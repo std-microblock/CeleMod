@@ -17,7 +17,7 @@ fn main() {
 
 
     #[cfg(debug_assertions)]
-    frame.load_html(include_bytes!("./ui/debug_index.html"), Some("app://index.html"));
+    frame.load_html(include_bytes!("./celemod-ui/debug_index.html"), Some("app://index.html"));
 
     frame.run_app();
 }

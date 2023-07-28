@@ -1,0 +1,3 @@
+[submodule "src/celemod-ui"]
+	path = src/celemod-ui
+	url = https://github.com/MicroCBer/celemod-ui
