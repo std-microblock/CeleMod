@@ -15,7 +15,7 @@ An alternative mod manager for Celeste
 ✅ 一键解析，补全依赖  
 ✅ 按类别搜索  
 ✅ 国服联机 Celeste.Miao.Net 快速配置  
-✅ 多个 Mod 同时下载
+✅ 多个 Mod 同时下载  
 ✅ 亚克力 UI  
 
 
