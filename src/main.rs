@@ -1,5 +1,11 @@
 #![feature(try_blocks)]
+#![feature(slice_pattern)]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use include_bytes_zstd::include_bytes_zstd;
+use serde::{Deserialize, Serialize};
+
+use core::slice::SlicePattern;
 use std::{
     fs::{self, write},
     path::{Path, PathBuf},
@@ -11,13 +17,32 @@ use aria2c::DownloadCallbackInfo;
 use everest::get_mod_cached;
 use game_scanner::{epicgames, prelude::Game};
 use lazy_static::lazy_static;
-use sciter::{dispatch_script_call, make_args, Value};
+use sciter::{dispatch_script_call, make_args, Value, GFX_LAYER};
 
 extern crate lazy_static;
 extern crate sciter;
 
 mod aria2c;
+mod blacklist;
 mod everest;
+
+#[macro_use]
+extern crate include_bytes_zstd;
+
+#[cfg(debug_assertions)]
+#[macro_export]
+macro_rules! zstd_include_bytes {
+    ($filename:literal) => {
+        include_bytes_zstd!($filename, 1)
+    };
+}
+#[cfg(not(debug_assertions))]
+#[macro_export]
+macro_rules! zstd_include_bytes {
+    ($filename:literal) => {
+        include_bytes_zstd!($filename, 21)
+    };
+}
 
 struct Handler;
 
@@ -36,7 +61,12 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
 
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;
-        let cache_dir = path.parent().unwrap().join("celemod_yaml_cache");
+        let cache_dir = path
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("celemod_yaml_cache");
         std::fs::create_dir_all(&cache_dir)?;
 
         let mut file = std::fs::File::create(
@@ -52,19 +82,37 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct ModDependency {
+    name: String,
+    version: String,
+    optional: bool,
+}
+#[derive(Debug, Serialize, Deserialize)]
 struct LocalMod {
     game_banana_id: i64,
     name: String,
-    deps: Vec<String>,
+    deps: Vec<ModDependency>,
     version: String,
+    file: String,
+}
+
+fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path)?;
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes)?;
+    let bytes = bytes.strip_prefix("\u{feff}".as_bytes()).unwrap_or(bytes.as_slice());
+    Ok(String::from_utf8(bytes.to_vec())?)
 }
 
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached().unwrap();
+
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
-        let _: anyhow::Result<_> = try {
+        let res: anyhow::Result<_> = try {
             if entry
                 .path()
                 .extension()
@@ -75,36 +123,57 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                     .path()
                     .parent()
                     .unwrap()
+                    .parent()
+                    .unwrap()
                     .join("celemod_yaml_cache")
                     .join(entry.path().with_extension("yaml").file_name().unwrap());
 
                 if !cache_path.exists() {
                     extract_mod_for_yaml(&entry.path())?;
                 }
-                let yaml = fs::read_to_string(cache_path)?;
+                let yaml = read_to_string_bom(&cache_path)?;
 
                 let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml)?;
 
-                let mut deps: Vec<String> = Vec::new();
+                let mut deps: Vec<ModDependency> = Vec::new();
 
                 if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
                     for dep in deps_yaml {
-                        deps.push(dep["Name"].as_str().unwrap().to_string());
+                        deps.push(ModDependency {
+                            name: dep["Name"].as_str().unwrap().to_string(),
+                            version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                            optional: false
+                        });
+                    }
+                }
+
+                if let Some(deps_yaml) = yaml[0]["OptionalDependencies"].as_sequence() {
+                    for dep in deps_yaml {
+                        deps.push(ModDependency {
+                            name: dep["Name"].as_str().unwrap().to_string(),
+                            version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                            optional: true
+                        });
                     }
                 }
 
                 let name = yaml[0]["Name"].as_str().context("")?.to_string();
                 let version = yaml[0]["Version"].as_str().context("")?.to_string();
-                let gbid = mod_data[&name]["GameBananaId"].as_i64().context("")?;
+                let gbid = mod_data[&name]["GameBananaId"].as_i64().unwrap_or(-1);
 
                 mods.push(LocalMod {
                     name,
                     version,
                     game_banana_id: gbid,
                     deps,
+                    file: entry.file_name().to_str().unwrap().to_string(),
                 });
             }
         };
+
+        if let Err(e) = res {
+            println!("[ WARNING ] Failed to parse {:?}: {}", entry.file_name(), e)
+        }
     }
     mods
 }
@@ -240,6 +309,121 @@ impl Handler {
                 .unwrap();
         });
     }
+
+    fn get_installed_miaonet(&self, mods_folder_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let installed = get_installed_mods_sync(mods_folder_path)
+                .into_iter()
+                .any(|p| p.name == "Miao.CelesteNet.Client");
+            callback.call(None, &make_args!(installed), None).unwrap();
+        });
+    }
+
+    fn get_installed_mods(&self, mods_folder_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let installed_mods = get_installed_mods_sync(mods_folder_path);
+            callback
+                .call(
+                    None,
+                    &make_args!(serde_json::to_string(&installed_mods).unwrap()),
+                    None,
+                )
+                .unwrap();
+        });
+    }
+
+    fn get_blacklist_profiles(&self, game_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
+            callback
+                .call(
+                    None,
+                    &make_args!(serde_json::to_string(&profiles).unwrap()),
+                    None,
+                )
+                .unwrap();
+        });
+    }
+
+    fn apply_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
+        let result = blacklist::apply_mod_blacklist_profile(&game_path, &profile_name);
+        if let Err(e) = result {
+            eprintln!("Failed to apply blacklist profile: {}", e);
+            format!("Failed to apply blacklist profile: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
+    fn switch_mod_blacklist_profile(&self, game_path: String, profile_name: String, mod_names: String, mod_files: String, enabled: bool) -> String {
+        let mod_names: Vec<String> = serde_json::from_str(&mod_names).unwrap();
+        let mod_files: Vec<String> =  serde_json::from_str(&mod_files).unwrap();
+        let mods: Vec<(&String, &String)> = mod_names.iter().zip(mod_files.iter()).collect();
+
+        let result = blacklist::switch_mod_blacklist_profile(
+            &game_path, &profile_name, mods, enabled);
+        if let Err(e) = result {
+            eprintln!("Failed to switch blacklist profile: {}", e);
+            format!("Failed to switch blacklist profile: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
+    fn new_mod_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
+        let result = blacklist::new_mod_blacklist_profile(&game_path, &profile_name);
+        if let Err(e) = result {
+            eprintln!("Failed to create blacklist profile: {}", e);
+            format!("Failed to create blacklist profile: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
+    fn get_current_profile(&self, game_path: String) -> String {
+        let result = blacklist::get_current_profile(&game_path);
+        if let Err(e) = result {
+            eprintln!("Failed to get current profile: {}", e);
+            format!("Failed to get current profile: {}", e)
+        } else {
+            result.unwrap()
+        }
+    }
+
+    fn remove_mod_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
+        let result = blacklist::remove_mod_blacklist_profile(&game_path, &profile_name);
+        if let Err(e) = result {
+            eprintln!("Failed to remove blacklist profile: {}", e);
+            format!("Failed to remove blacklist profile: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
+    fn open_url(&self, url: String) {
+        if let Err(e) = open::that(&url) {
+            eprintln!("Failed to open url: {}", e);
+        }
+    }
+
+    fn get_mod_download_url(&self, name: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let res: anyhow::Result<String> = try {
+                let mods = get_mod_cached()?;
+                let name = &mods[name];
+                let id = name["GameBananaFileId"].as_i64().context("")?;
+                format!("https://celeste.weg.fan/api/v2/download/gamebanana-files/{}", id)
+            };
+
+            let data = if let Ok(data) = res {
+                data
+            } else {
+                "".to_string()
+            };
+
+            callback.call(None, &make_args!(data), None).unwrap();
+        });
+    }
 }
 
 impl sciter::EventHandler for Handler {
@@ -247,12 +431,30 @@ impl sciter::EventHandler for Handler {
         fn download_mod(String, String, Value, bool);
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
+        fn get_installed_mods(String, Value);
+        fn get_installed_miaonet(String, Value);
         fn start_game(String);
+        fn open_url(String);
+        fn get_blacklist_profiles(String, Value);
+        fn apply_blacklist_profile(String, String);
+        fn switch_mod_blacklist_profile(String, String, String, String, bool);
+        fn new_mod_blacklist_profile(String, String);
+        fn get_current_profile(String);
+        fn remove_mod_blacklist_profile(String, String);
+        fn get_mod_download_url(String, Value);
     }
 }
 
 fn main() {
-    write("./sciter.dll", include_bytes!("../resources/sciter.dll")).unwrap();
+    if !Path::new("./sciter.dll").exists() {
+        write(
+            "./sciter.dll",
+            zstd_include_bytes!("./resources/sciter.dll"),
+        )
+        .unwrap();
+    }
+
+    sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
 
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))

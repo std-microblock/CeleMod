@@ -1,10 +1,13 @@
 use std::io::{BufRead, BufReader};
+use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
 use anyhow::Context;
+#[macro_use]
+use crate::zstd_include_bytes;
 #[macro_use]
 use lazy_static::lazy_static;
 
@@ -16,16 +19,16 @@ lazy_static! {
             .to_str()
             .unwrap()
             .to_string();
-        std::fs::write(&path, include_bytes!("../resources/aria2c.exe")).unwrap();
+        if !Path::new(&path).exists() {
+            std::fs::write(&path, zstd_include_bytes!("./resources/aria2c.exe")).unwrap();
+        }
         path
     };
 }
 
-
-
 pub struct DownloadCallbackInfo<'a> {
     pub progress: f32,
-    pub child: & 'a mut std::process::Child,
+    pub child: &'a mut std::process::Child,
 }
 
 pub fn download_file_with_progress(
@@ -36,6 +39,9 @@ pub fn download_file_with_progress(
     let aria2c_path = &*ARIA2C_PATH; // 从环境变量中获取 aria2c 路径
 
     println!("[ ARIA2C ] Downloading {} to {}", url, output_path);
+
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    const DETACHED_PROCESS: u32 = 0x00000008;
 
     let output_path = Path::new(output_path);
     // 构建 aria2c 命令
@@ -51,6 +57,8 @@ pub fn download_file_with_progress(
         .arg("--allow-overwrite=true")
         .arg("--summary-interval=1")
         .stdout(Stdio::piped())
+        // hide black console
+        .creation_flags(CREATE_NO_WINDOW)
         .spawn();
 
     // 检查是否成功启动子进程
@@ -77,11 +85,14 @@ pub fn download_file_with_progress(
                     progress
                 };
                 if let Ok(progress) = progress {
-                    progress_callback(DownloadCallbackInfo { progress, child: &mut child });
+                    progress_callback(DownloadCallbackInfo {
+                        progress,
+                        child: &mut child,
+                    });
                 }
             }
 
-            if line.contains("download completed"){
+            if line.contains("download completed") {
                 break 'a;
             }
         }
