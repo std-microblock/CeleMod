@@ -2,7 +2,7 @@
 #![feature(slice_pattern)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Deserialize, Serialize};
+use serde::{de::VariantAccess, Deserialize, Serialize};
 
 use std::{
     borrow::BorrowMut,
@@ -136,7 +136,10 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                     .join("celemod_yaml_cache")
                     .join(entry.path().with_extension("yaml").file_name().unwrap());
 
-                if !cache_path.exists() {
+                let mod_date = entry.metadata()?.modified().unwrap();
+                let cache_date = cache_path.metadata().ok().map(|v| v.modified().unwrap());
+
+                if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
                     extract_mod_for_yaml(&entry.path())?;
                 }
                 let yaml = read_to_string_bom(&cache_path)?;
@@ -199,18 +202,49 @@ fn download_and_install_mod(
 
     if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
         for dep in deps_yaml {
-            deps.push(
-                (dep["Name"]
-                .as_str()
-                .context("Interrupted yaml dependency")?
-                .to_string(),
-                dep["Version"].as_str()
-                .context("Interrupted yaml dependency")?
-                .to_string())
-            );
+            // FUCK YOU YAML
+            let version = if dep["Version"].is_f64() {
+                // this turns it into Number(1.1), let's parse it
+                let ver = format!("{:?}",dep["Version"]);
+                ver[
+                    "Number(".len()..ver.len() - 1
+                ].to_string()
+            } else {
+                let v=dep["Version"]
+                    .as_str()
+                    .unwrap_or("1.0.0")
+                    .to_string();
+                
+                if v.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                    v
+                } else {
+                    "1.0.0".to_string()
+                }
+            };
+
+            deps.push((
+                dep["Name"]
+                    .as_str()
+                    .context("Interrupted yaml dependency")?
+                    .to_string(),
+                version
+            ));
         }
     }
     Ok(deps)
+}
+
+fn rm_mod(mods_folder_path: &str, mod_name: &str) -> anyhow::Result<()> {
+    let mods = get_installed_mods_sync(mods_folder_path.to_string());
+    for mod_ in mods {
+        if mod_.name == mod_name {
+            let path = Path::new(mods_folder_path).join(&mod_.file);
+            if path.exists() {
+                fs::remove_file(path)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn get_celestes() -> Vec<Game> {
@@ -288,7 +322,6 @@ impl Handler {
 
                 let mut i_task = 0;
                 while tasklist.borrow().len() != i_task {
-
                     let tasklist2 = Rc::clone(&tasklist);
 
                     let deps = {
@@ -306,15 +339,20 @@ impl Handler {
                             )
                         };
 
-                        let task = &mut tasklist.try_borrow_mut().unwrap()[i_task];
-
-                        if let Ok(deps) = deps {
-                            task.status = DownloadStatus::Finished;
-                            deps
-                        } else {
-                            task.status = DownloadStatus::Failed;
-                            post_callback(&*tasklist.borrow(), "failed");
-                            return;
+                        match deps {
+                            Ok(deps) => {
+                                let task = &mut tasklist.try_borrow_mut().unwrap()[i_task];
+                                task.status = DownloadStatus::Finished;
+                                deps
+                            }
+                            Err(e) => {
+                                let mut tasklist = tasklist.try_borrow_mut().unwrap();
+                                let task = &mut tasklist[i_task];
+                                task.status = DownloadStatus::Failed;
+                                task.data = e.to_string();
+                                post_callback(&*tasklist, "failed");
+                                return;
+                            }
                         }
                     };
 
@@ -328,10 +366,9 @@ impl Handler {
                         let dep = dep.clone();
                         let min_ver = min_ver.clone();
 
-                        if installed_mods
-                            .iter()
-                            .any(|mod_| mod_.name == dep && compare_version(&mod_.version, &min_ver) >= 0)
-                        {
+                        if installed_mods.iter().any(|mod_| {
+                            mod_.name == dep && compare_version(&mod_.version, &min_ver) >= 0
+                        }) {
                             continue;
                         }
 
@@ -521,21 +558,29 @@ impl Handler {
         }
     }
 
-    fn get_mod_download_url(&self, name: String, callback: sciter::Value) {
+    fn get_mod_update(&self, name: String, callback: sciter::Value) {
         std::thread::spawn(move || {
-            let res: anyhow::Result<String> = try {
+            let res: anyhow::Result<(String, String)> = try {
                 let mods = get_mod_cached_new()?;
                 let name = &mods[&name];
-                name.download_url.clone()
+                (name.download_url.clone(), name.version.clone())
             };
 
             let data = if let Ok(data) = res {
-                data
+                serde_json::to_string(&data).unwrap()
             } else {
                 "".to_string()
             };
 
             callback.call(None, &make_args!(data), None).unwrap();
+        });
+    }
+
+    fn rm_mod(&self, mods_folder_path: String, mod_name: String) {
+        std::thread::spawn(move || {
+            if let Err(e) = rm_mod(&mods_folder_path, &mod_name) {
+                eprintln!("Failed to remove mod: {}", e);
+            }
         });
     }
 }
@@ -555,7 +600,8 @@ impl sciter::EventHandler for Handler {
         fn new_mod_blacklist_profile(String, String);
         fn get_current_profile(String);
         fn remove_mod_blacklist_profile(String, String);
-        fn get_mod_download_url(String, Value);
+        fn get_mod_update(String, Value);
+        fn rm_mod(String, String);
     }
 }
 
