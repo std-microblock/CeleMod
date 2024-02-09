@@ -32,6 +32,24 @@ mod wegfan;
 #[macro_use]
 extern crate include_bytes_zstd;
 
+fn compare_version(a: &str, b: &str) -> i32 {
+    let a_parts: Vec<&str> = a.split(".").collect();
+    let b_parts: Vec<&str> = b.split(".").collect();
+    for i in 0..std::cmp::max(a_parts.len(), b_parts.len()) {
+        let a_part = a_parts.get(i).unwrap_or(&"0");
+        let b_part = b_parts.get(i).unwrap_or(&"0");
+        if a_part == b_part {
+            continue;
+        }
+        if a_part.parse::<i32>().unwrap() > b_part.parse::<i32>().unwrap() {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+    0
+}
+
 struct Handler;
 
 fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
@@ -172,20 +190,23 @@ fn download_and_install_mod(
     url: &str,
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
-) -> anyhow::Result<Vec<String>> {
+) -> anyhow::Result<Vec<(String, String)>> {
     aria2c::download_file_with_progress(url, dest, progress_callback)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
-    let mut deps: Vec<String> = Vec::new();
+    let mut deps: Vec<(String, String)> = Vec::new();
 
     if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
         for dep in deps_yaml {
             deps.push(
-                dep["Name"]
-                    .as_str()
-                    .context("Interrupted yaml dependency")?
-                    .to_string(),
+                (dep["Name"]
+                .as_str()
+                .context("Interrupted yaml dependency")?
+                .to_string(),
+                dep["Version"].as_str()
+                .context("Interrupted yaml dependency")?
+                .to_string())
             );
         }
     }
@@ -228,10 +249,15 @@ impl Handler {
         &self,
         name: String,
         url: String,
-        dest: String,
+        mods_dir: String,
         callback: sciter::Value,
         use_cn_proxy: bool,
     ) {
+        let dest = Path::new(&mods_dir)
+            .join(name.clone() + ".zip")
+            .to_str()
+            .unwrap()
+            .to_string();
         std::thread::spawn(move || {
             let res: anyhow::Result<()> = try {
                 let cbkc = callback.clone();
@@ -262,14 +288,11 @@ impl Handler {
 
                 let mut i_task = 0;
                 while tasklist.borrow().len() != i_task {
-                    let dlen = tasklist.borrow().len();
-
-                    let callback = callback.clone();
 
                     let tasklist2 = Rc::clone(&tasklist);
 
                     let deps = {
-                        let download_res = {
+                        let deps = {
                             let current_task = tasklist.borrow()[i_task].clone();
 
                             download_and_install_mod(
@@ -285,7 +308,7 @@ impl Handler {
 
                         let task = &mut tasklist.try_borrow_mut().unwrap()[i_task];
 
-                        if let Ok(deps) = download_res {
+                        if let Ok(deps) = deps {
                             task.status = DownloadStatus::Finished;
                             deps
                         } else {
@@ -299,7 +322,19 @@ impl Handler {
 
                     post_callback(&tasklist.borrow(), "pending");
 
-                    for dep in deps {
+                    let installed_mods = get_installed_mods_sync(mods_dir.clone());
+                    for (dep, min_ver) in deps {
+                        // search in installed mods
+                        let dep = dep.clone();
+                        let min_ver = min_ver.clone();
+
+                        if installed_mods
+                            .iter()
+                            .any(|mod_| mod_.name == dep && compare_version(&mod_.version, &min_ver) >= 0)
+                        {
+                            continue;
+                        }
+
                         if mod_data.contains_key(&dep) {
                             let data = &mod_data[&dep];
                             let dest = Path::new(&dest)
