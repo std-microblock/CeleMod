@@ -2,21 +2,18 @@
 #![feature(slice_pattern)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use include_bytes_zstd::include_bytes_zstd;
 use serde::{Deserialize, Serialize};
 
-use core::slice::SlicePattern;
 use std::{
-    fs::{self, write},
+    fs::{self},
     path::{Path, PathBuf},
-    process,
 };
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use aria2c::DownloadCallbackInfo;
-use everest::get_mod_cached;
-use game_scanner::{epicgames, prelude::Game};
-use lazy_static::lazy_static;
+use everest::get_mod_cached_new;
+use game_scanner::prelude::Game;
+
 use sciter::{dispatch_script_call, make_args, Value, GFX_LAYER};
 
 extern crate lazy_static;
@@ -25,24 +22,10 @@ extern crate sciter;
 mod aria2c;
 mod blacklist;
 mod everest;
+mod wegfan;
 
 #[macro_use]
 extern crate include_bytes_zstd;
-
-#[cfg(debug_assertions)]
-#[macro_export]
-macro_rules! zstd_include_bytes {
-    ($filename:literal) => {
-        include_bytes_zstd!($filename, 1)
-    };
-}
-#[cfg(not(debug_assertions))]
-#[macro_export]
-macro_rules! zstd_include_bytes {
-    ($filename:literal) => {
-        include_bytes_zstd!($filename, 21)
-    };
-}
 
 struct Handler;
 
@@ -102,13 +85,15 @@ fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
     let mut file = std::fs::File::open(path)?;
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes)?;
-    let bytes = bytes.strip_prefix("\u{feff}".as_bytes()).unwrap_or(bytes.as_slice());
+    let bytes = bytes
+        .strip_prefix("\u{feff}".as_bytes())
+        .unwrap_or(bytes.as_slice());
     Ok(String::from_utf8(bytes.to_vec())?)
 }
 
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
-    let mod_data = get_mod_cached().unwrap();
+    let mod_data = get_mod_cached_new().unwrap();
 
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
@@ -142,7 +127,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                         deps.push(ModDependency {
                             name: dep["Name"].as_str().unwrap().to_string(),
                             version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
-                            optional: false
+                            optional: false,
                         });
                     }
                 }
@@ -152,14 +137,14 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                         deps.push(ModDependency {
                             name: dep["Name"].as_str().unwrap().to_string(),
                             version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
-                            optional: true
+                            optional: true,
                         });
                     }
                 }
 
                 let name = yaml[0]["Name"].as_str().context("")?.to_string();
                 let version = yaml[0]["Version"].as_str().context("")?.to_string();
-                let gbid = mod_data[&name]["GameBananaId"].as_i64().unwrap_or(-1);
+                let gbid = mod_data[&name].game_banana_id;
 
                 mods.push(LocalMod {
                     name,
@@ -179,7 +164,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
 }
 
 fn download_and_install_mod(
-    url: &String,
+    url: &str,
     dest: &String,
     progress_callback: &dyn Fn(DownloadCallbackInfo),
 ) -> Vec<String> {
@@ -214,70 +199,79 @@ fn get_celestes() -> Vec<Game> {
 impl Handler {
     fn download_mod(&self, url: String, dest: String, callback: sciter::Value, use_cn_proxy: bool) {
         std::thread::spawn(move || {
-            let cbkc = callback.clone();
+            let res: anyhow::Result<()> = try {
+                let cbkc = callback.clone();
 
-            let mut installed_deps: Vec<i64> = vec![];
+                let mut installed_deps: Vec<i64> = vec![];
 
-            let mut deps_to_install: Vec<(String, String)> = vec![(url, dest)];
+                let mut deps_to_install: Vec<(String, String)> = vec![(url, dest)];
 
-            let mod_data = get_mod_cached().unwrap();
+                let mod_data = get_mod_cached_new().unwrap();
 
-            while !deps_to_install.is_empty() {
-                let dlen = deps_to_install.len();
-                let (url, dest) = deps_to_install.pop().unwrap();
+                while !deps_to_install.is_empty() {
+                    let dlen = deps_to_install.len();
+                    let (url, dest) = deps_to_install.pop().unwrap();
 
-                let callback = callback.clone();
-                let callback2 = callback.clone();
+                    let callback = callback.clone();
+                    let callback2 = callback.clone();
 
-                let deps = download_and_install_mod(&url, &dest, &move |progress| {
-                    println!("Progress: {}", progress.progress);
-                    callback
-                        .call(
-                            None,
-                            &make_args!(format!("{}% ({})", progress.progress, dlen)),
-                            None,
-                        )
+                    let deps = download_and_install_mod(&url, &dest, &move |progress| {
+                        println!("Progress: {}", progress.progress);
+                        callback
+                            .call(
+                                None,
+                                &make_args!(format!("{}% ({})", progress.progress, dlen)),
+                                None,
+                            )
+                            .unwrap();
+                    });
+
+                    println!("Deps: {deps:#?}");
+
+                    callback2
+                        .call(None, &make_args!(format!("100% ({})", dlen)), None)
                         .unwrap();
-                });
 
-                println!("Deps: {deps:#?}");
+                    for dep in deps {
+                        if mod_data.contains_key(&dep) {
+                            let data = &mod_data[&dep];
+                            let dest = Path::new(&dest)
+                                .with_file_name(dep.clone() + ".zip")
+                                .to_str()
+                                .unwrap()
+                                .to_string();
 
-                callback2
-                    .call(None, &make_args!(format!("100% ({})", dlen)), None)
-                    .unwrap();
+                            let id = data.game_banana_id;
 
-                for dep in deps {
-                    let data = &mod_data[&dep];
-                    let dest = Path::new(&dest)
-                        .with_file_name(dep.clone() + ".zip")
-                        .to_str()
-                        .unwrap()
-                        .to_string();
+                            let fileid = data.game_banana_file_id;
 
-                    let id = data["GameBananaId"].as_i64();
+                            if !installed_deps.contains(&id) {
+                                let url = data.download_url.clone();
 
-                    if let Some(id) = id {
-                        let fileid = data["GameBananaFileId"].as_i64().unwrap();
-
-                        if !installed_deps.contains(&id) {
-                            let url = if use_cn_proxy {
-                                format!("https://celeste.weg.fan/api/v2/download/gamebanana-files/{fileid}")
-                            } else {
-                                data["MirrorURL"].as_str().unwrap().to_string()
-                            };
-
-                            installed_deps.push(id);
-                            deps_to_install.push((url, dest));
+                                installed_deps.push(id);
+                                deps_to_install.push((url, dest));
+                            }
+                        } else {
+                            println!("[ WARNING ] Failed to resolve {dep}");
                         }
-                    } else {
-                        println!("[ WARNING ] Failed to resolve {dep}");
                     }
                 }
+
+                println!("Download finished");
+
+                cbkc.call(None, &make_args!(100), None).unwrap();
+            };
+
+            if let Err(e) = res {
+                eprintln!("Failed to download mod: {}", e);
+                callback
+                    .call(
+                        None,
+                        &make_args!(format!("Failed to download mod: {}", e)),
+                        None,
+                    )
+                    .unwrap();
             }
-
-            println!("Download finished");
-
-            cbkc.call(None, &make_args!(100), None).unwrap();
         });
     }
 
@@ -295,7 +289,7 @@ impl Handler {
             .iter()
             .find(|game| game.path.clone().unwrap().to_str().unwrap() == path)
             .unwrap();
-        game_scanner::manager::launch_game(&game).unwrap();
+        game_scanner::manager::launch_game(game).unwrap();
     }
 
     fn get_installed_mod_ids(&self, mods_folder_path: String, callback: sciter::Value) {
@@ -355,13 +349,20 @@ impl Handler {
         }
     }
 
-    fn switch_mod_blacklist_profile(&self, game_path: String, profile_name: String, mod_names: String, mod_files: String, enabled: bool) -> String {
+    fn switch_mod_blacklist_profile(
+        &self,
+        game_path: String,
+        profile_name: String,
+        mod_names: String,
+        mod_files: String,
+        enabled: bool,
+    ) -> String {
         let mod_names: Vec<String> = serde_json::from_str(&mod_names).unwrap();
-        let mod_files: Vec<String> =  serde_json::from_str(&mod_files).unwrap();
+        let mod_files: Vec<String> = serde_json::from_str(&mod_files).unwrap();
         let mods: Vec<(&String, &String)> = mod_names.iter().zip(mod_files.iter()).collect();
 
-        let result = blacklist::switch_mod_blacklist_profile(
-            &game_path, &profile_name, mods, enabled);
+        let result =
+            blacklist::switch_mod_blacklist_profile(&game_path, &profile_name, mods, enabled);
         if let Err(e) = result {
             eprintln!("Failed to switch blacklist profile: {}", e);
             format!("Failed to switch blacklist profile: {}", e)
@@ -401,7 +402,7 @@ impl Handler {
     }
 
     fn open_url(&self, url: String) {
-        if let Err(e) = open::that(&url) {
+        if let Err(e) = open::that(url) {
             eprintln!("Failed to open url: {}", e);
         }
     }
@@ -409,10 +410,9 @@ impl Handler {
     fn get_mod_download_url(&self, name: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let res: anyhow::Result<String> = try {
-                let mods = get_mod_cached()?;
-                let name = &mods[name];
-                let id = name["GameBananaFileId"].as_i64().context("")?;
-                format!("https://celeste.weg.fan/api/v2/download/gamebanana-files/{}", id)
+                let mods = get_mod_cached_new()?;
+                let name = &mods[&name];
+                name.download_url.clone()
             };
 
             let data = if let Ok(data) = res {
@@ -447,14 +447,21 @@ impl sciter::EventHandler for Handler {
 
 fn main() {
     if !Path::new("./sciter.dll").exists() {
-        write(
-            "./sciter.dll",
-            zstd_include_bytes!("./resources/sciter.dll"),
-        )
-        .unwrap();
+        #[cfg(not(debug_assertions))]
+        {
+            fs::write(
+                "./sciter.dll",
+                include_bytes_zstd!("./resources/sciter.dll", 21),
+            )
+            .unwrap();
+        }
+        #[cfg(debug_assertions)]
+        {
+            panic!("sciter.dll not found");
+        }
     }
 
-    sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
+    let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
 
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))

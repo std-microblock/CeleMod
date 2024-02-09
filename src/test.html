@@ -7,35 +7,45 @@
 </head>
 <body>
     <div class="a">
-
-        <div class="b">
-            <div class="c">
-                111
-            </div>
-        </div>
-        <div class="b">
-            <div class="c">
-                111
-            </div>
-        </div>
-        <div class="b">
-            <div class="c">
-                111
-            </div>
-        </div>
-        <div class="b">
-            <div class="c">
-                111
-            </div>
-        </div>
     </div>
     <style>
         .a {
-            flow: horizontal-flow;
-        }
-        .c {
-            width: 400px;
+            width: 100px;
+            height: 100px;
+            background: yellow;
         }
     </style>
+
+    <script>
+        // test1: change the innerHTML of the style element
+        setTimeout(()=>{
+            const styleElement = document.querySelector('style');
+            styleElement.innerHTML = `
+                .a {
+                    width: 100px;
+                    height: 100px;
+                    background: purple;
+                }
+            `;
+        }, 1000)
+
+        // test2: remove and re-append the style element
+        setTimeout(()=>{
+            const styleElement = document.querySelector('style');
+            styleElement.remove();
+            const styleElement2 = document.createElement('style');
+            styleElement2.innerHTML = `
+                .a {
+                    width: 100px;
+                    height: 100px;
+                    background: blue;
+                }
+            `;
+            document.head.appendChild(styleElement2);
+        }, 2000)
+
+        
+    </script>
+
 </body>
 </html>

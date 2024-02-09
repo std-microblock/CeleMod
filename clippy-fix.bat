@@ -1,0 +1,1 @@
+set __CARGO_FIX_YOLO=1 & cargo clippy --fix --allow-dirty --all

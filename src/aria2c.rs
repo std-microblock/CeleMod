@@ -2,13 +2,10 @@ use std::io::{BufRead, BufReader};
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::thread;
-use std::time::Duration;
+
+
 
 use anyhow::Context;
-#[macro_use]
-use crate::zstd_include_bytes;
-#[macro_use]
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -20,7 +17,11 @@ lazy_static! {
             .unwrap()
             .to_string();
         if !Path::new(&path).exists() {
-            std::fs::write(&path, zstd_include_bytes!("./resources/aria2c.exe")).unwrap();
+            #[cfg(debug_assertions)]
+            panic!("aria2c.exe not found.");
+
+            #[cfg(not(debug_assertions))]
+            std::fs::write(&path, include_bytes_zstd!("./resources/aria2c.exe", 21)).unwrap();
         }
         path
     };
@@ -36,7 +37,7 @@ pub fn download_file_with_progress(
     output_path: &str,
     progress_callback: &dyn Fn(DownloadCallbackInfo),
 ) -> Result<(), String> {
-    let aria2c_path = &*ARIA2C_PATH; // 从环境变量中获取 aria2c 路径
+    let aria2c_path = &*ARIA2C_PATH;
 
     println!("[ ARIA2C ] Downloading {} to {}", url, output_path);
 
@@ -56,8 +57,9 @@ pub fn download_file_with_progress(
         .arg("--console-log-level=error")
         .arg("--allow-overwrite=true")
         .arg("--summary-interval=1")
+        // .arg("--max-tries=5")
+        // .arg("--timeout=600000")
         .stdout(Stdio::piped())
-        // hide black console
         .creation_flags(CREATE_NO_WINDOW)
         .spawn();
 
@@ -70,15 +72,15 @@ pub fn download_file_with_progress(
     // 读取管道，实时报告进度
     let stdout = child.stdout.take().unwrap();
     let reader = BufReader::new(stdout);
-    'a: for line in reader.lines().flatten() {
-        for line in line.split("\n").map(|f| f.trim()) {
+    'a: for line in reader.lines().map_while(Result::ok) {
+        for line in line.split('\n').map(|f| f.trim()) {
             println!("Recv: {}", line);
             // 处理 aria2c 控制台输出
             // [#798a50 27MiB/302MiB(9%) CN:8 DL:500KiB ETA:9m23s]
             if line.starts_with("[#") {
                 let progress: anyhow::Result<f32> = try {
-                    let start = line.find("(").context("Failed to find start index.")? + 1;
-                    let end = line.find("%").context("Failed to find end index.")?;
+                    let start = line.find('(').context("Failed to find start index.")? + 1;
+                    let end = line.find('%').context("Failed to find end index.")?;
                     let progress = line[start..end]
                         .parse::<f32>()
                         .context("Failed to parse progress.")?;

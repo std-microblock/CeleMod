@@ -1,65 +1,47 @@
+use crate::wegfan;
+
 use lazy_static::lazy_static;
-use std::{cell::RefCell, fs::File, io::Write, path::Path, sync::Mutex};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModInfoCached {
+    pub name: String,
+    pub version: String,
+    pub game_banana_id: i64,
+    pub game_banana_file_id: i64,
+    pub download_url: String,
+}
 
 lazy_static! {
-    static ref MOD_DATA_PATH: String = {
-        std::env::current_dir()
-            .unwrap()
-            .join("mod-cache-official.yaml")
-            .to_str()
-            .unwrap()
-            .to_string()
+    static ref MOD_INFO_CACHED: Arc<HashMap<String, ModInfoCached>> = {
+        let mods = get_mod_online_wegfan().unwrap();
+        let mods = mods.into_iter().map(|v| (v.name.clone(), v)).collect();
+        Arc::new(mods)
     };
 }
 
-pub fn update_mod_cache() -> anyhow::Result<serde_yaml::Value> {
-    let mods: anyhow::Result<_> = try {
-        if true {
-            let response = ureq::get("https://everestapi.github.io/modupdater.txt").call()?.into_string()?;
-            let url = response;
-
-            let response = ureq::get(url.trim()).call()?.into_string()?;
-            response
-        } else {
-            let response =ureq::get("https://celeste.wegfan.cn/api/v2/download/everest_update.yaml").call()?.into_string()?;
-            response
-        }
-    };
-
-    let mods = mods?;
-
-
-    let mut file = File::create(&*MOD_DATA_PATH)?;
-    file.write_all(mods.as_bytes())?;
-
-    let mods: serde_yaml::Value = serde_yaml::from_str(&mods)?;
-
-    Ok(mods)
+pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
+    let mut response: serde_json::Value = 
+        ureq::get("https://celeste-dev.weg.fan/api/v2/mod/list")
+        .set("Accept-Encoding", "gzip, deflate, br")
+        .call()?
+        .into_json()?;
+    let mods: Vec<wegfan::Mod> = serde_json::from_value(response["data"].take())?;
+    mods.into_iter()
+        .map(|v| -> anyhow::Result<ModInfoCached> {
+            Ok(ModInfoCached {
+                game_banana_file_id: v.submission_file.game_banana_id.unwrap_or(-1),
+                game_banana_id: v.submission_file.submission.game_banana_id.unwrap_or(-1),
+                download_url: v.submission_file.url,
+                name: v.name,
+                version: v.version,
+            })
+        })
+        .collect()
 }
 
-static MOD_DATA: Mutex<serde_yaml::Value> = Mutex::new(serde_yaml::Value::Null);
-
-fn read_mod_cache() -> anyhow::Result<serde_yaml::Value> {
-    let data = std::fs::read_to_string(&*MOD_DATA_PATH)?;
-    let mods: serde_yaml::Value = serde_yaml::from_str(&data)?;
-
-    Ok(mods)
-}
-
-pub fn get_mod_cached() -> anyhow::Result<&'static serde_yaml::Value> {
-    if !Path::new(&*MOD_DATA_PATH).exists()
-        || Path::new(&*MOD_DATA_PATH).metadata()?.modified()?
-            < std::time::SystemTime::now() - std::time::Duration::from_secs(60 * 60 * 24)
-    {
-        update_mod_cache()?;
-        *MOD_DATA.lock().unwrap() = read_mod_cache()?;
-    }
-
-    if MOD_DATA.lock().unwrap().is_null() {
-        *MOD_DATA.lock().unwrap() = read_mod_cache()?;
-    }
-
-    // unsafe create ref
-    let data = unsafe { & *(&(*MOD_DATA.lock().unwrap()) as *const serde_yaml::Value)};
-    Ok(data)
+pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>>> {
+    Ok(Arc::clone(&MOD_INFO_CACHED))
 }
