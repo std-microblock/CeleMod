@@ -5,8 +5,13 @@
 use serde::{Deserialize, Serialize};
 
 use std::{
-    fs::{self},
+    borrow::BorrowMut,
+    cell::RefCell,
+    fmt::format,
+    fs,
     path::{Path, PathBuf},
+    rc::Rc,
+    sync::RwLock,
 };
 
 use anyhow::{bail, Context};
@@ -166,20 +171,25 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
 fn download_and_install_mod(
     url: &str,
     dest: &String,
-    progress_callback: &dyn Fn(DownloadCallbackInfo),
-) -> Vec<String> {
-    aria2c::download_file_with_progress(url, dest, progress_callback).unwrap();
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+) -> anyhow::Result<Vec<String>> {
+    aria2c::download_file_with_progress(url, dest, progress_callback)?;
 
-    let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf()).unwrap();
+    let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
     let mut deps: Vec<String> = Vec::new();
 
     if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
         for dep in deps_yaml {
-            deps.push(dep["Name"].as_str().unwrap().to_string());
+            deps.push(
+                dep["Name"]
+                    .as_str()
+                    .context("Interrupted yaml dependency")?
+                    .to_string(),
+            );
         }
     }
-    deps
+    Ok(deps)
 }
 
 fn get_celestes() -> Vec<Game> {
@@ -196,41 +206,98 @@ fn get_celestes() -> Vec<Game> {
     games
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+enum DownloadStatus {
+    Waiting,
+    Downloading,
+    Finished,
+    Failed,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct DownloadInfo {
+    name: String,
+    url: String,
+    dest: String,
+    status: DownloadStatus,
+    data: String,
+}
+
 impl Handler {
-    fn download_mod(&self, url: String, dest: String, callback: sciter::Value, use_cn_proxy: bool) {
+    fn download_mod(
+        &self,
+        name: String,
+        url: String,
+        dest: String,
+        callback: sciter::Value,
+        use_cn_proxy: bool,
+    ) {
         std::thread::spawn(move || {
             let res: anyhow::Result<()> = try {
                 let cbkc = callback.clone();
 
                 let mut installed_deps: Vec<i64> = vec![];
 
-                let mut deps_to_install: Vec<(String, String)> = vec![(url, dest)];
+                let mut tasklist: Rc<RefCell<Vec<DownloadInfo>>> =
+                    Rc::new(RefCell::new(Vec::new()));
 
-                let mod_data = get_mod_cached_new().unwrap();
+                tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
+                    name: name.clone(),
+                    url: url.clone(),
+                    dest: dest.clone(),
+                    status: DownloadStatus::Waiting,
+                    data: "".to_string(),
+                });
 
-                while !deps_to_install.is_empty() {
-                    let dlen = deps_to_install.len();
-                    let (url, dest) = deps_to_install.pop().unwrap();
+                let mod_data = get_mod_cached_new()?;
+
+                let post_callback = |tasklist: &Vec<DownloadInfo>, state: &str| {
+                    cbkc.call(
+                        None,
+                        &make_args!(serde_json::to_string(&tasklist).unwrap(), state),
+                        None,
+                    )
+                    .unwrap();
+                };
+
+                let mut i_task = 0;
+                while tasklist.borrow().len() != i_task {
+                    let dlen = tasklist.borrow().len();
 
                     let callback = callback.clone();
-                    let callback2 = callback.clone();
 
-                    let deps = download_and_install_mod(&url, &dest, &move |progress| {
-                        println!("Progress: {}", progress.progress);
-                        callback
-                            .call(
-                                None,
-                                &make_args!(format!("{}% ({})", progress.progress, dlen)),
-                                None,
+                    let tasklist2 = Rc::clone(&tasklist);
+
+                    let deps = {
+                        let download_res = {
+                            let current_task = tasklist.borrow()[i_task].clone();
+
+                            download_and_install_mod(
+                                &current_task.url,
+                                &current_task.dest,
+                                &mut move |progress| {
+                                    (tasklist2.try_borrow_mut().unwrap())[i_task].data =
+                                        progress.progress.to_string();
+                                    post_callback(&*tasklist2.borrow(), "pending");
+                                },
                             )
-                            .unwrap();
-                    });
+                        };
+
+                        let task = &mut tasklist.try_borrow_mut().unwrap()[i_task];
+
+                        if let Ok(deps) = download_res {
+                            task.status = DownloadStatus::Finished;
+                            deps
+                        } else {
+                            task.status = DownloadStatus::Failed;
+                            post_callback(&*tasklist.borrow(), "failed");
+                            return;
+                        }
+                    };
 
                     println!("Deps: {deps:#?}");
 
-                    callback2
-                        .call(None, &make_args!(format!("100% ({})", dlen)), None)
-                        .unwrap();
+                    post_callback(&tasklist.borrow(), "pending");
 
                     for dep in deps {
                         if mod_data.contains_key(&dep) {
@@ -243,23 +310,35 @@ impl Handler {
 
                             let id = data.game_banana_id;
 
-                            let fileid = data.game_banana_file_id;
-
                             if !installed_deps.contains(&id) {
                                 let url = data.download_url.clone();
 
                                 installed_deps.push(id);
-                                deps_to_install.push((url, dest));
+                                tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
+                                    name: format!("依赖项·{}", dep),
+                                    url,
+                                    dest,
+                                    status: DownloadStatus::Waiting,
+                                    data: "0".to_string(),
+                                });
                             }
                         } else {
                             println!("[ WARNING ] Failed to resolve {dep}");
                         }
                     }
+
+                    i_task += 1;
+                    let mut tasklist = tasklist.try_borrow_mut().unwrap();
+                    tasklist[i_task - 1].status = DownloadStatus::Finished;
+                    tasklist[i_task - 1].data = "100".to_string();
+                    if i_task < tasklist.len() {
+                        tasklist[i_task].status = DownloadStatus::Downloading;
+                    }
                 }
 
                 println!("Download finished");
 
-                cbkc.call(None, &make_args!(100), None).unwrap();
+                post_callback(&*tasklist.borrow(), "finished");
             };
 
             if let Err(e) = res {
@@ -428,7 +507,7 @@ impl Handler {
 
 impl sciter::EventHandler for Handler {
     dispatch_script_call! {
-        fn download_mod(String, String, Value, bool);
+        fn download_mod(String, String, String, Value, bool);
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);

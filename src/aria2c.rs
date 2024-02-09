@@ -1,11 +1,13 @@
+use std::cell::RefCell;
+use std::fs;
 use std::io::{BufRead, BufReader};
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
-
-
-use anyhow::Context;
+use anyhow::{bail, Context};
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -35,8 +37,8 @@ pub struct DownloadCallbackInfo<'a> {
 pub fn download_file_with_progress(
     url: &str,
     output_path: &str,
-    progress_callback: &dyn Fn(DownloadCallbackInfo),
-) -> Result<(), String> {
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+) -> anyhow::Result<()> {
     let aria2c_path = &*ARIA2C_PATH;
 
     println!("[ ARIA2C ] Downloading {} to {}", url, output_path);
@@ -60,14 +62,27 @@ pub fn download_file_with_progress(
         // .arg("--max-tries=5")
         // .arg("--timeout=600000")
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
         .creation_flags(CREATE_NO_WINDOW)
         .spawn();
 
     // 检查是否成功启动子进程
     let mut child = match command {
         Ok(child) => child,
-        Err(_) => return Err(String::from("Failed to start aria2c process.")),
+        Err(_) => bail!("Failed to start aria2c process."),
     };
+
+    let mut err: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    let stderr = child.stderr.take().unwrap();
+    let err_ref = Arc::clone(&err);
+    // 读取错误输出
+    let thread = std::thread::spawn(move || {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines().map_while(Result::ok) {
+            println!("Error: {}", line);
+            err_ref.lock().unwrap().push_str(&(line + "\n"));
+        }
+    });
 
     // 读取管道，实时报告进度
     let stdout = child.stdout.take().unwrap();
@@ -75,8 +90,6 @@ pub fn download_file_with_progress(
     'a: for line in reader.lines().map_while(Result::ok) {
         for line in line.split('\n').map(|f| f.trim()) {
             println!("Recv: {}", line);
-            // 处理 aria2c 控制台输出
-            // [#798a50 27MiB/302MiB(9%) CN:8 DL:500KiB ETA:9m23s]
             if line.starts_with("[#") {
                 let progress: anyhow::Result<f32> = try {
                     let start = line.find('(').context("Failed to find start index.")? + 1;
@@ -100,9 +113,16 @@ pub fn download_file_with_progress(
         }
     }
 
+    thread.join().unwrap();
     // 等待子进程结束
     match child.wait() {
-        Ok(_) => Ok(()),
-        Err(_) => Err(String::from("Failed to download file.")),
+        Ok(status) => {
+            if !status.success() || !Path::new(output_path).exists() {
+                bail!(format!("Failed to download file. {}", err.lock().unwrap()))
+            } else {
+                Ok(())
+            }
+        }
+        Err(_) => bail!("Failed to download file."),
     }
 }
