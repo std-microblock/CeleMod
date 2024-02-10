@@ -1,14 +1,23 @@
 use std::{fs::File, io::Read, process::Command};
 
 fn main() {
+    Command::new("./sciter/packfolder.exe")
+        .arg("./src/celemod-ui/dist")
+        .arg("./resources/dist.rc")
+        .arg("-binary")
+        .spawn()
+        .unwrap();
+
     let output = Command::new("git")
         .args(&["rev-parse", "HEAD"])
         .output()
         .unwrap();
     let git_hash = String::from_utf8(output.stdout).unwrap();
     let mut version = "".to_string();
-    File::open("version.txt").unwrap()
-                            .read_to_string(&mut version).unwrap();
+    File::open("version.txt")
+        .unwrap()
+        .read_to_string(&mut version)
+        .unwrap();
     println!("cargo:rustc-env=VERSION={}", version);
     println!("cargo:rustc-env=GIT_HASH={}", git_hash);
 
@@ -24,18 +33,10 @@ fn main() {
                 "x86" => "win-x86",
                 _ => panic!("Unsupported target"),
             }
-        },
+        }
         "linux" => "linux",
         "darwin" => "osx",
         _ => panic!("Unsupported target"),
     };
     println!("cargo:rustc-env=TARGET={}", target);
-    
-
-    Command::new("./sciter/packfolder.exe")
-        .arg("./src/celemod-ui/dist")
-        .arg("./resources/dist.rc")
-        .arg("-binary")
-        .spawn()
-        .unwrap();
 }

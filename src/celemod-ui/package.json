@@ -5,6 +5,7 @@
     "build": "node build.js --prod"
   },
   "dependencies": {
+    "@babel/code-frame": "^7.23.5",
     "@types/react-window": "^1.8.5",
     "@types/react-window-infinite-loader": "^1.0.6",
     "immer": ">=9.0",
