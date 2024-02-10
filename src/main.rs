@@ -1,6 +1,6 @@
 #![feature(try_blocks)]
 #![feature(slice_pattern)]
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{de::VariantAccess, Deserialize, Serialize};
 

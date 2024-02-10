@@ -1,0 +1,36 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\yarn\bin\yarn.js add parcel-plugin-posthtml
+
+PATH: 
+  J:\Users\MicroBlock\anaconda3;J:\Users\MicroBlock\anaconda3\Library\mingw-w64\bin;J:\Users\MicroBlock\anaconda3\Library\usr\bin;J:\Users\MicroBlock\anaconda3\Library\bin;J:\Users\MicroBlock\anaconda3\Scripts;J:\Users\MicroBlock\anaconda3\bin;J:\Users\MicroBlock\anaconda3\condabin;J:\VulkanSDK\1.3.224.1\Bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\libnvvp;C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\intel64\compiler;C:\Program Files\Python311\Scripts;C:\Program Files\Python311;C:\Program Files (x86)\VMware\VMware Workstation\bin;J:\Oculus\Support\oculus-runtime;C:\Python37\Scripts;C:\Python37;C:\Python310\Scripts;C:\Python310;C:\Python311\Scripts;C:\Python311;C:\Program Files\Eclipse Adoptium\jdk-17.0.5.8-hotspot\bin;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0;C:\windows\System32\OpenSSH;C:\ProgramData\chocolatey\bin;C:\Program Files\Microsoft VS Code\bin;J:\Chocolatey\bin;C:\Program Files\Git\cmd;C:\ProgramData\nvm;C:\Program Files\nodejs;C:\Program Files\dotnet;J:\vcpkg;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;J:\Windows Kits\10\Windows Performance Toolkit;J:\Program Files\LLVM\bin;C:\Program Files\Go\bin;C:\Program Files\Git LFS;C:\Program Files\NVIDIA Corporation\Nsight Compute 2023.1.0;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn;C:\Program Files\Microsoft SQL Server\160\Tools\Binn;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn;C:\Program Files\Microsoft SQL Server\160\DTS\Binn;C:\Program Files\Azure Data Studio\bin;C:\Program Files\010 Editor;C:\Program Files\CMake\bin;.;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files (x86)\GnuPG\bin;C:\Program Files\LLVM\bin;C:\Program Files (x86)\ZeroTier\One;C:\Program Files\Microsoft SQL Server\120\Tools\Binn;C:\Program Files\Wolfram Research\WolframScript;J:\Projects\CppLyrics\skia\third_party\externals\emsdk;J:\Projects\CppLyrics\skia\third_party\externals\emsdk\upstream\emscripten;J:\Users\MicroBlock\anaconda3;J:\Users\MicroBlock\anaconda3\Library\mingw-w64\bin;J:\Users\MicroBlock\anaconda3\Library\usr\bin;J:\Users\MicroBlock\anaconda3\Library\bin;J:\Users\MicroBlock\anaconda3\Scripts;C:\Users\MicroBlock\.cargo\bin;J:\Chocolatey\bin;C:\Users\MicroBlock\AppData\Local\GitHubDesktop\bin;C:\ProgramData\nvm;C:\Program Files\nodejs;C:\Users\MicroBlock\.dotnet\tools;J:\vcpkg;C:\Users\MicroBlock\AppData\Local\Programs\Fiddler;C:\Program Files\Oracle\VirtualBox;C:\Program Files\OpenSSL-Win64\bin;C:\Users\MicroBlock\go\bin;J:\Chocolatey\lib\deno;C:\Users\MicroBlock\AppData\Local\JetBrains\Toolbox\scripts;C:\Users\MicroBlock\.dotnet\tools;C:\tools\mysql\current\bin;C:\Program Files\Azure Data Studio\bin;C:\Users\MicroBlock\AppData\Local\Microsoft\WindowsApps;C:\Program Files\CMake\bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.12.1
+
+Platform: 
+  win32 x64
+
+Trace: 
+  Error: https://registry.yarnpkg.com/parcel-plugin-posthtml: Not found
+      at params.callback [as _callback] (C:\ProgramData\nvm\v18.12.1\node_modules\yarn\lib\cli.js:66145:18)
+      at self.callback (C:\ProgramData\nvm\v18.12.1\node_modules\yarn\lib\cli.js:140890:22)
+      at Request.emit (node:events:513:28)
+      at Request.<anonymous> (C:\ProgramData\nvm\v18.12.1\node_modules\yarn\lib\cli.js:141862:10)
+      at Request.emit (node:events:513:28)
+      at IncomingMessage.<anonymous> (C:\ProgramData\nvm\v18.12.1\node_modules\yarn\lib\cli.js:141784:12)
+      at Object.onceWrapper (node:events:627:28)
+      at IncomingMessage.emit (node:events:525:35)
+      at endReadableNT (node:internal/streams/readable:1359:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+npm manifest: 
+  No manifest
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
