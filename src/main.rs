@@ -583,6 +583,53 @@ impl Handler {
             }
         });
     }
+
+    fn get_everest_version(&self, game_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let version = everest::get_everest_version(&game_path);
+            let version = if let Some(version) = version {
+                version.to_string()
+            } else {
+                "".to_string()
+            };
+            callback.call(None, &make_args!(version), None).unwrap();
+        });
+    }
+
+    fn download_and_install_everest(
+        &self,
+        game_path: String,
+        url: String,
+        callback: sciter::Value,
+    ) {
+        std::thread::spawn(move || {
+            let callback2 = callback.clone();
+            match everest::download_and_install_everest(&game_path, &url, &mut |msg, progress| {
+                callback
+                    .call(
+                        None,
+                        &make_args!(msg, progress as f64),
+                        None,
+                    )
+                    .unwrap();
+            }) {
+                Ok(()) => {
+                    callback2.call(None, &make_args!("Success"), None).unwrap();
+                }
+                Err(e) => {
+                    callback2.call(None, &make_args!("Failed", e.to_string()), None).unwrap();
+                }
+            }
+        });
+    }
+
+    fn celemod_version(&self) -> String {
+        env!("VERSION").to_string()
+    }
+
+    fn celemod_hash(&self) -> String {
+        env!("GIT_HASH").to_string()
+    }
 }
 
 impl sciter::EventHandler for Handler {
@@ -602,6 +649,10 @@ impl sciter::EventHandler for Handler {
         fn remove_mod_blacklist_profile(String, String);
         fn get_mod_update(String, Value);
         fn rm_mod(String, String);
+        fn get_everest_version(String, Value);
+        fn download_and_install_everest(String, String, Value);
+        fn celemod_version();
+        fn celemod_hash();
     }
 }
 

@@ -1,51 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
-    <div class="a">
+    <div class="list">
     </div>
     <style>
-        .a {
-            width: 100px;
-            height: 100px;
-            background: yellow;
+        .list {
+            behavior: virtual-list;
+            height: 300px;
+            overflow-y: scroll;
         }
     </style>
-
+    11
     <script>
-        // test1: change the innerHTML of the style element
-        setTimeout(()=>{
-            const styleElement = document.querySelector('style');
-            styleElement.innerHTML = `
-                .a {
-                    width: 100px;
-                    height: 100px;
-                    background: purple;
-                }
-            `;
-        }, 1000)
+        const addData = () => {
+            const list = document.querySelector('.list');
+            for (let i = 0; i < 20; i++) {
+                const item = document.createElement('img');
+                item.src = 'https://starwalk.space/gallery/images/summer-triangle-asterism/1920x1080.jpg?' + Math.random();
+                item.style.width = '500px';
+                list.appendChild(item)
+            }
+        }
+        document.querySelector('.list').addEventListener('contentrequired', () => {
+            addData()
+            return {
+                contentbefore: 0,
+                contentafter: 100
+            }
+        })
 
-        // test2: remove and re-append the style element
-        setTimeout(()=>{
-            const styleElement = document.querySelector('style');
-            styleElement.remove();
-            const styleElement2 = document.createElement('style');
-            styleElement2.innerHTML = `
-                .a {
-                    width: 100px;
-                    height: 100px;
-                    background: blue;
-                }
-            `;
-            document.head.appendChild(styleElement2);
-        }, 2000)
-
-        
+        addData()
     </script>
 
 </body>
+
 </html>
