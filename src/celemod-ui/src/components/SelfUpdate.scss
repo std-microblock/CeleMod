@@ -1,0 +1,81 @@
+@use "../index.scss"as theme;
+
+.update-prompt {
+    background: theme.$bg;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px #00000040;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+
+    width: 500px;
+    height: 340px;
+
+    .title {
+        font-size: 24px;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    position: relative;
+
+    .force {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        opacity: 0.6;
+    }
+
+    .info {
+        .vernum {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .detail-text {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 20px;
+        }
+    }
+
+    .updateOptions {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+
+        .download {
+            cursor: pointer;
+            display: inline-block;
+
+            &:hover {
+                opacity: 0.8;
+            }
+        }
+    }
+
+    .downloadProgress {
+        position: absolute;
+        bottom: 20px;
+        right: 0;
+        width: 110px;
+        display: inline-block;
+        horizontal-align: center;
+        vertical-align: center;
+
+        span {
+            margin-right: 60px;
+            display: inline-block;
+        }
+    }
+
+    .downloadFailed {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        text-align: right;
+        div {
+            color: #ef596f;
+        }
+    }
+}

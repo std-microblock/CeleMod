@@ -1,0 +1,168 @@
+@use "../index.scss"as theme;
+
+.everest {
+    padding: 40px;
+
+    img {
+        margin-bottom: 30px;
+    }
+
+    .line {
+        flow: horizontal-flow;
+        vertical-align: middle;
+
+        &>* {
+            width: max-content;
+        }
+
+        .ti {
+            font-size: 20px;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .ico {
+            font-size: 20px;
+            display: inline-block;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            margin-left: 10px;
+            display: inline-block;
+            color: mix(theme.$primary,
+                    theme.$fg,
+                    50%);
+        }
+    }
+
+    .channels {
+        flow: horizontal-flow;
+
+        .channel {
+            width: 33%;
+            margin-right: 0.3%;
+
+            .list {
+                height: calc(100vh - 300px);
+                overflow-y: scroll;
+
+                .item {
+                    margin-bottom: 5px;
+                    padding-bottom: 5px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+                    * {
+                        margin: 0 5px;
+                        display: inline-block;
+                    }
+
+                    .line1 {
+                        position: relative;
+                        width: 100%;
+
+                        .version {
+                            font-weight: 700;
+                        }
+
+                        .date {
+                            font-size: 10px;
+                            opacity: 0.6;
+                            right: 0;
+                            top: 5px;
+                            position: absolute;
+                        }
+                    }
+
+                    .line2 {
+                        position: relative;
+                        width: 100%;
+
+                        .commit {
+                            font-size: 12px;
+                            opacity: 0.6;
+                            left: 0;
+                        }
+
+                        button {
+                            position: absolute;
+                            right: 0;
+                            top: 0;
+                            border: none;
+                            background: none;
+                            color: theme.$fg;
+                            opacity: 0.7;
+                            font-size: 10px;
+                            padding: 0;
+
+                            &:hover {
+                                opacity: 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .installing {
+        width: 100%;
+        flow: vertical;
+        vertical-align: middle;
+        horizontal-align: center;
+
+        .wrapperin {
+            padding-right: 20px;
+            padding-bottom: 10px;
+            font-size: 100px;
+        }
+
+        &>* {
+            width: max-content;
+        }
+
+        .tip {
+            font-size: 20px;
+            font-weight: 700;
+            margin-right: 20px;
+        }
+
+        .url {
+            font-size: 15px;
+            font-weight: 500;
+            margin-right: 12px;
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0.8;
+        }
+
+        .state {
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 10px;
+            padding-right: 20px;
+            width: 90%;
+            text-align: center;
+            horizontal-align: center;
+
+            textarea {
+                text-align: left;
+                width: 90%;
+                height: 70px;
+                border: none;
+                background: none;
+                color: theme.$fg;
+                font-size: 15px;
+                font-weight: 700;
+                resize: none;
+                padding: 0;
+            }
+        }
+    }
+}

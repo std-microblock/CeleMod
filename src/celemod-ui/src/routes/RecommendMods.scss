@@ -1,0 +1,74 @@
+.mods {
+    flow: horizontal-flow;
+    width: 100%;
+
+    .part {
+        width: calc(50% - 5px);
+
+        h2 {
+            position: relative;
+            top: -33px;
+        }
+        h2 button {
+            position: absolute;
+            right: 15px;
+            top: 3px;
+        }
+
+        &:nth-child(2) {
+            display: block;
+            margin-left: 10px;
+        }
+
+        .list {
+            height: calc(100vh - 200px);
+            width: 100%;
+            overflow-y: scroll;
+            behavior: virtual-list;
+            margin: 0 5px;
+
+            .rmod {
+                flow: horizontal-flow;
+                width: 100%;
+                display: block;
+                position: relative;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 5px 0;
+
+                .info {
+                    width: calc(100% - 80px);
+
+                    .title {
+                        width: 100%;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    .desc {
+                        width: 100%;
+                        font-size: 12px;
+                        color: rgba(255, 255, 255, 0.7);
+                    }
+                }
+
+                .oper {
+                    vertical-align: middle;
+                    flow: horizontal-flow;
+                    position: absolute;
+                    right: 10px;
+                    top: -5px;
+                    bottom: 0px;
+
+                    button {
+                        background: transparent;
+                        box-shadow: none;
+                        &:hover {
+                            background: rgba(255, 255, 255, 0.2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

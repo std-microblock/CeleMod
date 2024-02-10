@@ -1,0 +1,42 @@
+@use "../index.scss"as theme;
+
+
+
+.filter {
+    width: 100vw;
+    select {
+        style-set: custom-select-dropdown;
+    }
+
+    .searchinput {
+        font-size: 15px;
+        padding: 4px 8px;
+        border: none;
+        background: theme.$bg1;
+        color: theme.$fg;
+        margin-right: 10px;
+    }
+
+    input {
+        width: calc(100vw - 335px);
+    }
+
+    select {
+        min-width: 60px;
+        margin-right: 6px;
+    }
+
+    button {
+        display: inline-block;
+        flow: horizontal;
+        vertical-align: middle;
+        margin-left: -2px;
+        margin-right: 7px;
+    }
+
+    flow: horizontal;
+    vertical-align: middle;
+    display: inline-block;
+    width: 100%;
+    margin: 3px 10px
+}

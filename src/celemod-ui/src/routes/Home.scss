@@ -1,0 +1,81 @@
+@use "../index.scss"as theme;
+
+.home {
+    .profiles {
+        // flow: horizontal-flow;
+        overflow-x: scroll;
+        overflow-y: hidden;
+        white-space: nowrap;
+        height: 120px;
+        margin-left: 0 !important;
+
+        .profile {
+            width: 100px;
+            height: 70px;
+            margin: 4px 6px;
+            padding: 10px 13px;
+            border-radius: 10px;
+            background: theme.$bg;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 5px #00000022;
+            display: inline-block;
+
+            &.selected {
+                border: 1px solid theme.$primary;
+            }
+
+            .name {
+                width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .info {
+                width: 100px;
+                flow: horizontal-flow;
+
+                .tips {
+                    width: max-content;
+                    font-size: 10px;
+                    opacity: 0.6;
+                    margin-top: 5px;
+                    margin-right: 5px;
+                }
+
+                .inf {
+                    font-size: 12px;
+                    font-weight: 700;
+                    margin-top: 3px;
+                    width: max-content;
+                }
+            }
+
+            button {
+                border: none;
+                background: none;
+                color: theme.$fg;
+                font-size: 10px;
+                margin-top: 5px;
+                padding: 0;
+                cursor: pointer;
+                opacity: 0.6;
+                transition: 0.3s;
+                right: 15px;
+                bottom: 5px;
+                position: absolute;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+}
+
+.home>.config {
+    margin-top: 10px;
+}

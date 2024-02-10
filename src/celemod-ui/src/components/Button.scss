@@ -1,0 +1,39 @@
+@use "../index.scss" as theme;
+
+button {
+    color: theme.$fg;
+    background: theme.$bg1;
+    border: none;
+    font-size: 12px;
+    border-radius: 5px;
+    display: inline-block;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #fff;
+    background-color: #222;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px #00000040;
+    // transition: background .2s ease-in-out;
+    padding: 3px 15px;
+    cursor: pointer;
+}
+
+button.large{
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+button.primary {
+    border: 3px theme.$primary solid;
+}
+
+button:hover {
+    background: theme.$bg2;
+}
+
+button:active {
+    background: theme.$bg3;
+}

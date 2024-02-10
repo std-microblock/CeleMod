@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" window-frame="solid" window-alignment="5" window-corners="round" window-maximizable="true"
+  window-blurbehind="dark ultra source-desktop" window-min-width="800px" window-min-height="600px">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>CeleMod</title>
+</head>
+
+<script>
+  // patches for compatibility between sciter and parcel
+  // hook appendChild to fix sciter's bug
+  const setAttribute = Element.prototype.setAttribute;
+  Element.prototype.setAttribute = function (name, value) {
+    if (name === 'src')
+      console.log('setAttribute', name, value);
+    setAttribute.call(this, name, value);
+  };
+</script>
+
+<body>
+  <div class="dummy"></div>
+  <span class="celemod-version" title="点击检查更新">
+    <div class="caption-hash"></div>
+    <div class="caption-version"></div>
+  </span>
+  <div role=window-caption>
+    CeleMod
+
+    <script>
+      document.querySelector('.celemod-version').onclick = () => {
+        if (!document.querySelector('.popup-container')) _checkUpdate()
+      }
+      document.querySelector('.caption-version').innerText = Window.this.xcall('celemod_version')
+      document.querySelector('.caption-hash').innerText = Window.this.xcall('celemod_hash').substr(0, 6)
+    </script>
+  </div>
+  <span class="win-ctrl">
+    <button role=window-minimize>
+      <icon|minus />
+    </button>
+    <button role=window-maximize>
+      <icon|landscape />
+    </button>
+    <button class="close" role=window-close>
+      <icon|cancel />
+    </button>
+  </span>
+
+  <div id="root"></div>
+  <link rel="stylesheet" href="./index.scss">
+  <link rel="stylesheet" href="i2.css">
+  <script>
+
+
+
+    Window.this.isResizable = true;
+    window.isMaximizable = true;
+
+    async function updateStyles() {
+      for (const style of document.querySelectorAll('style')) {
+        const url = style.getAttribute('src');
+        const response = await fetch(url);
+        const text = await response.text();
+        if (text === style.textContent) continue;
+        style.state.disabled = true
+        style.textContent = text;
+        style.state.disabled = false
+      }
+    }
+
+    console.clear = () => {
+      console.log("------- Cleared --------")
+      updateStyles()
+      // location.reload();
+    }
+
+
+    location.reload = function () {
+      setTimeout(() => {
+        console.log("location.reload1");
+        Window.this.load(location.href);
+      })
+    };
+
+    document.on("keyup", function (evt) {
+      if (evt.code == "F5") {
+        location.reload();
+      }
+    });
+  </script>
+  <script src="./index.tsx" type="module"></script>
+</body>
+
+</html>

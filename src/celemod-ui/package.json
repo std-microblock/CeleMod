@@ -1,0 +1,37 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "node build.js",
+    "build": "node build.js --prod"
+  },
+  "dependencies": {
+    "@types/react-window": "^1.8.5",
+    "@types/react-window-infinite-loader": "^1.0.6",
+    "immer": ">=9.0",
+    "preact": "^10.6.6",
+    "react-window": "^1.8.9",
+    "react-window-infinite-loader": "^1.0.9",
+    "src": "^1.1.2",
+    "zustand": "^4.3.9"
+  },
+  "devDependencies": {
+    "@parcel/config-default": "^2.11.0",
+    "@parcel/core": "^2.11.0",
+    "@parcel/reporter-cli": "^2.11.0",
+    "@parcel/transformer-sass": "2.11.0",
+    "parcel-bundler": "^1.12.4",
+    "parcel-resolver-ignore": "^2.1.5",
+    "posthtml-doctype": "^1.1.1",
+    "react": ">=16.8",
+    "react-dom": ">=16.8",
+    "sass": "^1.64.1",
+    "typescript": "^4.6.3"
+  },
+  "alias": {
+    "react": "preact/compat",
+    "react-dom/test-utils": "preact/test-utils",
+    "react-dom": "preact/compat",
+    "react/jsx-runtime": "preact/jsx-runtime"
+  },
+  "browserslist": "Chrome > 70"
+}

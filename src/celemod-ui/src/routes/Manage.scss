@@ -1,0 +1,152 @@
+@use "../index.scss"as theme;
+
+.manage {
+    height: calc(100vh - 55px);
+    flow: horizontal-flow;
+
+    .modList {
+
+        .title {
+            .filter-input {
+                width: calc(100% - 130px);
+                margin-left: 15px;
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 100px;
+                border: none;
+                background: #222;
+                color: theme.$fg;
+                box-shadow: 0 2px 5px #00000040;
+
+                opacity: 0.5;
+
+                &:hover {
+                    opacity: 0.7;
+                }
+
+                &:focus {
+                    opacity: 1;
+                }
+            }
+        }
+
+        width: calc(100% - 230px);
+        height: calc(100vh - 55px);
+        border-right: 1px solid rgba(255, 255, 255, 0.4);
+
+        .options {
+            margin-top: 5px;
+            display: inline-block;
+
+            &>* {
+                display: inline-block;
+                width: max-content;
+                margin-right: 10px;
+            }
+        }
+
+        .list {
+            margin-top: 8px;
+            behavior: virtual-list;
+            overflow-y: scroll;
+            height: calc(100vh - 150px);
+
+            .ma-badge {
+                display: inline-block;
+                padding: 0 6px;
+                margin: 1px 3px;
+                border-radius: 10px;
+            }
+
+            .childTree {
+                padding-left: 20px;
+                overflow: hidden;
+            }
+
+            .expandBtn {
+                color: #ffffff33 !important;
+                padding: 5px;
+                border-radius: 100%;
+
+                &.clickable {
+                    color: #ffffff99 !important;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+
+    .profiles {
+        behavior: virtual-list;
+        overflow-y: scroll;
+        height: calc(100vh - 50px);
+        width: 200px;
+        padding: 0 10px;
+
+        .profile {
+            background: theme.$bg;
+            margin: 6px 0;
+            padding: 5px 10px;
+            border-radius: 100px;
+            border: 1px solid transparent;
+            position: relative;
+
+            .opers {
+                position: absolute;
+                right: 10px;
+                top: 7px;
+                color: rgba(255, 255, 255, 0.3);
+
+                &>*:hover {
+                    color: rgba(255, 255, 255, 0.7);
+                }
+            }
+
+            &.current {
+                border: 1px solid theme.$primary;
+            }
+
+            &:hover {
+                background: theme.$bg2;
+                cursor: pointer;
+            }
+        }
+
+        .newProfile {
+            flow: horizontal-flow;
+            flow-columns: 160px 40px;
+            width: 215px;
+
+            input {
+                font-size: 12px;
+                padding: 4px 12px;
+                border: none;
+                border-radius: 100px;
+                color: theme.$fg;
+                margin-right: 5px;
+                background-color: #222;
+                box-shadow: 0 2px 5px #00000040;
+                width: calc(100% - 65px);
+                height: 22px;
+            }
+
+            button {
+                border-radius: 100px;
+            }
+        }
+    }
+
+    .title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+
+    .modVersion {
+        font-size: 10px;
+        margin: 0 6px;
+        display: inline-block;
+        color: rgba(255, 255, 255, 0.4);
+    }
+}

@@ -1,0 +1,36 @@
+* {
+    font-family: "Noto Sans SC", "Microsoft Yahei", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif !important;
+    font-rendering-mode: sub-pixel !important;
+    scroll-manner: scroll-manner(animation:true);
+}
+
+html,
+body {
+    overflow-y: hidden;
+    overflow-x: visible;
+    background: #00000000 !important;
+}
+
+
+@set v-scroll-indicator {
+    .slider {
+        background: #444444;
+        margin-left: 0px;
+        border-radius: 10px;
+
+    }
+
+    .base {
+        width: 0px;
+        /* // full width on hover */
+        min-width: 0px;
+        /* // collapsed size */
+
+    }
+
+}
+
+* {
+    vertical-scrollbar: "v-scroll-indicator";
+    horizontal-scrollbar: "v-scroll-indicator";
+}
