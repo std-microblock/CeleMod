@@ -676,6 +676,7 @@ impl sciter::EventHandler for Handler {
     }
 }
 
+
 fn main() {
     // parse /update command line argument
     let args: Vec<String> = std::env::args().collect();
@@ -687,7 +688,7 @@ fn main() {
         let current_exe = current_exe.to_string_lossy().to_string();
         let new_exe = &args[2];
         std::fs::remove_file(new_exe).unwrap();
-        std::fs::rename(current_exe, new_exe).unwrap();
+        std::fs::copy(current_exe, new_exe).unwrap();
         std::process::Command::new(new_exe).spawn().unwrap();
         return;
     }
