@@ -1,6 +1,6 @@
 #![feature(try_blocks)]
 #![feature(slice_pattern)]
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{de::VariantAccess, Deserialize, Serialize};
 
@@ -51,13 +51,13 @@ fn compare_version(a: &str, b: &str) -> i32 {
 }
 
 struct Handler;
-
+ 
 fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     let zipfile = std::fs::File::open(path)?;
     let mut archive = zip::ZipArchive::new(zipfile)?;
     let everest_name = archive
         .file_names()
-        .find(|name| name.starts_with("everest."))
+        .find(|name| name.starts_with("everest.y"))
         .context("Failed to find everest.yaml")?
         .to_string();
 
@@ -121,7 +121,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
         let res: anyhow::Result<_> = try {
-            if entry
+            let yaml = if entry
                 .path()
                 .extension()
                 .context("Unable to get the extension")?
@@ -142,44 +142,72 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
                     extract_mod_for_yaml(&entry.path())?;
                 }
-                let yaml = read_to_string_bom(&cache_path)?;
-
-                let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml)?;
-
-                let mut deps: Vec<ModDependency> = Vec::new();
-
-                if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
-                    for dep in deps_yaml {
-                        deps.push(ModDependency {
-                            name: dep["Name"].as_str().unwrap().to_string(),
-                            version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
-                            optional: false,
-                        });
-                    }
-                }
-
-                if let Some(deps_yaml) = yaml[0]["OptionalDependencies"].as_sequence() {
-                    for dep in deps_yaml {
-                        deps.push(ModDependency {
-                            name: dep["Name"].as_str().unwrap().to_string(),
-                            version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
-                            optional: true,
-                        });
-                    }
-                }
-
-                let name = yaml[0]["Name"].as_str().context("")?.to_string();
-                let version = yaml[0]["Version"].as_str().context("")?.to_string();
-                let gbid = mod_data[&name].game_banana_id;
-
-                mods.push(LocalMod {
-                    name,
-                    version,
-                    game_banana_id: gbid,
-                    deps,
-                    file: entry.file_name().to_str().unwrap().to_string(),
+                read_to_string_bom(&cache_path)?
+            } else if entry.file_type().unwrap().is_dir() {
+                let cache_path = entry.path().read_dir()?.find(|v| {
+                    v.as_ref().map(|v| v.file_name()
+                            .to_string_lossy()
+                            .to_string()
+                            .to_lowercase()
+                            .starts_with("everest.y"))
+                    .unwrap_or(false)
                 });
+                match cache_path {
+                    Some(cache_path) => {
+                        let cache_path = cache_path.unwrap().path();
+                        read_to_string_bom(&cache_path)?
+                    }
+                    None => {
+                        println!("[ WARNING ] Failed to find yaml, skipping {:?}", entry.file_name());
+                        continue;
+                    }
+                }
+            } else {
+                println!(
+                    "[ WARNING ] Failed to find yaml, skipping {:?}",
+                    entry.file_name()
+                );
+                continue;
+            };
+
+            let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml)?;
+
+            let mut deps: Vec<ModDependency> = Vec::new();
+
+            if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
+                for dep in deps_yaml {
+                    deps.push(ModDependency {
+                        name: dep["Name"].as_str().unwrap().to_string(),
+                        version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                        optional: false,
+                    });
+                }
             }
+
+            if let Some(deps_yaml) = yaml[0]["OptionalDependencies"].as_sequence() {
+                for dep in deps_yaml {
+                    deps.push(ModDependency {
+                        name: dep["Name"].as_str().unwrap().to_string(),
+                        version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                        optional: true,
+                    });
+                }
+            }
+
+            let name = yaml[0]["Name"].as_str().context("")?.to_string();
+            let version = yaml[0]["Version"].as_str().context("")?.to_string();
+            if !mod_data.contains_key(&name) {
+                continue;
+            }
+            let gbid = mod_data[&name].game_banana_id;
+
+            mods.push(LocalMod {
+                name,
+                version,
+                game_banana_id: gbid,
+                deps,
+                file: entry.file_name().to_str().unwrap().to_string(),
+            });
         };
 
         if let Err(e) = res {
@@ -273,6 +301,19 @@ struct DownloadInfo {
     data: String,
 }
 
+fn make_path_compatible_name(name: &str) -> String {
+    name.replace(" ", "_")
+        .replace(":", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("?", "_")
+        .replace("*", "_")
+        .replace("\"", "_")
+        .replace("<", "_")
+        .replace(">", "_")
+        .replace("|", "_")
+}
+
 impl Handler {
     fn download_mod(
         &self,
@@ -283,7 +324,7 @@ impl Handler {
         use_cn_proxy: bool,
     ) {
         let dest = Path::new(&mods_dir)
-            .join(name.clone() + ".zip")
+            .join(make_path_compatible_name(&name) + ".zip")
             .to_str()
             .unwrap()
             .to_string();
@@ -627,11 +668,19 @@ impl Handler {
     fn do_self_update(&self, url: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let tmp = std::env::temp_dir().join("cele-mod.exe");
-            match aria2c::download_file_with_progress(&url, &tmp.to_string_lossy().to_string(), &mut |progress| {
-                callback
-                    .call(None, &make_args!("downloading", progress.progress as f64), None)
-                    .unwrap();
-            }) {
+            match aria2c::download_file_with_progress(
+                &url,
+                &tmp.to_string_lossy().to_string(),
+                &mut |progress| {
+                    callback
+                        .call(
+                            None,
+                            &make_args!("downloading", progress.progress as f64),
+                            None,
+                        )
+                        .unwrap();
+                },
+            ) {
                 Ok(()) => {
                     // replace the current exe with the downloaded one
                     let current_exe = std::env::current_exe().unwrap();
@@ -675,7 +724,6 @@ impl sciter::EventHandler for Handler {
         fn do_self_update(String, Value);
     }
 }
-
 
 fn main() {
     // parse /update command line argument
