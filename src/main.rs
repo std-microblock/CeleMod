@@ -205,16 +205,11 @@ fn download_and_install_mod(
             // FUCK YOU YAML
             let version = if dep["Version"].is_f64() {
                 // this turns it into Number(1.1), let's parse it
-                let ver = format!("{:?}",dep["Version"]);
-                ver[
-                    "Number(".len()..ver.len() - 1
-                ].to_string()
+                let ver = format!("{:?}", dep["Version"]);
+                ver["Number(".len()..ver.len() - 1].to_string()
             } else {
-                let v=dep["Version"]
-                    .as_str()
-                    .unwrap_or("1.0.0")
-                    .to_string();
-                
+                let v = dep["Version"].as_str().unwrap_or("1.0.0").to_string();
+
                 if v.chars().all(|c| c.is_ascii_digit() || c == '.') {
                     v
                 } else {
@@ -227,7 +222,7 @@ fn download_and_install_mod(
                     .as_str()
                     .context("Interrupted yaml dependency")?
                     .to_string(),
-                version
+                version,
             ));
         }
     }
@@ -606,18 +601,16 @@ impl Handler {
             let callback2 = callback.clone();
             match everest::download_and_install_everest(&game_path, &url, &mut |msg, progress| {
                 callback
-                    .call(
-                        None,
-                        &make_args!(msg, progress as f64),
-                        None,
-                    )
+                    .call(None, &make_args!(msg, progress as f64), None)
                     .unwrap();
             }) {
                 Ok(()) => {
                     callback2.call(None, &make_args!("Success"), None).unwrap();
                 }
                 Err(e) => {
-                    callback2.call(None, &make_args!("Failed", e.to_string()), None).unwrap();
+                    callback2
+                        .call(None, &make_args!("Failed", e.to_string()), None)
+                        .unwrap();
                 }
             }
         });
@@ -629,6 +622,32 @@ impl Handler {
 
     fn celemod_hash(&self) -> String {
         env!("GIT_HASH").to_string()
+    }
+
+    fn do_self_update(&self, url: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let tmp = std::env::temp_dir().join("cele-mod.exe");
+            match aria2c::download_file_with_progress(&url, &tmp.to_string_lossy().to_string(), &mut |progress| {
+                callback
+                    .call(None, &make_args!("downloading", progress.progress as f64), None)
+                    .unwrap();
+            }) {
+                Ok(()) => {
+                    // replace the current exe with the downloaded one
+                    let current_exe = std::env::current_exe().unwrap();
+                    let current_exe = current_exe.to_string_lossy().to_string();
+                    let mut cmd = std::process::Command::new(&tmp);
+                    cmd.arg("/update").arg(current_exe);
+                    cmd.spawn().unwrap();
+                    std::process::exit(0);
+                }
+                Err(e) => {
+                    callback
+                        .call(None, &make_args!("failed", e.to_string()), None)
+                        .unwrap();
+                }
+            }
+        });
     }
 }
 
@@ -653,10 +672,26 @@ impl sciter::EventHandler for Handler {
         fn download_and_install_everest(String, String, Value);
         fn celemod_version();
         fn celemod_hash();
+        fn do_self_update(String, Value);
     }
 }
 
 fn main() {
+    // parse /update command line argument
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() == 3 && args[1] == "/update" {
+        // sleep for a bit to let the old process exit
+        std::thread::sleep(std::time::Duration::from_secs_f32(0.5));
+
+        let current_exe = std::env::current_exe().unwrap();
+        let current_exe = current_exe.to_string_lossy().to_string();
+        let new_exe = &args[2];
+        std::fs::remove_file(new_exe).unwrap();
+        std::fs::rename(current_exe, new_exe).unwrap();
+        std::process::Command::new(new_exe).spawn().unwrap();
+        return;
+    }
+
     if !Path::new("./sciter.dll").exists() {
         #[cfg(not(debug_assertions))]
         {
