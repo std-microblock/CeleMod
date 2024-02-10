@@ -12,8 +12,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::RwLock,
-};
-
+}; 
 use anyhow::{bail, Context};
 use aria2c::DownloadCallbackInfo;
 use everest::get_mod_cached_new;
@@ -739,6 +738,15 @@ fn main() {
         std::fs::copy(current_exe, new_exe).unwrap();
         std::process::Command::new(new_exe).spawn().unwrap();
         return;
+    }
+
+    // windows only
+    #[cfg(windows)]
+    {
+        use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS}; 
+        unsafe { 
+            AttachConsole(ATTACH_PARENT_PROCESS);
+        }
     }
 
     if !Path::new("./sciter.dll").exists() {

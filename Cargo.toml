@@ -18,3 +18,8 @@ ureq = { version = "*", features = ["json", "gzip", "tls"] }
 strip_bom = "1.0.0"
 open = "*"
 include-bytes-zstd = "*"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "*", features = ["wincon"] }
+
+[target.'cfg(unix)'.dependencies]

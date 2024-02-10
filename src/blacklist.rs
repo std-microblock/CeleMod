@@ -4,6 +4,8 @@ use std::path::Path;
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
+use crate::get_installed_mods_sync;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModBlacklist {
     name: String,
@@ -82,6 +84,7 @@ pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile
         let default_blacklist = Path::new(&game_path).join("Mods").join("blacklist.txt");
         if default_blacklist.exists() {
             let data = fs::read_to_string(default_blacklist).unwrap();
+            let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
             let profile = ModBlacklistProfile {
                 name: "Default".to_string(),
                 mods: data
@@ -90,16 +93,10 @@ pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile
                     .filter_map(|v| {
                         Some(ModBlacklist {
                             name: {
-                                let cache_file = Path::new(&game_path)
-                                    .join("celemod_yaml_cache")
-                                    .join(v.replace(".zip", ".yaml"));
-                                if cache_file.exists() {
-                                    let data = fs::read_to_string(cache_file).unwrap();
-                                    let yaml: serde_yaml::Value =
-                                        serde_yaml::from_str(&data).unwrap();
-                                    yaml["name"].as_str().unwrap().to_string()
+                                if let Some(mod_name) = mods.iter().find(|m| m.file == v) {
+                                    mod_name.name.clone()
                                 } else {
-                                    return None;
+                                    v.to_string()
                                 }
                             },
                             file: v.to_string(),
