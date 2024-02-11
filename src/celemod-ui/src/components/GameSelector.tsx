@@ -3,7 +3,7 @@ import { Icon } from "./Icon";
 import "./GameSelector.scss"
 import { callRemote, useBlockingMask } from "../utils";
 
-export const GameSelector = (props: { paths: string[], onSelect: any, selectedPath?: string, launchGame: () => void }) => {
+export const GameSelector = (props: { paths: string[], onSelect: any, selectedPath?: string, launchGame: (v: string) => void }) => {
     if (!props.paths.length) return <div>No games found</div>;
     const mask = useBlockingMask();
 
@@ -18,8 +18,12 @@ export const GameSelector = (props: { paths: string[], onSelect: any, selectedPa
             </select>
 
             <button style={{ marginLeft: 5, borderRadius: 4 }} onClick={() => {
-                props.launchGame()
-            }}>启动</button>
+                props.launchGame('everest')
+            }}>启动 Everest</button>
+
+            <button style={{ marginLeft: 5, borderRadius: 4 }} onClick={() => {
+                props.launchGame('origin')
+            }}>启动 原版</button>
 
             <button style={{ marginLeft: 5, borderRadius: 4 }} onClick={() => {
                 callRemote("open_url", (props.selectedPath || props.paths[0]) + '/Mods');

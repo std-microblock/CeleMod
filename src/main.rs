@@ -478,6 +478,21 @@ impl Handler {
         game_scanner::manager::launch_game(game).unwrap();
     }
 
+    fn start_game_directly(&self, path: String, origin: bool) {
+        let game =Path::new(&path).join("Celeste.exe");
+        let game_origin = Path::new(&path).join("orig").join("Celeste.exe");
+
+        if origin {
+            if game_origin.exists() {
+                std::process::Command::new(game_origin).spawn().unwrap();
+            } else {
+                std::process::Command::new(game).spawn().unwrap();
+            }
+        } else {
+            std::process::Command::new(game).spawn().unwrap();
+        }
+    }
+
     fn get_installed_mod_ids(&self, mods_folder_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let installed_mod_ids = get_installed_mods_sync(mods_folder_path)
@@ -721,6 +736,7 @@ impl sciter::EventHandler for Handler {
         fn celemod_version();
         fn celemod_hash();
         fn do_self_update(String, Value);
+        fn start_game_directly(String, bool);
     }
 }
 

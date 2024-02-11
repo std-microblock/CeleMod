@@ -130,13 +130,13 @@ export const Home = () => {
                 <GameSelector paths={gamePaths} onSelect={(e: InputEvent) => {
                     // @ts-ignore
                     setGamePath(e.target.value);
-                }} launchGame={() => {
+                }} launchGame={(v) => {
                     lastUseMap[currentProfileName] = Date.now();
                     setLastUseMap(lastUseMap);
                     save();
                     mask.setMaskEnabled(true);
                     mask.setMaskText("正在启动");
-                    callRemote("start_game", gamePath || gamePaths[0]);
+                    callRemote("start_game_directly", gamePath || gamePaths[0], v === 'origin');
                     setTimeout(() => {
                         mask.setMaskEnabled(false);
                     }, 20000);
@@ -199,14 +199,12 @@ export const Home = () => {
                             e.stopPropagation();
                             setCurrentProfileName(v.name);
                             lastUseMap[v.name] = Date.now();
-                            save(
-
-                            )
+                            save()
                             setLastUseMap(lastUseMap);
                             mask.setMaskEnabled(true);
                             mask.setMaskText("正在启动");
                             setTimeout(() => {
-                                callRemote("start_game", gamePath || gamePaths[0]);
+                                callRemote("start_game_directly", gamePath || gamePaths[0], false);
                             }, 300);
 
                             setTimeout(() => {
