@@ -24,6 +24,7 @@ export const Search = () => {
     const [loading, setLoading] = useState(true);
     const loadingLock = useRef(false)
     const [sort, setSort] = useState<"new" | "updateAdded" | "updated" | "views" | "likes">("likes")
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchModPage = async (page: number) => {
         console.log("fetching", page)
@@ -44,6 +45,7 @@ export const Search = () => {
 
     useEffect(() => {
         setMods([])
+        setCurrentPage(1)
         fetchModPage(1).then(setMods);
     }, [type, search, sort]);
 
@@ -87,19 +89,69 @@ export const Search = () => {
 
         {
             mods.length > 0 ?
-                mods[0] ? <ModList loading={loading} mods={mods} onLoadMore={() => {
-                    setMods(mods => {
-                        if (loadingLock.current) return mods;
-                        loadingLock.current = true
-                        if (mods.length % 25 !== 0) return mods;
-                        console.log(mods.length, 'page:', Math.floor(mods.length / 25) + 1)
-                        fetchModPage(Math.floor(mods.length / 25) + 1).then(m => {
-                            setMods(mods => [...mods, ...m])
-                        });
+                mods[0] ? <ModList allowUpScroll={
+                    currentPage > 1
+                } loading={loading} mods={mods} onLoadMore={useCallback((type: string, visibleRange: {
+                    start: number;
+                    end: number;
+                    colWidth: number;
+                }) => new Promise(rs => {
+                    console.log('load more', type)
+                    const forceScroll = async (top: number) => {
+                        const list = document.querySelector('.mod-list')!;
+                        while (list.scrollTop !== top) {
+                            list.scrollTo({
+                                top: top,
+                                behavior: 'instant'
+                            })
+                            await new Promise(rs => setTimeout(rs, 10))
+                        }
+                    }
 
-                        return mods
-                    })
-                }} modFolder={selectedPath + "/Mods"} /> :
+                    const fadeIn = ()=>{
+                        const list = document.querySelector('.mod-list')!;
+                        // @ts-ignore
+                        list.style.opacity = '1';
+                    }
+
+                    const fadeOut = ()=>{
+                        const list = document.querySelector('.mod-list')!;
+                        // @ts-ignore
+                        list.style.opacity = '0';
+                    }
+
+                    if (type === 'up') {
+                        if (currentPage === 1) return;
+                        if (loadingLock.current) return;
+                        loadingLock.current = true;
+                        fadeOut();
+                        setCurrentPage(v => {
+                            fetchModPage(v - 1).then(newMods => {
+                                if (newMods.length === 0) return;
+                                setMods(newMods);
+                                rs(void 0)
+                                const list = document.querySelector('.mod-list')!;
+                                //@ts-ignore
+                                const bottomPaddingUpTop = list.scrollTop + list.lastElementChild.offsetTop - list.offsetHeight - 80
+                                forceScroll(bottomPaddingUpTop).then(fadeIn)
+                            })
+                            return v - 1;
+                        })
+                    } else {
+                        if (loadingLock.current) return;
+                        loadingLock.current = true;
+                        fadeOut();
+                        setCurrentPage(v => {
+                            fetchModPage(v + 1).then(newMods => {
+                                if (newMods.length === 0) return;
+                                setMods(newMods);
+                                rs(void 0)
+                                forceScroll(40).then(fadeIn)
+                            })
+                            return v + 1;
+                        })
+                    }
+                }), [currentPage])} modFolder={selectedPath + "/Mods"} /> :
                     <div className="empty">加载失败，请重试</div> :
                 loading ? <div className="empty"></div> :
                     <div className="empty">无内容</div>

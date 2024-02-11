@@ -58,7 +58,7 @@ export interface ModInfo {
     other: string;
     detail?: () => Promise<ModDetailInfo>;
 }
-export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, modFolder: string, isInstalled: boolean }) => {
+export const Mod = memo((props: { mod: ModInfo, onClick?: any, expanded?: boolean, modFolder: string, isInstalled: boolean }) => {
     const { download, modManage } = useGlobalContext();
     const { mod } = props;
     const preview = mod.previewUrl;
@@ -68,107 +68,107 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
     const useChinaMirror = useDownloadSettings(p => p.useCNMirror as boolean);
 
     return (
-        <Fragment>
-            <div onClick={props.onClick} class={`mod ${props.expanded && 'expanded'}`}>
-                <div className="operations">
-                    <Button onClick={async () => {
-                        if (downloadTask || props.isInstalled) return;
+        <div onClick={props.onClick} class={`mod ${props.expanded && 'expanded'}`} key={mod.name}>
+            <div className="operations">
+                <Button onClick={async () => {
+                    if (downloadTask || props.isInstalled) return;
 
-                        const down = (name: string, url: string) => {
-                            setDownloadTask(download.downloadMod(name, url, {
-                                onProgress: (task) => setDownloadTask({ ...task }),
-                                onFailed: (task) => setDownloadTask({ ...task }),
-                                onFinished: (task) => {
-                                    setDownloadTask({ ...task })
-                                    modManage.reloadMods();
-                                },
-                            }));
+                    const down = (name: string, url: string) => {
+                        setDownloadTask(download.downloadMod(name, url, {
+                            onProgress: (task) => setDownloadTask({ ...task }),
+                            onFailed: (task) => setDownloadTask({ ...task }),
+                            onFinished: (task) => {
+                                setDownloadTask({ ...task })
+                                modManage.reloadMods();
+                            },
+                        }));
+                    }
+
+                    let ctx: any;
+                    createPopup(() => {
+                        const popupCtx = useContext(PopupContext);
+                        const [downloads, setDownloads] = useState<FileToDownload[] | null>(null);
+                        const [error, setError] = useState<string | null>(null);
+                        ctx = {
+                            hide() {
+                                popupCtx.hide()
+                            },
+                            setDownloads(data: any) {
+                                setDownloads(data);
+                            },
+                            setError(data: any) {
+                                setError(data);
+                            }
                         }
 
-                        let ctx: any;
-                        createPopup(() => {
-                            const popupCtx = useContext(PopupContext);
-                            const [downloads, setDownloads] = useState<FileToDownload[] | null>(null);
-                            const [error, setError] = useState<string | null>(null);
-                            ctx = {
-                                hide() {
-                                    popupCtx.hide()
-                                },
-                                setDownloads(data: any) {
-                                    setDownloads(data);
-                                },
-                                setError(data: any) {
-                                    setError(data);
-                                }
-                            }
-
-                            if (downloads === null && error === null)
-                                return <div style={{
-                                    width: "min-content",
-                                }}>
-                                    <ProgressIndicator infinite />
-                                </div>;
-
-                            return <div className="download-file-popup" onClick={e => {
-                                if (e.target === e.currentTarget) ctx.hide();
+                        if (downloads === null && error === null)
+                            return <div style={{
+                                width: "min-content",
                             }}>
-                                {
-                                    downloads && downloads.map(v => {
-                                        console.log(downloads)
-                                        return <div className="file" onClick={()=>{
-                                            down(v.name, v.url);
-                                            popupCtx.hide();
-                                        }}>
-                                            <div className="name">
-                                                <Icon name="save" />
-                                                {v.name}
-                                            </div>
-                                            <div className="info">
-                                                <span className="size">{v.size}</span>
-                                                <span className="id">{v.id}</span>
-                                            </div>
-                                            <div className="url">{v.url}</div>
+                                <ProgressIndicator infinite />
+                            </div>;
+
+                        return <div className="download-file-popup" onClick={e => {
+                            if (e.target === e.currentTarget) ctx.hide();
+                        }}>
+                            {
+                                downloads && downloads.map(v => {
+                                    console.log(downloads)
+                                    return <div className="file" onClick={() => {
+                                        down(v.name, v.url);
+                                        popupCtx.hide();
+                                    }}>
+                                        <div className="name">
+                                            <Icon name="save" />
+                                            {v.name}
                                         </div>
-                                    }).reduce((pre: any[],cur)=>{
-                                        // group by 3
-                                        if(pre.length === 0) return [[cur]];
-                                        if(pre[pre.length-1].length === 2) return [...pre, [cur]];
-                                        pre[pre.length-1].push(cur);
-                                        return pre;
-                                    },[]).map(v=><div className="group">{v}</div>)
-                                }
-                                <span>{error}</span>
-                            </div>
-                        })
-
-                        const downloadInfo = await mod.downloadUrl();
-
-                        if (typeof downloadInfo === 'string') {
-                            ctx.hide()
-                            down(mod.name, downloadInfo)
-                        } else {
-                            if (downloadInfo.length === 1) {
-                                ctx.hide()
-                                down(downloadInfo[0].name, downloadInfo[0].url)
-                            } else if (downloadInfo.length === 0) {
-                                ctx.setError("文件列表为空")
-                            } else {
-                                ctx.setDownloads(downloadInfo)
+                                        <div className="info">
+                                            <span className="size">{v.size}</span>
+                                            <span className="id">{v.id}</span>
+                                        </div>
+                                        <div className="url">{v.url}</div>
+                                    </div>
+                                }).reduce((pre: any[], cur) => {
+                                    // group by 3
+                                    if (pre.length === 0) return [[cur]];
+                                    if (pre[pre.length - 1].length === 2) return [...pre, [cur]];
+                                    pre[pre.length - 1].push(cur);
+                                    return pre;
+                                }, []).map(v => <div className="group">{v}</div>)
                             }
+                            <span>{error}</span>
+                        </div>
+                    })
+
+                    const downloadInfo = await mod.downloadUrl();
+
+                    if (typeof downloadInfo === 'string') {
+                        ctx.hide()
+                        down(mod.name, downloadInfo)
+                    } else {
+                        if (downloadInfo.length === 1) {
+                            ctx.hide()
+                            down(downloadInfo[0].name, downloadInfo[0].url)
+                        } else if (downloadInfo.length === 0) {
+                            ctx.setError("文件列表为空")
+                        } else {
+                            ctx.setDownloads(downloadInfo)
                         }
+                    }
 
 
-                    }}>
-                        {
-                            props.isInstalled ? <Icon name="i-tick" /> :
-                                downloadTask ?
-                                    downloadTask.state === 'pending' ? `${downloadTask.progress}% (${downloadTask.subtasks.filter(v => v.state !== 'Finished').length})` :
-                                        downloadTask.state === 'failed' ? <Icon name="i-cross" /> : <Icon name="i-tick" />
-                                    : <Icon name="download" />
-                        }
-                    </Button>
+                }}>
+                    {
+                        props.isInstalled ? <Icon name="i-tick" /> :
+                            downloadTask ?
+                                downloadTask.state === 'pending' ? `${downloadTask.progress}% (${downloadTask.subtasks.filter(v => v.state !== 'Finished').length})` :
+                                    downloadTask.state === 'failed' ? <Icon name="i-cross" /> : <Icon name="i-tick" />
+                                : <Icon name="download" />
+                    }
+                </Button>
 
-                    <Button onClick={async () => {
+                {
+                    props.mod.detail && <Button onClick={async () => {
 
                         createPopup(() => {
                             const [data, setData] = useState<ModDetailInfo | null>(null);
@@ -176,7 +176,7 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
                             useEffect(() => {
                                 mod.detail?.().then(setData);
                             }, []);
-
+    
                             const refContent = useRef<HTMLDivElement>(null);
                             const refImages = useRef<HTMLDivElement>(null);
                             useEffect(() => {
@@ -195,7 +195,7 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
                                     })
                                 })
                             }, [data])
-
+    
                             useEffect(() => {
                                 if (!refContent.current) return;
                                 refContent.current.innerHTML = "";
@@ -227,10 +227,10 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
                                 // @ts-ignore
                                 for (const img of div.querySelectorAll('img'))
                                     img.style.maxWidth = "300px";
-
+    
                                 refContent.current.appendChild(div);
                             }, [data])
-
+    
                             if (!data) return <div style={{
                                 width: "min-content",
                             }}>
@@ -269,7 +269,7 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
                                         } />)}
                                     </div>
                                 }
-
+    
                                 <div className="content" ref={refContent}>
                                 </div>
                             </div>
@@ -279,20 +279,20 @@ export const Mod = (props: { mod: ModInfo, onClick?: any, expanded?: boolean, mo
                     }}>
                         <Icon name="opts-h" />
                     </Button>
-                </div>
-
-                <div className="info">
-                    <div className="name">{mod.name}</div>
-                    <div className="author">{mod.author}</div>
-                    <div className="other">{mod.other}</div>
-                </div>
-
-                <BackgroundEle preview={preview} />
+                }
             </div>
-        </Fragment>
+
+            <div className="info">
+                <div className="name">{mod.name}</div>
+                <div className="author">{mod.author}</div>
+                <div className="other">{mod.other}</div>
+            </div>
+
+            <BackgroundEle preview={preview} />
+        </div>
     );
-}
-export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: string, loading?: boolean }) => {
+})
+export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: string, loading?: boolean, allowUpScroll: boolean }) => {
     const [loading, setLoading] = useState(true);
     const useChinaMirror = useDownloadSettings(p => p.useCNMirror as boolean);
 
@@ -300,7 +300,6 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
 
     useEffect(() => {
         callRemote('get_installed_mod_ids', props.modFolder, (ids: string) => {
-
             setInstalledModIDs(ids.split("\n"));
         });
     }, [props.modFolder]);
@@ -321,29 +320,113 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
 
     const refList: any = useRef(null);
 
+    const getVisibleRange = () => {
+        if (!refList.current) return { start: 0, end: 0, colWidth: 1 };
+        const padding = 40
+        const childHeight = refList.current.children[1].getBoundingClientRect().height + GUTTER_SIZE * 2;
+        const start = Math.floor((refList.current.scrollTop - padding) / childHeight);
+        const end = Math.ceil((refList.current.scrollTop + refList.current.offsetHeight - padding * 2) / childHeight);
+        const colWidth = Math.floor(
+            (refList.current?.offsetWidth || 0) / 340
+        );
+        return { start, end, colWidth };
+    }
+
     useEffect(() => {
         if (refList.current) {
-            refList.current.addEventListener("contentrequired", (e: {
-                data: {
-                    where: number,
-                    start: number,
-                    length: number
+            refList.current.vlist.slidingWindowSize = 10;
+            let reachedOnce = false;
+            let scrollLocked = false;
+            refList.current.scrollTop = 40
+            refList.current.addEventListener("mousewheel", (e: any) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const scrollTo = (v: any)=>{
+                    refList.current.scrollTo(v)
                 }
-            }) => {
-                if (e.data.start === -1) {
-                    return {
-                        morebefore: 0,
-                        moreafter: 20
+
+                const target = refList.current.scrollTop + e.deltaY * 1.6;
+                // console.log(target)
+                const topPaddingDownTop = 40;
+                const list = document.querySelector('.mod-list');
+                // @ts-ignore
+                const bottomPaddingUpTop = list.scrollTop + list.lastElementChild.offsetTop - list.offsetHeight - 80
+                if (scrollLocked) return;
+                if (target < 40) {
+                    if (!props.allowUpScroll) {
+                        scrollTo({
+                            top: 40,
+                            behavior: 'smooth'
+                        })
+                        return;
                     }
+                    // reach top padding
+                    if (reachedOnce) {
+                        scrollTo({
+                            top: target,
+                            behavior: 'smooth'
+                        })
+
+                        if (target < 0) {
+                            scrollLocked = true
+                            setTimeout(() => {
+                                props.onLoadMore?.('up').then(() => {
+                                    scrollLocked = false;
+                                })
+                            }, 300)
+                            scrollTo({
+                                top: target,
+                                behavior: 'smooth'
+                            })
+                        }
+                    } else {
+                        scrollTo({
+                            top: topPaddingDownTop,
+                            behavior: 'smooth'
+                        })
+                        reachedOnce = true;
+                    }
+                } else if (target > refList.current.scrollHeight - refList.current.offsetHeight - 40) {
+                    // reach bottom padding
+                    if (reachedOnce) {
+                        if (target > refList.current.offsetHeight) {
+                            if (!scrollLocked) {
+                                scrollLocked = true
+                                setTimeout(() => {
+                                    props.onLoadMore?.('down').then(() => {
+                                        scrollLocked = false;
+                                    })
+                                }, 300)
+                                scrollTo({
+                                    top: target,
+                                    behavior: 'smooth'
+                                })
+                            }
+                        } else {
+                            scrollTo({
+                                top: target,
+                                behavior: 'smooth'
+                            })
+                        }
+                    } else {
+                        console.log("To", bottomPaddingUpTop)
+                        scrollTo({
+                            top: bottomPaddingUpTop,
+                            behavior: 'smooth'
+                        })
+                        reachedOnce = true;
+                    }
+                } else {
+                    scrollTo({
+                        top: target,
+                        behavior: 'smooth'
+                    })
+                    reachedOnce = false;
                 }
-                props.onLoadMore?.();
-                return {
-                    morebefore: 0,
-                    moreafter: 20
-                }
-            });
+            })
         }
-    }, [])
+    }, [props.onLoadMore])
 
     const formatSize = (size: number) => {
         const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -351,10 +434,38 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
         return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
     }
 
+
+
+    const [visible, setVisible] = useState(getVisibleRange());
+
+    useEffect(() => {
+        const onScroll = () => {
+            const range = getVisibleRange();
+            const c = refList.current.children
+            for (let i = 0; i < c.length; i++) {
+                const line = Math.floor(i / range.colWidth);
+                if (line < range.start || line > range.end) {
+                    const v = c[i]
+                    const im = v.querySelector("img")
+                    // im && (im.src = "")
+                }
+            }
+            setVisible(range);
+        }
+        refList.current.addEventListener('scroll', onScroll);
+
+        setTimeout(onScroll, 10)
+
+        return () => {
+            refList.current.removeEventListener('scroll', onScroll);
+        }
+    }, []);
+
     return (
         <div>
             <div className="mod-list" ref={refList}>
-                {props.mods.map(mod2 => {
+                {<div className="padding"></div>}
+                {props.mods.map((mod2, index) => {
                     const mod = useMemo(() => {
                         const res = {
                             name: mod2.name,
@@ -367,9 +478,8 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
                                     return true;
                                 }).map(v => ({
                                     id: v.gameBananaId.toString(),
-                                    name: `${
-                                        v.description.includes(v.mods[0].version) ? "" : v.mods[0].version + "-"
-                                    }${v.description}-${v.mods[0].name}`,
+                                    name: `${v.description.includes(v.mods[0].version) ? "" : v.mods[0].version + "-"
+                                        }${v.description}-${v.mods[0].name}`,
                                     size: formatSize(v.size),
                                     url: v.url
                                 } as FileToDownload)))
@@ -395,14 +505,30 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
                     }, [mod2]);
                     if (!mod) return (<div></div>) as any;
 
+
+                    const line = Math.floor(index / visible.colWidth);
+                    const col = index % visible.colWidth;
+                    const visibleStart = visible.start;
+                    const visibleEnd = visible.end;
+
+                    const isVisible = true //line >= visibleStart && line <= visibleEnd;
+
                     return <div style={{
                         margin: GUTTER_SIZE,
                         boxSizing: "border-box"
                     }}>
-                        <Mod mod={mod} modFolder={props.modFolder}
-                            isInstalled={mod.isInstalled} />
+                        <div style={{
+                            width: 330,
+                            height: 220
+                        }}>
+                            {
+                                isVisible && <Mod mod={mod} modFolder={props.modFolder}
+                                    isInstalled={mod.isInstalled} />
+                            }
+                        </div>
                     </div> as any;
                 })}
+                <div className="padding"></div>
             </div>
 
             {loading && <div class="loader" style={{
@@ -413,6 +539,8 @@ export const ModList = (props: { mods: Content[], onLoadMore?: any, modFolder: s
             }}>
                 <div class="bar"></div>
             </div>}
+
+            {<div className="padding"></div>}
         </div>
     );
 }

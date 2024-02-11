@@ -21,18 +21,25 @@
     <script>
         const addData = () => {
             const list = document.querySelector('.list');
+            list.vlist.slidingWindowSize = 20;
+            const eles = []
             for (let i = 0; i < 20; i++) {
                 const item = document.createElement('img');
-                item.src = 'https://starwalk.space/gallery/images/summer-triangle-asterism/1920x1080.jpg?' + Math.random();
+                const r = Math.random()
+                item.src = 'https://starwalk.space/gallery/images/summer-triangle-asterism/1920x1080.jpg?' + r;
                 item.style.width = '500px';
-                list.appendChild(item)
+                item.key = r
+                eles.push(item)
             }
+
+            list.append(eles)
         }
         document.querySelector('.list').addEventListener('contentrequired', () => {
             addData()
             return {
                 contentbefore: 0,
-                contentafter: 100
+                contentafter: 10
+
             }
         })
 

@@ -150,6 +150,13 @@
     overflow-y: auto;
     // flow-columns: repeat(3, 350px);
     behavior: virtual-list;
+    transition: .2s opacity;
+
+    .padding {
+        height: 40px;
+        width: 100%;
+        display: inline-block;
+    }
 
     &>* {
         margin-left: 15px;
