@@ -2,10 +2,15 @@ import { h } from "preact";
 import { Icon } from "./Icon";
 import "./GameSelector.scss"
 import { callRemote, useBlockingMask } from "../utils";
+import { useGamePath } from "src/states";
 
-export const GameSelector = (props: { paths: string[], onSelect: any, selectedPath?: string, launchGame: (v: string) => void }) => {
+export const GameSelector = (props: { paths: string[], onSelect: any, launchGame: (v: string) => void }) => {
     if (!props.paths.length) return <div>No games found</div>;
-    const mask = useBlockingMask();
+    const { gamePath } = useGamePath();
+
+    if(!props.paths.includes(gamePath)) {
+        props.paths.push(gamePath);
+    }
 
     return (
         <div class="gameSelector">
@@ -13,7 +18,7 @@ export const GameSelector = (props: { paths: string[], onSelect: any, selectedPa
                 <Icon name="save" />
                 <span>选择游戏路径</span>
             </div>
-            <select onChange={props.onSelect} value={props.selectedPath || props.paths[0]}>
+            <select onChange={props.onSelect} value={gamePath || props.paths[0]}>
                 {props.paths.map(p => <option value={p}>{p}</option>)}
             </select>
 
@@ -26,7 +31,7 @@ export const GameSelector = (props: { paths: string[], onSelect: any, selectedPa
             }}>启动 原版</button>
 
             <button style={{ marginLeft: 5, borderRadius: 4 }} onClick={() => {
-                callRemote("open_url", (props.selectedPath || props.paths[0]) + '/Mods');
+                callRemote("open_url", (gamePath || props.paths[0]) + '/Mods');
             }}>Mods 文件夹</button>
         </div>
     );

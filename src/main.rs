@@ -712,6 +712,17 @@ impl Handler {
             }
         });
     }
+
+    fn verify_celeste_install(&self, path: String) -> bool {
+        let path = Path::new(&path);
+        let checklist = vec!["Celeste.exe"];
+        for file in checklist {
+            if path.join(file).exists() {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 impl sciter::EventHandler for Handler {
@@ -737,6 +748,7 @@ impl sciter::EventHandler for Handler {
         fn celemod_hash();
         fn do_self_update(String, Value);
         fn start_game_directly(String, bool);
+        fn verify_celeste_install(String);
     }
 }
 

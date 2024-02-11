@@ -18,7 +18,7 @@ export const Home = () => {
     const gamePaths = useMemo(() => {
         const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);
         if (!gamePath && paths.length > 0) {
-            setGamePath(paths[0]);
+            // setGamePath(paths[0]);
         }
         return paths;
     }, [gamePath]);
@@ -92,7 +92,7 @@ export const Home = () => {
 
     const manualSelect = () => {
         // @ts-ignore
-        const res = Window.this.selectFile({ mode: 'open', filter: 'celeste.exe|celeste.exe' });
+        const res = Window.this.selectFile({ mode: 'open', filter: 'Celeste.exe|Celeste.exe' });
         if (res !== null) {
             // strip file:// and Celeste.exe
             const before = "file://".length
