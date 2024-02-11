@@ -56,6 +56,8 @@ pub fn download_file_with_progress(
         .arg("-o")
         .arg(output_path.file_name().unwrap())
         .arg(url)
+        .arg("--timeout=600")
+        .arg(format!("--user-agent=CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]))
         .arg("--console-log-level=error")
         .arg("--allow-overwrite=true")
         .arg("--summary-interval=1")
