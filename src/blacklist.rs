@@ -89,6 +89,7 @@ pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile
                 name: "Default".to_string(),
                 mods: data
                     .lines()
+                    .map(|v|v.trim())
                     .filter(|v| !v.starts_with('#'))
                     .filter_map(|v| {
                         Some(ModBlacklist {

@@ -34,6 +34,12 @@
       }
       document.querySelector('.caption-version').innerText = Window.this.xcall('celemod_version')
       document.querySelector('.caption-hash').innerText = Window.this.xcall('celemod_hash').substr(0, 6)
+
+      const [x, y, w, h] = Window.this.box("xywh", "border", "desktop")
+      if (w < 800 || h < 600)
+        Window.this.move(
+          x, y, 800 * (800 / w), 600 * (600 / h)
+        )
     </script>
   </div>
   <span class="win-ctrl">

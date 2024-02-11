@@ -743,9 +743,11 @@ fn main() {
     // windows only
     #[cfg(windows)]
     {
-        use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS}; 
+        use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
+        use winapi::um::winuser::SetProcessDPIAware;
         unsafe { 
             AttachConsole(ATTACH_PARENT_PROCESS);
+            SetProcessDPIAware();
         }
     }
 
