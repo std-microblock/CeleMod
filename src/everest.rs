@@ -57,7 +57,7 @@ pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>
 }
 
 pub fn check_everest_installed(game_path: &str) -> bool {
-    std::path::Path::new(&format!("{}/MMHOOK_Celeste.dll", game_path)).exists()
+    std::path::Path::new(&format!("{}/Celeste.Mod.mm.dll", game_path)).exists()
 }
 
 static MAGIC_STR: &str = "EverestBuild";
