@@ -20,18 +20,52 @@ export const useThemeContext = () => {
     } = useEnableAcrylic();
 
     useEffect(() => {
+        if (!storage) return;
         storage.root ??= {};
         storage.root.enableAcrylic ??= true;
+        storage.root.windowSize ??= [800, 600];
 
         setEnableAcrylic(storage.root.enableAcrylic);
+        // @ts-ignore
+        const [x, y, w, h] = Window.this.box("xywh", "border", "desktop")
+        if (storage.root.windowSize[0] !== w || storage.root.windowSize[1] !== h) {
+            console.log('persist size', storage.root.windowSize)
+            // @ts-ignore
+            Window.this.move(x, y, ...storage.root.windowSize);
+        }
     }, [storage]);
 
     useEffect(() => {
+        if (!storage) return;
         // @ts-ignore
         Window.this.blurBehind = enableAcrylic ? 'dark ultra source-desktop' : 'none'
         storage.root.enableAcrylic = enableAcrylic;
         save();
-    }, [enableAcrylic]);
+    }, [enableAcrylic, storage]);
+
+    useEffect(() => {
+        let lastResize = -1
+        const handler = () => {
+            const now = Date.now();
+            lastResize = now;
+            setTimeout(() => {
+                if (lastResize === now) {
+                    // @ts-ignore
+                    const [x, y, w, h] = Window.this.box("xywh", "border", "desktop")
+                    console.log('saving window size', w, h)
+                    storage.root.windowSize = [w, h];
+                    save();
+                }
+            }, 100);
+        }
+        // @ts-ignore
+        Window.this.on('size', handler)
+
+        return () => {
+            // @ts-ignore
+            Window.this.off('size', handler)
+        }
+    }, [storage]);
 
     return {
         enableAcrylic,
