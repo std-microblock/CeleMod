@@ -3,7 +3,8 @@ import { useMemo, useState } from "preact/hooks";
 import { GameSelector } from "../components/GameSelector";
 import { Icon } from "../components/Icon";
 import { callRemote, useBlockingMask, useSysModule } from "../utils";
-import strawberry from "../resources/Strawberry.webp"
+// @ts-ignore
+import strawberry from "../resources/Celemod.png"
 import { useCurrentBlacklistProfile, useDownloadSettings, useGamePath, useStorage } from "../states";
 import { ModBlacklistProfile } from "../ipc/blacklist";
 import { useEffect } from "react";
