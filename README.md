@@ -35,3 +35,7 @@ An alternative mod manager for Celeste
 ![a80ca1bb96919629ee69fc237048bdd5](https://github.com/MicroCBer/CeleMod/assets/66859419/ff77be2f-3599-4831-9c38-3703979066b2)
 ![f5125abf1462349308bf51ad16e42601](https://github.com/MicroCBer/CeleMod/assets/66859419/40705319-3896-4b17-bb68-51f70560df19)
 ![c7501d330b8620839e0f6a77c5b549c3](https://github.com/MicroCBer/CeleMod/assets/66859419/72ba4cb6-e60d-459a-a7f7-f59521dae63b)
+
+### Credits
+
+@WEGFan 提供镜像和社区 API、蔚蓝实现等相关知识

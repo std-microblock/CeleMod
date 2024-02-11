@@ -3,7 +3,7 @@
   "搜索": "Search",
   "管理": "Manage",
   "联机相关": "Multiplayer",
-  "推荐模组": "Recommendations",
+  "推荐模组": "Featured",
   "下载任务": "Download Tasks",
   "请先安装 Everest": "Please install Everest first.",
   "Everest 是 Celeste 的开源模组加载器和模组 API，允许您根据自己的喜好创 建自定义地图包、纹理替换和代码模组。 必须先安装 Everest 才能使用 Mod。 CeleMod 可以帮助你一键下载和安装 Everest。": "Everest is an open-source mod loader and modding API for Celeste that allows you to create custom map packs, texture replacements, and code mods according to your preferences. Modding requires Everest to be installed. CeleMod can assist you in downloading and installing Everest with just one click.",
