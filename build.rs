@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, process::Command};
+use std::{env, fs::File, io::Read, process::Command};
 
 fn main() {
     Command::new("./sciter/packfolder.exe")
@@ -39,4 +39,12 @@ fn main() {
         _ => panic!("Unsupported target"),
     };
     println!("cargo:rustc-env=TARGET={}", target);
+
+    use winres::WindowsResource;
+
+    if env::var_os("CARGO_CFG_WINDOWS").is_some() {
+        WindowsResource::new()
+            .set_icon("icon.ico")
+            .compile().unwrap();
+    }
 }

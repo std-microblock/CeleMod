@@ -23,3 +23,6 @@ include-bytes-zstd = "*"
 winapi = { version = "*", features = ["wincon"] }
 
 [target.'cfg(unix)'.dependencies]
+
+[build-dependencies]
+winres = "0.1.12"

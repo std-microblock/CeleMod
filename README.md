@@ -1,5 +1,5 @@
 <div align=center>
-<img src="Strawberry.webp" />
+<img src="src\celemod-ui\src\resources\Celemod.png" />
 
 # CeleMod
 
