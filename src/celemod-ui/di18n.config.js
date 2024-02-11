@@ -1,0 +1,17 @@
+module.exports = {
+  entry: ['src'],
+  exclude: [],
+  output: ['src'],
+  disableAutoTranslate: true,
+  extractOnly: false,
+  translator: null,
+  ignoreComponents: [],
+  ignoreMethods: [],
+  primaryLocale: 'zh-CN',
+  supportedLocales: ['zh-CN', 'en-US'],
+  importCode: "import _i18n from 'src/i18n';",
+  i18nObject: '_i18n',
+  i18nMethod: 't',
+  prettier: { singleQuote: true, trailingComma: 'es5', endOfLine: 'lf' },
+  localeConf: { type: 'file', folder: 'locales' },
+};

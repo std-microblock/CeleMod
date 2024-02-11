@@ -10,11 +10,12 @@
     ],
     "module": "esnext",
     "moduleResolution": "node",
-    "strict": true,
+    "strict": false,
     "target": "ES2022",
     "typeRoots": [
       "./src/types"
-    ]
+    ],
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*"
