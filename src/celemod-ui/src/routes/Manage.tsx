@@ -438,6 +438,13 @@ export const Manage = () => {
                 const names: string[] = [];
 
                 const addToSwitchList = (name: string) => {
+                    const blacklist = [
+                        'CelesteNet.Client',
+                        'Miao.CelesteNet.Client'
+                    ]
+
+                    if (blacklist.includes(name)) return;
+
                     const mod = installedModMap.get(name);
                     if (mod) {
                         mod.enabled = enabled;
