@@ -436,15 +436,12 @@ export const Manage = () => {
         switchMod: (name: string, enabled: boolean, recursive = true) => {
             if (currentProfile) {
                 const names: string[] = [];
+                const excludeFromAutoEnableList = [
+                    'CelesteNet.Client',
+                    'Miao.CelesteNet.Client'
+                ]
 
                 const addToSwitchList = (name: string) => {
-                    const blacklist = [
-                        'CelesteNet.Client',
-                        'Miao.CelesteNet.Client'
-                    ]
-
-                    if (blacklist.includes(name)) return;
-
                     const mod = installedModMap.get(name);
                     if (mod) {
                         mod.enabled = enabled;
@@ -456,8 +453,10 @@ export const Manage = () => {
                             const deps = mod?.dependencies
 
                             for (const dep of deps ?? []) {
-                                if (!('_missing' in dep))
+                                if (!('_missing' in dep)) {
+                                    if (excludeFromAutoEnableList.includes(dep.name)) continue
                                     addToSwitchList(dep.name);
+                                }
                             }
                         } else {
                             const orphanDeps = mod?.dependencies.filter(v =>
