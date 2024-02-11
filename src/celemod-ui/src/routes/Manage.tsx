@@ -399,9 +399,9 @@ export const Manage = () => {
             }
         }
 
-        return [...modTree.values()].sort((a, b) => a.name.localeCompare(b.name));
+        return [...modTree.values()].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
     }, [installedModMap, excludeDependents, filter])
-    
+
     useEffect(() => {
         // @ts-ignore
         modsTreeRef.current?.scrollTo(0, 0)
@@ -505,7 +505,7 @@ export const Manage = () => {
             <div className="modList">
                 <div className="title">
                     Mod 列表
-                    <input placeholder="筛选 Mod" className="filter-input" type="text" value={filter} onChange={e=>{
+                    <input placeholder="筛选 Mod" className="filter-input" type="text" value={filter} onChange={e => {
                         setFilter((e.target as any).value);
                     }} />
                 </div>
