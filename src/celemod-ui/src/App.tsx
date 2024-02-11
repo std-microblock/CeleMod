@@ -16,6 +16,7 @@ import { DownloadListMenu } from "./components/DownloadList";
 import { useEverestCtx } from "./context/everest";
 import { Everest } from "./routes/Everest";
 import { checkUpdate } from "./components/SelfUpdate";
+import { useThemeContext } from "./context/theme";
 
 export const GlobalContext = createContext<{
     bus: EventTarget,
@@ -24,7 +25,8 @@ export const GlobalContext = createContext<{
     everest: ReturnType<typeof useEverestCtx>,
     pageController: {
         setPage(name: string): void
-    }
+    },
+    theme: ReturnType<typeof useThemeContext>
 }>({} as any);
 
 export const useGlobalContext = () => {
@@ -70,6 +72,7 @@ export default () => {
             setPage(name);
         }
     }
+    const theme = useThemeContext();
 
     const { gamePath } = useGamePath()
 
@@ -95,7 +98,8 @@ export default () => {
                 modManage,
                 download,
                 everest,
-                pageController
+                pageController,
+                theme
             }}>
                 <DownloadListMenu />
                 <nav className="sidebar">

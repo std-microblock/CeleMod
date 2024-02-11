@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { Button } from "../components/Button";
 import "./Home.scss"
 import { createPopup } from "../components/Popup";
+import { useEnableAcrylic } from "src/context/theme";
 
 export const Home = () => {
     const [gamePath, setGamePath] = useGamePath(v => [v.gamePath, v.setGamePath]);
@@ -28,8 +29,6 @@ export const Home = () => {
         [profile: string]: number
     }>({});
     const Storage = useSysModule("storage");
-
-    const [enableAcrylic, setEnableAcrylic] = useState(true);
 
     const { profiles, setProfiles,
         currentProfileName, setCurrentProfileName,
@@ -51,7 +50,7 @@ export const Home = () => {
                 storageLU.commit();
             })
 
-            window.addEventListener('beforeunload', ()=>{
+            window.addEventListener('beforeunload', () => {
                 storageLU.close();
             })
         }
@@ -91,6 +90,24 @@ export const Home = () => {
         return "很久以前";
     }
 
+    const manualSelect = () => {
+        // @ts-ignore
+        const res = Window.this.selectFile({ mode: 'open', filter: 'celeste.exe|celeste.exe' });
+        if (res !== null) {
+            // strip file:// and Celeste.exe
+            const before = "file://".length
+            const after = "celeste.exe".length
+            const path = res.slice(before, res.length - after)
+            console.log("Selected", path)
+            setGamePath(path);
+        }
+    }
+
+    const {
+        enableAcrylic,
+        setEnableAcrylic
+    } = useEnableAcrylic();
+
     return <div class="home">
 
         <div className="info">
@@ -107,40 +124,28 @@ export const Home = () => {
             </span>
         </div>
         <br />
-        <br />
 
         {
             gamePath ? <div className="config">
-            <GameSelector paths={gamePaths} onSelect={(e: InputEvent) => {
-                // @ts-ignore
-                setGamePath(e.target.value);
-            }} launchGame={() => {
-                lastUseMap[currentProfileName] = Date.now();
-                setLastUseMap(lastUseMap);
-                save();
-                mask.setMaskEnabled(true);
-                mask.setMaskText("正在启动");
-                callRemote("start_game", gamePath || gamePaths[0]);
-                setTimeout(() => {
-                    mask.setMaskEnabled(false);
-                }, 20000);
-            }} />
-        </div> : <div className="config">
-            未找到游戏！请先安装 Steam 商店或Epic 商店版的 Celeste，或 <span onClick={()=>{
-                // @ts-ignore
-                const res = Window.this.selectFile({mode: 'open', filter:'celeste.exe|celeste.exe'});
-                if(res !== null) {
-                    // strip file:// and Celeste.exe
-                    const before = "file://".length
-                    const after = "celeste.exe".length
-                    const path = res.slice(before, res.length - after)
-                    console.log("Selected", path)
-                    setGamePath(path);
-                }
-            }} style={{
-                color: '#a77fdb'
-            }}>点此手动选择</span>
-        </div>
+                <GameSelector paths={gamePaths} onSelect={(e: InputEvent) => {
+                    // @ts-ignore
+                    setGamePath(e.target.value);
+                }} launchGame={() => {
+                    lastUseMap[currentProfileName] = Date.now();
+                    setLastUseMap(lastUseMap);
+                    save();
+                    mask.setMaskEnabled(true);
+                    mask.setMaskText("正在启动");
+                    callRemote("start_game", gamePath || gamePaths[0]);
+                    setTimeout(() => {
+                        mask.setMaskEnabled(false);
+                    }, 20000);
+                }} />
+            </div> : <div className="config">
+                未找到游戏！请先安装 Steam 商店或Epic 商店版的 Celeste，或 <span onClick={manualSelect} style={{
+                    color: '#a77fdb'
+                }}>点此手动选择</span>
+            </div>
         }
 
 
@@ -191,27 +196,45 @@ export const Home = () => {
                     <Button onClick={
                         // @ts-ignore
                         (e) => {
-                        e.stopPropagation();
-                        setCurrentProfileName(v.name);
-                        lastUseMap[v.name] = Date.now();
-                        save(
+                            e.stopPropagation();
+                            setCurrentProfileName(v.name);
+                            lastUseMap[v.name] = Date.now();
+                            save(
 
-                        )
-                        setLastUseMap(lastUseMap);
-                        mask.setMaskEnabled(true);
-                        mask.setMaskText("正在启动");
-                        setTimeout(() => {
-                            callRemote("start_game", gamePath || gamePaths[0]);
-                        }, 300);
+                            )
+                            setLastUseMap(lastUseMap);
+                            mask.setMaskEnabled(true);
+                            mask.setMaskText("正在启动");
+                            setTimeout(() => {
+                                callRemote("start_game", gamePath || gamePaths[0]);
+                            }, 300);
 
-                        setTimeout(() => {
-                            mask.setMaskEnabled(false);
-                        }, 20000);
-                    }}>
+                            setTimeout(() => {
+                                mask.setMaskEnabled(false);
+                            }, 20000);
+                        }}>
                         启动
                     </Button>
                 </div>)
             }
+        </div>
+
+        <div className="config theme">
+            <Icon name="edit" />
+            &nbsp;
+            <span>主题设置</span>
+        </div>
+
+        <div className="config-block">
+            <label>
+                <input type="checkbox" checked={enableAcrylic} onClick={() => {
+                    setEnableAcrylic(!enableAcrylic);
+                }} />
+                <span>
+                    &nbsp;启用亚克力效果
+                </span>
+            </label>
+
         </div>
     </div>;
 };

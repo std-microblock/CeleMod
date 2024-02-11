@@ -145,47 +145,6 @@ a {
     float: left;
 }
 
-.home {
-    padding: 20px;
-
-    .info {
-
-        .title {
-            margin-top: 20px;
-            font-size: 40px;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            font-size: 20px;
-            font-weight: 400;
-            opacity: 0.6;
-            width: 300px;
-        }
-
-        img {
-            width: 100px;
-            margin-top: 20px;
-        }
-
-        flow: grid(1 2,
-            1 3);
-    }
-
-    .config {
-        margin-bottom: 5px;
-
-        .icon {
-            margin-right: 5px;
-        }
-    }
-
-    .config-block {
-        margin-left: 10px;
-    }
-}
-
-
 input[type=checkbox] {
     appearance: none;
     height: 15px;
