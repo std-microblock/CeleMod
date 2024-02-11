@@ -23,9 +23,9 @@ interface Maddie480EverestVersion {
 }
 
 const Channel = ({
-    dataUrl, branch, onInstall, title
+    dataFull, branch, onInstall, title
 }: {
-    dataUrl: string,
+    dataFull: Maddie480EverestVersion[],
     branch: string,
     title: string,
     onInstall: (url: string) => void
@@ -33,14 +33,11 @@ const Channel = ({
     const [data, setData] = useState<Maddie480EverestVersion[] | null>(null);
 
     useEffect(() => {
-        console.log(dataUrl)
-        fetch(dataUrl).then(res => res.json()).then(v => {
-            setData(v.filter((v: Maddie480EverestVersion) => v.branch === branch.toLowerCase()));
-        });
-    }, [])
-    
+        setData(dataFull.filter((v: Maddie480EverestVersion) => v.branch === branch.toLowerCase()));
+    }, [dataFull])
+
     const getDownloadUrl = (data: Maddie480EverestVersion) => {
-        if(data.branch === 'stable') return `https://celeste.weg.fan/api/v2/download/everest/${data.version}`
+        if (data.branch === 'stable') return `https://celeste.weg.fan/api/v2/download/everest/${data.version}`
         return data.mainDownload;
     }
 
@@ -102,6 +99,14 @@ export const Everest = () => {
         });
     }
 
+    const [everestData, setEverestData] = useState<Maddie480EverestVersion[] | null>(null);
+
+    useEffect(() => {
+        fetch('https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true')
+            .then(v=>v.json())
+            .then(v=>setEverestData(v))
+    }, [])
+
     return <div className="everest">
         <img src={everest} alt="" srcset="" width={300} />
 
@@ -123,26 +128,34 @@ export const Everest = () => {
         </div>
         {
             installingUrl === null ? <Fragment>
-                <div className="channels">
-                    <Channel
-                        title="Stable 通道"
-                        branch="Stable"
-                        dataUrl="https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true&wtf"
-                        onInstall={url => installEverest(url)}
-                    />
-                    <Channel
-                        title="Beta 通道"
-                        branch="Beta"
-                        dataUrl="https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true"
-                        onInstall={url => installEverest(url)}
-                    />
-                    <Channel
-                        branch="Dev"
-                        title="Dev 通道"
-                        dataUrl="https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true"
-                        onInstall={url => installEverest(url)}
-                    />
-                </div>
+                {
+                    everestData ? <Fragment>
+                        <div className="channels">
+                            <Channel
+                                title="Stable 通道"
+                                branch="Stable"
+                                dataFull={everestData}
+                                onInstall={url => installEverest(url)}
+                            />
+                            <Channel
+                                title="Beta 通道"
+                                branch="Beta"
+                                dataFull={everestData}
+                                onInstall={url => installEverest(url)}
+                            />
+                            <Channel
+                                branch="Dev"
+                                title="Dev 通道"
+                                dataFull={everestData}
+                                onInstall={url => installEverest(url)}
+                            />
+                        </div>
+                    </Fragment> : <div style={{
+                        horizontalAlign: 'center'
+                    }}>
+                        <ProgressIndicator infinite />
+                    </div>
+                }
             </Fragment> : <Fragment>
                 <div className="installing">
                     {installState === 'Failed' ? <Fragment>
