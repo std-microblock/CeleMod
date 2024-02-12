@@ -61,8 +61,7 @@ export const createI18NContext = () => {
     useEffect(() => {
         if (storage?.root?.lang)
             ctx.setLang(storage.root.lang);
-
-        if (env.language() === 'zh') {
+        else if (env.language() === 'zh') {
             ctx.setLang('zh-CN')
             setMirror('wegfan')
         }
