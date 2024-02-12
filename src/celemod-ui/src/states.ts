@@ -27,6 +27,7 @@ export const useCurrentBlacklistProfile = create<{
 declare global {
     var configStorage: any;
     var storage: any;
+    var env: any;
 }
 
 export const useStorage = () => {
@@ -75,7 +76,7 @@ export const useCurrentLang = create<{
     currentLang: string,
     setCurrentLang: (currentLang: string) => void
 }>((set) => ({
-    currentLang: "",
+    currentLang: '',
     setCurrentLang: (currentLang: string) => set({ currentLang })
 }));
 
@@ -120,14 +121,13 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
 }
 
 const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPersistedState<T>(defaultValue, storage => storage.root[key], (storage, data, save) => {
-    console.log("Save", data)
     storage.root[key] = data;
     save()
 })
 
 export const [initMirror, useMirror] = createPersistedStateByKey('mirror', 'wegfan')
 export const [initGamePath, useGamePath] = createPersistedState<string>('', storage => {
-    if (storage.root.lastGamePath)
+    if (storage?.root?.lastGamePath)
         return storage.root.lastGamePath
     const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);
     return paths[0]

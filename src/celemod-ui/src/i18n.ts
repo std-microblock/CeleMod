@@ -1,6 +1,6 @@
 import { createContext } from 'preact';
 import { useContext, useReducer } from 'preact/hooks';
-import { useCurrentLang, useStorage } from './states';
+import { useCurrentLang, useMirror, useStorage } from './states';
 import { useEffect, useMemo } from 'react';
 
 import zhCN from 'locales/zh-CN.json';
@@ -44,6 +44,7 @@ export const useI18N = () => {
 export const createI18NContext = () => {
     const { currentLang, setCurrentLang } = useCurrentLang();
     const { storage, save } = useStorage();
+    const [mirror, setMirror] = useMirror();
 
     const ctx = useMemo(() => ({
         setLang(lang: string) {
@@ -60,6 +61,15 @@ export const createI18NContext = () => {
     useEffect(() => {
         if (storage?.root?.lang)
             ctx.setLang(storage.root.lang);
+
+        if (env.language() === 'zh') {
+            ctx.setLang('zh-CN')
+            setMirror('wegfan')
+        }
+        else {
+            ctx.setLang('en-US')
+            setMirror('gamebanana')
+        }
     }, [storage]);
 
     return ctx;
