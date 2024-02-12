@@ -2,13 +2,15 @@ module.exports = {
   entry: ['src'],
   exclude: [],
   output: ['src'],
-  disableAutoTranslate: true,
+  disableAutoTranslate: false,
   extractOnly: false,
   translator: null,
   ignoreComponents: [],
   ignoreMethods: [],
   primaryLocale: 'zh-CN',
-  supportedLocales: ['zh-CN', 'en-US'],
+  supportedLocales: ['zh-CN', 'en-US'
+  // , 'de-DE', 'fr-FR', 'ru-RU'
+  ],
   importCode: "import _i18n, { useI18N } from 'src/i18n';",
   i18nObject: '_i18n',
   i18nMethod: 't',

@@ -1,13 +1,20 @@
-import zhCN from 'locales/zh-CN.json';
-import enUS from 'locales/en-US.json';
 import { createContext } from 'preact';
 import { useContext, useReducer } from 'preact/hooks';
 import { useCurrentLang, useStorage } from './states';
 import { useEffect, useMemo } from 'react';
 
+import zhCN from 'locales/zh-CN.json';
+import enUS from 'locales/en-US.json';
+import ruRU from 'locales/ru-RU.json';
+import frFR from 'locales/fr-FR.json';
+import deDE from 'locales/de-DE.json'
+
 const locales = {
     'zh-CN': zhCN,
     'en-US': enUS,
+    'de-DE': deDE,
+    'ru-RU': ruRU,
+    'fr-FR': frFR
 };
 
 let locale = 'zh-CN';
