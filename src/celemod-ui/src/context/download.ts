@@ -1,5 +1,5 @@
 import { callRemote } from "../utils";
-import { useInstalledMods, useGamePath } from "../states";
+import { useInstalledMods, useGamePath, useMirror as useMirror, useStorage } from "../states";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { EventTarget } from "../utils";
 
@@ -68,15 +68,26 @@ export const createDownloadContext = () => {
 
     const eventBus = useMemo(() => new EventTarget(), []);
 
+    const [downloadMirror, setDownloadMirror] = useMirror();
+
     const ctx = {
         eventBus,
         downloadTasks,
-        downloadMod: (name: string, url: string, {
+        downloadMod: (name: string, gb_fileid_or_url: string, {
             force = false,
             onProgress = (task: Download.TaskInfo, progress: number) => { },
             onFinished = (task: Download.TaskInfo) => { },
             onFailed = (task: Download.TaskInfo, error: string) => { }
         }) => {
+
+            let url;
+            if (gb_fileid_or_url.startsWith("http")) url = gb_fileid_or_url;
+            else {
+                const gb_fileid = gb_fileid_or_url
+                if (downloadMirror === 'wegfan') url = `https://celeste.weg.fan/api/v2/download/gamebanana-files/${gb_fileid}`;
+                else url = `https://gamebanana.com/dl/${gb_fileid}`
+            }
+
             if (installedMods.find(m => m.name === name)) {
                 if (force) {
                     callRemote("rm_mod", gamePath + "/Mods/", name)

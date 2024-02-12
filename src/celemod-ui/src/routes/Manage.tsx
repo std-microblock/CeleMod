@@ -5,7 +5,6 @@ import {
   BackendDep,
   BackendModInfo,
   useCurrentBlacklistProfile,
-  useDownloadSettings,
   useGamePath,
   useInstalledMods,
 } from '../states';
@@ -94,13 +93,12 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
   const { download } = useGlobalContext();
   const ctx = useContext(modListContext);
   const [state, setState] = useState(_i18n.t('缺失'));
-  const [url, setUrl] = useState<string | null>(null);
-  const useChinaMirror = useDownloadSettings((p) => p.useCNMirror as boolean);
+  const [gbFileID, setGBFileID] = useState<string | null>(null);
   useEffect(() => {
     callRemote('get_mod_update', name, (data: string) => {
       if (!!data) {
-        const [url, version] = JSON.parse(data);
-        setUrl(url);
+        const [gbFileId, version] = JSON.parse(data);
+        setGBFileID(gbFileId);
         if (optional) setState(_i18n.t('点击下载'));
         else setState(_i18n.t('缺失·点击下载'));
       }
@@ -114,10 +112,10 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         bg={optional ? '#3ca3f4' : '#ef4647'}
         color="white"
         onClick={
-          url !== null
+          gbFileID !== null
             ? async () => {
               setState(_i18n.t('下载中'));
-              download.downloadMod(name, url, {
+              download.downloadMod(name, gbFileID, {
                 onProgress: (task, progress) => {
                   setState(`${progress}% (${task.subtasks.length})`);
                 },
@@ -187,9 +185,9 @@ const ModLocal = ({
   useEffect(() => {
     callRemote('get_mod_update', name, (data: string) => {
       if (!!data) {
-        const [url, newversion] = JSON.parse(data);
+        const [gbFileID, newversion] = JSON.parse(data);
         if (compareVersion(newversion, version) > 0) {
-          setUpdateState([url, newversion]);
+          setUpdateState([gbFileID, newversion]);
           setUpdateString(
             _i18n.t('点击更新 · {newversion}', { newversion: newversion })
           );
@@ -460,7 +458,7 @@ export const Manage = () => {
   }, [installedMods, currentProfile, profiles, checkOptionalDep]);
 
   const [latestModInfos, setLatestModInfos] = useState<[
-    string, string, string // name, version, url
+    string, string, string // name, version, gbfileid
   ][]>([]);
 
   useEffect(() => {
@@ -469,7 +467,11 @@ export const Manage = () => {
     })
   }, [])
 
-  const hasUpdateMods = useMemo(() => {
+  const hasUpdateMods: {
+    name: string,
+    version: string,
+    gb_file: string
+  }[] = useMemo(() => {
     const mods = [];
     for (const mod of installedMods) {
       const latest = latestModInfos.find(v => v[0] === mod.name);
@@ -477,7 +479,7 @@ export const Manage = () => {
         mods.push({
           name: mod.name,
           version: latest[1],
-          url: latest[2]
+          gb_file: latest[2]
         });
       }
     }
@@ -768,7 +770,7 @@ export const Manage = () => {
                 setHasUpdateBtnState('更新中');
                 const updateUnfinishedSet = new Set(hasUpdateMods.map(v => v.name));
                 for (const mod of hasUpdateMods) {
-                  download.downloadMod(mod.name, mod.url, {
+                  download.downloadMod(mod.name, mod.gb_file, {
                     onProgress: (task, progress) => {
                       console.log(task, progress);
                     },

@@ -21,12 +21,14 @@ let locale = 'zh-CN';
 
 export default {
     t(key: string, slots = {}) {
-        console.log(locale, key, slots)
         let translated = locales[locale]?.[key] ?? key;
         for (const k in slots) {
             translated = translated.replaceAll(`{${k}}`, slots[k]);
         }
         return translated;
+    },
+    get currentLang() {
+        return locale
     }
 }
 

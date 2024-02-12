@@ -146,7 +146,7 @@
   "已安装": "Installed",
   "下载": "Download",
   "准备下载": "Preparing download",
-  "推荐的模组": "Recommended mods",
+  "推荐的模组": "Featured mods",
   "这里将会列出一些推荐安装的模组及其简介，请按需安装": "Here you will find a list of recommended mods to install along with their descriptions. Please install as needed.",
   "功能性模组": "Utility Mods",
   "下载所有": "Download all",
@@ -170,5 +170,5 @@
   "选择其他路径": "Choose another path",
   "界面设置": "UI Settings",
   "语言": "Language",
-  "简体中文": "Simplified Chinese"
+  "简体中文": "简体中文 "
 }

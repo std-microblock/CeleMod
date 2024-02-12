@@ -616,7 +616,7 @@ impl Handler {
             let res: anyhow::Result<(String, String)> = try {
                 let mods = get_mod_cached_new()?;
                 let name = &mods[&name];
-                (name.download_url.clone(), name.version.clone())
+                (name.game_banana_file_id.to_string(), name.version.clone())
             };
 
             let data = if let Ok(data) = res {
@@ -635,7 +635,7 @@ impl Handler {
                 let mods = get_mod_cached_new()?;
                 mods.iter()
                     .map(|(k, v)| 
-                        (k.clone(), v.version.clone(), v.download_url.clone())
+                        (k.clone(), v.version.clone(), v.game_banana_file_id.to_string())
                     )
                     .collect()
             };

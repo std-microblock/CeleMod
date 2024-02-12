@@ -15,8 +15,8 @@ import strawberry from '../resources/Celemod.png';
 import {
     useCurrentBlacklistProfile,
     useCurrentLang,
-    useDownloadSettings,
     useGamePath,
+    useMirror,
     useStorage,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
@@ -41,10 +41,6 @@ export const Home = () => {
         }
         return paths;
     }, [gamePath]);
-    const [useChinaMirror, setUseChinaMirror] = useDownloadSettings((v) => [
-        v.useCNMirror,
-        v.setUseCNMirror,
-    ]);
     const [counter, setCounter] = useState(0);
 
     const [lastUseMap, setLastUseMap] = useState<{
@@ -131,6 +127,8 @@ export const Home = () => {
 
     const { enableAcrylic, setEnableAcrylic } = useEnableAcrylic();
 
+    const [downloadMirror, setDownloadMirror] = useMirror();
+
     return (
         <div class="home">
             <div className="info">
@@ -201,13 +199,12 @@ export const Home = () => {
             <div className="config-block">
                 <input
                     type="checkbox"
-                    checked={useChinaMirror}
-                    disabled
+                    checked={downloadMirror === 'wegfan'}
                     name="usecnmirror"
                     onChange={(e) => {
                         //@ts-ignore
                         const checked = e.target.checked;
-                        setUseChinaMirror(checked);
+                        setDownloadMirror(checked ? 'wegfan' : 'gamebanana')
                     }}
                 />
 
@@ -299,6 +296,9 @@ export const Home = () => {
                     <select
                         onChange={(e: any) => {
                             i18nCtx.setLang(e.target.value);
+                            if (e.target.value !== 'zh-CN') {
+                                setDownloadMirror('gamebanana')
+                            }
                         }}
                         value={i18nCtx.currentLang}
                     >

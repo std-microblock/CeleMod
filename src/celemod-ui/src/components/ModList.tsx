@@ -11,7 +11,6 @@ import { callRemote, displayDate } from '../utils';
 import { FixedSizeGrid, FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
 import { memo } from 'preact/compat';
-import { useDownloadSettings } from '../states';
 import { Content } from '../api/wegfan';
 import { Download } from '../context/download';
 import { useGlobalContext } from '../App';
@@ -77,8 +76,6 @@ export const Mod = memo(
       null
     );
 
-    const useChinaMirror = useDownloadSettings((p) => p.useCNMirror as boolean);
-
     return (
       <div
         onClick={props.onClick}
@@ -90,9 +87,9 @@ export const Mod = memo(
             onClick={async () => {
               if (downloadTask || props.isInstalled) return;
 
-              const down = (name: string, url: string) => {
+              const down = (name: string, fileid: string) => {
                 setDownloadTask(
-                  download.downloadMod(name, url, {
+                  download.downloadMod(name, fileid, {
                     onProgress: (task) => setDownloadTask({ ...task }),
                     onFailed: (task) => setDownloadTask({ ...task }),
                     onFinished: (task) => {
@@ -148,7 +145,7 @@ export const Mod = memo(
                             <div
                               className="file"
                               onClick={() => {
-                                down(v.name, v.url);
+                                down(v.name, v.id);
                                 popupCtx.hide();
                               }}
                             >
@@ -187,7 +184,7 @@ export const Mod = memo(
               } else {
                 if (downloadInfo.length === 1) {
                   ctx.hide();
-                  down(downloadInfo[0].name, downloadInfo[0].url);
+                  down(downloadInfo[0].name, downloadInfo[0].id);
                 } else if (downloadInfo.length === 0) {
                   ctx.setError(_i18n.t('文件列表为空'));
                 } else {
@@ -379,7 +376,6 @@ export const ModList = (props: {
   allowUpScroll: boolean;
 }) => {
   const [loading, setLoading] = useState(true);
-  const useChinaMirror = useDownloadSettings((p) => p.useCNMirror as boolean);
 
   const [installedModIDs, setInstalledModIDs] = useState<string[] | null>(null);
 

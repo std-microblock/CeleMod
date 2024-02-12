@@ -6,9 +6,9 @@ import {
   BackendModInfo,
   useCurrentBlacklistProfile,
   useCurrentEverestVersion,
-  useDownloadSettings,
   useGamePath,
   useInstalledMods,
+  useMirror,
 } from '../states';
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { callRemote, displayDate } from '../utils';
@@ -52,9 +52,13 @@ const Channel = ({
     );
   }, [dataFull]);
 
+  const [mirror] = useMirror()
+
   const getDownloadUrl = (data: Maddie480EverestVersion) => {
-    if (data.branch === 'stable')
-      return `https://celeste.weg.fan/api/v2/download/everest/${data.version}`;
+    if (data.branch === 'stable') {
+      if (mirror === 'wegfan') return `https://celeste.weg.fan/api/v2/download/everest/${data.version}`;
+      return data.mainDownload;
+    }
     return data.mainDownload;
   };
 
@@ -229,12 +233,12 @@ export const Everest = () => {
                   <ProgressIndicator
                     {...(installProgress
                       ? {
-                          value: installProgress,
-                          max: 100,
-                        }
+                        value: installProgress,
+                        max: 100,
+                      }
                       : {
-                          infinite: true,
-                        })}
+                        infinite: true,
+                      })}
                   />
                 </div>
                 <div className="tip">

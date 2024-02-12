@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { ModBlacklistProfile } from './ipc/blacklist';
+import { useEffect } from 'react';
 
 export const useGamePath = create<{
     gamePath: string,
@@ -7,14 +8,6 @@ export const useGamePath = create<{
 }>((set) => ({
     gamePath: "",
     setGamePath: (gamePath: string) => set({ gamePath })
-}));
-
-export const useDownloadSettings = create<{
-    useCNMirror: boolean,
-    setUseCNMirror: (useCNMirror: boolean) => void
-}>((set) => ({
-    useCNMirror: true,
-    setUseCNMirror: (useCNMirror: boolean) => set({ useCNMirror })
 }));
 
 export const useCurrentBlacklistProfile = create<{
@@ -87,3 +80,46 @@ export const useCurrentLang = create<{
     currentLang: "",
     setCurrentLang: (currentLang: string) => set({ currentLang })
 }));
+
+interface _Storage {
+    root: any
+}
+
+function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set: (storage: _Storage, data: T, save: () => void) => void) {
+    const useTheState = create<{
+        value: T,
+        set: (value: T) => void
+    }>(set => ({
+        value: initial,
+        set(value) {
+            set({ value })
+        },
+    }));
+
+    return [() => {
+        const { value, set: setData } = useTheState();
+
+        const { storage, save } = useStorage();
+
+        useEffect(() => {
+            if (!storage) return;
+            const data = get(storage);
+            data && setData(data)
+        }, [storage])
+    }, (() => {
+        const { value, set: setData } = useTheState();
+        const { storage, save } = useStorage();
+        return [value, (data) => {
+            setData(data)
+            set(storage, data, save)
+        }]
+    })] as [() => void, () => ([T, (data: T) => void])]
+}
+
+const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPersistedState<T>(defaultValue, storage => storage.root[key], (storage, data, save) => {
+    console.log("Save", data)
+    storage.root[key] = data;
+    save()
+})
+
+export const [initMirror, useMirror] = createPersistedStateByKey('mirror', 'wegfan')

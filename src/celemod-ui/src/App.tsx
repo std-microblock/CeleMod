@@ -10,7 +10,7 @@ import { Manage } from './routes/Manage';
 import { Multiplayer } from './routes/Multiplayer';
 import { EventTarget, callRemote } from './utils';
 import { RecommendMods } from './routes/RecommendMods';
-import { useCurrentLang, useGamePath, useInstalledMods } from './states';
+import { initMirror, useCurrentLang, useGamePath, useInstalledMods } from './states';
 import { createModManageContext } from './context/modManage';
 import { createDownloadContext } from './context/download';
 import { DownloadListMenu } from './components/DownloadList';
@@ -78,6 +78,7 @@ export default () => {
     },
   };
   const theme = createThemeContext();
+  initMirror();
 
   const { gamePath } = useGamePath();
 

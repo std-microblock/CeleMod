@@ -5,11 +5,19 @@ export const _functionalMods = () => [
     description: _i18n.t('群服联机'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client',
+    visible: lang => lang === 'zh-CN'
+  }, {
+    name: 'CelesteNet',
+    description: 'Multiplayer support',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
+    visible: lang => lang !== 'zh-CN'
   },
   {
     name: _i18n.t('蔚蓝Mod中国镜像'),
     description: _i18n.t('在境内可以正常使用游戏内的下载和更新'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/ChinaMirror',
+    visible: lang => lang === 'zh-CN'
   },
   {
     name: _i18n.t('Extended Variant Mode（拓展异变）'),
@@ -126,7 +134,7 @@ export const _functionalMods = () => [
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/Better%20Move%20Blocks',
   },
-];
+].filter(v => v);
 
 export const _skinMods = () => [
   {

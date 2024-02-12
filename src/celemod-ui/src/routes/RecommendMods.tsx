@@ -38,22 +38,27 @@ const RMod = ({
   const startDownload = () => {
     if (state !== _i18n.t('下载')) return;
     setState(_i18n.t('准备下载'));
-    ctx.download.downloadMod(modNameFromUrl(download_url), download_url, {
-      onProgress(task, progress) {
-        setState(
-          `${progress}% (${
-            task.subtasks.filter((v) => v.state === 'Finished').length
-          }/${task.subtasks.length})`
-        );
-      },
-      onFinished() {
-        setState(_i18n.t('已安装'));
-        ctx.modManage.reloadMods();
-      },
-      onFailed(task, error) {
-        setState(_i18n.t('下载失败'));
-      },
-    });
+    const name = modNameFromUrl(download_url);
+    callRemote('get_mod_update', name, (data) => {
+      if (!!data) {
+        const [gbFileId, version] = JSON.parse(data);
+        ctx.download.downloadMod(name, gbFileId, {
+          onProgress(task, progress) {
+            setState(
+              `${progress}% (${task.subtasks.filter((v) => v.state === 'Finished').length
+              }/${task.subtasks.length})`
+            );
+          },
+          onFinished() {
+            setState(_i18n.t('已安装'));
+            ctx.modManage.reloadMods();
+          },
+          onFailed(task, error) {
+            setState(_i18n.t('下载失败'));
+          },
+        });
+      }
+    })
   };
 
   startDownloadHandler.download = startDownload;
@@ -107,7 +112,10 @@ export const RecommendMods = () => {
             {_i18n.t('功能性模组')}
             <Button
               onClick={() => {
-                for (const mod of functionalMods) {
+                for (const mod of functionalMods
+                  .filter(v => (!v.visible || v.visible(_i18n.currentLang)))
+                  .filter((mod) => !installedMods.some((m) => m.name === modNameFromUrl(mod.download_url)))
+                ) {
                   // @ts-ignore
                   refDownloadHandlers.current[mod.name].download();
                 }
@@ -118,11 +126,12 @@ export const RecommendMods = () => {
           </h2>
           <div className="list">
             {functionalMods.map((mod) => (
-              <RMod
+              (
+                !mod.visible || mod.visible(_i18n.currentLang)
+              ) && <RMod
                 name={mod.name}
-                startDownloadHandler={
-                  // @ts-ignore
-                  refDownloadHandlers.current[mod.name]
+                startDownloadHandler={  
+                  ((refDownloadHandlers.current[mod.name] ??= {}), refDownloadHandlers.current[mod.name])
                 }
                 download_url={mod.download_url}
                 description={mod.description}
