@@ -1,13 +1,6 @@
 use std::{env, fs::File, io::Read, process::Command};
 
 fn main() {
-    Command::new("./sciter/packfolder.exe")
-        .arg("./src/celemod-ui/dist")
-        .arg("./resources/dist.rc")
-        .arg("-binary")
-        .spawn()
-        .unwrap();
-
     let output = Command::new("git")
         .args(&["rev-parse", "HEAD"])
         .output()

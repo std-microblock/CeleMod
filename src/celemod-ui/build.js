@@ -1,4 +1,5 @@
 const { Parcel } = require('@parcel/core');
+const { join } = require('path');
 const { fileURLToPath } = require('url');
 
 let bundler = new Parcel({
@@ -46,7 +47,7 @@ const postBuildAction = () => {
             let js = fs.readFileSync(`./dist/${file}`, 'utf8');
             js = js.replace(/window.dispatchEvent/g, 'console.log');
 
-            for(const fileName of files) {
+            for (const fileName of files) {
                 js = js.replaceAll(`${JSON.stringify(fileName + "?")}+Date.now()`, JSON.stringify(fileName))
             }
 
@@ -58,7 +59,21 @@ const postBuildAction = () => {
         }
     }
 
-    console.log('🚀Post-build actions complete');
+    console.log('- Post-build actions complete, bundling');
+
+    /*
+        Command::new("./sciter/packfolder.exe")
+        .arg("./src/celemod-ui/dist")
+        .arg("./resources/dist.rc")
+        .arg("-binary")
+        .spawn()
+        .unwrap();
+    */
+
+    const process = require('child_process');
+    process.execSync(`${join(__dirname, '../../sciter/packfolder.exe')} ./dist ${join(__dirname, '../../resources/dist.rc')} -binary`, { stdio: 'inherit' });
+
+    console.log('🚀Bundling complete, packed into resources/dist.rc')
 }
 
 !(async () => {
