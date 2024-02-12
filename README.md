@@ -1,4 +1,4 @@
-[English README](./README.en.md)
+[English](./README.en.md)
 
 <div align=center>
 <img src="src\celemod-ui\src\resources\Celemod.png" />
