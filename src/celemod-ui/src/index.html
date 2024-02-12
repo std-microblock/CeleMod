@@ -9,14 +9,7 @@
 </head>
 
 <script>
-  // patches for compatibility between sciter and parcel
-  // hook appendChild to fix sciter's bug
-  const setAttribute = Element.prototype.setAttribute;
-  Element.prototype.setAttribute = function (name, value) {
-    if (name === 'src')
-      console.log('setAttribute', name, value);
-    setAttribute.call(this, name, value);
-  };
+  "padding for sciter-specific.js"
 </script>
 
 <body>

@@ -92,7 +92,8 @@ export const RecommendMods = () => {
   const skinMods = _skinMods()
 
   const { installedMods } = useInstalledMods();
-  const modsPath = useGamePath((v) => v.gamePath + '/Mods');
+  const [gamePath] = useGamePath();
+  const modsPath = gamePath + '/Mods';
   const refDownloadHandlers = useRef(
     [...functionalMods, ...skinMods].reduce((prev, mod) => {
       // @ts-ignore

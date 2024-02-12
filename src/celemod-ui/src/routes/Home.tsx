@@ -28,10 +28,7 @@ import { useEnableAcrylic } from 'src/context/theme';
 
 export const Home = () => {
     useI18N();
-    const [gamePath, setGamePath] = useGamePath((v) => [
-        v.gamePath,
-        v.setGamePath,
-    ]);
+    const [gamePath, setGamePath] = useGamePath();
     const gamePaths = useMemo(() => {
         const paths = callRemote('get_celeste_dirs')
             .split('\n')
@@ -46,7 +43,6 @@ export const Home = () => {
     const [lastUseMap, setLastUseMap] = useState<{
         [profile: string]: number;
     }>({});
-    const Storage = useSysModule('storage');
 
     const {
         profiles,
@@ -57,25 +53,7 @@ export const Home = () => {
         setCurrentProfile,
     } = useCurrentBlacklistProfile();
 
-    const { storage, _setStorage, _setSaveHandler, save } = useStorage();
-
-    useEffect(() => {
-        if (Storage) {
-            const storageLU = Storage.open('./cele-mod.db');
-
-            console.log('Storage', storageLU);
-            // @ts-ignore
-            window.configStorage = storageLU;
-            _setStorage(storageLU);
-            _setSaveHandler(() => {
-                storageLU.commit();
-            });
-
-            window.addEventListener('beforeunload', () => {
-                storageLU.close();
-            });
-        }
-    }, [Storage]);
+    const { storage, save } = useStorage();
 
     useEffect(() => {
         if (storage) {

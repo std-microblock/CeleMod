@@ -24,17 +24,22 @@ export const useCurrentBlacklistProfile = create<{
     })
 }));
 
-export const useStorage = create<{
-    storage: any,
-    _setStorage: (storage: any) => void,
-    _setSaveHandler: (handler: () => void) => void,
-    save: () => void
-}>((set) => ({
-    storage: null,
-    _setStorage: (storage: any) => set({ storage }),
-    _setSaveHandler: (handler: () => void) => set({ save: handler }),
-    save: () => { }
-}));
+declare global {
+    var configStorage: any;
+    var storage: any;
+}
+
+export const useStorage = () => {
+    if (!window.configStorage) {
+        window.configStorage = storage.open('./cele-mod.db');
+
+        window.addEventListener('beforeunload', () => {
+            configStorage.close();
+        });
+    }
+
+    return { storage: configStorage, save: () => configStorage.commit() }
+};
 
 export interface BackendDep {
     name: string,
@@ -121,7 +126,7 @@ const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPer
 })
 
 export const [initMirror, useMirror] = createPersistedStateByKey('mirror', 'wegfan')
-export const [initGamePath, useGamePath] = createPersistedState('', storage => {
+export const [initGamePath, useGamePath] = createPersistedState<string>('', storage => {
     if (storage.root.lastGamePath)
         return storage.root.lastGamePath
     const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);

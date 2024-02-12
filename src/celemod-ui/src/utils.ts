@@ -9,6 +9,7 @@ export const callRemote = (name: string, ...args: any[]) => {
 }
 
 export const useSysModule: (n: string) => any | null = (name: string) => {
+    console.log(env)
     const [module, setModule] = useState(null);
     useEffect(() => {
         // @ts-ignore

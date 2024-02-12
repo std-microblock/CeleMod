@@ -338,8 +338,8 @@ export const Manage = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
 
-  const gamePath = useGamePath((v) => v.gamePath);
-  const modPath = useGamePath((v) => v.gamePath + '/Mods');
+  const [gamePath] = useGamePath();
+  const modPath = gamePath + '/Mods';
 
   const {
     profiles,

@@ -32,7 +32,7 @@ export const Search = () => {
   const [mods, setMods] = useState<Content[]>([]);
   const [type, setType] = useState<string>('');
   const [search, setSearch] = useState<string>('');
-  const selectedPath = useGamePath((v) => v.gamePath);
+  const [selectedPath] = useGamePath();
   const [loading, setLoading] = useState(true);
   const loadingLock = useRef(false);
   const [sort, setSort] = useState<

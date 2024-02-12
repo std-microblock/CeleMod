@@ -57,18 +57,18 @@ const postBuildAction = () => {
         if (file.endsWith('.map')) {
             fs.rmSync(`./dist/${file}`);
         }
+
+        if (file.endsWith('.html')) {
+            let html = fs.readFileSync(`./dist/${file}`, 'utf8');
+            const sciterSpecific = fs.readFileSync('./src/sciter-specific.js', 'utf-8');
+            html = html.replace(`"padding for sciter-specific.js"`,
+                `</script><script type="module">${sciterSpecific}`
+            );
+            fs.writeFileSync(`./dist/${file}`, html, 'utf8');
+        }
     }
 
     console.log('- Post-build actions complete, bundling');
-
-    /*
-        Command::new("./sciter/packfolder.exe")
-        .arg("./src/celemod-ui/dist")
-        .arg("./resources/dist.rc")
-        .arg("-binary")
-        .spawn()
-        .unwrap();
-    */
 
     const process = require('child_process');
     process.execSync(`${join(__dirname, '../../sciter/packfolder.exe')} ./dist ${join(__dirname, '../../resources/dist.rc')} -binary`, { stdio: 'inherit' });
