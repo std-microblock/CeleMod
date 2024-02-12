@@ -147,7 +147,8 @@ export const selectGamePath = (successCallback) => {
         // strip file:// and Celeste.exe
         const before = 'file://'.length;
         const after = 'celeste.exe'.length;
-        const path = res.slice(before, res.length - after);
+        const decoded = decodeURI(res)
+        const path = decoded.slice(before, decoded.length - after);
         console.log('Selected', path);
         successCallback(path);
         return path

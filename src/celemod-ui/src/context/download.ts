@@ -60,7 +60,7 @@ const makePathName = (name: string) => {
 
 export const createDownloadContext = () => {
     const { installedMods } = useInstalledMods();
-    const gamePath = useGamePath(v => v.gamePath);
+    const [gamePath] = useGamePath();
 
     const downloadTasks = useRef<{
         [id: string]: Download.TaskInfo;

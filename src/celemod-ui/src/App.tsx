@@ -80,7 +80,7 @@ export default () => {
   const theme = createThemeContext();
   initMirror();
 
-  const { gamePath } = useGamePath();
+  const [gamePath] = useGamePath();
 
   useEffect(() => {
     checkUpdate().catch(console.error);

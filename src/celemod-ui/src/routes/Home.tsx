@@ -296,9 +296,7 @@ export const Home = () => {
                     <select
                         onChange={(e: any) => {
                             i18nCtx.setLang(e.target.value);
-                            if (e.target.value !== 'zh-CN') {
-                                setDownloadMirror('gamebanana')
-                            }
+                            setDownloadMirror(e.target.value === 'zh-CN' ? 'wegfan' : 'gamebanana')
                         }}
                         value={i18nCtx.currentLang}
                     >

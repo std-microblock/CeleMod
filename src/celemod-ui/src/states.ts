@@ -1,14 +1,7 @@
 import { create } from 'zustand'
 import { ModBlacklistProfile } from './ipc/blacklist';
 import { useEffect } from 'react';
-
-export const useGamePath = create<{
-    gamePath: string,
-    setGamePath: (gamePath: string) => void
-}>((set) => ({
-    gamePath: "",
-    setGamePath: (gamePath: string) => set({ gamePath })
-}));
+import { callRemote } from './utils';
 
 export const useCurrentBlacklistProfile = create<{
     currentProfileName: string,
@@ -111,7 +104,12 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
         const { storage, save } = useStorage();
         return [value, (data) => {
             setData(data)
-            set(storage, data, save)
+            if (storage)
+                set(storage, data, save)
+            else setTimeout(() => {
+                if (storage)
+                    set(storage, data, save)
+            }, 10)
         }]
     })] as [() => void, () => ([T, (data: T) => void])]
 }
@@ -123,3 +121,12 @@ const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPer
 })
 
 export const [initMirror, useMirror] = createPersistedStateByKey('mirror', 'wegfan')
+export const [initGamePath, useGamePath] = createPersistedState('', storage => {
+    if (storage.root.lastGamePath)
+        return storage.root.lastGamePath
+    const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);
+    return paths[0]
+}, (storage, data, save) => {
+    storage.root.lastGamePath = data
+    save()
+})

@@ -22,7 +22,7 @@ export const useEverestInstallState =
 
 export const useEverestCtx = () => {
     const { currentEverestVersion, setCurrentEverestVersion } = useCurrentEverestVersion();
-    const { gamePath } = useGamePath();
+    const [gamePath] = useGamePath();
     const { everestInstallState, setEverestInstallState } = useEverestInstallState();
 
     const ctx = {

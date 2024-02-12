@@ -95,7 +95,7 @@ export const Everest = () => {
   const ctx = useGlobalContext();
   const { setCurrentEverestVersion, currentEverestVersion } =
     useCurrentEverestVersion();
-  const { gamePath } = useGamePath();
+  const [gamePath] = useGamePath();
   const [installingUrl, setInstallingUrl] = useState<string | null>(null);
   const [installState, setInstallState] = useState<string | null>(null);
   const [installProgress, setInstallProgress] = useState<number | null>(null);

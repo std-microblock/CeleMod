@@ -11,7 +11,7 @@ export const GameSelector = (props: {
   launchGame: (v: string) => void;
 }) => {
   if (!props.paths.length) return <div>No games found</div>;
-  const { gamePath } = useGamePath();
+  const [gamePath] = useGamePath();
 
   if (!props.paths.includes(gamePath)) {
     props.paths.push(gamePath);

@@ -1,13 +1,15 @@
 import { callRemote } from "../utils";
-import { useInstalledMods, useGamePath, useStorage } from "../states";
+import { useInstalledMods, useGamePath, useStorage, initGamePath } from "../states";
 import { useEffect, useMemo } from "preact/hooks";
 
 export const createModManageContext = () => {
     const { setInstalledMods } = useInstalledMods();
-    const { gamePath, setGamePath } = useGamePath();
+    const [ gamePath, setGamePath ] = useGamePath();
 
     const { storage, save } = useStorage();
 
+
+    initGamePath()
 
     useEffect(() => {
         if (!gamePath) return;
@@ -18,16 +20,6 @@ export const createModManageContext = () => {
         console.log('saving game path', gamePath)
         save();
     }, [gamePath, storage]);
-
-    useEffect(() => {
-        if (storage?.root?.lastGamePath && callRemote('verify_celeste_install', storage.root.lastGamePath))
-            setGamePath(storage.root.lastGamePath);
-        else {
-            const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);
-            if (paths.length > 0)
-                setGamePath(paths[0]);
-        }
-    }, [storage]);
 
     const ctx = {
         reloadMods: () => {
