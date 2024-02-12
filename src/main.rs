@@ -56,7 +56,7 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     let mut archive = zip::ZipArchive::new(zipfile)?;
     let everest_name = archive
         .file_names()
-        .find(|name| name.starts_with("everest.y"))
+        .find(|name| name == "everest.yaml" || name == "everest.yml")
         .context("Failed to find everest.yaml")?
         .to_string();
 
@@ -144,11 +144,13 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 read_to_string_bom(&cache_path)?
             } else if entry.file_type().unwrap().is_dir() {
                 let cache_path = entry.path().read_dir()?.find(|v| {
-                    v.as_ref().map(|v| v.file_name()
-                            .to_string_lossy()
-                            .to_string()
-                            .to_lowercase()
-                            .starts_with("everest.y"))
+                    v.as_ref().map(|v| {
+                        let name = v.file_name()
+                        .to_string_lossy()
+                        .to_string()
+                        .to_lowercase();
+                        name == "everest.yaml" || name == "everest.yml"
+                    })
                     .unwrap_or(false)
                 });
                 match cache_path {
