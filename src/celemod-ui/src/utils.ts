@@ -8,35 +8,6 @@ export const callRemote = (name: string, ...args: any[]) => {
     return Window.this.xcall(name, ...args)
 }
 
-export const useSysModule: (n: string) => any | null = (name: string) => {
-    console.log(env)
-    const [module, setModule] = useState(null);
-    useEffect(() => {
-        // @ts-ignore
-        if (window[name]) setModule(window[name]);
-        else {
-            // @ts-ignore
-            if (!window[name + '_promise'])
-                eval(`
-        window.${name}_promise = (async()=>{
-            await import('@${name}').then(v => {
-                window.${name} = v;
-                return v;
-            });
-        })();
-    `)
-            // @ts-ignore
-            window[name + '_promise'].then(() => {
-                console.log('loaded', name)
-                //@ts-ignore
-                setModule(window[name]);
-            });
-        }
-    }, []);
-
-    return module;
-}
-
 export const useBlockingMask = () => {
     const [maskEnabled, setMaskEnabled] = useState(false);
     const [maskText, setMaskText] = useState("");

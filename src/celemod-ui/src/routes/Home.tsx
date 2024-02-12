@@ -7,8 +7,7 @@ import { Icon } from '../components/Icon';
 import {
     callRemote,
     selectGamePath,
-    useBlockingMask,
-    useSysModule,
+    useBlockingMask
 } from '../utils';
 // @ts-ignore
 import strawberry from '../resources/Celemod.png';
