@@ -56,7 +56,7 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     let mut archive = zip::ZipArchive::new(zipfile)?;
     let everest_name = archive
         .file_names()
-        .find(|name| name == "everest.yaml" || name == "everest.yml")
+        .find(|name| name == &"everest.yaml" || name == &"everest.yml")
         .context("Failed to find everest.yaml")?
         .to_string();
 
