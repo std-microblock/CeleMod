@@ -32,6 +32,7 @@ interface ModInfo {
   version: string;
   _deps: BackendDep[]; // raw deps
   resolveDependencies: () => DepResolveResult;
+  file: string;
 }
 
 interface MissingModDepInfo {
@@ -158,6 +159,7 @@ const ModLocal = ({
   dependedBy,
   version,
   optional = false,
+  file
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
@@ -261,7 +263,7 @@ const ModLocal = ({
           bg="#ff9800"
           color="white"
           onClick={() => {
-            download.downloadMod(name, updateState[0], {
+            download.downloadMod(file.slice(0, -".zip".length), updateState[0], {
               onProgress: (task, progress) => {
                 setUpdateString(`${progress}% (${task.subtasks.length})`);
               },
@@ -371,6 +373,7 @@ export const Manage = () => {
         version: mod.version,
         dependencies: [],
         dependedBy: [],
+        file: mod.file,
         _deps: mod.deps,
         resolveDependencies: () => {
           let status = 'resolved';
