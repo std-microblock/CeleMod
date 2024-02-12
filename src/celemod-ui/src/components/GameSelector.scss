@@ -1,37 +1,5 @@
 @use "../index.scss"as theme;
 
-@set custom-select-dropdown < std-select-dropdown {
-    :root>button {
-        fill: theme.$fg;
-    }
-
-    * {
-        border: none !important;
-        color: theme.$fg;
-        background: transparent;
-    }
-
-    :root {
-        width: max-content;
-        padding: 4px 5px;
-        background: theme.$bg1 !important;
-    }
-
-    :root:hover {
-        background: theme.$bg2 !important;
-    }
-
-    option {
-        background: theme.$bg1 !important;
-        color: theme.$fg;
-        padding: 8px 9px;
-
-        &:hover {
-            background: theme.$bg2 !important;
-        }
-    }
-}
-
 .gameSelector {
     width: 100%;
 

@@ -107,7 +107,6 @@
   "上次启动": "Last Start",
   "禁用的 Mod 数": "Disabled",
   "启动": "Start",
-  "主题设置": "Theme Settings",
   "启用亚克力效果": "Enable Acrylic Effect",
   "缺失": "Missing",
   "点击下载": "Click to Download",
@@ -129,9 +128,9 @@
   "禁用全部": "Disable All",
   "启用全部": "Enable All",
   "应用修改": "Apply Changes",
-  "主树隐藏依赖": "Hide Main Tree Dependencies",
-  "检查可选依赖": "Check Optional Dependencies",
-  "显示完整树": "Show Full Tree",
+  "主树隐藏依赖": "Hide Deps in Main Tree",
+  "检查可选依赖": "Check Optional Deps",
+  "显示完整树": "Full Tree",
   "显示更新": "Show Updates",
   "Profile 列表": "Profile List",
   "Profile 名": "Profile Name",
@@ -168,5 +167,8 @@
   "最多点赞": "Most Liked",
   "加载失败，请重试": "Loading failed, please try again",
   "无内容": "No content.",
-  "选择其他路径": "Choose another path"
+  "选择其他路径": "Choose another path",
+  "界面设置": "UI Settings",
+  "语言": "Language",
+  "简体中文": "简体中文"
 }

@@ -79,3 +79,11 @@ export const useCurrentEverestVersion = create<{
     currentEverestVersion: "",
     setCurrentEverestVersion: (currentEverestVersion: string) => set({ currentEverestVersion })
 }));
+
+export const useCurrentLang = create<{
+    currentLang: string,
+    setCurrentLang: (currentLang: string) => void
+}>((set) => ({
+    currentLang: "",
+    setCurrentLang: (currentLang: string) => set({ currentLang })
+}));

@@ -30,7 +30,7 @@ export const Multiplayer = () => {
   return (
     <div className="multiplayer">
       <h1>
-        <small>1</small>
+        Ⅰ&nbsp;
         {_i18n.t('安装 Mod')}
       </h1>
       <p>{_i18n.t('为了在蔚蓝群服进行联机，你需要安装以下 Mod')}</p>
@@ -52,7 +52,7 @@ export const Multiplayer = () => {
       />
 
       <h1>
-        <small>2</small>
+        Ⅱ&nbsp;
         {_i18n.t('注册账号')}
       </h1>
       <p>{_i18n.t('你需要在 Celeste 群服论坛 注册一个账号')}</p>
@@ -65,7 +65,7 @@ export const Multiplayer = () => {
       </Button>
 
       <h1>
-        <small>3</small>
+        Ⅲ&nbsp;
         {_i18n.t('登录账号')}
       </h1>
       <p>{_i18n.t('打开游戏后，你将需要在 Mod 设置中启用并登录群服 Mod')}</p>

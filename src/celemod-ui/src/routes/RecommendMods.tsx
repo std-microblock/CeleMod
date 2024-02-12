@@ -1,4 +1,4 @@
-import _i18n from 'src/i18n';
+import _i18n, { useI18N } from 'src/i18n';
 import './RecommendMods.scss';
 import { h } from 'preact';
 import { useGamePath, useInstalledMods } from '../states';
@@ -6,7 +6,7 @@ import { Mod } from '../components/ModList';
 import { Button } from '../components/Button';
 import { useState, useEffect } from 'react';
 import { callRemote } from '../utils';
-import { functionalMods, skinMods } from '../resources/RecommendModData';
+import { _functionalMods, _skinMods } from '../resources/RecommendModData';
 import { useRef } from 'preact/hooks';
 import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
@@ -79,8 +79,12 @@ const RMod = ({
 };
 
 export const RecommendMods = () => {
+  useI18N();
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
+
+  const functionalMods = _functionalMods()
+  const skinMods = _skinMods()
 
   const { installedMods } = useInstalledMods();
   const modsPath = useGamePath((v) => v.gamePath + '/Mods');

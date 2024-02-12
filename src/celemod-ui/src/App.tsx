@@ -1,4 +1,4 @@
-import _i18n from 'src/i18n';
+import _i18n, { I18NContext, createI18NContext } from 'src/i18n';
 import { Fragment, FunctionComponent, createContext, h } from 'preact';
 import { useMemo, useState, useEffect, useContext } from 'preact/hooks';
 import { Icon } from './components/Icon';
@@ -10,24 +10,24 @@ import { Manage } from './routes/Manage';
 import { Multiplayer } from './routes/Multiplayer';
 import { EventTarget, callRemote } from './utils';
 import { RecommendMods } from './routes/RecommendMods';
-import { useGamePath, useInstalledMods } from './states';
-import { useModManageContext } from './context/modManage';
-import { useDownloadContext } from './context/download';
+import { useCurrentLang, useGamePath, useInstalledMods } from './states';
+import { createModManageContext } from './context/modManage';
+import { createDownloadContext } from './context/download';
 import { DownloadListMenu } from './components/DownloadList';
-import { useEverestCtx } from './context/everest';
+import { useEverestCtx as createEverestContext } from './context/everest';
 import { Everest } from './routes/Everest';
 import { checkUpdate } from './components/SelfUpdate';
-import { useThemeContext } from './context/theme';
+import { createThemeContext } from './context/theme';
 
 export const GlobalContext = createContext<{
   bus: EventTarget;
-  modManage: ReturnType<typeof useModManageContext>;
-  download: ReturnType<typeof useDownloadContext>;
-  everest: ReturnType<typeof useEverestCtx>;
+  modManage: ReturnType<typeof createModManageContext>;
+  download: ReturnType<typeof createDownloadContext>;
+  everest: ReturnType<typeof createEverestContext>;
   pageController: {
     setPage(name: string): void;
   };
-  theme: ReturnType<typeof useThemeContext>;
+  theme: ReturnType<typeof createThemeContext>;
 }>({} as any);
 
 export const useGlobalContext = () => {
@@ -67,17 +67,17 @@ export default () => {
   }, [page]);
 
   // setup ctx states
-  const modManage = useModManageContext();
+  const modManage = createModManageContext();
   const bus = useMemo(() => new EventTarget(), []);
 
-  const download = useDownloadContext();
-  const everest = useEverestCtx();
+  const download = createDownloadContext();
+  const everest = createEverestContext();
   const pageController = {
     setPage(name: string) {
       setPage(name);
     },
   };
-  const theme = useThemeContext();
+  const theme = createThemeContext();
 
   const { gamePath } = useGamePath();
 
@@ -100,75 +100,82 @@ export default () => {
     );
   };
 
+  const { currentLang } = useCurrentLang();
+  const i18nCtx = createI18NContext();
+
   return (
     <Fragment>
-      {/* @ts-ignore */}
-      <GlobalContext.Provider
-        value={{
-          bus,
-          modManage,
-          download,
-          everest,
-          pageController,
-          theme,
-        }}
-      >
-        <DownloadListMenu />
-        <nav className="sidebar">
-          <SidebarButton icon="home" name="Home" title={_i18n.t('主页')} />
-          {gamePath && (
-            <Fragment>
-              <SidebarButton icon="chart-area" name="Everest" title="Everest" />
-              <SidebarButton
-                icon="search"
-                name="Search"
-                title={_i18n.t('搜索')}
-              />
-              <SidebarButton
-                icon="drive"
-                name="Manage"
-                title={_i18n.t('管理')}
-              />
-              <SidebarButton
-                icon="web"
-                name="Multiplayer"
-                title={_i18n.t('联机相关')}
-              />
-              <SidebarButton
-                icon="flag"
-                name="RecommendMods"
-                title={_i18n.t('推荐模组')}
-              />
-            </Fragment>
-          )}
+      <I18NContext.Provider value={i18nCtx}>
+        {/* @ts-ignore */}
+        <GlobalContext.Provider
+          value={{
+            bus,
+            modManage,
+            download,
+            everest,
+            pageController,
+            theme,
+          }}
+        >
+          <DownloadListMenu />
+          <nav className="sidebar">
+            <SidebarButton icon="home" name="Home" title={_i18n.t('主页')} />
+            {gamePath && (
+              <Fragment>
+                <SidebarButton icon="chart-area" name="Everest" title="Everest" />
+                <SidebarButton
+                  icon="search"
+                  name="Search"
+                  title={_i18n.t('搜索')}
+                />
+                <SidebarButton
+                  icon="drive"
+                  name="Manage"
+                  title={_i18n.t('管理')}
+                />
+                {
+                  currentLang === 'zh-CN' && <SidebarButton
+                    icon="web"
+                    name="Multiplayer"
+                    title={_i18n.t('联机相关')}
+                  />
+                }
+                <SidebarButton
+                  icon="flag"
+                  name="RecommendMods"
+                  title={_i18n.t('推荐模组')}
+                />
+              </Fragment>
+            )}
 
-          <div
-            className="downloadListBtn"
-            onClick={() => {
-              const btn = document.querySelector('.downloadListBtn');
-              const list = document.querySelector('.downloadList');
-
-              // @ts-ignore
-              btn.popup(list);
-            }}
-          >
-            <Icon name="download" />
-          </div>
-        </nav>
-        {Object.entries(pageElement).map(([key, value]) => {
-          return (
             <div
-              className="page"
-              style={{
-                display: key === page ? 'block' : 'none',
-                width: '85vw',
+              className="downloadListBtn"
+              onClick={() => {
+                const btn = document.querySelector('.downloadListBtn');
+                const list = document.querySelector('.downloadList');
+
+                // @ts-ignore
+                btn.popup(list);
               }}
             >
-              {value}
+              <Icon name="download" />
             </div>
-          );
-        })}
-      </GlobalContext.Provider>
+          </nav>
+          {Object.entries(pageElement).map(([key, value]) => {
+            return (
+              <div
+                className="page"
+                style={{
+                  display: key === page ? 'block' : 'none',
+                  width: '85vw',
+                }}
+              >
+                {value}
+              </div>
+            );
+          })}
+        </GlobalContext.Provider>
+      </I18NContext.Provider>
     </Fragment>
   );
 };

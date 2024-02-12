@@ -58,7 +58,7 @@ const makePathName = (name: string) => {
     return name.replace(/[^a-zA-Z0-9]/g, "_");
 }
 
-export const useDownloadContext = () => {
+export const createDownloadContext = () => {
     const { installedMods } = useInstalledMods();
     const gamePath = useGamePath(v => v.gamePath);
 

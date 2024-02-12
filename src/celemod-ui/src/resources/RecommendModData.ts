@@ -1,5 +1,5 @@
 import _i18n from 'src/i18n';
-export const functionalMods = [
+export const _functionalMods = () => [
   {
     name: 'MiaoCelesteNet',
     description: _i18n.t('群服联机'),
@@ -128,7 +128,7 @@ export const functionalMods = [
   },
 ];
 
-export const skinMods = [
+export const _skinMods = () => [
   {
     name: 'Niko - Oneshot',
     description: _i18n.t('Oneshot Niko 皮肤'),

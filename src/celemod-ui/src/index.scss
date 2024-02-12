@@ -254,3 +254,35 @@ input[type=checkbox]:disabled {
     font-size: 9px;
     margin-bottom: -4px;
 }
+
+@set custom-select-dropdown < std-select-dropdown {
+    :root>button {
+        fill: $fg;
+    }
+
+    * {
+        border: none !important;
+        color: $fg;
+        background: transparent;
+    }
+
+    :root {
+        width: max-content;
+        padding: 4px 5px;
+        background: $bg1 !important;
+    }
+
+    :root:hover {
+        background: $bg2 !important;
+    }
+
+    option {
+        background: $bg1 !important;
+        color: $fg;
+        padding: 8px 9px;
+
+        &:hover {
+            background: $bg2 !important;
+        }
+    }
+}

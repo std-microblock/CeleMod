@@ -9,7 +9,7 @@ module.exports = {
   ignoreMethods: [],
   primaryLocale: 'zh-CN',
   supportedLocales: ['zh-CN', 'en-US'],
-  importCode: "import _i18n from 'src/i18n';",
+  importCode: "import _i18n, { useI18N } from 'src/i18n';",
   i18nObject: '_i18n',
   i18nMethod: 't',
   prettier: { singleQuote: true, trailingComma: 'es5', endOfLine: 'lf' },

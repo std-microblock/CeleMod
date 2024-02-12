@@ -12,7 +12,7 @@ export const useEnableAcrylic = create<{
     setEnableAcrylic: (v) => set({ enableAcrylic: v })
 }))
 
-export const useThemeContext = () => {
+export const createThemeContext = () => {
     const { storage, save } = useStorage();
     const {
         enableAcrylic,

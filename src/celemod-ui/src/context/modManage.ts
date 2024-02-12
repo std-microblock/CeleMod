@@ -2,7 +2,7 @@ import { callRemote } from "../utils";
 import { useInstalledMods, useGamePath, useStorage } from "../states";
 import { useEffect, useMemo } from "preact/hooks";
 
-export const useModManageContext = () => {
+export const createModManageContext = () => {
     const { setInstalledMods } = useInstalledMods();
     const { gamePath, setGamePath } = useGamePath();
 

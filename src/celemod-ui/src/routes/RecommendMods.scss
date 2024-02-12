@@ -36,7 +36,7 @@
                 padding: 5px 0;
 
                 .info {
-                    width: calc(100% - 80px);
+                    width: calc(100% - 100px);
 
                     .title {
                         width: 100%;
@@ -63,6 +63,8 @@
                     button {
                         background: transparent;
                         box-shadow: none;
+                        padding: 2px 0;
+                        width: 88px;
                         &:hover {
                             background: rgba(255, 255, 255, 0.2);
                         }
