@@ -27,6 +27,7 @@ export const GameSelector = (props: {
         {props.paths.map((p) => (
           <option value={p}>{p}</option>
         ))}
+        <option value="__other__">{_i18n.t('选择其他路径')}</option>
       </select>
 
       <button

@@ -136,3 +136,20 @@ export const compareVersion = (a: string, b: string) => {
     }
     return 0;
 }
+
+export const selectGamePath = (successCallback) => {
+    // @ts-ignore
+    const res = Window.this.selectFile({
+        mode: 'open',
+        filter: 'Celeste.exe|Celeste.exe',
+    });
+    if (res !== null) {
+        // strip file:// and Celeste.exe
+        const before = 'file://'.length;
+        const after = 'celeste.exe'.length;
+        const path = res.slice(before, res.length - after);
+        console.log('Selected', path);
+        successCallback(path);
+        return path
+    }
+};

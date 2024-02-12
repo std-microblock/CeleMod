@@ -164,8 +164,7 @@ export const Search = () => {
                         if (newMods.length === 0) return;
                         setMods(newMods);
                         rs(void 0);
-                        const list = document.querySelector('.mod-list')!;
-                        //@ts-ignore
+                        const list = document.querySelector('.mod-list')! as any;
                         const bottomPaddingUpTop =
                           list.scrollTop +
                           list.lastElementChild.offsetTop -

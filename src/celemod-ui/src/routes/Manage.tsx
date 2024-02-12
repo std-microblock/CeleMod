@@ -742,10 +742,10 @@ export const Manage = () => {
           ))}
 
           <div className="newProfile">
-            {/* @ts-ignore */}
             <input
               type="text"
               placeholder={_i18n.t('Profile 名')}
+              /* @ts-ignore */
               filter={alphabet}
               maxlength="30"
             />

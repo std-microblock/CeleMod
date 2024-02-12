@@ -445,8 +445,7 @@ export const ModList = (props: {
         const target = refList.current.scrollTop + e.deltaY * 1.6;
         // console.log(target)
         const topPaddingDownTop = 40;
-        const list = document.querySelector('.mod-list');
-        // @ts-ignore
+        const list = document.querySelector('.mod-list') as any;
         const bottomPaddingUpTop =
           list.scrollTop +
           list.lastElementChild.offsetTop -
