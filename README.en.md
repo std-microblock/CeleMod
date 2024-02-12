@@ -1,35 +1,31 @@
-[English README](./README.en.md)
-
 <div align=center>
 <img src="src\celemod-ui\src\resources\Celemod.png" />
 
 # CeleMod
 
-[Github](https://github.com/MicroCBer/CeleMod/releases/latest) · [蓝奏云 (密码·ok)](https://microblock.lanzouo.com/b0apezvij)
+[Github Releases](https://github.com/MicroCBer/CeleMod/releases/latest)
 
-An alternative mod manager for Celeste  
- 一个 ⌈ 更好用、更强大 ⌋ 的蔚蓝 Mod 管理器
+An alternative mod manager for Celeste
 
 </div>
 
-### 好用
-✅ 常用 Mod 列表，一键安装  
-✅ 国内超快下载（多线程下载，@WEGFan 镜像）  
-✅ 轻量级，启动占用仅 18M  
-✅ 一键解析，补全依赖  
-✅ 一键升级 Mod  
-✅ 按类别搜索，多种排序方式  
-✅ 国服联机 Celeste.Miao.Net 快速配置  
-✅ Everest 镜像一键安装  
-### 强大
-✅ 多个 Mod 配置一键切换  
-✅ 树状 Mod 管理，依赖一目了然  
-✅ 多个 Mod 同时下载，不阻塞  
-✅ 软件内 Mod 详情预览  
-✅ 亚克力 UI  
+### Easy to use
+✅ List of commonly used Mods, one-click installation
+✅ Super-fast download (multi-threaded download, @WEGFan mirror)
+✅ Lightweight, only takes up 18M at startup
+✅ One-click analysis and dependency completion
+✅ One-click upgrade Mod
+✅ Search by category, multiple sorting methods
+✅ Everest mirror one-click installation
+### Powerful
+✅ Multiple Mod configurations can be switched with one click
+✅ Tree-like Mod management, dependencies are clear at a glance
+✅ Multiple Mods can be downloaded at the same time without blocking
+✅ Mod details preview in the software
+✅ Acrylic UI
 
 
-### 页面展示
+### Screenshots
 ![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a906d8bb-16dc-4018-b370-9a13cec5ade1)
 ![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a3592323-c9ea-4ded-9b7c-bf8e23c8f31d)
 ![6e14b711c66dd7b36fcb76f71470c272](https://github.com/MicroCBer/CeleMod/assets/66859419/1ee695a5-59a0-4326-8f54-cad2165bba74)
@@ -40,4 +36,4 @@ An alternative mod manager for Celeste
 
 ### Credits
 
-[@WEGFan](https://github.com/WEGFan) 提供镜像和社区 API、蔚蓝实现等相关知识
+[@WEGFan](https://github.com/WEGFan) provides mirroring and community API, blue implementation and other related knowledge
