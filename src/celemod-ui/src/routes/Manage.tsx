@@ -116,20 +116,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           url !== null
             ? async () => {
-                setState(_i18n.t('下载中'));
-                download.downloadMod(name, url, {
-                  onProgress: (task, progress) => {
-                    setState(`${progress}% (${task.subtasks.length})`);
-                  },
-                  onFinished: () => {
-                    setState(_i18n.t('下载完成'));
-                    ctx?.reloadMods();
-                  },
-                  onFailed: () => {
-                    setState(_i18n.t('下载失败'));
-                  },
-                });
-              }
+              setState(_i18n.t('下载中'));
+              download.downloadMod(name, url, {
+                onProgress: (task, progress) => {
+                  setState(`${progress}% (${task.subtasks.length})`);
+                },
+                onFinished: () => {
+                  setState(_i18n.t('下载完成'));
+                  ctx?.reloadMods();
+                },
+                onFailed: () => {
+                  setState(_i18n.t('下载失败'));
+                },
+              });
+            }
             : undefined
         }
       >
@@ -201,9 +201,8 @@ const ModLocal = ({
   return (
     <div className={`m-mod ${enabled && 'enabled'}`}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${
-          hasDeps && 'clickable'
-        }`}
+        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
+          }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -459,6 +458,35 @@ export const Manage = () => {
 
     return modMap;
   }, [installedMods, currentProfile, profiles, checkOptionalDep]);
+
+  const [latestModInfos, setLatestModInfos] = useState<[
+    string, string, string // name, version, url
+  ][]>([]);
+
+  useEffect(() => {
+    callRemote('get_mod_latest_info', v => {
+      setLatestModInfos(JSON.parse(v))
+    })
+  }, [])
+
+  const hasUpdateMods = useMemo(() => {
+    const mods = [];
+    for (const mod of installedMods) {
+      const latest = latestModInfos.find(v => v[0] === mod.name);
+      if (latest && compareVersion(latest[1], mod.version) > 0) {
+        mods.push({
+          name: mod.name,
+          version: latest[1],
+          url: latest[2]
+        });
+      }
+    }
+
+    return mods;
+  }, [latestModInfos, installedModMap]);
+
+  const [hasUpdateBtnState, setHasUpdateBtnState] = useState('更新全部');
+
   const modsTreeRef = useRef(null);
   const [filter, setFilter] = useState('');
 
@@ -625,6 +653,8 @@ export const Manage = () => {
     [currentProfile, installedMods, gamePath, modPath, fullTree, showUpdate]
   );
 
+  const { download } = useGlobalContext()
+
   return (
     <div className="manage">
       <modListContext.Provider value={manageCtx}>
@@ -728,6 +758,38 @@ export const Manage = () => {
               />
               {_i18n.t('显示更新')}
             </label>
+          </div>
+          <div className="opers" style={{
+            marginTop: "5px"
+          }}>
+            {showUpdate && hasUpdateMods.length !== 0 && (
+              <button onClick={() => {
+                if (hasUpdateBtnState !== '更新全部') return;
+                setHasUpdateBtnState('更新中');
+                const updateUnfinishedSet = new Set(hasUpdateMods.map(v => v.name));
+                for (const mod of hasUpdateMods) {
+                  download.downloadMod(mod.name, mod.url, {
+                    onProgress: (task, progress) => {
+                      console.log(task, progress);
+                    },
+                    onFinished: () => {
+                      updateUnfinishedSet.delete(mod.name);
+                      if (updateUnfinishedSet.size === 0) {
+                        setHasUpdateBtnState('更新完成');
+                        manageCtx.reloadMods();
+                      }
+                    },
+                    onFailed: () => {
+                      console.log('failed');
+                      setHasUpdateBtnState('更新失败，请查看左下角');
+                    },
+                    force: true,
+                  });
+                }
+              }}>
+                {hasUpdateBtnState}
+              </button>
+            )}
           </div>
           <div className="list" ref={modsTreeRef}>
             {installedModsTree.map((v) => (

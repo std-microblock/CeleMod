@@ -4,6 +4,10 @@
 
 use serde::{de::VariantAccess, Deserialize, Serialize};
 
+use anyhow::{bail, Context};
+use aria2c::DownloadCallbackInfo;
+use everest::get_mod_cached_new;
+use game_scanner::prelude::Game;
 use std::{
     borrow::BorrowMut,
     cell::RefCell,
@@ -12,11 +16,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::RwLock,
-}; 
-use anyhow::{bail, Context};
-use aria2c::DownloadCallbackInfo;
-use everest::get_mod_cached_new;
-use game_scanner::prelude::Game;
+};
 
 use sciter::{dispatch_script_call, make_args, Value, GFX_LAYER};
 
@@ -50,7 +50,7 @@ fn compare_version(a: &str, b: &str) -> i32 {
 }
 
 struct Handler;
- 
+
 fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     let zipfile = std::fs::File::open(path)?;
     let mut archive = zip::ZipArchive::new(zipfile)?;
@@ -144,14 +144,12 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 read_to_string_bom(&cache_path)?
             } else if entry.file_type().unwrap().is_dir() {
                 let cache_path = entry.path().read_dir()?.find(|v| {
-                    v.as_ref().map(|v| {
-                        let name = v.file_name()
-                        .to_string_lossy()
-                        .to_string()
-                        .to_lowercase();
-                        name == "everest.yaml" || name == "everest.yml"
-                    })
-                    .unwrap_or(false)
+                    v.as_ref()
+                        .map(|v| {
+                            let name = v.file_name().to_string_lossy().to_string().to_lowercase();
+                            name == "everest.yaml" || name == "everest.yml"
+                        })
+                        .unwrap_or(false)
                 });
                 match cache_path {
                     Some(cache_path) => {
@@ -159,7 +157,10 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                         read_to_string_bom(&cache_path)?
                     }
                     None => {
-                        println!("[ WARNING ] Failed to find yaml, skipping {:?}", entry.file_name());
+                        println!(
+                            "[ WARNING ] Failed to find yaml, skipping {:?}",
+                            entry.file_name()
+                        );
                         continue;
                     }
                 }
@@ -481,7 +482,7 @@ impl Handler {
     }
 
     fn start_game_directly(&self, path: String, origin: bool) {
-        let game =Path::new(&path).join("Celeste.exe");
+        let game = Path::new(&path).join("Celeste.exe");
         let game_origin = Path::new(&path).join("orig").join("Celeste.exe");
 
         if origin {
@@ -628,6 +629,27 @@ impl Handler {
         });
     }
 
+    fn get_mod_latest_info(&self, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let res: anyhow::Result<Vec<(String, String, String)>> = try {
+                let mods = get_mod_cached_new()?;
+                mods.iter()
+                    .map(|(k, v)| 
+                        (k.clone(), v.version.clone(), v.download_url.clone())
+                    )
+                    .collect()
+            };
+
+            let data = if let Ok(data) = res {
+                serde_json::to_string(&data).unwrap()
+            } else {
+                "[]".to_string()
+            };
+
+            callback.call(None, &make_args!(data), None).unwrap();
+        });
+    }
+
     fn rm_mod(&self, mods_folder_path: String, mod_name: String) {
         std::thread::spawn(move || {
             if let Err(e) = rm_mod(&mods_folder_path, &mod_name) {
@@ -751,6 +773,7 @@ impl sciter::EventHandler for Handler {
         fn do_self_update(String, Value);
         fn start_game_directly(String, bool);
         fn verify_celeste_install(String);
+        fn get_mod_latest_info(Value);
     }
 }
 
@@ -775,7 +798,7 @@ fn main() {
     {
         use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
         use winapi::um::winuser::SetProcessDPIAware;
-        unsafe { 
+        unsafe {
             AttachConsole(ATTACH_PARENT_PROCESS);
             SetProcessDPIAware();
         }
