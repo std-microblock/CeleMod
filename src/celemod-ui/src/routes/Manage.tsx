@@ -797,6 +797,8 @@ export const Manage = () => {
             {installedModsTree.map((v) => (
               <Mod {...(v as any)} />
             ))}
+
+            <div className="padding"></div>
           </div>
         </div>
         <div className="profiles">
