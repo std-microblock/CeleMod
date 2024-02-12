@@ -1,5 +1,5 @@
 import { callRemote } from "../utils";
-import { useInstalledMods, useGamePath, useMirror as useMirror, useStorage } from "../states";
+import { useInstalledMods, useGamePath, useMirror as useMirror, useStorage, initUseMultiThread, useUseMultiThread } from "../states";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { EventTarget } from "../utils";
 
@@ -61,6 +61,9 @@ const makePathName = (name: string) => {
 export const createDownloadContext = () => {
     const { installedMods } = useInstalledMods();
     const [gamePath] = useGamePath();
+
+    initUseMultiThread();
+    const [useMultiThread, setUseMultiThread] = useUseMultiThread();
 
     const downloadTasks = useRef<{
         [id: string]: Download.TaskInfo;
@@ -146,7 +149,7 @@ export const createDownloadContext = () => {
                     }
 
                     eventBus.dispatchEvent('taskListChanged')
-                }, false);
+                }, false, useMultiThread);
             }
             return downloadTasks.current[name];
         }

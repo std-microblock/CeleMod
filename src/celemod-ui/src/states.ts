@@ -135,3 +135,5 @@ export const [initGamePath, useGamePath] = createPersistedState<string>('', stor
     storage.root.lastGamePath = data
     save()
 })
+
+export const [initUseMultiThread, useUseMultiThread] = createPersistedStateByKey('useMultiThread', true)

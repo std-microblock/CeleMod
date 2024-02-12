@@ -38,6 +38,7 @@ pub fn download_file_with_progress(
     url: &str,
     output_path: &str,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    multi_thread: bool,
 ) -> anyhow::Result<()> {
     let aria2c_path = &*ARIA2C_PATH;
 
@@ -48,25 +49,32 @@ pub fn download_file_with_progress(
 
     let output_path = Path::new(output_path);
     // 构建 aria2c 命令
-    let command = Command::new(aria2c_path)
-        .arg("-x8")
-        .arg("-s8")
-        .arg("-d")
-        .arg(output_path.parent().unwrap())
-        .arg("-o")
-        .arg(output_path.file_name().unwrap())
-        .arg(url)
-        .arg("--timeout=600")
-        .arg(format!("--user-agent=CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]))
-        .arg("--console-log-level=error")
-        .arg("--allow-overwrite=true")
-        .arg("--summary-interval=1")
-        // .arg("--max-tries=5")
-        // .arg("--timeout=600000")
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .creation_flags(CREATE_NO_WINDOW)
-        .spawn();
+    let mut command = Command::new(aria2c_path);
+    let command = if multi_thread {
+        command.arg("-x8").arg("-s8")
+    } else {
+        &mut command
+    }
+    .arg("-d")
+    .arg(output_path.parent().unwrap())
+    .arg("-o")
+    .arg(output_path.file_name().unwrap())
+    .arg(url)
+    .arg("--timeout=600")
+    .arg(format!(
+        "--user-agent=CeleMod/{}-{}",
+        env!("VERSION"),
+        &env!("GIT_HASH")[..6]
+    ))
+    .arg("--console-log-level=error")
+    .arg("--allow-overwrite=true")
+    .arg("--summary-interval=1")
+    // .arg("--max-tries=5")
+    // .arg("--timeout=600000")
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .creation_flags(CREATE_NO_WINDOW)
+    .spawn();
 
     // 检查是否成功启动子进程
     let mut child = match command {

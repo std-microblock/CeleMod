@@ -223,8 +223,9 @@ fn download_and_install_mod(
     url: &str,
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    multi_thread: bool,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    aria2c::download_file_with_progress(url, dest, progress_callback)?;
+    aria2c::download_file_with_progress(url, dest, progress_callback, multi_thread)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
@@ -324,6 +325,7 @@ impl Handler {
         mods_dir: String,
         callback: sciter::Value,
         use_cn_proxy: bool,
+        multi_thread: bool,
     ) {
         let dest = Path::new(&mods_dir)
             .join(make_path_compatible_name(&name) + ".zip")
@@ -373,7 +375,7 @@ impl Handler {
                                     (tasklist2.try_borrow_mut().unwrap())[i_task].data =
                                         progress.progress.to_string();
                                     post_callback(&*tasklist2.borrow(), "pending");
-                                },
+                                }, multi_thread
                             )
                         };
 
@@ -717,7 +719,7 @@ impl Handler {
                             None,
                         )
                         .unwrap();
-                },
+                }, false
             ) {
                 Ok(()) => {
                     // replace the current exe with the downloaded one
@@ -751,7 +753,7 @@ impl Handler {
 
 impl sciter::EventHandler for Handler {
     dispatch_script_call! {
-        fn download_mod(String, String, String, Value, bool);
+        fn download_mod(String, String, String, Value, bool, bool);
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);

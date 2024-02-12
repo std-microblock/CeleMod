@@ -17,6 +17,7 @@ import {
     useGamePath,
     useMirror,
     useStorage,
+    useUseMultiThread,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
 import { useEffect } from 'react';
@@ -105,6 +106,7 @@ export const Home = () => {
     const { enableAcrylic, setEnableAcrylic } = useEnableAcrylic();
 
     const [downloadMirror, setDownloadMirror] = useMirror();
+    const [useMultiThread, setUseMultiThread] = useUseMultiThread();
 
     return (
         <div class="home">
@@ -189,8 +191,12 @@ export const Home = () => {
             </div>
 
             <div className="config-block">
-                <input type="checkbox" checked={true} disabled />
-                <label>{_i18n.t('使用 16 线程下载')}</label>
+
+                <label>
+                    <input type="checkbox" checked={useMultiThread} onChange={(v: any) => {
+                        setUseMultiThread(v.target.checked)
+                    }} />{_i18n.t('使用多线程下载')}
+                </label>
             </div>
 
             <div className="config">

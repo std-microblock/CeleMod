@@ -136,7 +136,7 @@ pub fn download_and_install_everest(
 
     aria2c::download_file_with_progress(url, temp_path, &mut |callback| {
         progress_callback("Downloading Everest".to_string(), callback.progress);
-    })?;
+    }, false)?;
 
     progress_callback("Installing Everest".to_string(), 50.0);
 

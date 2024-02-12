@@ -12,7 +12,7 @@ export const Multiplayer = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
 
-  const selectedPath = useGamePath((v) => v.gamePath);
+  const [selectedPath] = useGamePath();
 
   const [installedMiaoNet, setInstalledMiaoNet] = useState(false);
 
