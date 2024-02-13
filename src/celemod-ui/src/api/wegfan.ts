@@ -124,6 +124,7 @@ export interface WegfanSearchSubmissionParams {
     section?: string;
     search?: string;
     sort?: "new" | "updateAdded" | "updated" | "views" | "likes";
+    includeExclusiveSubmissions?: boolean;
 }
 
 export const searchSubmission = async ({
@@ -133,6 +134,7 @@ export const searchSubmission = async ({
     section,
     search,
     sort,
+    includeExclusiveSubmissions
 }: WegfanSearchSubmissionParams): Promise<WegfanSubmissionSearchResult> => {
     const params = new URLSearchParams();
     if (page) params.set("page", page.toString());
@@ -141,6 +143,7 @@ export const searchSubmission = async ({
     if (section) params.set("section", section);
     if (search) params.set("search", search);
     if (sort) params.set("sort", sort);
+    if (includeExclusiveSubmissions) params.set("includeExclusiveSubmissions", includeExclusiveSubmissions.toString());
     return fetch(`https://celeste.weg.fan/api/v2/submission/search?${params.toString()}`, {
         headers: {
             'User-Agent': celemodUA

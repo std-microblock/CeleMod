@@ -3,7 +3,7 @@ import { Fragment, h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { ModList } from '../components/ModList';
 import { getMods, Mod, SearchModResp } from '../api/xmao';
-import { useCurrentEverestVersion, useGamePath } from '../states';
+import { useCurrentEverestVersion, useGamePath, useMirror } from '../states';
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -40,6 +40,8 @@ export const Search = () => {
   >('likes');
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [mirror] = useMirror();
+
   const fetchModPage = async (page: number) => {
     console.log('fetching', page);
     setLoading(true);
@@ -51,6 +53,7 @@ export const Search = () => {
       sort,
       section: 'Mod',
       size: 25,
+      includeExclusiveSubmissions: mirror === 'wegfan'
     });
     console.log('finished, size:', res.content.length);
     setLoading(false);
