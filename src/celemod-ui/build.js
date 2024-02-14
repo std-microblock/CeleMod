@@ -49,6 +49,7 @@ const postBuildAction = () => {
 
             for (const fileName of files) {
                 js = js.replaceAll(`${JSON.stringify(fileName + "?")}+Date.now()`, JSON.stringify(fileName))
+                js = js.replaceAll(`${JSON.stringify(fileName)} + "?" + Date.now()`, JSON.stringify(fileName))
             }
 
             fs.writeFileSync(`./dist/${file}`, js, 'utf8');
