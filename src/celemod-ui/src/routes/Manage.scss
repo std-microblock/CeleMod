@@ -7,6 +7,10 @@
     .modList {
 
         .title {
+            html[lang="pt-BR"] & {
+                font-size: 16px;
+            }
+
             .filter-input {
                 width: calc(100% - 130px);
                 margin-left: 15px;
@@ -30,11 +34,18 @@
             }
         }
 
+        button {
+            html[lang="pt-BR"] & {
+                font-size: 10px !important;
+            }
+        }
+
         width: calc(100% - 230px);
         height: calc(100vh - 55px);
         border-right: 1px solid rgba(255, 255, 255, 0.4);
 
         .options {
+            width: 100%;
             margin-top: 5px;
             display: inline-block;
 
@@ -47,10 +58,11 @@
 
         .list {
             .padding {
-                height: 40px;
+                height: 120px;
                 width: 100%;
                 display: block;
             }
+
             margin-top: 8px;
             behavior: virtual-list;
             overflow-y: scroll;
@@ -133,11 +145,17 @@
                 box-shadow: 0 2px 5px #00000040;
                 width: calc(100% - 65px);
                 height: 22px;
+
+                html[lang="pt-BR"] & {
+                    width: calc(100% - 95px);
+                }
             }
 
             button {
                 border-radius: 100px;
             }
+
+            
         }
     }
 

@@ -285,6 +285,7 @@ export const Home = () => {
                     >
                         <option value="zh-CN">{_i18n.t('简体中文')}</option>
                         <option value="en-US">English</option>
+                        <option value="pt-BR">Brazilian Portuguese</option>
                         {/* <option value="ru-RU">русский</option>
                         <option value="de-DE">Deutsch</option>
                         <option value="fr-FR">Français</option> */}

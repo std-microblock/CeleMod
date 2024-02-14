@@ -7,14 +7,16 @@ import zhCN from 'locales/zh-CN.json';
 import enUS from 'locales/en-US.json';
 import ruRU from 'locales/ru-RU.json';
 import frFR from 'locales/fr-FR.json';
-import deDE from 'locales/de-DE.json'
+import deDE from 'locales/de-DE.json';
+import ptBR from 'locales/pt-BR.json';
 
 const locales = {
     'zh-CN': zhCN,
     'en-US': enUS,
     'de-DE': deDE,
     'ru-RU': ruRU,
-    'fr-FR': frFR
+    'fr-FR': frFR,
+    'pt-BR': ptBR
 };
 
 let locale = 'zh-CN';
@@ -22,6 +24,11 @@ let locale = 'zh-CN';
 export default {
     t(key: string, slots = {}) {
         let translated = locales[locale]?.[key] ?? key;
+
+        if (translated === '&&') {
+            translated = key;
+        }
+
         for (const k in slots) {
             translated = translated.replaceAll(`{${k}}`, slots[k]);
         }
@@ -49,6 +56,7 @@ export const createI18NContext = () => {
     const ctx = useMemo(() => ({
         setLang(lang: string) {
             console.log('set lang', lang)
+            document.body.parentElement.setAttribute('lang', lang)
             locale = lang;
             storage.root ??= {};
             storage.root.lang = lang;

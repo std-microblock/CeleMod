@@ -8,7 +8,7 @@ module.exports = {
   ignoreComponents: [],
   ignoreMethods: [],
   primaryLocale: 'zh-CN',
-  supportedLocales: ['zh-CN', 'en-US'
+  supportedLocales: ['zh-CN', 'en-US', 'pt-BR'
   // , 'de-DE', 'fr-FR', 'ru-RU'
   ],
   importCode: "import _i18n, { useI18N } from 'src/i18n';",

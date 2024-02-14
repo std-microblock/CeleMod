@@ -27,6 +27,14 @@
             box-shadow: 0 0 5px #00000022;
             display: inline-block;
 
+            html[lang="pt-BR"] &{
+                width: 150px;
+
+                .info {
+                    width: 150px;
+                }
+            }
+
             &.selected {
                 border: 1px solid theme.$primary;
             }
