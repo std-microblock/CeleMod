@@ -809,14 +809,14 @@ fn main() {
     if !Path::new("./sciter.dll").exists() {
         #[cfg(not(debug_assertions))]
         {
-            fs::write(
-                "./sciter.dll",
-                include_bytes_zstd!("./resources/sciter.dll", 21),
-            )
-            .unwrap();
+            // fs::write(
+            //     "./sciter.dll",
+            //     include_bytes!("../resources/sciter.dll"),
+            // )
+            // .unwrap();
         }
-        #[cfg(debug_assertions)]
-        {
+
+        if !Path::new("./sciter.dll").exists() {
             panic!("sciter.dll not found");
         }
     }
