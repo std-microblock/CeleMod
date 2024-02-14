@@ -61,7 +61,7 @@ const postBuildAction = () => {
         if (file.endsWith('.html')) {
             let html = fs.readFileSync(`./dist/${file}`, 'utf8');
             const sciterSpecific = fs.readFileSync('./src/sciter-specific.js', 'utf-8');
-            html = html.replace(`"padding for sciter-specific.js"`,
+            html = html.replace(`padding("padding for sciter-specific.js")`,
                 `</script><script type="module">${sciterSpecific}`
             );
             fs.writeFileSync(`./dist/${file}`, html, 'utf8');
