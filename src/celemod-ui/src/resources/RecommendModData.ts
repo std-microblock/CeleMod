@@ -97,11 +97,6 @@ export const _functionalMods = () => [
       'https://celeste.weg.fan/api/v2/download/mods/InfiniteBackups',
   },
   {
-    name: 'Hardcore Mode',
-    description: _i18n.t('钢魂模式（死亡即删档）'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/HardcoreMode',
-  },
-  {
     name: 'Vanilla Tweaks',
     description: _i18n.t('小工具合集：草莓统计、视角引导、跳过序章、尖刺置前'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/VanillaTweaks',
