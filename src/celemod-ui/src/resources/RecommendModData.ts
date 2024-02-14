@@ -229,7 +229,7 @@ export const _skinMods = () => [
   },
   {
     name: 'Hateline',
-    description: _i18n.t('哈特莱恩'),
+    description: _i18n.t('Hateline'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/Hateline',
   },
   {
@@ -240,12 +240,12 @@ export const _skinMods = () => [
   },
   {
     name: 'TaffylinePart1',
-    description: _i18n.t('太妃糖部分1'),
+    description: _i18n.t('Taffyline Part1'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/TaffylinePart1',
   },
   {
     name: 'TaffylinePart2',
-    description: _i18n.t('太妃糖部分2'),
+    description: _i18n.t('Taffyline Part2'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/TaffylinePart2',
   },
   {
@@ -256,13 +256,13 @@ export const _skinMods = () => [
   },
   {
     name: 'Harold Madeline Skin',
-    description: _i18n.t('哈罗德·马德琳·斯皮'),
+    description: _i18n.t('Harold Madeline Skin'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/gamebanana-files/846449',
   },
   {
     name: 'Funny Poses WIP',
-    description: _i18n.t('有趣的姿势在制品'),
+    description: _i18n.t('有趣的姿势'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/gamebanana-files/841273',
   },
