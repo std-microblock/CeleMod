@@ -24,6 +24,7 @@ let bundler = new Parcel({
             resolveFrom: __dirname,
         },
     ],
+    watchDir: join(__dirname, 'src'),
 });
 
 const postBuildAction = () => {
@@ -82,6 +83,7 @@ const postBuildAction = () => {
         const fs = require('fs');
         fs.rmdirSync('./dist', { recursive: true });
         await bundler.watch((err, evt) => {
+        
             // console.clear()
             if (evt.type === 'buildSuccess') {
                 postBuildAction()
