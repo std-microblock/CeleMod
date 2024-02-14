@@ -19,11 +19,13 @@ lazy_static! {
             .unwrap()
             .to_string();
         if !Path::new(&path).exists() {
-            #[cfg(debug_assertions)]
-            panic!("aria2c.exe not found.");
+            // #[cfg(not(debug_assertions))]
+            // std::fs::write(&path, include_bytes!("../resources/aria2c.exe")).unwrap();
 
-            #[cfg(not(debug_assertions))]
-            std::fs::write(&path, include_bytes_zstd!("./resources/aria2c.exe", 21)).unwrap();
+            if !Path::new(&path).exists() {
+                #[cfg(debug_assertions)]
+                panic!("aria2c.exe not found.");
+            }
         }
         path
     };

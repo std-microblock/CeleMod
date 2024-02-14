@@ -36,7 +36,7 @@ export const GameSelector = (props: {
           props.launchGame('everest');
         }}
       >
-        {_i18n.t('启动 Everest')}
+        {_i18n.t('Everest')}
       </button>
 
       <button
@@ -45,7 +45,7 @@ export const GameSelector = (props: {
           props.launchGame('origin');
         }}
       >
-        {_i18n.t('启动 原版')}
+        {_i18n.t('原版')}
       </button>
 
       <button

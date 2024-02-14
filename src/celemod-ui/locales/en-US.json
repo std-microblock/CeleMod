@@ -9,8 +9,6 @@
   "Everest 是 Celeste 的开源模组加载器和模组 API，允许您根据自己的喜好创 建自定义地图包、纹理替换和代码模组。 必须先安装 Everest 才能使用 Mod。 CeleMod 可以帮助你一键下载和安装 Everest。": "Everest is an open-source mod loader and modding API for Celeste that allows you to create custom map packs, texture replacements, and code mods according to your preferences. Modding requires Everest to be installed. CeleMod can assist you in downloading and installing Everest with just one click.",
   "转到 Everest 页": "Go to the Everest page",
   "选择游戏路径": "Select game path",
-  "启动 Everest": "Everest",
-  "启动 原版": "Vanilla",
   "Mods 文件夹": "Mods folder",
   "文件列表为空": "File list is empty",
   "Celemod 有更新": "Celemod has updates",
@@ -102,7 +100,6 @@
   "点此手动选择": "Click here to manually select",
   "下载设置": "Download settings",
   "使用中国镜像 ( @WEGFan )": "Use Chinese mirror (@WEGFan)",
-  "使用 16 线程下载": "Use 16 threads for download",
   "Profile 选择": "Profile Selection",
   "上次启动": "Last Start",
   "禁用的 Mod 数": "Disabled",
@@ -170,5 +167,12 @@
   "选择其他路径": "Choose another path",
   "界面设置": "UI Settings",
   "语言": "Language",
-  "简体中文": "简体中文 "
+  "简体中文": "Simplified Chinese",
+  "Everest": "Everest",
+  "原版": "Vanilla",
+  "使用多线程下载": "Use multi -thread download",
+  "更新全部": "Update all",
+  "更新中": "updating",
+  "更新完成": "update completed",
+  "更新失败，请查看左下角": "The update failed, please check the lower left corner"
 }

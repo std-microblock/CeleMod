@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "start": "node build.js",
-    "build": "node build.js --prod"
+    "build": "node build.js --prod",
+    "translate":"di18n sync"
   },
   "dependencies": {
     "@babel/code-frame": "^7.23.5",

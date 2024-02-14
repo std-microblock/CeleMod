@@ -114,20 +114,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-              setState(_i18n.t('下载中'));
-              download.downloadMod(name, gbFileID, {
-                onProgress: (task, progress) => {
-                  setState(`${progress}% (${task.subtasks.length})`);
-                },
-                onFinished: () => {
-                  setState(_i18n.t('下载完成'));
-                  ctx?.reloadMods();
-                },
-                onFailed: () => {
-                  setState(_i18n.t('下载失败'));
-                },
-              });
-            }
+                setState(_i18n.t('下载中'));
+                download.downloadMod(name, gbFileID, {
+                  onProgress: (task, progress) => {
+                    setState(`${progress}% (${task.subtasks.length})`);
+                  },
+                  onFinished: () => {
+                    setState(_i18n.t('下载完成'));
+                    ctx?.reloadMods();
+                  },
+                  onFailed: () => {
+                    setState(_i18n.t('下载失败'));
+                  },
+                });
+              }
             : undefined
         }
       >
@@ -157,7 +157,7 @@ const ModLocal = ({
   dependedBy,
   version,
   optional = false,
-  file
+  file,
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
@@ -199,8 +199,9 @@ const ModLocal = ({
   return (
     <div className={`m-mod ${enabled && 'enabled'}`}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
-          }`}
+        className={`expandBtn ${expanded && 'expanded'} ${
+          hasDeps && 'clickable'
+        }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -243,6 +244,7 @@ const ModLocal = ({
           {_i18n.t('可选依赖')}
         </ModBadge>
       )}
+
       {dependedByFiltered.length > 0 && (
         <ModBadge
           bg="#2196f3"
@@ -260,20 +262,24 @@ const ModLocal = ({
           bg="#ff9800"
           color="white"
           onClick={() => {
-            download.downloadMod(file.slice(0, -".zip".length), updateState[0], {
-              onProgress: (task, progress) => {
-                setUpdateString(`${progress}% (${task.subtasks.length})`);
-              },
-              onFinished: () => {
-                setUpdateString(_i18n.t('下载完成'));
-                ctx?.reloadMods();
-              },
-              onFailed: (task) => {
-                console.log(task);
-                setUpdateString(_i18n.t('下载失败'));
-              },
-              force: true,
-            });
+            download.downloadMod(
+              file.slice(0, -'.zip'.length),
+              updateState[0],
+              {
+                onProgress: (task, progress) => {
+                  setUpdateString(`${progress}% (${task.subtasks.length})`);
+                },
+                onFinished: () => {
+                  setUpdateString(_i18n.t('下载完成'));
+                  ctx?.reloadMods();
+                },
+                onFailed: (task) => {
+                  console.log(task);
+                  setUpdateString(_i18n.t('下载失败'));
+                },
+                force: true,
+              }
+            );
           }}
         >
           {updateString}
@@ -457,29 +463,33 @@ export const Manage = () => {
     return modMap;
   }, [installedMods, currentProfile, profiles, checkOptionalDep]);
 
-  const [latestModInfos, setLatestModInfos] = useState<[
-    string, string, string // name, version, gbfileid
-  ][]>([]);
+  const [latestModInfos, setLatestModInfos] = useState<
+    [
+      string,
+      string,
+      string // name, version, gbfileid
+    ][]
+  >([]);
 
   useEffect(() => {
-    callRemote('get_mod_latest_info', v => {
-      setLatestModInfos(JSON.parse(v))
-    })
-  }, [])
+    callRemote('get_mod_latest_info', (v) => {
+      setLatestModInfos(JSON.parse(v));
+    });
+  }, []);
 
   const hasUpdateMods: {
-    name: string,
-    version: string,
-    gb_file: string
+    name: string;
+    version: string;
+    gb_file: string;
   }[] = useMemo(() => {
     const mods = [];
     for (const mod of installedMods) {
-      const latest = latestModInfos.find(v => v[0] === mod.name);
+      const latest = latestModInfos.find((v) => v[0] === mod.name);
       if (latest && compareVersion(latest[1], mod.version) > 0) {
         mods.push({
           name: mod.name,
           version: latest[1],
-          gb_file: latest[2]
+          gb_file: latest[2],
         });
       }
     }
@@ -487,7 +497,9 @@ export const Manage = () => {
     return mods;
   }, [latestModInfos, installedModMap]);
 
-  const [hasUpdateBtnState, setHasUpdateBtnState] = useState('更新全部');
+  const [hasUpdateBtnState, setHasUpdateBtnState] = useState(
+    _i18n.t('更新全部')
+  );
 
   const modsTreeRef = useRef(null);
   const [filter, setFilter] = useState('');
@@ -655,7 +667,7 @@ export const Manage = () => {
     [currentProfile, installedMods, gamePath, modPath, fullTree, showUpdate]
   );
 
-  const { download } = useGlobalContext()
+  const { download } = useGlobalContext();
 
   return (
     <div className="manage">
@@ -725,6 +737,7 @@ export const Manage = () => {
                   setExcludeDependents(e.target.checked);
                 }}
               />
+
               {_i18n.t('主树隐藏依赖')}
             </label>
             <label>
@@ -736,6 +749,7 @@ export const Manage = () => {
                   setCheckOptionalDep(e.target.checked);
                 }}
               />
+
               {_i18n.t('检查可选依赖')}
             </label>
             <label>
@@ -747,6 +761,7 @@ export const Manage = () => {
                   setFullTree(e.target.checked);
                 }}
               />
+
               {_i18n.t('显示完整树')}
             </label>
             <label>
@@ -758,37 +773,45 @@ export const Manage = () => {
                   setShowUpdate(e.target.checked);
                 }}
               />
+
               {_i18n.t('显示更新')}
             </label>
           </div>
-          <div className="opers" style={{
-            marginTop: "5px"
-          }}>
+          <div
+            className="opers"
+            style={{
+              marginTop: '5px',
+            }}
+          >
             {showUpdate && hasUpdateMods.length !== 0 && (
-              <button onClick={() => {
-                if (hasUpdateBtnState !== '更新全部') return;
-                setHasUpdateBtnState('更新中');
-                const updateUnfinishedSet = new Set(hasUpdateMods.map(v => v.name));
-                for (const mod of hasUpdateMods) {
-                  download.downloadMod(mod.name, mod.gb_file, {
-                    onProgress: (task, progress) => {
-                      console.log(task, progress);
-                    },
-                    onFinished: () => {
-                      updateUnfinishedSet.delete(mod.name);
-                      if (updateUnfinishedSet.size === 0) {
-                        setHasUpdateBtnState('更新完成');
-                        manageCtx.reloadMods();
-                      }
-                    },
-                    onFailed: () => {
-                      console.log('failed');
-                      setHasUpdateBtnState('更新失败，请查看左下角');
-                    },
-                    force: true,
-                  });
-                }
-              }}>
+              <button
+                onClick={() => {
+                  if (hasUpdateBtnState !== _i18n.t('更新全部')) return;
+                  setHasUpdateBtnState(_i18n.t('更新中'));
+                  const updateUnfinishedSet = new Set(
+                    hasUpdateMods.map((v) => v.name)
+                  );
+                  for (const mod of hasUpdateMods) {
+                    download.downloadMod(mod.name, mod.gb_file, {
+                      onProgress: (task, progress) => {
+                        console.log(task, progress);
+                      },
+                      onFinished: () => {
+                        updateUnfinishedSet.delete(mod.name);
+                        if (updateUnfinishedSet.size === 0) {
+                          setHasUpdateBtnState(_i18n.t('更新完成'));
+                          manageCtx.reloadMods();
+                        }
+                      },
+                      onFailed: () => {
+                        console.log('failed');
+                        setHasUpdateBtnState(_i18n.t('更新失败，请查看左下角'));
+                      },
+                      force: true,
+                    });
+                  }
+                }}
+              >
                 {hasUpdateBtnState}
               </button>
             )}
@@ -815,6 +838,7 @@ export const Manage = () => {
               filter={alphabet}
               maxlength="30"
             />
+
             <Button
               onClick={() => {
                 const name = document.querySelector('.newProfile input') as any;
