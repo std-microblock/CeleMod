@@ -60,11 +60,6 @@ export const _functionalMods = () => [
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathTracker',
   },
   {
-    name: 'StatDisable',
-    description: _i18n.t('隐藏死亡次数和日志'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/StatDisable',
-  },
-  {
     name: 'Death Markers',
     description: _i18n.t('标记每次死亡的位置'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathMarkers',
