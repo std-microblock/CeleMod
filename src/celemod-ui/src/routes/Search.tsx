@@ -3,7 +3,7 @@ import { Fragment, h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { ModList } from '../components/ModList';
 import { getMods, Mod, SearchModResp } from '../api/xmao';
-import { useCurrentEverestVersion, useGamePath, useMirror } from '../states';
+import { currentMirror, useCurrentEverestVersion, useGamePath, useMirror } from '../states';
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -39,8 +39,7 @@ export const Search = () => {
     'new' | 'updateAdded' | 'updated' | 'views' | 'likes'
   >('likes');
   const [currentPage, setCurrentPage] = useState(1);
-
-  const [mirror] = useMirror();
+  const [hasMore, setHasMore] = useState(true);
 
   const fetchModPage = async (page: number) => {
     console.log('fetching', page);
@@ -53,17 +52,20 @@ export const Search = () => {
       sort,
       section: 'Mod',
       size: 25,
-      includeExclusiveSubmissions: mirror === 'wegfan'
+      includeExclusiveSubmissions: currentMirror() === 'wegfan'
     });
     console.log('finished, size:', res.content.length);
     setLoading(false);
-    return res.content;
+    return res;
   };
 
   useEffect(() => {
     setMods([]);
     setCurrentPage(1);
-    fetchModPage(1).then(setMods);
+    fetchModPage(1).then(v=>{
+      setMods(v.content);
+      setHasMore(v.hasNextPage);
+    });
   }, [type, search, sort]);
 
   useEffect(() => {
@@ -123,6 +125,7 @@ export const Search = () => {
             allowUpScroll={currentPage > 1}
             loading={loading}
             mods={mods}
+            haveMore={hasMore}
             onLoadMore={useCallback(
               (
                 type: string,
@@ -163,7 +166,9 @@ export const Search = () => {
                     loadingLock.current = true;
                     fadeOut();
                     setCurrentPage((v) => {
-                      fetchModPage(v - 1).then((newMods) => {
+                      fetchModPage(v - 1).then((data) => {
+                        const newMods = data.content;
+                        setHasMore(data.hasNextPage);
                         if (newMods.length === 0) return;
                         setMods(newMods);
                         rs(void 0);
@@ -182,7 +187,9 @@ export const Search = () => {
                     loadingLock.current = true;
                     fadeOut();
                     setCurrentPage((v) => {
-                      fetchModPage(v + 1).then((newMods) => {
+                      fetchModPage(v + 1).then((data) => {
+                        const newMods = data.content;
+                        setHasMore(data.hasNextPage);
                         if (newMods.length === 0) return;
                         setMods(newMods);
                         rs(void 0);

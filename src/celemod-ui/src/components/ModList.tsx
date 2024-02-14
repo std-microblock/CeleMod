@@ -197,9 +197,8 @@ export const Mod = memo(
               <Icon name="i-tick" />
             ) : downloadTask ? (
               downloadTask.state === 'pending' ? (
-                `${downloadTask.progress}% (${
-                  downloadTask.subtasks.filter((v) => v.state !== 'Finished')
-                    .length
+                `${downloadTask.progress}% (${downloadTask.subtasks.filter((v) => v.state !== 'Finished')
+                  .length
                 })`
               ) : downloadTask.state === 'failed' ? (
                 <Icon name="i-cross" />
@@ -371,6 +370,7 @@ export const Mod = memo(
 export const ModList = (props: {
   mods: Content[];
   onLoadMore?: any;
+  haveMore?: boolean;
   modFolder: string;
   loading?: boolean;
   allowUpScroll: boolean;
@@ -418,7 +418,7 @@ export const ModList = (props: {
     );
     const end = Math.ceil(
       (refList.current.scrollTop + refList.current.offsetHeight - padding * 2) /
-        childHeight
+      childHeight
     );
     const colWidth = Math.floor((refList.current?.offsetWidth || 0) / 340);
     return { start, end, colWidth };
@@ -480,7 +480,9 @@ export const ModList = (props: {
               top: topPaddingDownTop,
               behavior: 'smooth',
             });
-            reachedOnce = true;
+
+            if (props.haveMore)
+              reachedOnce = true;
           }
         } else if (
           target >
@@ -513,7 +515,8 @@ export const ModList = (props: {
               top: bottomPaddingUpTop,
               behavior: 'smooth',
             });
-            reachedOnce = true;
+            if (props.haveMore)
+              reachedOnce = true;
           }
         } else {
           scrollTo({
@@ -524,7 +527,7 @@ export const ModList = (props: {
         }
       });
     }
-  }, [props.onLoadMore]);
+  }, [props.onLoadMore, props.haveMore]);
 
   const formatSize = (size: number) => {
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -577,16 +580,15 @@ export const ModList = (props: {
                     })
                     .map(
                       (v) =>
-                        ({
-                          id: v.gameBananaId.toString(),
-                          name: `${
-                            v.description.includes(v.mods[0].version)
-                              ? ''
-                              : v.mods[0].version + '-'
+                      ({
+                        id: v.gameBananaId.toString(),
+                        name: `${v.description.includes(v.mods[0].version)
+                          ? ''
+                          : v.mods[0].version + '-'
                           }${v.description}-${v.mods[0].name}`,
-                          size: formatSize(v.size),
-                          url: v.url,
-                        } as FileToDownload)
+                        size: formatSize(v.size),
+                        url: v.url,
+                      } as FileToDownload)
                     )
                 );
               },

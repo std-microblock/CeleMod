@@ -95,6 +95,8 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
         },
     }));
 
+    let refValue = initial;
+
     return [() => {
         const { value, set: setData } = useTheState();
 
@@ -103,12 +105,14 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
         useEffect(() => {
             if (!storage) return;
             const data = get(storage);
+            refValue = data;
             data && setData(data)
         }, [storage])
     }, (() => {
         const { value, set: setData } = useTheState();
         const { storage, save } = useStorage();
         return [value, (data) => {
+            refValue = data;
             setData(data)
             if (storage)
                 set(storage, data, save)
@@ -117,7 +121,7 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
                     set(storage, data, save)
             }, 10)
         }]
-    })] as [() => void, () => ([T, (data: T) => void])]
+    }), () => refValue] as [() => void, () => ([T, (data: T) => void]), () => T]
 }
 
 const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPersistedState<T>(defaultValue, storage => storage.root[key], (storage, data, save) => {
@@ -125,7 +129,7 @@ const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPer
     save()
 })
 
-export const [initMirror, useMirror] = createPersistedStateByKey('mirror', 'wegfan')
+export const [initMirror, useMirror, currentMirror] = createPersistedStateByKey('mirror', 'wegfan')
 export const [initGamePath, useGamePath] = createPersistedState<string>('', storage => {
     if (storage?.root?.lastGamePath)
         return storage.root.lastGamePath

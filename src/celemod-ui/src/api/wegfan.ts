@@ -144,7 +144,9 @@ export const searchSubmission = async ({
     if (search) params.set("search", search);
     if (sort) params.set("sort", sort);
     if (includeExclusiveSubmissions) params.set("includeExclusiveSubmissions", includeExclusiveSubmissions.toString());
-    return fetch(`https://celeste.weg.fan/api/v2/submission/search?${params.toString()}`, {
+    const url = `https://celeste.weg.fan/api/v2/submission/search?${params.toString()}`;
+    console.log(url);
+    return fetch(url, {
         headers: {
             'User-Agent': celemodUA
         }
