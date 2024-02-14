@@ -427,7 +427,7 @@ impl Handler {
 
                                 installed_deps.push(id);
                                 tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
-                                    name: format!("依赖项·{}", dep),
+                                    name: dep.clone(),
                                     url,
                                     dest,
                                     status: DownloadStatus::Waiting,
