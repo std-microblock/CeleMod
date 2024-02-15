@@ -88,6 +88,7 @@ export const createDownloadContext = () => {
             else {
                 const gb_fileid = gb_fileid_or_url
                 if (downloadMirror === 'wegfan') url = `https://celeste.weg.fan/api/v2/download/gamebanana-files/${gb_fileid}`;
+                else if (downloadMirror === '0x0ade') url = `https://celestemodupdater.0x0a.de/banana-mirror/${gb_fileid}.zip`
                 else url = `https://gamebanana.com/dl/${gb_fileid}`
             }
 

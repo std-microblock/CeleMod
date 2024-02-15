@@ -75,7 +75,7 @@ export const createI18NContext = () => {
         }
         else {
             ctx.setLang('en-US')
-            setMirror('gamebanana')
+            setMirror('0x0ade')
         }
     }, [storage]);
 

@@ -176,18 +176,12 @@ export const Home = () => {
             </div>
 
             <div className="config-block">
-                <input
-                    type="checkbox"
-                    checked={downloadMirror === 'wegfan'}
-                    name="usecnmirror"
-                    onChange={(e) => {
-                        //@ts-ignore
-                        const checked = e.target.checked;
-                        setDownloadMirror(checked ? 'wegfan' : 'gamebanana')
-                    }}
-                />
-
-                <label for="usecnmirror">{_i18n.t('使用中国镜像 ( @WEGFan )')}</label>
+                <span>下载镜像</span>&nbsp;
+                <select value={downloadMirror} onChange={e=>setDownloadMirror(e.currentTarget.value)}>
+                    <option value="0x0ade">0x0ade</option>
+                    <option value="gamebanana">GameBanana</option>
+                    <option value="wegfan">WEGFan</option>
+                </select>
             </div>
 
             <div className="config-block">
@@ -279,7 +273,7 @@ export const Home = () => {
                     <select
                         onChange={(e: any) => {
                             i18nCtx.setLang(e.target.value);
-                            setDownloadMirror(e.target.value === 'zh-CN' ? 'wegfan' : 'gamebanana')
+                            setDownloadMirror(e.target.value === 'zh-CN' ? 'wegfan' : '0x0ade')
                         }}
                         value={i18nCtx.currentLang}
                     >

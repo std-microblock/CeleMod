@@ -1,11 +1,10 @@
 @use "../index.scss"as theme;
 
 .home {
-    .languageSelect {
-        select {
-            style-set: custom-select-dropdown;
-            margin: 4px 0;
-        }
+    select {
+        style-set: custom-select-dropdown;
+        margin: 4px 0;
+        width: max-content;
     }
     .profiles {
         // flow: horizontal-flow;
