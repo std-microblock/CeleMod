@@ -22,13 +22,15 @@ jobs:
           components: rustfmt, clippy
     - name: Build Rust
       run: cargo build --verbose --release
+    - name: Copy Dependencies
+      run: cp ./resources/aria2c.exe ./target/release/aria2c.exe && cp ./resources/sciter.dll ./target/release/sciter.dll
     - uses: actions/upload-artifact@v4.3.1
       with:
         name: windows
         path:  |
           ./target/release/cele-mod.exe
-          ./resources/aria2c.exe
-          ./resources/sciter.dll
+          ./target/release/aria2c.exe
+          ./target/release/sciter.dll
   build-linux:
     runs-on: ubuntu-latest
     steps:
