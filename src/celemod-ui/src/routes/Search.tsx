@@ -50,7 +50,7 @@ export const Search = () => {
       categoryId: categoryIdMap[type],
       search,
       sort,
-      section: 'Mod',
+      // section: 'Mod',
       size: 25,
       includeExclusiveSubmissions: currentMirror() === 'wegfan'
     });
