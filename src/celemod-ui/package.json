@@ -24,8 +24,6 @@
     "@parcel/reporter-cli": "^2.11.0",
     "@parcel/transformer-sass": "2.11.0",
     "di18n-cli": "^0.1.29",
-    "parcel-bundler": "*",
-    "parcel-resolver-ignore": "*",
     "react": ">=16.8",
     "react-dom": ">=16.8",
     "sass": "^1.64.1",
