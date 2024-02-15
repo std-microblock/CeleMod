@@ -523,6 +523,38 @@ export const Manage = () => {
   const modsTreeRef = useRef(null);
   const [filter, setFilter] = useState('');
 
+  const checkFilter = (mod: ModInfoProbablyMissing) => {
+    const isSpecialFilter = v => v.startsWith(':') || v.startsWith('!') || v.startsWith('-')
+    const args = filter.split(' ').filter(isSpecialFilter);
+    const name = mod.name.toLowerCase();
+    const nameFilter = args.filter(v => !isSpecialFilter(v)).join(' ').toLowerCase().trim();
+
+    if (nameFilter && !name.includes(nameFilter)) return false;
+
+    const checkSpecialFilter = (arg: string) => {
+      arg = arg.toLowerCase();
+
+      if (arg.startsWith(':') || arg.startsWith('-')) arg = arg.slice(1);
+
+      if (!('_missing' in mod)) {
+        if (arg.startsWith('enable')) {
+          return mod.enabled;
+        } else if (arg.startsWith('disable')) {
+          return !mod.enabled;
+        }
+      }
+
+      if (arg.startsWith('!')) {
+        return !checkSpecialFilter(arg.slice(1));
+      }
+    }
+    for (const arg of args) {
+      if (!checkSpecialFilter(arg)) return false;
+    }
+
+    return true;
+  }
+
   const installedModsTree = useMemo(() => {
     const modTree = new Map<string, ModInfoProbablyMissing>();
 
@@ -531,7 +563,7 @@ export const Manage = () => {
     }
 
     const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
-      if (filter && mod.name.toLowerCase().includes(filter.toLowerCase()))
+      if (filter && checkFilter(mod))
         return;
       if (!isRoot) {
         modTree.delete(mod.name);
@@ -556,7 +588,7 @@ export const Manage = () => {
 
     if (filter) {
       for (const mod of modTree.values()) {
-        if (!mod.name.toLowerCase().includes(filter.toLowerCase())) {
+        if (!checkFilter(mod)) {
           modTree.delete(mod.name);
         }
       }
