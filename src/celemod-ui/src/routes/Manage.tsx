@@ -340,6 +340,8 @@ const Profile = ({ name, current }: { name: string; current: boolean }) => {
 const alphabet =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- _';
 
+let lastApplyReq = -1;
+
 export const Manage = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
@@ -586,6 +588,13 @@ export const Manage = () => {
 
         setCurrentProfile({ ...currentProfile });
         setHasUnsavedChanges(true);
+
+        lastApplyReq = Date.now();
+        setTimeout(() => {
+          if (lastApplyReq === Date.now()) {
+            manageCtx.switchProfile(manageCtx.currentProfileName);
+          }
+        }, 600);
       },
       switchMod: (name: string, enabled: boolean, recursive = true) => {
         if (currentProfile) {
@@ -634,6 +643,7 @@ export const Manage = () => {
         setHasUnsavedChanges(true);
       },
       switchProfile: (name: string) => {
+        if(hasUnsavedChanges) return;
         callRemote('apply_blacklist_profile', gamePath, name);
         setCurrentProfileName(name);
         setHasUnsavedChanges(false);
@@ -716,16 +726,6 @@ export const Manage = () => {
             >
               {_i18n.t('启用全部')}
             </Button>
-            &nbsp;&nbsp;
-            {hasUnsavedChanges && (
-              <Button
-                onClick={() => {
-                  manageCtx.switchProfile(currentProfileName);
-                }}
-              >
-                {_i18n.t('应用修改')}
-              </Button>
-            )}
           </div>
           <div className="options">
             <label>
