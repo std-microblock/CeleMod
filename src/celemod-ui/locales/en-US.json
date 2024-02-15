@@ -92,7 +92,6 @@
   "未找到游戏！请先安装 Steam 商店或Epic 商店版的 Celeste，或": "Game not found! Please install Celeste from the Steam or Epic store, or",
   "点此手动选择": "Click here to manually select",
   "下载设置": "Download settings",
-  "使用中国镜像 ( @WEGFan )": "Use Chinese mirror (@WEGFan)",
   "Profile 选择": "Profile Selection",
   "上次启动": "Last Start",
   "禁用的 Mod 数": "Disabled",
@@ -117,7 +116,6 @@
   "打开 Mods 文件夹": "Open Mods Folder",
   "禁用全部": "Disable All",
   "启用全部": "Enable All",
-  "应用修改": "Apply Changes",
   "主树隐藏依赖": "Hide Deps",
   "检查可选依赖": "Check Optional Deps",
   "显示完整树": "Full Tree",
@@ -172,5 +170,7 @@
   "Taffyline Part1": "Taffyline Part1",
   "Taffyline Part2": "Taffyline Part2",
   "Harold Madeline Skin": "Harold Madeline Skin",
-  "有趣的姿势": "Interesting pose"
+  "有趣的姿势": "Interesting pose",
+  "下载镜像": "Download mirror",
+  "始终开启": "Always open"
 }

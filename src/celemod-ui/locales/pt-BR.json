@@ -92,7 +92,6 @@
   "未找到游戏！请先安装 Steam 商店或Epic 商店版的 Celeste，或": "Jogo não encontrado! Por favor, instale o Celeste da Steam ou da Epic, ou",
   "点此手动选择": "Clique aqui para selecionar manualmente",
   "下载设置": "Configurações de Download",
-  "使用中国镜像 ( @WEGFan )": "Usar o mirror Chinês (@WEGFan)",
   "Profile 选择": "Seleção de Perfil",
   "上次启动": "Última inicialização",
   "禁用的 Mod 数": "Desativado",
@@ -117,7 +116,6 @@
   "打开 Mods 文件夹": "Abrir Pasta de Mods",
   "禁用全部": "Desativar Todos",
   "启用全部": "Ativar Todos",
-  "应用修改": "Aplicar Mudanças",
   "主树隐藏依赖": "Esconder Dependências",
   "检查可选依赖": "Checar Dependências Opcionais",
   "显示完整树": "Lista Inteira",
@@ -172,5 +170,7 @@
   "Taffyline Part1": "Skin da YouTuber Ace Taffy",
   "Taffyline Part2": "Skin que troca o Theo pelo pet da Ace Taffy",
   "Harold Madeline Skin": "Skin do Harold",
-  "有趣的姿势": "Pose interessante"
+  "有趣的姿势": "Pose interessante",
+  "下载镜像": "Baixar espelho",
+  "始终开启": "Sempre aberto"
 }

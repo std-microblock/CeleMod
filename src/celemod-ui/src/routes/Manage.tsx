@@ -121,20 +121,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-              setState(_i18n.t('下载中'));
-              download.downloadMod(name, gbFileID, {
-                onProgress: (task, progress) => {
-                  setState(`${progress}% (${task.subtasks.length})`);
-                },
-                onFinished: () => {
-                  setState(_i18n.t('下载完成'));
-                  ctx?.reloadMods();
-                },
-                onFailed: () => {
-                  setState(_i18n.t('下载失败'));
-                },
-              });
-            }
+                setState(_i18n.t('下载中'));
+                download.downloadMod(name, gbFileID, {
+                  onProgress: (task, progress) => {
+                    setState(`${progress}% (${task.subtasks.length})`);
+                  },
+                  onFinished: () => {
+                    setState(_i18n.t('下载完成'));
+                    ctx?.reloadMods();
+                  },
+                  onFailed: () => {
+                    setState(_i18n.t('下载失败'));
+                  },
+                });
+              }
             : undefined
         }
       >
@@ -203,13 +203,14 @@ const ModLocal = ({
     });
   }, [name]);
 
-  const isAlwaysOn = ctx?.alwaysOnMods.includes(name)
+  const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
 
   return (
     <div className={`m-mod ${enabled && 'enabled'}`}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
-          }`}
+        className={`expandBtn ${expanded && 'expanded'} ${
+          hasDeps && 'clickable'
+        }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -223,22 +224,20 @@ const ModLocal = ({
         )}
       </span>
       <ModBadge
-        bg={
-          isAlwaysOn ? '#087EBF' :
-            enabled ? '#4caf50'
-              : '#2c313c'
-        }
+        bg={isAlwaysOn ? '#087EBF' : enabled ? '#4caf50' : '#2c313c'}
         color="white"
         onClick={() => {
           ctx?.switchMod(name, !enabled);
         }}
         onContextMenu={(e) => {
-          ctx?.switchAlwaysOn(name, !isAlwaysOn)
+          ctx?.switchAlwaysOn(name, !isAlwaysOn);
         }}
       >
-        {isAlwaysOn ? "始终开启" :
-          enabled ? _i18n.t('已启用')
-            : _i18n.t('已禁用')}
+        {isAlwaysOn
+          ? _i18n.t('始终开启')
+          : enabled
+          ? _i18n.t('已启用')
+          : _i18n.t('已禁用')}
       </ModBadge>
 
       {enabled &&
@@ -525,12 +524,17 @@ export const Manage = () => {
 
   const checkFilter = (filter: string, mod: ModInfoProbablyMissing) => {
     if (filter.includes('||'))
-      return filter.split('||').some(f => checkFilter(f, mod));
+      return filter.split('||').some((f) => checkFilter(f, mod));
 
-    const isSpecialFilter = v => v.startsWith(':') || v.startsWith('!') || v.startsWith('-')
+    const isSpecialFilter = (v) =>
+      v.startsWith(':') || v.startsWith('!') || v.startsWith('-');
     const args = filter.split(' ');
     const name = mod.name.toLowerCase();
-    const nameFilter = args.filter(v => !isSpecialFilter(v)).join(' ').toLowerCase().trim();
+    const nameFilter = args
+      .filter((v) => !isSpecialFilter(v))
+      .join(' ')
+      .toLowerCase()
+      .trim();
 
     if (!name.includes(nameFilter)) return false;
 
@@ -547,24 +551,29 @@ export const Manage = () => {
         }
 
         if (arg.startsWith('hasdep') || arg.startsWith('havedep')) {
-          return mod.dependencies.length > 0
+          return mod.dependencies.length > 0;
         }
 
-        if (arg.startsWith('update') || arg.startsWith('hasupdate') || arg.startsWith('haveupdate') || arg.startsWith('outdate')) {
-          return hasUpdateMods.some(v => v.name === mod.name)
+        if (
+          arg.startsWith('update') ||
+          arg.startsWith('hasupdate') ||
+          arg.startsWith('haveupdate') ||
+          arg.startsWith('outdate')
+        ) {
+          return hasUpdateMods.some((v) => v.name === mod.name);
         }
       }
 
       if (arg.startsWith('!')) {
         return !checkSpecialFilter(arg.slice(1));
       }
-    }
+    };
     for (const arg of args.filter(isSpecialFilter)) {
       if (!checkSpecialFilter(arg)) return false;
     }
 
     return true;
-  }
+  };
 
   const installedModsTree = useMemo(() => {
     const modTree = new Map<string, ModInfoProbablyMissing>();
@@ -574,8 +583,7 @@ export const Manage = () => {
     }
 
     const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
-      if (filter && checkFilter(filter, mod))
-        return;
+      if (filter && checkFilter(filter, mod)) return;
       if (!isRoot) {
         modTree.delete(mod.name);
       }
@@ -615,18 +623,17 @@ export const Manage = () => {
     modsTreeRef.current?.scrollTo(0, 0);
   }, [excludeDependents]);
 
-  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods()
-  const globalCtx = useGlobalContext()
+  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
+  const globalCtx = useGlobalContext();
   const manageCtx = useMemo(
     () => ({
       switchAlwaysOn: (name: string, enabled: boolean) => {
-        if (enabled) setAlwaysOnMods([...alwaysOnMods, name])
-        else setAlwaysOnMods(alwaysOnMods.filter(v => v !== name))
+        if (enabled) setAlwaysOnMods([...alwaysOnMods, name]);
+        else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));
       },
       alwaysOnMods,
       batchSwitchMod: (names: string[], enabled: boolean) => {
-        if (!enabled)
-          names = names.filter((v) => !alwaysOnMods.includes(v))
+        if (!enabled) names = names.filter((v) => !alwaysOnMods.includes(v));
         if (!currentProfile) return;
         let files = [];
         for (const mod of names) {
@@ -666,7 +673,11 @@ export const Manage = () => {
           }
         }, 600);
       },
-      switchMod: (names: string | string[], enabled: boolean, recursive = true) => {
+      switchMod: (
+        names: string | string[],
+        enabled: boolean,
+        recursive = true
+      ) => {
         if (currentProfile) {
           const switchList: string[] = [];
           const excludeFromAutoEnableList = [
@@ -748,7 +759,15 @@ export const Manage = () => {
       fullTree,
       showUpdate,
     }),
-    [currentProfile, installedMods, gamePath, modPath, fullTree, showUpdate, alwaysOnMods]
+    [
+      currentProfile,
+      installedMods,
+      gamePath,
+      modPath,
+      fullTree,
+      showUpdate,
+      alwaysOnMods,
+    ]
   );
 
   const { download } = useGlobalContext();
@@ -782,7 +801,9 @@ export const Manage = () => {
             <Button
               onClick={() => {
                 manageCtx.switchMod(
-                  [...installedModsTree.values()].map((v) => v.name).filter((v) => !alwaysOnMods.includes(v)),
+                  [...installedModsTree.values()]
+                    .map((v) => v.name)
+                    .filter((v) => !alwaysOnMods.includes(v)),
                   false
                 );
               }}
