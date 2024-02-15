@@ -30,8 +30,14 @@ export const createThemeContext = () => {
         const [x, y, w, h] = Window.this.box("xywh", "border", "desktop")
         if (storage.root.windowSize[0] !== w || storage.root.windowSize[1] !== h) {
             console.log('persist size', storage.root.windowSize)
-            // @ts-ignore
-            Window.this.move(x, y, ...storage.root.windowSize);
+            if (storage.root.windowSize.length === 4) {
+                const [w, h, x, y] = storage.root.windowSize;
+                // @ts-ignore
+                Window.this.move(x, y, w, h);
+            } else {
+                // @ts-ignore
+                Window.this.move(x, y, ...storage.root.windowSize);
+            }
         }
     }, [storage]);
 
@@ -53,17 +59,21 @@ export const createThemeContext = () => {
                     // @ts-ignore
                     const [x, y, w, h] = Window.this.box("xywh", "border", "desktop")
                     console.log('saving window size', w, h)
-                    storage.root.windowSize = [w, h];
+                    storage.root.windowSize = [w, h, x, y];
                     save();
                 }
             }, 100);
         }
         // @ts-ignore
         Window.this.on('size', handler)
+        // @ts-ignore
+        Window.this.on('move', handler)
 
         return () => {
             // @ts-ignore
             Window.this.off('size', handler)
+            // @ts-ignore
+            Window.this.off('move', handler)
         }
     }, [storage]);
 
