@@ -523,13 +523,16 @@ export const Manage = () => {
   const modsTreeRef = useRef(null);
   const [filter, setFilter] = useState('');
 
-  const checkFilter = (mod: ModInfoProbablyMissing) => {
+  const checkFilter = (filter: string, mod: ModInfoProbablyMissing) => {
+    if (filter.includes('||'))
+      return filter.split('||').some(f => checkFilter(f, mod));
+
     const isSpecialFilter = v => v.startsWith(':') || v.startsWith('!') || v.startsWith('-')
-    const args = filter.split(' ').filter(isSpecialFilter);
+    const args = filter.split(' ');
     const name = mod.name.toLowerCase();
     const nameFilter = args.filter(v => !isSpecialFilter(v)).join(' ').toLowerCase().trim();
 
-    if (nameFilter && !name.includes(nameFilter)) return false;
+    if (!name.includes(nameFilter)) return false;
 
     const checkSpecialFilter = (arg: string) => {
       arg = arg.toLowerCase();
@@ -542,13 +545,21 @@ export const Manage = () => {
         } else if (arg.startsWith('disable')) {
           return !mod.enabled;
         }
+
+        if (arg.startsWith('hasdep') || arg.startsWith('havedep')) {
+          return mod.dependencies.length > 0
+        }
+
+        if (arg.startsWith('update') || arg.startsWith('hasupdate') || arg.startsWith('haveupdate') || arg.startsWith('outdate')) {
+          return hasUpdateMods.some(v => v.name === mod.name)
+        }
       }
 
       if (arg.startsWith('!')) {
         return !checkSpecialFilter(arg.slice(1));
       }
     }
-    for (const arg of args) {
+    for (const arg of args.filter(isSpecialFilter)) {
       if (!checkSpecialFilter(arg)) return false;
     }
 
@@ -563,7 +574,7 @@ export const Manage = () => {
     }
 
     const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
-      if (filter && checkFilter(mod))
+      if (filter && checkFilter(filter, mod))
         return;
       if (!isRoot) {
         modTree.delete(mod.name);
@@ -588,7 +599,7 @@ export const Manage = () => {
 
     if (filter) {
       for (const mod of modTree.values()) {
-        if (!checkFilter(mod)) {
+        if (!checkFilter(filter, mod)) {
           modTree.delete(mod.name);
         }
       }
