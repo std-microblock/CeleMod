@@ -35,6 +35,8 @@ jobs:
           toolchain: nightly
           override: true
           components: rustfmt, clippy
+    - name: Install dependencies
+      run: sudo apt-get install -y libgtk-3-dev pkg-config cmake clang
     - name: Build Rust
       run: cargo build --verbose --release
     - uses: actions/upload-artifact@v4.3.1
