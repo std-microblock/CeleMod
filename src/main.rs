@@ -265,7 +265,11 @@ fn rm_mod(mods_folder_path: &str, mod_name: &str) -> anyhow::Result<()> {
         if mod_.name == mod_name {
             let path = Path::new(mods_folder_path).join(&mod_.file);
             if path.exists() {
-                fs::remove_file(path)?;
+                if path.is_dir() {
+                    fs::remove_dir_all(path)?;
+                } else {
+                    fs::remove_file(path)?;
+                }
             }
         }
     }
@@ -328,8 +332,7 @@ impl Handler {
 
                 let mut installed_deps: Vec<i64> = vec![];
 
-                let tasklist: Rc<RefCell<Vec<DownloadInfo>>> =
-                    Rc::new(RefCell::new(Vec::new()));
+                let tasklist: Rc<RefCell<Vec<DownloadInfo>>> = Rc::new(RefCell::new(Vec::new()));
 
                 tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
                     name: name.clone(),
@@ -365,7 +368,8 @@ impl Handler {
                                     (tasklist2.try_borrow_mut().unwrap())[i_task].data =
                                         progress.progress.to_string();
                                     post_callback(&tasklist2.borrow(), "pending");
-                                }, multi_thread
+                                },
+                                multi_thread,
                             )
                         };
 
@@ -626,9 +630,13 @@ impl Handler {
             let res: anyhow::Result<Vec<(String, String, String)>> = try {
                 let mods = get_mod_cached_new()?;
                 mods.iter()
-                    .map(|(k, v)| 
-                        (k.clone(), v.version.clone(), v.game_banana_file_id.to_string())
-                    )
+                    .map(|(k, v)| {
+                        (
+                            k.clone(),
+                            v.version.clone(),
+                            v.game_banana_file_id.to_string(),
+                        )
+                    })
                     .collect()
             };
 
@@ -709,7 +717,8 @@ impl Handler {
                             None,
                         )
                         .unwrap();
-                }, false
+                },
+                false,
             ) {
                 Ok(()) => {
                     // replace the current exe with the downloaded one
@@ -801,7 +810,7 @@ fn main() {
         panic!("sciter.dll not found");
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(target_os = "windows")]
     let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
 
     let mut frame = sciter::WindowBuilder::main()
