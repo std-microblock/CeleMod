@@ -17,6 +17,7 @@ export const createBlacklistContext = () => {
 
     const ctx = {
         switchProfile: (name: string) => {
+            console.log('switch to profile', name);
             callRemote('apply_blacklist_profile', gamePath, name, JSON.stringify(alwaysOnMods));
             setCurrentProfileName(name);
         },

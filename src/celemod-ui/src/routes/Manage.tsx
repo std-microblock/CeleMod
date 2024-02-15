@@ -121,20 +121,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-                setState(_i18n.t('下载中'));
-                download.downloadMod(name, gbFileID, {
-                  onProgress: (task, progress) => {
-                    setState(`${progress}% (${task.subtasks.length})`);
-                  },
-                  onFinished: () => {
-                    setState(_i18n.t('下载完成'));
-                    ctx?.reloadMods();
-                  },
-                  onFailed: () => {
-                    setState(_i18n.t('下载失败'));
-                  },
-                });
-              }
+              setState(_i18n.t('下载中'));
+              download.downloadMod(name, gbFileID, {
+                onProgress: (task, progress) => {
+                  setState(`${progress}% (${task.subtasks.length})`);
+                },
+                onFinished: () => {
+                  setState(_i18n.t('下载完成'));
+                  ctx?.reloadMods();
+                },
+                onFailed: () => {
+                  setState(_i18n.t('下载失败'));
+                },
+              });
+            }
             : undefined
         }
       >
@@ -208,9 +208,8 @@ const ModLocal = ({
   return (
     <div className={`m-mod ${enabled && 'enabled'}`}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${
-          hasDeps && 'clickable'
-        }`}
+        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
+          }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -236,8 +235,8 @@ const ModLocal = ({
         {isAlwaysOn
           ? _i18n.t('始终开启')
           : enabled
-          ? _i18n.t('已启用')
-          : _i18n.t('已禁用')}
+            ? _i18n.t('已启用')
+            : _i18n.t('已禁用')}
       </ModBadge>
 
       {enabled &&
@@ -361,7 +360,7 @@ let lastApplyReq = -1;
 export const Manage = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
-
+  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
   const [gamePath] = useGamePath();
   const modPath = gamePath + '/Mods';
 
@@ -536,6 +535,7 @@ export const Manage = () => {
       .toLowerCase()
       .trim();
 
+    // console.log(name, nameFilter);
     if (!name.includes(nameFilter)) return false;
 
     const checkSpecialFilter = (arg: string) => {
@@ -545,9 +545,9 @@ export const Manage = () => {
 
       if (!('_missing' in mod)) {
         if (arg.startsWith('enable')) {
-          return mod.enabled;
+          return mod.enabled || alwaysOnMods.includes(mod.name);
         } else if (arg.startsWith('disable')) {
-          return !mod.enabled;
+          return !checkSpecialFilter('enable');
         }
 
         if (arg.startsWith('hasdep') || arg.startsWith('havedep')) {
@@ -622,8 +622,6 @@ export const Manage = () => {
     // @ts-ignore
     modsTreeRef.current?.scrollTo(0, 0);
   }, [excludeDependents]);
-
-  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
   const globalCtx = useGlobalContext();
   const manageCtx = useMemo(
     () => ({
@@ -666,9 +664,10 @@ export const Manage = () => {
         setHasUnsavedChanges(true);
 
         lastApplyReq = Date.now();
+        let thisReq = lastApplyReq;
         setTimeout(() => {
-          if (lastApplyReq === Date.now()) {
-            manageCtx.switchProfile(manageCtx.currentProfileName);
+          if (lastApplyReq === thisReq) {
+            globalCtx.blacklist.switchProfile(manageCtx.currentProfileName);
             setHasUnsavedChanges(false);
           }
         }, 600);
