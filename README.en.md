@@ -38,4 +38,4 @@ An alternative mod manager for Celeste
 
 [@WEGFan](https://github.com/WEGFan) provides mirroring and community API, blue implementation and other related knowledge
 
-@Destro Brazilian Portuguese translation
+@Destro and @Rhuan Brazilian Portuguese translation
