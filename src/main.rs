@@ -801,6 +801,7 @@ fn main() {
         panic!("sciter.dll not found");
     }
 
+    #[cfg(target_os="windows")]
     let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
 
     let mut frame = sciter::WindowBuilder::main()
