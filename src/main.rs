@@ -2,21 +2,20 @@
 #![feature(slice_pattern)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{de::VariantAccess, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use anyhow::{bail, Context};
 use aria2c::DownloadCallbackInfo;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
 use std::{
-    borrow::BorrowMut,
     cell::RefCell,
-    fmt::format,
     fs,
     path::{Path, PathBuf},
     rc::Rc,
-    sync::RwLock,
 };
+
+extern crate msgbox;
 
 use sciter::{dispatch_script_call, make_args, Value, GFX_LAYER};
 
@@ -32,8 +31,8 @@ mod wegfan;
 extern crate include_bytes_zstd;
 
 fn compare_version(a: &str, b: &str) -> i32 {
-    let a_parts: Vec<&str> = a.split(".").collect();
-    let b_parts: Vec<&str> = b.split(".").collect();
+    let a_parts: Vec<&str> = a.split('.').collect();
+    let b_parts: Vec<&str> = b.split('.').collect();
     for i in 0..std::cmp::max(a_parts.len(), b_parts.len()) {
         let a_part = a_parts.get(i).unwrap_or(&"0");
         let b_part = b_parts.get(i).unwrap_or(&"0");
@@ -305,16 +304,7 @@ struct DownloadInfo {
 }
 
 fn make_path_compatible_name(name: &str) -> String {
-    name.replace(" ", "_")
-        .replace(":", "_")
-        .replace("/", "_")
-        .replace("\\", "_")
-        .replace("?", "_")
-        .replace("*", "_")
-        .replace("\"", "_")
-        .replace("<", "_")
-        .replace(">", "_")
-        .replace("|", "_")
+    name.replace([' ', ':', '/', '\\', '?', '*', '\"', '<', '>', '|'], "_")
 }
 
 impl Handler {
@@ -324,7 +314,7 @@ impl Handler {
         url: String,
         mods_dir: String,
         callback: sciter::Value,
-        use_cn_proxy: bool,
+        _use_cn_proxy: bool,
         multi_thread: bool,
     ) {
         let dest = Path::new(&mods_dir)
@@ -338,7 +328,7 @@ impl Handler {
 
                 let mut installed_deps: Vec<i64> = vec![];
 
-                let mut tasklist: Rc<RefCell<Vec<DownloadInfo>>> =
+                let tasklist: Rc<RefCell<Vec<DownloadInfo>>> =
                     Rc::new(RefCell::new(Vec::new()));
 
                 tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
@@ -374,7 +364,7 @@ impl Handler {
                                 &mut move |progress| {
                                     (tasklist2.try_borrow_mut().unwrap())[i_task].data =
                                         progress.progress.to_string();
-                                    post_callback(&*tasklist2.borrow(), "pending");
+                                    post_callback(&tasklist2.borrow(), "pending");
                                 }, multi_thread
                             )
                         };
@@ -390,7 +380,7 @@ impl Handler {
                                 let task = &mut tasklist[i_task];
                                 task.status = DownloadStatus::Failed;
                                 task.data = e.to_string();
-                                post_callback(&*tasklist, "failed");
+                                post_callback(&tasklist, "failed");
                                 return;
                             }
                         }
@@ -450,7 +440,7 @@ impl Handler {
 
                 println!("Download finished");
 
-                post_callback(&*tasklist.borrow(), "finished");
+                post_callback(&tasklist.borrow(), "finished");
             };
 
             if let Err(e) = res {
@@ -710,7 +700,7 @@ impl Handler {
             let tmp = std::env::temp_dir().join("cele-mod.exe");
             match aria2c::download_file_with_progress(
                 &url,
-                &tmp.to_string_lossy().to_string(),
+                tmp.to_string_lossy().as_ref(),
                 &mut |progress| {
                     callback
                         .call(
@@ -807,18 +797,8 @@ fn main() {
     }
 
     if !Path::new("./sciter.dll").exists() {
-        #[cfg(not(debug_assertions))]
-        {
-            // fs::write(
-            //     "./sciter.dll",
-            //     include_bytes!("../resources/sciter.dll"),
-            // )
-            // .unwrap();
-        }
-
-        if !Path::new("./sciter.dll").exists() {
-            panic!("sciter.dll not found");
-        }
+        let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
+        panic!("sciter.dll not found");
     }
 
     let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));

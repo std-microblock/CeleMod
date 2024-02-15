@@ -1,10 +1,10 @@
-use std::cell::RefCell;
-use std::fs;
+
+
 use std::io::{BufRead, BufReader};
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::rc::Rc;
+
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
@@ -21,11 +21,8 @@ lazy_static! {
         if !Path::new(&path).exists() {
             // #[cfg(not(debug_assertions))]
             // std::fs::write(&path, include_bytes!("../resources/aria2c.exe")).unwrap();
-
-            if !Path::new(&path).exists() {
-                #[cfg(debug_assertions)]
-                panic!("aria2c.exe not found.");
-            }
+            let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
+            panic!("aria2c.exe not found.");
         }
         path
     };
@@ -84,7 +81,7 @@ pub fn download_file_with_progress(
         Err(_) => bail!("Failed to start aria2c process."),
     };
 
-    let mut err: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    let err: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     let stderr = child.stderr.take().unwrap();
     let err_ref = Arc::clone(&err);
     // 读取错误输出
