@@ -39,3 +39,5 @@ An alternative mod manager for Celeste
 [@WEGFan](https://github.com/WEGFan) provides mirroring and community API, Celeste implementation and other related knowledge
 
 @Destro and @Rhuan Brazilian Portuguese translation
+
+[@dzhake](https://github.com/dzhake) Russian translation

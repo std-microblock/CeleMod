@@ -7,8 +7,8 @@ export const _functionalMods = () => [
       'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client',
     visible: lang => lang === 'zh-CN'
   }, {
-    name: 'CelesteNet',
-    description: 'Multiplayer support',
+    name: _i18n.t('CelesteNet'),
+    description: _i18n.t('Multiplayer support'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
     visible: lang => lang !== 'zh-CN'

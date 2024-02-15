@@ -157,7 +157,6 @@
   "无内容": "Sem conteúdo.",
   "选择其他路径": "Escolha outro diretório",
   "界面设置": "Configurações de Interface",
-  "语言": "Linguagem",
   "简体中文": "&&",
   "Everest": "Everest",
   "原版": "Vanilla",
@@ -172,5 +171,8 @@
   "Harold Madeline Skin": "Skin do Harold",
   "有趣的姿势": "Pose interessante",
   "下载镜像": "Baixar espelho",
-  "始终开启": "Sempre aberto"
+  "始终开启": "Sempre aberto",
+  "CelesteNet": "CelesteNet",
+  "Multiplayer support": "Multiplayer support",
+  "语言/Language": "Linguagem"
 }

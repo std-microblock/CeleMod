@@ -7,7 +7,8 @@
     .modList {
 
         .title {
-            html[lang="pt-BR"] & {
+            html[lang="pt-BR"] &,
+            html[lang="ru-RU"] & {
                 font-size: 16px;
             }
 
@@ -35,7 +36,8 @@
         }
 
         button {
-            html[lang="pt-BR"] & {
+            html[lang="pt-BR"] & ,
+            html[lang="ru-RU"] &{
                 font-size: 10px !important;
             }
         }

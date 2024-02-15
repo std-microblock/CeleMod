@@ -8,8 +8,8 @@ module.exports = {
   ignoreComponents: [],
   ignoreMethods: [],
   primaryLocale: 'zh-CN',
-  supportedLocales: ['zh-CN', 'en-US', 'pt-BR'
-  // , 'de-DE', 'fr-FR', 'ru-RU'
+  supportedLocales: ['zh-CN', 'en-US', 'pt-BR', 'ru-RU'
+  // , 'de-DE', 'fr-FR',
   ],
   importCode: "import _i18n, { useI18N } from 'src/i18n';",
   i18nObject: '_i18n',

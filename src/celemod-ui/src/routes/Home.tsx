@@ -193,6 +193,7 @@ export const Home = () => {
               setUseMultiThread(v.target.checked);
             }}
           />
+
           {_i18n.t('使用多线程下载')}
         </label>
       </div>
@@ -273,7 +274,7 @@ export const Home = () => {
         </label>
 
         <div class="languageSelect">
-          <span>{_i18n.t('语言')}</span>&nbsp;
+          <span>{_i18n.t('语言/Language')}</span>&nbsp;
           <select
             onChange={(e: any) => {
               i18nCtx.setLang(e.target.value);
@@ -285,10 +286,11 @@ export const Home = () => {
           >
             <option value="zh-CN">{_i18n.t('简体中文')}</option>
             <option value="en-US">English</option>
+            <option value="ru-RU">русский</option>
             <option value="pt-BR">Brazilian Portuguese</option>
-            {/* <option value="ru-RU">русский</option>
-              <option value="de-DE">Deutsch</option>
-              <option value="fr-FR">Français</option> */}
+            {/*
+               <option value="de-DE">Deutsch</option>
+               <option value="fr-FR">Français</option> */}
           </select>
         </div>
       </div>

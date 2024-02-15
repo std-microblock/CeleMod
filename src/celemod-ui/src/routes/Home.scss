@@ -26,7 +26,8 @@
             box-shadow: 0 0 5px #00000022;
             display: inline-block;
 
-            html[lang="pt-BR"] &{
+            html[lang="pt-BR"] &,
+            html[lang="ru-RU"] &{
                 width: 150px;
 
                 .info {
