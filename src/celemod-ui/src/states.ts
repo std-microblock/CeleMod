@@ -141,3 +141,5 @@ export const [initGamePath, useGamePath] = createPersistedState<string>('', stor
 })
 
 export const [initUseMultiThread, useUseMultiThread] = createPersistedStateByKey('useMultiThread', true)
+
+export const [initAlwaysOnMods, useAlwaysOnMods] = createPersistedStateByKey('alwaysOnMods', [])

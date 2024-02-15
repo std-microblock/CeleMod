@@ -18,6 +18,7 @@ import { useEverestCtx as createEverestContext } from './context/everest';
 import { Everest } from './routes/Everest';
 import { checkUpdate } from './components/SelfUpdate';
 import { createThemeContext } from './context/theme';
+import { createBlacklistContext } from './context/blacklist';
 
 export const GlobalContext = createContext<{
   bus: EventTarget;
@@ -28,6 +29,7 @@ export const GlobalContext = createContext<{
     setPage(name: string): void;
   };
   theme: ReturnType<typeof createThemeContext>;
+  blacklist: ReturnType<typeof createBlacklistContext>;
 }>({} as any);
 
 export const useGlobalContext = () => {
@@ -72,6 +74,7 @@ export default () => {
 
   const download = createDownloadContext();
   const everest = createEverestContext();
+  const blacklist = createBlacklistContext();
   const pageController = {
     setPage(name: string) {
       setPage(name);
@@ -116,6 +119,7 @@ export default () => {
             everest,
             pageController,
             theme,
+            blacklist
           }}
         >
           <DownloadListMenu />

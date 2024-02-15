@@ -25,6 +25,7 @@ import { Button } from '../components/Button';
 import './Home.scss';
 import { createPopup } from '../components/Popup';
 import { useEnableAcrylic } from 'src/context/theme';
+import { useGlobalContext } from 'src/App';
 
 export const Home = () => {
     useI18N();
@@ -38,7 +39,7 @@ export const Home = () => {
         }
         return paths;
     }, [gamePath]);
-    const [counter, setCounter] = useState(0);
+    const globalCtx = useGlobalContext();
 
     const [lastUseMap, setLastUseMap] = useState<{
         [profile: string]: number;
@@ -204,7 +205,7 @@ export const Home = () => {
                     <div
                         class={`profile ${v.name === currentProfileName && 'selected'}`}
                         onClick={() => {
-                            setCurrentProfileName(v.name);
+                            globalCtx.blacklist.switchProfile(v.name);
                         }}
                     >
                         <div className="name">{v.name}</div>
@@ -223,7 +224,7 @@ export const Home = () => {
                                 // @ts-ignore
                                 (e) => {
                                     e.stopPropagation();
-                                    setCurrentProfileName(v.name);
+                                    globalCtx.blacklist.switchProfile(v.name);
                                     lastUseMap[v.name] = Date.now();
                                     save();
                                     setLastUseMap(lastUseMap);

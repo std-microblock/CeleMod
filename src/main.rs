@@ -539,8 +539,9 @@ impl Handler {
         });
     }
 
-    fn apply_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
-        let result = blacklist::apply_mod_blacklist_profile(&game_path, &profile_name);
+    fn apply_blacklist_profile(&self, game_path: String, profile_name: String, always_on_mods: String) -> String {
+        let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap();
+        let result = blacklist::apply_mod_blacklist_profile(&game_path, &profile_name, &always_on_mods);
         if let Err(e) = result {
             eprintln!("Failed to apply blacklist profile: {}", e);
             format!("Failed to apply blacklist profile: {}", e)
@@ -760,7 +761,7 @@ impl sciter::EventHandler for Handler {
         fn start_game(String);
         fn open_url(String);
         fn get_blacklist_profiles(String, Value);
-        fn apply_blacklist_profile(String, String);
+        fn apply_blacklist_profile(String, String, String);
         fn switch_mod_blacklist_profile(String, String, String, String, bool);
         fn new_mod_blacklist_profile(String, String);
         fn get_current_profile(String);

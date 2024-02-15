@@ -4,9 +4,11 @@ import './Manage.scss';
 import {
   BackendDep,
   BackendModInfo,
+  useAlwaysOnMods,
   useCurrentBlacklistProfile,
   useGamePath,
   useInstalledMods,
+  useStorage,
 } from '../states';
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { callRemote, compareVersion } from '../utils';
@@ -49,7 +51,7 @@ type ModDepInfo = ModInfoProbablyMissing & {
 };
 
 const modListContext = createContext<{
-  switchMod: (id: string, enabled: boolean) => void;
+  switchMod: (id: string, enabled: boolean, recursive?: boolean) => void;
   switchProfile: (name: string) => void;
   removeProfile: (name: string) => void;
   modFolder: string;
@@ -58,6 +60,8 @@ const modListContext = createContext<{
   reloadMods: () => void;
   fullTree: boolean;
   showUpdate: boolean;
+  alwaysOnMods: string[];
+  switchAlwaysOn: (name: string, enabled: boolean) => void;
 } | null>({} as any);
 
 const ModBadge = ({
@@ -66,17 +70,20 @@ const ModBadge = ({
   color,
   onClick,
   title,
+  onContextMenu,
 }: {
   children: any;
   color: string;
   bg: string;
   onClick?: () => void;
+  onContextMenu?: (e: MouseEvent) => void;
   title?: string;
 }) => {
   return (
     <span
       className="ma-badge"
       onClick={onClick}
+      onContextMenu={onContextMenu}
       style={{
         background: bg,
         color: color,
@@ -114,20 +121,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-                setState(_i18n.t('下载中'));
-                download.downloadMod(name, gbFileID, {
-                  onProgress: (task, progress) => {
-                    setState(`${progress}% (${task.subtasks.length})`);
-                  },
-                  onFinished: () => {
-                    setState(_i18n.t('下载完成'));
-                    ctx?.reloadMods();
-                  },
-                  onFailed: () => {
-                    setState(_i18n.t('下载失败'));
-                  },
-                });
-              }
+              setState(_i18n.t('下载中'));
+              download.downloadMod(name, gbFileID, {
+                onProgress: (task, progress) => {
+                  setState(`${progress}% (${task.subtasks.length})`);
+                },
+                onFinished: () => {
+                  setState(_i18n.t('下载完成'));
+                  ctx?.reloadMods();
+                },
+                onFailed: () => {
+                  setState(_i18n.t('下载失败'));
+                },
+              });
+            }
             : undefined
         }
       >
@@ -196,12 +203,13 @@ const ModLocal = ({
     });
   }, [name]);
 
+  const isAlwaysOn = ctx?.alwaysOnMods.includes(name)
+
   return (
     <div className={`m-mod ${enabled && 'enabled'}`}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${
-          hasDeps && 'clickable'
-        }`}
+        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
+          }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -215,13 +223,22 @@ const ModLocal = ({
         )}
       </span>
       <ModBadge
-        bg={enabled ? '#4caf50' : '#2c313c'}
+        bg={
+          isAlwaysOn ? '#087EBF' :
+            enabled ? '#4caf50'
+              : '#2c313c'
+        }
         color="white"
         onClick={() => {
           ctx?.switchMod(name, !enabled);
         }}
+        onContextMenu={(e) => {
+          ctx?.switchAlwaysOn(name, !isAlwaysOn)
+        }}
       >
-        {enabled ? _i18n.t('已启用') : _i18n.t('已禁用')}
+        {isAlwaysOn ? "始终开启" :
+          enabled ? _i18n.t('已启用')
+            : _i18n.t('已禁用')}
       </ModBadge>
 
       {enabled &&
@@ -555,9 +572,18 @@ export const Manage = () => {
     modsTreeRef.current?.scrollTo(0, 0);
   }, [excludeDependents]);
 
+  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods()
+  const globalCtx = useGlobalContext()
   const manageCtx = useMemo(
     () => ({
+      switchAlwaysOn: (name: string, enabled: boolean) => {
+        if (enabled) setAlwaysOnMods([...alwaysOnMods, name])
+        else setAlwaysOnMods(alwaysOnMods.filter(v => v !== name))
+      },
+      alwaysOnMods,
       batchSwitchMod: (names: string[], enabled: boolean) => {
+        if (!enabled)
+          names = names.filter((v) => !alwaysOnMods.includes(v))
         if (!currentProfile) return;
         let files = [];
         for (const mod of names) {
@@ -593,12 +619,13 @@ export const Manage = () => {
         setTimeout(() => {
           if (lastApplyReq === Date.now()) {
             manageCtx.switchProfile(manageCtx.currentProfileName);
+            setHasUnsavedChanges(false);
           }
         }, 600);
       },
-      switchMod: (name: string, enabled: boolean, recursive = true) => {
+      switchMod: (names: string | string[], enabled: boolean, recursive = true) => {
         if (currentProfile) {
-          const names: string[] = [];
+          const switchList: string[] = [];
           const excludeFromAutoEnableList = [
             'CelesteNet.Client',
             'Miao.CelesteNet.Client',
@@ -608,7 +635,7 @@ export const Manage = () => {
             const mod = installedModMap.get(name);
             if (mod) {
               mod.enabled = enabled;
-              names.push(name);
+              switchList.push(name);
             }
 
             if (recursive) {
@@ -635,17 +662,21 @@ export const Manage = () => {
             }
           };
 
-          addToSwitchList(name);
+          if (typeof names === 'string') {
+            names = [names];
+          }
+          for (const name of names) {
+            addToSwitchList(name);
+          }
 
-          manageCtx.batchSwitchMod(names, enabled);
+          manageCtx.batchSwitchMod(switchList, enabled);
         }
 
         setHasUnsavedChanges(true);
       },
       switchProfile: (name: string) => {
-        if(hasUnsavedChanges) return;
-        callRemote('apply_blacklist_profile', gamePath, name);
-        setCurrentProfileName(name);
+        if (hasUnsavedChanges) return;
+        globalCtx.blacklist.switchProfile(name);
         setHasUnsavedChanges(false);
       },
       removeProfile: (name: string) => {
@@ -674,7 +705,7 @@ export const Manage = () => {
       fullTree,
       showUpdate,
     }),
-    [currentProfile, installedMods, gamePath, modPath, fullTree, showUpdate]
+    [currentProfile, installedMods, gamePath, modPath, fullTree, showUpdate, alwaysOnMods]
   );
 
   const { download } = useGlobalContext();
@@ -707,8 +738,8 @@ export const Manage = () => {
             &nbsp;&nbsp;
             <Button
               onClick={() => {
-                manageCtx.batchSwitchMod(
-                  installedMods.map((v) => v.name),
+                manageCtx.switchMod(
+                  [...installedModsTree.values()].map((v) => v.name).filter((v) => !alwaysOnMods.includes(v)),
                   false
                 );
               }}

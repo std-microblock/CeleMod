@@ -21,6 +21,7 @@ pub struct ModBlacklistProfile {
 pub fn apply_mod_blacklist_profile(
     game_path: &String,
     profile_name: &String,
+    always_on_mod: &[String],
 ) -> anyhow::Result<()> {
     let profile = get_mod_blacklist_profiles(game_path)
         .into_iter()
@@ -38,7 +39,9 @@ pub fn apply_mod_blacklist_profile(
             profile_name
         ) + &mods.iter()
             .filter_map(|v| {
-                profile.mods.iter().find(|m| m.name == v.name).map(|mod_name| format!("# {}\n", mod_name.file))
+                profile.mods.iter()
+                .find(|m| m.name == v.name && !always_on_mod.contains(&v.name))
+                .map(|mod_name| format!("# {}\n", mod_name.file))
             })
             .collect::<Vec<String>>()
             .join("\n")),
