@@ -133,7 +133,7 @@ pub fn download_file_with_progress(
     match child.wait() {
         Ok(status) => {
             if !status.success() || !Path::new(output_path).exists() {
-                bail!(format!("Failed to download file. {}", err.lock().unwrap()))
+                bail!(format!("Failed to download file. Reason: {}", err.lock().unwrap()))
             } else {
                 Ok(())
             }

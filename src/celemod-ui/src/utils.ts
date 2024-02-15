@@ -126,3 +126,5 @@ export const selectGamePath = (successCallback) => {
         return path
     }
 };
+
+export type Awaitable<T> = T | Promise<T>;

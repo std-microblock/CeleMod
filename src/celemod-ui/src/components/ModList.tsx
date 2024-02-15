@@ -6,7 +6,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { GameSelector } from './GameSelector';
-import { callRemote, displayDate } from '../utils';
+import { Awaitable, callRemote, displayDate } from '../utils';
 
 import { FixedSizeGrid, FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
@@ -16,6 +16,8 @@ import { Download } from '../context/download';
 import { useGlobalContext } from '../App';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
+// @ts-ignore
+import celemodIcon from '../resources/celemod.png';
 
 const processLargeNum = (num: number) => {
   if (num < 1000) return num.toString();
@@ -54,7 +56,7 @@ export interface FileToDownload {
 
 export interface ModInfo {
   name: string;
-  downloadUrl: (() => Promise<string>) | (() => Promise<FileToDownload[]>);
+  downloadUrl: (() => Awaitable<string | FileToDownload[]>);
   previewUrl: string;
   author: string;
   other: string;
@@ -570,6 +572,7 @@ export const ModList = (props: {
               name: mod2.name,
               downloadUrl: () => {
                 const dedup = new Set();
+                if (!mod2.gameBananaId) return mod2.files[0].url
                 return Promise.resolve(
                   mod2.files
                     .filter((v) => {
@@ -592,10 +595,10 @@ export const ModList = (props: {
                     )
                 );
               },
-              previewUrl: mod2.screenshots[0].url,
+              previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
               author: mod2.submitter,
               isInstalled: installedModIDs.includes(
-                mod2.gameBananaId.toString()
+                mod2.gameBananaId?.toString()
               ),
               other: `${mod2.likes} 🥰 · ${processLargeNum(
                 mod2.views
