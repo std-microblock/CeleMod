@@ -821,6 +821,9 @@ fn main() {
     #[cfg(target_os = "windows")]
     let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::D2D));
 
+    #[cfg(target_os = "linux")]
+    let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_OPENGL));
+
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))
         // .glassy()
@@ -842,7 +845,7 @@ fn main() {
     }
 
     frame.event_handler(Handler);
-
+ 
     #[cfg(debug_assertions)]
     frame.load_html(
         include_bytes!("./celemod-ui/debug_index.html"),
