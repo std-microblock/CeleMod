@@ -44,7 +44,7 @@ export const createThemeContext = () => {
     useEffect(() => {
         if (!storage) return;
         // @ts-ignore
-        Window.this.blurBehind = enableAcrylic ? 'dark ultra source-desktop' : 'none'
+        // Window.this.blurBehind = enableAcrylic ? 'dark ultra source-desktop' : 'none'
         storage.root.enableAcrylic = enableAcrylic;
         save();
     }, [enableAcrylic, storage]);

@@ -539,9 +539,15 @@ impl Handler {
         });
     }
 
-    fn apply_blacklist_profile(&self, game_path: String, profile_name: String, always_on_mods: String) -> String {
+    fn apply_blacklist_profile(
+        &self,
+        game_path: String,
+        profile_name: String,
+        always_on_mods: String,
+    ) -> String {
         let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap();
-        let result = blacklist::apply_mod_blacklist_profile(&game_path, &profile_name, &always_on_mods);
+        let result =
+            blacklist::apply_mod_blacklist_profile(&game_path, &profile_name, &always_on_mods);
         if let Err(e) = result {
             eprintln!("Failed to apply blacklist profile: {}", e);
             format!("Failed to apply blacklist profile: {}", e)
@@ -795,6 +801,8 @@ fn main() {
         return;
     }
 
+    println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
+
     // windows only
     #[cfg(windows)]
     {
@@ -804,11 +812,10 @@ fn main() {
             AttachConsole(ATTACH_PARENT_PROCESS);
             SetProcessDPIAware();
         }
-    }
-
-    if !Path::new("./sciter.dll").exists() {
-        let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
-        panic!("sciter.dll not found");
+        if !Path::new("./sciter.dll").exists() {
+            let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
+            panic!("sciter.dll not found");
+        }
     }
 
     #[cfg(target_os = "windows")]
@@ -816,8 +823,8 @@ fn main() {
 
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))
-        .glassy()
-        .alpha()
+        // .glassy()
+        // .alpha()
         .closeable()
         .create();
 

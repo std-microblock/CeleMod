@@ -41,7 +41,7 @@ pub fn apply_mod_blacklist_profile(
             .filter_map(|v| {
                 profile.mods.iter()
                 .find(|m| m.name == v.name && !always_on_mod.contains(&v.name))
-                .map(|mod_name| format!("# {}\n", mod_name.file))
+                .map(|mod_name| mod_name.file.clone())
             })
             .collect::<Vec<String>>()
             .join("\n")),

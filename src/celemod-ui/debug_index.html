@@ -6,10 +6,38 @@
     <title>Document</title>
 </head>
 <body>
-    <script>
+    <!-- <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var string = msg.toLowerCase();
+            var substring = "script error";
+            if (string.indexOf(substring) > -1){
+                document.body.innerText = ('Script Error: See Browser Console for Detail');
+            } else {
+                var message = [
+                    'Message: ' + msg,
+                    'URL: ' + url,
+                    'Line: ' + lineNo,
+                    'Column: ' + columnNo,
+                    'Error object: ' + JSON.stringify(error)
+                ].join(' - ');
+                document.body.innerText = (message);
+            }
+            return false;
+        };
+        console.log(1)
         setTimeout(()=>{
-            Window.this.load("http://localhost:1234/");
+            // Window.this.load("http://localhost:1234/");
+            // Window.this.load("http://172.25.48.1:1234/"); // wsl
         },10);
+    </script> -->
+    <div>Debug Loader</div>
+    <button>Jump</button>
+
+    <script>
+        document.querySelector('button').onclick = () => {
+            document.body.innerText = 'Jumped';
+            Window.this.load("http://172.25.48.1:1234/");
+        }
     </script>
 </body>
 </html>
