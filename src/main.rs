@@ -483,7 +483,7 @@ impl Handler {
 
         if origin {
             if game_origin.exists() {
-                std::process::Command::new(game_origin).spawn().unwrap();
+                std::process::Command::new(game_origin).arg("--vanilla").spawn().unwrap();
             } else {
                 std::process::Command::new(game).spawn().unwrap();
             }
