@@ -198,7 +198,9 @@ const ModLocal = ({
     const update = ctx?.hasUpdateMods.find((v) => v.name === name);
     if (update) {
       setUpdateState([update.gb_file, update.version]);
-      setUpdateString(_i18n.t('点击更新'));
+      setUpdateString(_i18n.t('点击更新 · {newversion}', {
+        newversion: update.version,
+      }));
     }
   }, [name, ctx.hasUpdateMods]);
 
@@ -506,9 +508,12 @@ export const Manage = () => {
           name: mod.name,
           version: latest[1],
           gb_file: latest[2],
+          current: mod.version
         });
       }
     }
+
+    console.log('hasUpdateMods', JSON.stringify(hasUpdateMods, null, 4))
 
     return mods;
   }, [latestModInfos, installedModMap]);
