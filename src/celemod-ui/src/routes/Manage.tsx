@@ -485,7 +485,8 @@ export const Manage = () => {
     [
       string,
       string,
-      string // name, version, gbfileid
+      string,
+      string // name, version, gbfileid, url
     ][]
   >([]);
 
@@ -499,6 +500,8 @@ export const Manage = () => {
     name: string;
     version: string;
     gb_file: string;
+    current: string;
+    url: string;
   }[] = useMemo(() => {
     const mods = [];
     for (const mod of installedMods) {
@@ -508,7 +511,8 @@ export const Manage = () => {
           name: mod.name,
           version: latest[1],
           gb_file: latest[2],
-          current: mod.version
+          current: mod.version,
+          url: latest[3],
         });
       }
     }
@@ -891,7 +895,7 @@ export const Manage = () => {
                     hasUpdateMods.map((v) => v.name)
                   );
                   for (const mod of hasUpdateMods) {
-                    download.downloadMod(mod.name, mod.gb_file, {
+                    download.downloadMod(mod.name, mod.gb_file === '-1' ? mod.url : mod.gb_file, {
                       onProgress: (task, progress) => {
                         console.log(task, progress);
                       },

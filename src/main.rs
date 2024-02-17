@@ -634,7 +634,7 @@ impl Handler {
 
     fn get_mod_latest_info(&self, callback: sciter::Value) {
         std::thread::spawn(move || {
-            let res: anyhow::Result<Vec<(String, String, String)>> = try {
+            let res: anyhow::Result<Vec<(String, String, String, String)>> = try {
                 let mods = get_mod_cached_new()?;
                 mods.iter()
                     .map(|(k, v)| {
@@ -642,6 +642,7 @@ impl Handler {
                             k.clone(),
                             v.version.clone(),
                             v.game_banana_file_id.to_string(),
+                            v.download_url.clone(),
                         )
                     })
                     .collect()

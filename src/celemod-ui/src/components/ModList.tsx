@@ -147,7 +147,7 @@ export const Mod = memo(
                             <div
                               className="file"
                               onClick={() => {
-                                down(v.name, v.id);
+                                down(v.name, parseInt(v.id) === -1 ? v.url : v.id);
                                 popupCtx.hide();
                               }}
                             >
