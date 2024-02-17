@@ -42,7 +42,7 @@ const RMod = ({
     callRemote('get_mod_update', name, (data) => {
       if (!!data) {
         const [gbFileId, version] = JSON.parse(data);
-        ctx.download.downloadMod(name, gbFileId === -1 ? download_url : gbFileId, {
+        ctx.download.downloadMod(name, parseInt(gbFileId) === -1 ? download_url : gbFileId, {
           onProgress(task, progress) {
             setState(
               `${progress}% (${task.subtasks.filter((v) => v.state === 'Finished').length
