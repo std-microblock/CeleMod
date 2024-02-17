@@ -826,8 +826,8 @@ fn main() {
 
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))
-        // .glassy()
-        // .alpha()
+        .glassy()
+        .alpha()
         .closeable()
         .create();
 
@@ -848,7 +848,7 @@ fn main() {
  
     #[cfg(debug_assertions)]
     frame.load_html(
-        include_bytes!("./celemod-ui/debug_index.html"),
+        read_to_string_bom(Path::new("./src/celemod-ui/debug_index.html")).unwrap().as_bytes(),
         Some("app://index.html"),
     );
     #[cfg(not(debug_assertions))]

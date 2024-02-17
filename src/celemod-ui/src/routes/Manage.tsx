@@ -62,6 +62,11 @@ const modListContext = createContext<{
   showUpdate: boolean;
   alwaysOnMods: string[];
   switchAlwaysOn: (name: string, enabled: boolean) => void;
+  hasUpdateMods: {
+    name: string;
+    version: string;
+    gb_file: string;
+  }[];
 } | null>({} as any);
 
 const ModBadge = ({
@@ -190,18 +195,12 @@ const ModLocal = ({
   const [updateState, setUpdateState] = useState<[string, string] | null>(null);
   const [updateString, setUpdateString] = useState('');
   useEffect(() => {
-    callRemote('get_mod_update', name, (data: string) => {
-      if (!!data) {
-        const [gbFileID, newversion] = JSON.parse(data);
-        if (compareVersion(newversion, version) > 0) {
-          setUpdateState([gbFileID, newversion]);
-          setUpdateString(
-            _i18n.t('点击更新 · {newversion}', { newversion: newversion })
-          );
-        }
-      }
-    });
-  }, [name]);
+    const update = ctx?.hasUpdateMods.find((v) => v.name === name);
+    if (update) {
+      setUpdateState([update.gb_file, update.version]);
+      setUpdateString(_i18n.t('点击更新'));
+    }
+  }, [name, ctx.hasUpdateMods]);
 
   const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
 
@@ -625,6 +624,7 @@ export const Manage = () => {
   const globalCtx = useGlobalContext();
   const manageCtx = useMemo(
     () => ({
+      hasUpdateMods,
       switchAlwaysOn: (name: string, enabled: boolean) => {
         if (enabled) setAlwaysOnMods([...alwaysOnMods, name]);
         else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));

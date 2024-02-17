@@ -1,6 +1,6 @@
 #!/bin/bash
 mkdir -p /usr/lib/sciter
-wget https://gitlab.com/sciter-engine/sciter-js-sdk/-/raw/main/bin/linux/x64/libsciter.so?ref_type=heads -O /usr/lib/sciter/libsciter-gtk.so
+wget https://gitlab.com/sciter-engine/sciter-js-sdk/-/raw/main/bin/linux/x64/libsciter.so?ref_type=heads -O /usr/lib/sciter/libsciter-gtk-64.so
 
 touch /etc/ld.so.conf.d/sciter.conf
 bash -c 'echo "/usr/lib/sciter" > /etc/ld.so.conf.d/sciter.conf'

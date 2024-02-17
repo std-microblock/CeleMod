@@ -1564,8 +1564,7 @@ checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
 [[package]]
 name = "sciter-rs"
 version = "0.5.58"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cdb1443364559d670a1b190bea5cdd1064cd9347e7e18150f18737bbc3c2234"
+source = "git+https://github.com/MicroCBer/rust-sciter#0d95e1910d7ea0dcccb2cc774ba189dfe5b5c8ba"
 dependencies = [
  "lazy_static",
  "libc",
