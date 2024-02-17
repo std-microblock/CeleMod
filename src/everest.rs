@@ -93,6 +93,13 @@ fn run_command(
     let mut cmd = Command::new(&installer_path);
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    const DETACHED_PROCESS: u32 = 0x00000008;
+    #[cfg(target_os = "windows")]
+    use std::os::windows::process::CommandExt;
+    #[cfg(target_os = "windows")]
+    let cmd = cmd.creation_flags(CREATE_NO_WINDOW);
+
     cmd.current_dir(
         installer_path
             .parent()
@@ -134,9 +141,14 @@ pub fn download_and_install_everest(
     let temp_path = temp_path.to_str().unwrap();
     let game_path = game_path.to_str().unwrap();
 
-    aria2c::download_file_with_progress(url, temp_path, &mut |callback| {
-        progress_callback("Downloading Everest".to_string(), callback.progress);
-    }, false)?;
+    aria2c::download_file_with_progress(
+        url,
+        temp_path,
+        &mut |callback| {
+            progress_callback("Downloading Everest".to_string(), callback.progress);
+        },
+        false,
+    )?;
 
     progress_callback("Installing Everest".to_string(), 50.0);
 

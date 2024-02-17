@@ -45,8 +45,7 @@ pub fn download_file_with_progress(
 
     println!("[ ARIA2C ] Downloading {} to {}", url, output_path);
 
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
-    const DETACHED_PROCESS: u32 = 0x00000008;
+
 
     let output_path = Path::new(output_path);
     // 构建 aria2c 命令
@@ -75,6 +74,8 @@ pub fn download_file_with_progress(
     .stdout(Stdio::piped())
     .stderr(Stdio::piped());
 
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    const DETACHED_PROCESS: u32 = 0x00000008;
     #[cfg(target_os = "windows")]
     let command = command.creation_flags(CREATE_NO_WINDOW).spawn();
 
