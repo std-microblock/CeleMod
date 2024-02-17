@@ -124,7 +124,8 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
     }), () => refValue] as [() => void, () => ([T, (data: T) => void]), () => T]
 }
 
-const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPersistedState<T>(defaultValue, storage => storage.root[key], (storage, data, save) => {
+const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPersistedState<T>(defaultValue, storage => storage.root?.[key] ?? defaultValue, (storage, data, save) => {
+    storage.root ??= {};
     storage.root[key] = data;
     save()
 })
