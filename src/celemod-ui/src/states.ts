@@ -28,11 +28,26 @@ declare global {
     var configStorage: any;
     var storage: any;
     var env: any;
+    var sys: any;
 }
 
 export const useStorage = () => {
     if (!window.configStorage) {
-        window.configStorage = storage.open('./cele-mod.db');
+        let path = './cele-mod.db';
+        const exists = (path)=>{
+            try {
+                sys.fs.statSync(path);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        if (exists('../../cele-mod.db')) {
+            path = '../../cele-mod.db';
+        }
+
+        console.log('useStorage', path)
+        window.configStorage = storage.open(path);
 
         window.addEventListener('beforeunload', () => {
             configStorage.close();

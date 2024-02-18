@@ -384,7 +384,7 @@ impl Handler {
                                 let task = &mut tasklist[i_task];
                                 task.status = DownloadStatus::Failed;
                                 task.data = e.to_string();
-                                fs::remove_file(&current_task.dest);
+                                let _ = fs::remove_file(&task.dest);
                                 post_callback(&tasklist, "failed");
                                 return;
                             }

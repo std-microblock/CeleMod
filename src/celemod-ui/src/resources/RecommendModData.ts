@@ -285,3 +285,50 @@ export const _skinMods = () => [
       'https://celeste.weg.fan/api/v2/download/gamebanana-files/857866',
   },
 ];
+
+export const _mapMods = ()=>[
+  {
+    name: 'StrawberryJam Collab （草莓酱）',
+    description: '全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/StrawberryJam2021',
+  },
+  {
+    name: 'Spring Collab （春游）',
+    description: '另一个大型地图集，与草莓酱相比较简单',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/SpringCollab2020',
+  },
+  {
+    name: 'Gallery Collab（画游）',
+    description: '中国玩家制作的地图集，地图较少，美术精美，适合新手和老玩家',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/ChineseNewYear2024Collab',
+  },
+  {
+    name: 'Winter Collab （冬游）',
+    description: '另一个大型地图集，与草莓酱相比较简单',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/WinterCollab2021',
+  },
+  {
+    name: 'the road less travelled',
+    description: '独立地图，酱一难度，比较宁静，官图A面过后可打',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/the%20road%20less%20travelled',
+  },
+  {
+    name: 'glyph',
+    description: '独立地图，酱二红难度，老图，要求',
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/glyph',
+  },
+]
+
+
+/*
+into the jungle 官
+gate to the stars
+far away
+glyph
+*/
