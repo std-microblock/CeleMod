@@ -34,6 +34,8 @@ interface ModInfo {
   _deps: BackendDep[]; // raw deps
   resolveDependencies: () => DepResolveResult;
   file: string;
+  duplicateCount: number;
+  duplicateFiles: string[]
 }
 
 interface MissingModDepInfo {
@@ -170,6 +172,8 @@ const ModLocal = ({
   version,
   optional = false,
   file,
+  duplicateCount,
+  duplicateFiles
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
@@ -272,6 +276,11 @@ const ModLocal = ({
           {dependedByFiltered.length}
         </ModBadge>
       )}
+      {duplicateCount > 1 && <ModBadge bg="#DB3D73" color="white" title={
+        duplicateFiles.map((v) => v.split('/').pop()).join(' | ')
+      }>
+        重复 Mod · {duplicateCount} 次
+      </ModBadge>}
 
       {ctx?.showUpdate && updateState && (
         <ModBadge
@@ -452,13 +461,19 @@ export const Manage = () => {
 
           return { status, message } as DepResolveResult;
         },
+        duplicateCount: 1,
+        duplicateFiles: [mod.file]
       };
-      modMap.set(mod.name, modInfo);
+      if (modMap.has(mod.name)) {
+        modMap.get(mod.name)!.duplicateCount = modMap.get(mod.name)!.duplicateCount + 1;
+        modMap.get(mod.name)!.duplicateFiles.push(mod.file);
+      } else {
+        modMap.set(mod.name, modInfo);
+      }
     }
 
-    for (const mod of installedMods) {
-      const modInfo = modMap.get(mod.name)!;
-      for (const dep of mod.deps) {
+    for (const modInfo of modMap.values()) {
+      for (const dep of modInfo._deps) {
         if (!modMap.has(dep.name)) {
           modInfo.dependencies.push({
             name: dep.name,
