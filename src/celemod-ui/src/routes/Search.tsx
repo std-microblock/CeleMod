@@ -3,7 +3,7 @@ import { Fragment, h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { ModList } from '../components/ModList';
 import { getMods, Mod, SearchModResp } from '../api/xmao';
-import { currentMirror, useCurrentEverestVersion, useGamePath, useMirror } from '../states';
+import { currentMirror, initSearchSort, useCurrentEverestVersion, useGamePath, useMirror, useSearchSort } from '../states';
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -35,9 +35,8 @@ export const Search = () => {
   const [selectedPath] = useGamePath();
   const [loading, setLoading] = useState(true);
   const loadingLock = useRef(false);
-  const [sort, setSort] = useState<
-    'new' | 'updateAdded' | 'updated' | 'views' | 'likes'
-  >('likes');
+  initSearchSort();
+  const [sort, setSort] = useSearchSort();
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
