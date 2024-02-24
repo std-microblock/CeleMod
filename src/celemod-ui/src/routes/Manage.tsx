@@ -205,13 +205,15 @@ const ModLocal = ({
       setUpdateString(_i18n.t('点击更新 · {newversion}', {
         newversion: update.version,
       }));
+    } else {
+      setUpdateState(null);
     }
   }, [name, ctx.hasUpdateMods]);
 
   const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
 
   return (
-    <div className={`m-mod ${enabled && 'enabled'}`}>
+    <div className={`m-mod ${enabled && 'enabled'}`} key={id}>
       <span
         className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
           }`}
