@@ -858,7 +858,7 @@ export const Manage = () => {
                 }}
               />
 
-              {_i18n.t('主树隐藏依赖')}
+              只显示不被依赖的Mod
             </label>
             <label>
               <input

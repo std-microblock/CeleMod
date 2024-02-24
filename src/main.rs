@@ -198,9 +198,13 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
             let name = yaml[0]["Name"].as_str().context("")?.to_string();
             let version = yaml[0]["Version"].as_str().context("")?.to_string();
             if !mod_data.contains_key(&name) {
-                continue;
+                println!("[ WARNING ] Failed to resolve {name} in mod data, using -1 as gamebanana id");
             }
-            let gbid = mod_data[&name].game_banana_id;
+            let gbid = if mod_data.contains_key(&name) {
+                mod_data[&name].game_banana_id
+            } else {
+                -1
+            };
 
             mods.push(LocalMod {
                 name,
