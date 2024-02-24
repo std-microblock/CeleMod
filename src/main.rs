@@ -112,6 +112,20 @@ fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
     Ok(String::from_utf8(bytes.to_vec())?)
 }
 
+fn parse_version(mod_version: &serde_yaml::Value) -> String {
+    if mod_version.is_f64() {
+        mod_version.as_f64().unwrap().to_string()
+    } else {
+        let v = mod_version.as_str().unwrap_or("1.0.0").to_string();
+
+        if v.chars().all(|c| c.is_ascii_digit() || c == '.') {
+            v
+        } else {
+            "1.0.0".to_string()
+        }
+    }
+}
+
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached_new().unwrap();
@@ -179,7 +193,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 for dep in deps_yaml {
                     deps.push(ModDependency {
                         name: dep["Name"].as_str().unwrap().to_string(),
-                        version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                        version: parse_version(&dep["Version"]),
                         optional: false,
                     });
                 }
@@ -189,14 +203,14 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 for dep in deps_yaml {
                     deps.push(ModDependency {
                         name: dep["Name"].as_str().unwrap().to_string(),
-                        version: dep["Version"].as_str().unwrap_or("0.0.0").to_string(),
+                        version: parse_version(&dep["Version"]),
                         optional: true,
                     });
                 }
             }
 
             let name = yaml[0]["Name"].as_str().context("")?.to_string();
-            let version = yaml[0]["Version"].as_str().context("")?.to_string();
+            let version = parse_version(&yaml[0]["Version"]);
             if !mod_data.contains_key(&name) {
                 println!("[ WARNING ] Failed to resolve {name} in mod data, using -1 as gamebanana id");
             }
@@ -237,19 +251,7 @@ fn download_and_install_mod(
     if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
         for dep in deps_yaml {
             // FUCK YOU YAML
-            let version = if dep["Version"].is_f64() {
-                // this turns it into Number(1.1), let's parse it
-                let ver = format!("{:?}", dep["Version"]);
-                ver["Number(".len()..ver.len() - 1].to_string()
-            } else {
-                let v = dep["Version"].as_str().unwrap_or("1.0.0").to_string();
-
-                if v.chars().all(|c| c.is_ascii_digit() || c == '.') {
-                    v
-                } else {
-                    "1.0.0".to_string()
-                }
-            };
+            let version = parse_version(&dep["Version"]);
 
             deps.push((
                 dep["Name"]
