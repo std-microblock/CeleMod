@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useEffect } from "react";
+import { dirname } from "path";
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -113,14 +114,13 @@ export const selectGamePath = (successCallback) => {
     // @ts-ignore
     const res = Window.this.selectFile({
         mode: 'open',
-        filter: 'Celeste.exe|Celeste.exe',
+        filter: 'Celeste.exe (Windows)|Celeste.exe|' + 'Celeste (*nix)|Celeste',
     });
     if (res !== null) {
         // strip file:// and Celeste.exe
-        const before = 'file://'.length;
-        const after = 'celeste.exe'.length;
+        const prefix = 'file://'.length;
         const decoded = decodeURI(res)
-        const path = decoded.slice(before, decoded.length - after);
+        const path = dirname(decoded.slice(prefix));
         console.log('Selected', path);
         successCallback(path);
         return path
