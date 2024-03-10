@@ -151,7 +151,7 @@ export const Home = () => {
       ) : (
         <div className="config">
           {_i18n.t(
-            '未找到游戏！请先安装 Steam 商店或Epic 商店版的 Celeste，或'
+            '未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或'
           )}
           <span
             onClick={() => {
