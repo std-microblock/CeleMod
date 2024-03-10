@@ -10,7 +10,6 @@ export const GameSelector = (props: {
   onSelect: any;
   launchGame: (v: string) => void;
 }) => {
-  if (!props.paths.length) return <div>No games found</div>;
   const [gamePath] = useGamePath();
 
   if (!props.paths.includes(gamePath)) {

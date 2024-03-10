@@ -17,7 +17,7 @@ import { useGlobalContext } from '../App';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
 // @ts-ignore
-import celemodIcon from '../resources/celemod.png';
+import celemodIcon from '../resources/Celemod.png';
 
 const processLargeNum = (num: number) => {
   if (num < 1000) return num.toString();
