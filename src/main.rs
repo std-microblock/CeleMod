@@ -485,8 +485,14 @@ impl Handler {
     }
 
     fn start_game_directly(&self, path: String, origin: bool) {
-        let game = Path::new(&path).join("Celeste.exe");
-        let game_origin = Path::new(&path).join("orig").join("Celeste.exe");
+        #[cfg(windows)]
+        let file = "Celeste.exe";
+
+        #[cfg(unix)]
+        let file = "Celeste";
+
+        let game = Path::new(&path).join(file);
+        let game_origin = Path::new(&path).join("orig").join(file);
 
         if origin {
             if game_origin.exists() {
@@ -755,7 +761,7 @@ impl Handler {
 
     fn verify_celeste_install(&self, path: String) -> bool {
         let path = Path::new(&path);
-        let checklist = vec!["Celeste.exe"];
+        let checklist = vec!["Celeste.exe", "Celeste"];
         for file in checklist {
             if path.join(file).exists() {
                 return true;
