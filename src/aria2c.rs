@@ -55,6 +55,7 @@ pub fn download_file_with_progress(
     } else {
         &mut command
     }
+    .arg("--no-conf")
     .arg("-d")
     .arg(output_path.parent().unwrap())
     .arg("-o")
