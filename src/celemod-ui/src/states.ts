@@ -121,7 +121,9 @@ function createPersistedState<T>(initial: T, get: (storage: _Storage) => T, set:
             if (!storage) return;
             const data = get(storage);
             refValue = data;
-            data && setData(data)
+            if(data !== undefined && data !== null) {
+                setData(data)
+            }
         }, [storage])
     }, (() => {
         const { value, set: setData } = useTheState();

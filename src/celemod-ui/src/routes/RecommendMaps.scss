@@ -4,16 +4,17 @@
   .collabs {
     // overflow-x: scroll;
     overflow-y: scroll;
-    white-space: nowrap;
+    // white-space: nowrap;
     // height: 100vh;
-    height: 300px;
+    width: 900px;
+    height: calc(100vh - 140px);
   }
   .collab {
     border-radius: 10px;
     overflow: hidden;
     background-size: 370px 208px;
     margin: 12px 6px;
-    // display: inline-block;
+    display: inline-block;
     // float: left;
 
     height: 400px;
@@ -37,6 +38,7 @@
     }
 
     .intro {
+      pointer-events: none;
       padding: 0 10px;
       padding-top: 160px;
       position: relative;
@@ -56,7 +58,7 @@
         white-space: normal;
 
         p {
-            margin: 6px 0;
+          margin: 6px 0;
         }
       }
 

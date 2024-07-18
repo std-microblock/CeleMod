@@ -45,5 +45,5 @@ export const createPopup = (fc: FunctionalComponent, {
     </PopupContext.Provider>
 
     render(ele, container);
-    return container;
+    return ctx;
 }

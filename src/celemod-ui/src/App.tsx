@@ -50,7 +50,7 @@ export default () => {
     RecommendMaps
   };
 
-  const [page, setPage] = useState('RecommendMaps');
+  const [page, setPage] = useState('Home');
 
   const [pageElement, setPageElement] = useState<{
     [key: string]: Element;
