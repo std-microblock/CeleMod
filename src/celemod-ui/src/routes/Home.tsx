@@ -105,7 +105,7 @@ export const Home = () => {
 
   const [downloadMirror, setDownloadMirror] = useMirror();
   const [useMultiThread, setUseMultiThread] = useUseMultiThread();
-  const { installedMods } = useInstalledMods()
+  const { installedMods } = useInstalledMods();
 
   return (
     <div class="home">
@@ -221,8 +221,10 @@ export const Home = () => {
             </div>
 
             <div className="info">
-              <span className="tips">启用的 Mod 数</span>
-              <span className="inf">{installedMods.length - v.mods.length}</span>
+              <span className="tips">{_i18n.t('启用的 Mod 数')}</span>
+              <span className="inf">
+                {installedMods.length - v.mods.length}
+              </span>
             </div>
 
             <Button
@@ -291,8 +293,8 @@ export const Home = () => {
             <option value="ru-RU">русский</option>
             <option value="pt-BR">Brazilian Portuguese</option>
             {/*
-               <option value="de-DE">Deutsch</option>
-               <option value="fr-FR">Français</option> */}
+                <option value="de-DE">Deutsch</option>
+                <option value="fr-FR">Français</option> */}
           </select>
         </div>
       </div>

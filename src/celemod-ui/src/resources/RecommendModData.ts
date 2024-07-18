@@ -1,129 +1,134 @@
 import _i18n from 'src/i18n';
-export const _functionalMods = () => [
-  {
-    name: 'Collab Lobby UI',
-    description: _i18n.t('在大地图中按 M 显示 Collab 地图选择器'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/CollabLobbyUI',
-  },
-  {
-    name: 'MiaoCelesteNet',
-    description: _i18n.t('群服联机'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client',
-    visible: lang => lang === 'zh-CN'
-  }, {
-    name: _i18n.t('CelesteNet'),
-    description: _i18n.t('Multiplayer support'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
-    visible: lang => lang !== 'zh-CN'
-  },
-  {
-    name: _i18n.t('蔚蓝Mod中国镜像'),
-    description: _i18n.t('在境内可以正常使用游戏内的下载和更新'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/ChinaMirror',
-    visible: lang => lang === 'zh-CN'
-  },
-  {
-    name: _i18n.t('Extended Variant Mode（拓展异变）'),
-    description: _i18n.t('提供比异变更多的改变游戏画面、内容、玩法的选项'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/ExtendedVariantMode',
-  },
-  {
-    name: _i18n.t('Speedrun Tool（速通辅助工具）'),
-    description: _i18n.t(
-      '实时存档读档（SL）、调试地图和传送、速通计时器、一键望远镜等'
-    ),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/SpeedrunTool',
-  },
-  {
-    name: 'CelesteTAS',
-    description: _i18n.t('用于编写TAS，也可以显示碰撞箱、数值面板等'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/CelesteTAS',
-  },
-  {
-    name: 'Celeste Randomizer',
-    description: _i18n.t('生成随机地图，可用于联机'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/Randomizer',
-  },
-  {
-    name: 'Randomizer Chinese Lang Pack',
-    description: _i18n.t('随机地图菜单中文翻译'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/RandomizerChineseLangPack',
-  },
-  {
-    name: 'Helper Test Map Hider',
-    description: _i18n.t('隐藏helper的测试地图'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/HelperTestMapHider',
-  },
-  {
-    name: 'DeathTracker',
-    description: _i18n.t('实时显示死亡次数'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathTracker',
-  },
-  {
-    name: 'Death Markers',
-    description: _i18n.t('标记每次死亡的位置'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathMarkers',
-  },
-  {
-    name: 'Celeste Input History',
-    description: _i18n.t('显示按键输入历史'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/InputHistory',
-  },
-  {
-    name: 'Stamina Meter',
-    description: _i18n.t('显示体力条'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/StaminaMeter',
-  },
-  {
-    name: 'Strawberry Tool',
-    description: _i18n.t('指示附近的收集品、将身后的草莓变透明'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/StrawberryTool',
-  },
-  {
-    name: "notnot's I Hate Blueberries",
-    description: _i18n.t('已收集的草莓不变蓝'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/notnot%27s%20I%20Hate%20Blueberries',
-    exclude_from_download_all: true,
-  },
-  {
-    name: 'Infinite Backups',
-    description: _i18n.t('提供更多、更完整的存档备份'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/InfiniteBackups',
-  },
-  {
-    name: 'Mouse Controls',
-    description: _i18n.t('鼠标操控'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/MouseControls',
-  },
-  {
-    name: 'Better Refill Gems',
-    description: _i18n.t('给一次性水晶加上红色边框'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/BetterRefillGems',
-    exclude_from_download_all: true,
-  },
-  {
-    name: 'Better Ice Walls',
-    description: _i18n.t('优化冰墙显示，具有减小贴图厚度等多种选项'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/BetterIceWalls',
-    exclude_from_download_all: true,
-  },
-  {
-    name: 'Better Move Blocks',
-    description: _i18n.t('给移动块加上白色边框，避免因为背景太黑了看不到'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/Better%20Move%20Blocks',
-    exclude_from_download_all: true,
-  },
-].filter(v => v);
+export const _functionalMods = () =>
+  [
+    {
+      name: 'Collab Lobby UI',
+      description: _i18n.t('在大地图中按 M 显示 Collab 地图选择器'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/CollabLobbyUI',
+    },
+    {
+      name: 'MiaoCelesteNet',
+      description: _i18n.t('群服联机'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client',
+      visible: (lang) => lang === 'zh-CN',
+    },
+    {
+      name: _i18n.t('CelesteNet'),
+      description: _i18n.t('Multiplayer support'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
+      visible: (lang) => lang !== 'zh-CN',
+    },
+    {
+      name: _i18n.t('蔚蓝Mod中国镜像'),
+      description: _i18n.t('在境内可以正常使用游戏内的下载和更新'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/ChinaMirror',
+      visible: (lang) => lang === 'zh-CN',
+    },
+    {
+      name: _i18n.t('Extended Variant Mode（拓展异变）'),
+      description: _i18n.t('提供比异变更多的改变游戏画面、内容、玩法的选项'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/ExtendedVariantMode',
+    },
+    {
+      name: _i18n.t('Speedrun Tool（速通辅助工具）'),
+      description: _i18n.t(
+        '实时存档读档（SL）、调试地图和传送、速通计时器、一键望远镜等'
+      ),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/SpeedrunTool',
+    },
+    {
+      name: 'CelesteTAS',
+      description: _i18n.t('用于编写TAS，也可以显示碰撞箱、数值面板等'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/CelesteTAS',
+    },
+    {
+      name: 'Celeste Randomizer',
+      description: _i18n.t('生成随机地图，可用于联机'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/Randomizer',
+    },
+    {
+      name: 'Randomizer Chinese Lang Pack',
+      description: _i18n.t('随机地图菜单中文翻译'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/RandomizerChineseLangPack',
+    },
+    {
+      name: 'Helper Test Map Hider',
+      description: _i18n.t('隐藏helper的测试地图'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/HelperTestMapHider',
+    },
+    {
+      name: 'DeathTracker',
+      description: _i18n.t('实时显示死亡次数'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathTracker',
+    },
+    {
+      name: 'Death Markers',
+      description: _i18n.t('标记每次死亡的位置'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathMarkers',
+    },
+    {
+      name: 'Celeste Input History',
+      description: _i18n.t('显示按键输入历史'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/InputHistory',
+    },
+    {
+      name: 'Stamina Meter',
+      description: _i18n.t('显示体力条'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/StaminaMeter',
+    },
+    {
+      name: 'Strawberry Tool',
+      description: _i18n.t('指示附近的收集品、将身后的草莓变透明'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/StrawberryTool',
+    },
+    {
+      name: "notnot's I Hate Blueberries",
+      description: _i18n.t('已收集的草莓不变蓝'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/notnot%27s%20I%20Hate%20Blueberries',
+      exclude_from_download_all: true,
+    },
+    {
+      name: 'Infinite Backups',
+      description: _i18n.t('提供更多、更完整的存档备份'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/InfiniteBackups',
+    },
+    {
+      name: 'Mouse Controls',
+      description: _i18n.t('鼠标操控'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/MouseControls',
+    },
+    {
+      name: 'Better Refill Gems',
+      description: _i18n.t('给一次性水晶加上红色边框'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/BetterRefillGems',
+      exclude_from_download_all: true,
+    },
+    {
+      name: 'Better Ice Walls',
+      description: _i18n.t('优化冰墙显示，具有减小贴图厚度等多种选项'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/BetterIceWalls',
+      exclude_from_download_all: true,
+    },
+    {
+      name: 'Better Move Blocks',
+      description: _i18n.t('给移动块加上白色边框，避免因为背景太黑了看不到'),
+      download_url:
+        'https://celeste.weg.fan/api/v2/download/mods/Better%20Move%20Blocks',
+      exclude_from_download_all: true,
+    },
+  ].filter((v) => v);
 
 export const _skinMods = () => [
   {
@@ -287,43 +292,45 @@ export const _skinMods = () => [
 
 export const _mapMods = () => [
   {
-    name: 'StrawberryJam Collab （草莓酱）',
-    description: '全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家',
+    name: _i18n.t('StrawberryJam Collab （草莓酱）'),
+    description: _i18n.t(
+      '全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家'
+    ),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/StrawberryJam2021',
   },
   {
-    name: 'Spring Collab （春游）',
-    description: '另一个大型地图集，与草莓酱相比较简单',
+    name: _i18n.t('Spring Collab （春游）'),
+    description: _i18n.t('另一个大型地图集，与草莓酱相比较简单'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/SpringCollab2020',
   },
   {
-    name: 'Gallery Collab（画游）',
-    description: '中国玩家制作的地图集，地图较少，美术精美，适合新手和老玩家',
+    name: _i18n.t('Gallery Collab（画游）'),
+    description: _i18n.t(
+      '中国玩家制作的地图集，地图较少，美术精美，适合新手和老玩家'
+    ),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/ChineseNewYear2024Collab',
   },
   {
-    name: 'Winter Collab （冬游）',
-    description: '另一个大型地图集，与草莓酱相比较简单',
+    name: _i18n.t('Winter Collab （冬游）'),
+    description: _i18n.t('另一个大型地图集，与草莓酱相比较简单'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/WinterCollab2021',
   },
   {
     name: 'the road less travelled',
-    description: '独立地图，酱一难度，比较宁静，官图A面过后可打',
+    description: _i18n.t('独立地图，酱一难度，比较宁静，官图A面过后可打'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/the%20road%20less%20travelled',
   },
   {
     name: 'glyph',
-    description: '独立地图，酱二红难度，老图，要求',
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/glyph',
+    description: _i18n.t('独立地图，酱二红难度，老图，要求'),
+    download_url: 'https://celeste.weg.fan/api/v2/download/mods/glyph',
   },
-]
-
+];
 
 /*
 into the jungle 官

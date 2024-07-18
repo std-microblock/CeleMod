@@ -35,7 +35,7 @@ interface ModInfo {
   resolveDependencies: () => DepResolveResult;
   file: string;
   duplicateCount: number;
-  duplicateFiles: string[]
+  duplicateFiles: string[];
 }
 
 interface MissingModDepInfo {
@@ -128,20 +128,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-              setState(_i18n.t('下载中'));
-              download.downloadMod(name, gbFileID, {
-                onProgress: (task, progress) => {
-                  setState(`${progress}% (${task.subtasks.length})`);
-                },
-                onFinished: () => {
-                  setState(_i18n.t('下载完成'));
-                  ctx?.reloadMods();
-                },
-                onFailed: () => {
-                  setState(_i18n.t('下载失败'));
-                },
-              });
-            }
+                setState(_i18n.t('下载中'));
+                download.downloadMod(name, gbFileID, {
+                  onProgress: (task, progress) => {
+                    setState(`${progress}% (${task.subtasks.length})`);
+                  },
+                  onFinished: () => {
+                    setState(_i18n.t('下载完成'));
+                    ctx?.reloadMods();
+                  },
+                  onFailed: () => {
+                    setState(_i18n.t('下载失败'));
+                  },
+                });
+              }
             : undefined
         }
       >
@@ -173,7 +173,7 @@ const ModLocal = ({
   optional = false,
   file,
   duplicateCount,
-  duplicateFiles
+  duplicateFiles,
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
@@ -202,9 +202,11 @@ const ModLocal = ({
     const update = ctx?.hasUpdateMods.find((v) => v.name === name);
     if (update) {
       setUpdateState([update.gb_file, update.version]);
-      setUpdateString(_i18n.t('点击更新 · {newversion}', {
-        newversion: update.version,
-      }));
+      setUpdateString(
+        _i18n.t('点击更新 · {newversion}', {
+          newversion: update.version,
+        })
+      );
     } else {
       setUpdateState(null);
     }
@@ -215,8 +217,9 @@ const ModLocal = ({
   return (
     <div className={`m-mod ${enabled && 'enabled'}`} key={id}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
-          }`}
+        className={`expandBtn ${expanded && 'expanded'} ${
+          hasDeps && 'clickable'
+        }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -242,8 +245,8 @@ const ModLocal = ({
         {isAlwaysOn
           ? _i18n.t('始终开启')
           : enabled
-            ? _i18n.t('已启用')
-            : _i18n.t('已禁用')}
+          ? _i18n.t('已启用')
+          : _i18n.t('已禁用')}
       </ModBadge>
 
       {enabled &&
@@ -278,11 +281,19 @@ const ModLocal = ({
           {dependedByFiltered.length}
         </ModBadge>
       )}
-      {duplicateCount > 1 && <ModBadge bg="#DB3D73" color="white" title={
-        duplicateFiles.map((v) => v.split('/').pop()).join(' | ')
-      }>
-        重复 Mod · {duplicateCount} 次
-      </ModBadge>}
+
+      {duplicateCount > 1 && (
+        <ModBadge
+          bg="#DB3D73"
+          color="white"
+          title={duplicateFiles.map((v) => v.split('/').pop()).join(' | ')}
+        >
+          {_i18n.t('重复 Mod ·')}
+
+          {duplicateCount}
+          {_i18n.t('次')}
+        </ModBadge>
+      )}
 
       {ctx?.showUpdate && updateState && (
         <ModBadge
@@ -464,10 +475,11 @@ export const Manage = () => {
           return { status, message } as DepResolveResult;
         },
         duplicateCount: 1,
-        duplicateFiles: [mod.file]
+        duplicateFiles: [mod.file],
       };
       if (modMap.has(mod.name)) {
-        modMap.get(mod.name)!.duplicateCount = modMap.get(mod.name)!.duplicateCount + 1;
+        modMap.get(mod.name)!.duplicateCount =
+          modMap.get(mod.name)!.duplicateCount + 1;
         modMap.get(mod.name)!.duplicateFiles.push(mod.file);
       } else {
         modMap.set(mod.name, modInfo);
@@ -534,7 +546,7 @@ export const Manage = () => {
       }
     }
 
-    console.log('hasUpdateMods', JSON.stringify(mods, null, 4))
+    console.log('hasUpdateMods', JSON.stringify(mods, null, 4));
 
     return mods;
   }, [latestModInfos, installedModMap]);
@@ -857,8 +869,7 @@ export const Manage = () => {
                   setExcludeDependents(e.target.checked);
                 }}
               />
-
-              只显示不被依赖的Mod
+              {_i18n.t('只显示不被依赖的Mod')}
             </label>
             <label>
               <input
@@ -912,23 +923,29 @@ export const Manage = () => {
                     hasUpdateMods.map((v) => v.name)
                   );
                   for (const mod of hasUpdateMods) {
-                    download.downloadMod(mod.name, mod.gb_file === '-1' ? mod.url : mod.gb_file, {
-                      onProgress: (task, progress) => {
-                        console.log(task, progress);
-                      },
-                      onFinished: () => {
-                        updateUnfinishedSet.delete(mod.name);
-                        if (updateUnfinishedSet.size === 0) {
-                          setHasUpdateBtnState(_i18n.t('更新完成'));
-                          manageCtx.reloadMods();
-                        }
-                      },
-                      onFailed: () => {
-                        console.log('failed');
-                        setHasUpdateBtnState(_i18n.t('更新失败，请查看左下角'));
-                      },
-                      force: true,
-                    });
+                    download.downloadMod(
+                      mod.name,
+                      mod.gb_file === '-1' ? mod.url : mod.gb_file,
+                      {
+                        onProgress: (task, progress) => {
+                          console.log(task, progress);
+                        },
+                        onFinished: () => {
+                          updateUnfinishedSet.delete(mod.name);
+                          if (updateUnfinishedSet.size === 0) {
+                            setHasUpdateBtnState(_i18n.t('更新完成'));
+                            manageCtx.reloadMods();
+                          }
+                        },
+                        onFailed: () => {
+                          console.log('failed');
+                          setHasUpdateBtnState(
+                            _i18n.t('更新失败，请查看左下角')
+                          );
+                        },
+                        force: true,
+                      }
+                    );
                   }
                 }}
               >
