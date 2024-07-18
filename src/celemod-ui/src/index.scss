@@ -10,58 +10,56 @@ $fg3: #aaaaaa;
 $primary: #a77fdb;
 
 html {
-    color: $fg;
-    background: transparent;
-    padding: 0 10px;
+  color: $fg;
+  background: transparent;
+  padding: 0 10px;
 }
 
 a {
-    color: lighten($primary, 10%);
-    text-decoration: none;
-    margin: 0 4px;
-    display: inline-block;
+  color: lighten($primary, 10%);
+  text-decoration: none;
+  margin: 0 4px;
+  display: inline-block;
 
-    &:hover {
-        color: darken($primary, 10%);
-    }
+  &:hover {
+    color: darken($primary, 10%);
+  }
 }
 
-[role=window-caption] {
-    font-size: 14px;
-    font-weight: 400;
-    color: $fg;
-    padding: 5px 0;
-    margin-bottom: 5px;
-    opacity: 0.8;
+[role="window-caption"] {
+  font-size: 14px;
+  font-weight: 400;
+  color: $fg;
+  padding: 5px 0;
+  margin-bottom: 5px;
+  opacity: 0.8;
 }
 
 .win-ctrl {
-    position: fixed;
-    top: 0;
-    right: 0;
+  position: fixed;
+  top: 0;
+  right: 0;
 
-    button:not(:hover):not(:active) {
-        background: transparent;
-        box-shadow: none;
+  button:not(:hover):not(:active) {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  button {
+    padding: 0;
+    width: 40px;
+    height: 30px;
+    border-radius: 0;
+
+    display: inline-block;
+    flow: horizontal;
+    vertical-align: middle;
+    horizontal-align: center;
+
+    & > * {
+      // flow: vertical;
     }
-
-    button {
-        padding: 0;
-        width: 40px;
-        height: 30px;
-        border-radius: 0;
-
-        display: inline-block;
-        flow: horizontal;
-        vertical-align: middle;
-        horizontal-align: center;
-
-
-        &>* {
-
-            // flow: vertical;
-        }
-    }
+  }
 }
 
 // html,
@@ -69,230 +67,237 @@ a {
 //     overflow: hidden;
 // }
 
-
 // loader
 .loader {
-    width: 100vw;
-    background: transparent;
-    padding: 10px;
+  width: 100vw;
+  background: transparent;
+  padding: 10px;
 }
 
 .loader .bar {
-    height: 4px;
-    border-radius: 5px;
-    position: relative;
-    width: 0%;
-    background-color: #55aaff;
-    animation: progress 2s infinite;
+  height: 4px;
+  border-radius: 5px;
+  position: relative;
+  width: 0%;
+  background-color: #55aaff;
+  animation: progress 2s infinite;
 }
 
 @keyframes progress {
-    0% {
-        width: 0vw;
-        margin-left: 0vw;
-    }
+  0% {
+    width: 0vw;
+    margin-left: 0vw;
+  }
 
-    50% {
-        margin-left: 15vw;
-        width: 25vw;
-    }
+  50% {
+    margin-left: 15vw;
+    width: 25vw;
+  }
 
-    100% {
-        width: 0vw;
-        margin-left: 100vw;
-    }
+  100% {
+    width: 0vw;
+    margin-left: 100vw;
+  }
 }
 
 .sidebar {
-    display: inline-block;
+  display: inline-block;
+  width: 50px;
+  height: 90vh;
+  float: left;
+  margin-right: 15px;
+
+  .navBtn {
+    border-radius: 7px;
+    font-size: 15px;
+    margin-bottom: 10px;
+    transition: background 0.3s ease-in-out;
+    cursor: pointer;
+
     width: 50px;
-    height: 90vh;
-    float: left;
-    margin-right: 15px;
+    height: 43px;
+    display: inline-block;
+    vertical-align: center;
+    horizontal-align: center;
+    flow: vertical;
+    border: 1px solid transparent;
+    padding-top: 7px;
 
-
-    .navBtn {
-        border-radius: 7px;
-        font-size: 15px;
-        margin-bottom: 10px;
-        transition: background .3s ease-in-out;
-        cursor: pointer;
-
-        width: 50px;
-        height: 43px;
-        display: inline-block;
-        vertical-align: center;
-        horizontal-align: center;
-        flow: vertical;
-
-        padding-top: 7px;
-
-        &.selected {
-            box-shadow: 0 2px 10px $bg1;
-            background: $bg1;
-        }
-
-        .title {
-            font-size: 10px;
-            margin-top: 3px;
-            opacity: 0.6;
-        }
+    &.selected {
+      box-shadow: 0 2px 10px $bg1;
+      border: 1px solid $bg2;
+      background: $bg1;
     }
+
+    &:not(.selected):hover {
+      background: $bg2;
+    }
+
+    &:active {
+      background: $bg3;
+    }
+
+    .title {
+      font-size: 10px;
+      margin-top: 3px;
+      opacity: 0.6;
+    }
+  }
 }
 
 .page {
-    display: inline-block;
-    float: left;
+  display: inline-block;
+  float: left;
+  transition: opacity 0.3s ease-in-out, margin-left 0.3s ease-in-out;
 }
 
-input[type=checkbox] {
-    appearance: none;
-    height: 15px;
-    width: 15px;
-    border: 1px solid $bg3;
-    background: $bg1;
-    border-radius: 3px;
-    opacity: 0.7;
-    // transition: opacity .2s ease-in-out;
+input[type="checkbox"] {
+  appearance: none;
+  height: 15px;
+  width: 15px;
+  border: 1px solid $bg3;
+  background: $bg1;
+  border-radius: 3px;
+  opacity: 0.7;
+  // transition: opacity .2s ease-in-out;
 }
 
-input[type=checkbox]:checked {
-    background: url(stock:checkmark) no-repeat 60% 60% $bg1;
-    background-size: 7px;
+input[type="checkbox"]:checked {
+  background: url(stock:checkmark) no-repeat 60% 60% $bg1;
+  background-size: 7px;
 }
 
-input[type=checkbox]:hover {
-    opacity: 1;
+input[type="checkbox"]:hover {
+  opacity: 1;
 }
 
-input[type=checkbox]:disabled {
-    opacity: 0.5;
+input[type="checkbox"]:disabled {
+  opacity: 0.5;
 }
 
 // mask
 .blocking-mask {
-    position: fixed;
-    top: 40px;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #00000088;
-    z-index: 100;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-    transition: opacity .2s ease-in-out;
-    text-align: center;
-    padding-top: calc(50vh - 70px);
+  position: fixed;
+  top: 40px;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #00000088;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease-in-out;
+  text-align: center;
+  padding-top: calc(50vh - 70px);
 }
 
 .downloadListBtn {
-    position: absolute;
-    left: 22px;
-    bottom: 0;
-    font-size: 20px;
-    bottom: 20px;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
-    background: transparent;
-    opacity: 0.8;
-    transition: background .1s, opacity .1s;
+  position: absolute;
+  left: 22px;
+  bottom: 0;
+  font-size: 20px;
+  bottom: 20px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 5px;
+  background: transparent;
+  opacity: 0.8;
+  transition: background 0.1s, opacity 0.1s;
 
-    &:hover {
-        opacity: 1;
-        background: $bg2;
-        box-shadow: 0 2px 10px $bg1;
-    }
+  &:hover {
+    opacity: 1;
+    background: $bg2;
+    box-shadow: 0 2px 10px $bg1;
+  }
 }
-
 
 // no-everest page
 .no-everest {
-    padding: 30px;
+  padding: 30px;
 }
 
 .popup-container {
-    z-index: 100;
-    // overflow: hidden;
-    position: fixed;
-    display: block;
-    left: 10px;
-    top: 38px;
-    right: 15px;
-    width: calc(100vw - 25px);
-    height: calc(100vh - 48px);
-    border-radius: 10px;
-    opacity: 0;
-    transform: scale(1.3);
-    transition: opacity .2s, transform .2s;
-    horizontal-align: center;
-    vertical-align: middle;
+  z-index: 100;
+  // overflow: hidden;
+  position: fixed;
+  display: block;
+  left: 10px;
+  top: 38px;
+  right: 15px;
+  width: calc(100vw - 25px);
+  height: calc(100vh - 48px);
+  border-radius: 10px;
+  opacity: 0;
+  transform: scale(1.3);
+  transition: opacity 0.2s, transform 0.2s;
+  horizontal-align: center;
+  vertical-align: middle;
 }
 
 .loading-popup {
-    width: calc(100vw - 50px);
-    horizontal-align: center;
-    vertical-align: middle;
-    flow: vertical;
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: 90vh;
+  width: calc(100vw - 50px);
+  horizontal-align: center;
+  vertical-align: middle;
+  flow: vertical;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 90vh;
 }
 
 .celemod-version {
-    position: fixed;
-    left: 80px;
-    top: 13px;
-    flow: vertical;
-    display: inline-block;
-    horizontal-align: center;
-    vertical-align: middle;
-    cursor: pointer;
+  position: fixed;
+  left: 80px;
+  top: 13px;
+  flow: vertical;
+  display: inline-block;
+  horizontal-align: center;
+  vertical-align: middle;
+  cursor: pointer;
 }
 
 .celemod-version .caption-version {
-    color: rgba(255, 255, 255, 0.582);
-    font-size: 10px;
+  color: rgba(255, 255, 255, 0.582);
+  font-size: 10px;
 }
 
 .celemod-version .caption-hash {
-    color: rgba(255, 255, 255, 0.301);
-    font-size: 9px;
-    margin-bottom: -4px;
+  color: rgba(255, 255, 255, 0.301);
+  font-size: 9px;
+  margin-bottom: -4px;
 }
 
 @set custom-select-dropdown < std-select-dropdown {
-    :root>button {
-        fill: $fg;
-    }
+  :root > button {
+    fill: $fg;
+  }
 
-    * {
-        border: none !important;
-        color: $fg;
-        background: transparent;
-    }
+  * {
+    border: none !important;
+    color: $fg;
+    background: transparent;
+  }
 
-    :root {
-        width: max-content;
-        padding: 4px 5px;
-        background: $bg1 !important;
-    }
+  :root {
+    width: max-content;
+    padding: 4px 5px;
+    background: $bg1 !important;
+  }
 
-    :root:hover {
-        background: $bg2 !important;
-    }
+  :root:hover {
+    background: $bg2 !important;
+  }
 
-    option {
-        background: $bg1 !important;
-        color: $fg;
-        padding: 8px 9px;
+  option {
+    background: $bg1 !important;
+    color: $fg;
+    padding: 8px 9px;
 
-        &:hover {
-            background: $bg2 !important;
-        }
+    &:hover {
+      background: $bg2 !important;
     }
+  }
 }

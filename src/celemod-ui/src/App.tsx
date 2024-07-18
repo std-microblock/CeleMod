@@ -179,10 +179,12 @@ export default () => {
                 className="page"
                 style={{
                   display: key === page ? 'block' : 'none',
+                  opacity: key === page ? 1 : 0,
+                  marginLeft: key === page ? 0 : '-10px',
                   width: 'calc(100vw - 150px)',
                 }}
               >
-                {value}
+                {(key === page) && value}
               </div>
             );
           })}
