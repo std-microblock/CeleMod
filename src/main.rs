@@ -858,7 +858,7 @@ fn main() {
                 );
             }
         }
-        if !Path::new("./sciter.dll").exists() {
+        if !std::env::current_exe().unwrap().parent().unwrap().join("sciter.dll").exists() {
             let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
             panic!("sciter.dll not found");
         }
