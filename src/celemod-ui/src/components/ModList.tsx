@@ -230,7 +230,7 @@ export const Mod = memo(
                     useEffect(() => {
                       if (!refImages.current) return;
                       // horizontal scroll
-                      refImages.current.addEventListener('mousewheel', horizontalScrollMouseWheelHandler);
+                      refImages.current.addEventListener('mousewheel', horizontalScrollMouseWheelHandler());
                     }, [data]);
 
                     useEffect(() => {

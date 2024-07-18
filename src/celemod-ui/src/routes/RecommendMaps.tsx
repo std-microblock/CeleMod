@@ -66,7 +66,7 @@ export const RecommendMaps = () => {
         <div className="rec-map"  >
             <h1>推荐的地图</h1>
             <p>这里将会列出一些推荐安装的地图及其简介，请按需安装</p>
-            <div className="collabs" onWheel={horizontalScrollMouseWheelHandler}>
+            <div className="collabs">
                 <div className="collab" style={{
                     backgroundImage: `url(${strawberryJamImg})`
                 }}>

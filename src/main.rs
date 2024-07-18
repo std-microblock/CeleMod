@@ -8,6 +8,7 @@ use anyhow::{bail, Context};
 use aria2c::DownloadCallbackInfo;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
+use winapi::um::winuser::ShowWindow;
 use std::{
     cell::RefCell,
     fs,
@@ -212,7 +213,9 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
             let name = yaml[0]["Name"].as_str().context("")?.to_string();
             let version = parse_version(&yaml[0]["Version"]);
             if !mod_data.contains_key(&name) {
-                println!("[ WARNING ] Failed to resolve {name} in mod data, using -1 as gamebanana id");
+                println!(
+                    "[ WARNING ] Failed to resolve {name} in mod data, using -1 as gamebanana id"
+                );
             }
             let gbid = if mod_data.contains_key(&name) {
                 mod_data[&name].game_banana_id
@@ -496,7 +499,10 @@ impl Handler {
 
         if origin {
             if game_origin.exists() {
-                std::process::Command::new(game_origin).arg("--vanilla").spawn().unwrap();
+                std::process::Command::new(game_origin)
+                    .arg("--vanilla")
+                    .spawn()
+                    .unwrap();
             } else {
                 std::process::Command::new(game).spawn().unwrap();
             }
@@ -769,6 +775,19 @@ impl Handler {
         }
         false
     }
+
+    fn show_log_window(&self) {
+        #[cfg(not(debug_assertions))]
+        {
+            use winapi::um::winuser::{ShowWindow, SW_SHOW};
+            unsafe {
+                ShowWindow(
+                    winapi::um::wincon::GetConsoleWindow(),
+                    SW_SHOW,
+                );
+            }
+        }
+    }
 }
 
 impl sciter::EventHandler for Handler {
@@ -796,6 +815,7 @@ impl sciter::EventHandler for Handler {
         fn start_game_directly(String, bool);
         fn verify_celeste_install(String);
         fn get_mod_latest_info(Value);
+        fn show_log_window();
     }
 }
 
@@ -820,11 +840,23 @@ fn main() {
     // windows only
     #[cfg(windows)]
     {
-        use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
         use winapi::um::winuser::SetProcessDPIAware;
         unsafe {
-            AttachConsole(ATTACH_PARENT_PROCESS);
             SetProcessDPIAware();
+            #[cfg(debug_assertions)]
+            {
+                use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
+                AttachConsole(ATTACH_PARENT_PROCESS);
+            } 
+            #[cfg(not(debug_assertions))]
+            {
+                use winapi::um::consoleapi::AllocConsole;
+                AllocConsole();
+                ShowWindow(
+                    winapi::um::wincon::GetConsoleWindow(),
+                    winapi::um::winuser::SW_HIDE,
+                );
+            }
         }
         if !Path::new("./sciter.dll").exists() {
             let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
@@ -859,10 +891,12 @@ fn main() {
     }
 
     frame.event_handler(Handler);
- 
+
     #[cfg(debug_assertions)]
     frame.load_html(
-        read_to_string_bom(Path::new("./src/celemod-ui/debug_index.html")).unwrap().as_bytes(),
+        read_to_string_bom(Path::new("./src/celemod-ui/debug_index.html"))
+            .unwrap()
+            .as_bytes(),
         Some("app://index.html"),
     );
     #[cfg(not(debug_assertions))]

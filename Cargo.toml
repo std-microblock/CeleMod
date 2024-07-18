@@ -21,7 +21,7 @@ include-bytes-zstd = "*"
 msgbox = "0.7.0"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "*", features = ["wincon"] }
+winapi = { version = "*", features = ["wincon", "consoleapi"] }
 
 [target.'cfg(unix)'.dependencies]
 

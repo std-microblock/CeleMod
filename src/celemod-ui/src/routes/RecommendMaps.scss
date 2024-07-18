@@ -2,17 +2,19 @@
 
 .rec-map {
   .collabs {
-    overflow-x: scroll;
-    overflow-y: hidden;
+    // overflow-x: scroll;
+    overflow-y: scroll;
     white-space: nowrap;
-    height: 100vh;
+    // height: 100vh;
+    height: 300px;
   }
   .collab {
     border-radius: 10px;
     overflow: hidden;
     background-size: 370px 208px;
     margin: 12px 6px;
-    display: inline-block;
+    // display: inline-block;
+    // float: left;
 
     height: 400px;
     width: 350px;
@@ -69,6 +71,7 @@
       padding: 10px;
       flow: horizontal-flow;
       horizontal-align: right;
+      z-index: 999;
     }
   }
 }

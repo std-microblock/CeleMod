@@ -130,7 +130,7 @@ export const selectGamePath = (successCallback) => {
 
 export type Awaitable<T> = T | Promise<T>;
 
-export const horizontalScrollMouseWheelHandler = (e) => {
+export const horizontalScrollMouseWheelHandler = (smooth = true)=>(e) => {
     // @ts-ignore
     if (e.deltaY === 0) return;
     e.preventDefault();
@@ -139,6 +139,6 @@ export const horizontalScrollMouseWheelHandler = (e) => {
     e.currentTarget.scrollTo({
       // @ts-ignore
       left: e.currentTarget.scrollLeft + e.deltaY * 2,
-      behavior: 'smooth',
+      behavior: smooth ? 'smooth' : 'instant',
     });
   }

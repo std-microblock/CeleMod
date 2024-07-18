@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" window-frame="solid" window-alignment="5" window-corners="round" window-maximizable="true"
-  window-blurbehind="dark ultra source-desktop"
-   window-min-width="800px" window-min-height="600px">
+  window-blurbehind="dark ultra source-desktop" window-min-width="800px" window-min-height="600px">
 
 <head>
   <meta charset="utf-8" />
@@ -26,6 +25,9 @@
       document.querySelector('.celemod-version').onclick = () => {
         if (!document.querySelector('.popup-container')) _checkUpdate()
       }
+      document.querySelector('.celemod-version')
+        .on('contextmenu', () => Window.this.xcall('show_log_window'))
+
       document.querySelector('.caption-version').innerText = Window.this.xcall('celemod_version')
       document.querySelector('.caption-hash').innerText = Window.this.xcall('celemod_hash').substr(0, 6)
 
@@ -34,6 +36,8 @@
         Window.this.move(
           x, y, 800 * (800 / w), 600 * (600 / h)
         )
+
+
     </script>
   </div>
   <span class="win-ctrl">
