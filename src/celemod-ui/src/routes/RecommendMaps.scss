@@ -18,6 +18,10 @@
     // float: left;
 
     height: 400px;
+
+    html:not([lang="zh-CN"]) & {
+        height: 490px;
+    }
     width: 350px;
     background-color: theme.$bg1;
 
