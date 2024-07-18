@@ -19,6 +19,7 @@ import { Everest } from './routes/Everest';
 import { checkUpdate } from './components/SelfUpdate';
 import { createThemeContext } from './context/theme';
 import { createBlacklistContext } from './context/blacklist';
+import { RecommendMaps } from './routes/RecommendMaps';
 
 export const GlobalContext = createContext<{
   bus: EventTarget;
@@ -46,9 +47,10 @@ export default () => {
     Manage,
     Multiplayer,
     RecommendMods,
+    RecommendMaps
   };
 
-  const [page, setPage] = useState('Home');
+  const [page, setPage] = useState('RecommendMaps');
 
   const [pageElement, setPageElement] = useState<{
     [key: string]: Element;
@@ -149,6 +151,11 @@ export default () => {
                   icon="flag"
                   name="RecommendMods"
                   title={_i18n.t('推荐模组')}
+                />
+                <SidebarButton
+                  icon="image"
+                  name="RecommendMaps"
+                  title={_i18n.t('推荐地图')}
                 />
               </Fragment>
             )}

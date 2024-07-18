@@ -6,7 +6,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { GameSelector } from './GameSelector';
-import { Awaitable, callRemote, displayDate } from '../utils';
+import { Awaitable, callRemote, displayDate, horizontalScrollMouseWheelHandler } from '../utils';
 
 import { FixedSizeGrid, FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
@@ -230,18 +230,7 @@ export const Mod = memo(
                     useEffect(() => {
                       if (!refImages.current) return;
                       // horizontal scroll
-                      refImages.current.addEventListener('mousewheel', (e) => {
-                        // @ts-ignore
-                        if (e.deltaY === 0) return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // @ts-ignore
-                        refImages.current.scrollTo({
-                          // @ts-ignore
-                          left: refImages.current.scrollLeft + e.deltaY * 2,
-                          behavior: 'smooth',
-                        });
-                      });
+                      refImages.current.addEventListener('mousewheel', horizontalScrollMouseWheelHandler);
                     }, [data]);
 
                     useEffect(() => {

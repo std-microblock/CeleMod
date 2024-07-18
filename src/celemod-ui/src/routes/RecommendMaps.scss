@@ -1,0 +1,74 @@
+@use "../index.scss" as theme;
+
+.rec-map {
+  .collabs {
+    overflow-x: scroll;
+    overflow-y: hidden;
+    white-space: nowrap;
+    height: 100vh;
+  }
+  .collab {
+    border-radius: 10px;
+    overflow: hidden;
+    background-size: 370px 208px;
+    margin: 12px 6px;
+    display: inline-block;
+
+    height: 400px;
+    width: 350px;
+    background-color: theme.$bg1;
+
+    border: 1px solid theme.$bg2;
+    box-shadow: 2px 3px 10px #00000044;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      width: calc(100% + 20px);
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: linear-gradient(90deg, transparent, theme.$bg1);
+      top: 108px;
+      z-index: -1;
+    }
+
+    .intro {
+      padding: 0 10px;
+      padding-top: 160px;
+      position: relative;
+      .name {
+        font-size: 30px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        font-size: 12px;
+        opacity: 0.6;
+        margin-top: 5px;
+        padding-left: 2px;
+      }
+
+      .desc {
+        white-space: normal;
+
+        p {
+            margin: 6px 0;
+        }
+      }
+
+      .info {
+        opacity: 0.6;
+      }
+    }
+
+    .oper {
+      position: absolute;
+      bottom: 0px;
+      padding: 10px;
+      flow: horizontal-flow;
+      horizontal-align: right;
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useEffect } from "react";
+// @ts-ignore
 import { dirname } from "path";
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -128,3 +129,16 @@ export const selectGamePath = (successCallback) => {
 };
 
 export type Awaitable<T> = T | Promise<T>;
+
+export const horizontalScrollMouseWheelHandler = (e) => {
+    // @ts-ignore
+    if (e.deltaY === 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // @ts-ignore
+    e.currentTarget.scrollTo({
+      // @ts-ignore
+      left: e.currentTarget.scrollLeft + e.deltaY * 2,
+      behavior: 'smooth',
+    });
+  }

@@ -64,6 +64,7 @@ static MAGIC_STR: &str = "EverestBuild";
 
 pub fn get_everest_version(game_path: &str) -> Option<i32> {
     fn check_file(path: String) -> Option<i32> {
+        println!("Checking {path}");
         let buf = std::fs::read(path).ok()?;
         let str = unsafe { std::str::from_utf8_unchecked(&buf) };
         let pos = str.find(MAGIC_STR);
@@ -79,8 +80,8 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
 
     if check_everest_installed(game_path) {
         check_file(game_path.to_owned() + "/Celeste.exe")
-            .or(check_file(game_path.to_owned() + "/Celeste.Mod.mm.dll"))
-            .or(Some(0))
+            .or(check_file(game_path.to_owned() + "/Celeste.dll"))
+            .or(None)
     } else {
         None
     }

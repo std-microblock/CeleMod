@@ -108,17 +108,20 @@ export const _functionalMods = () => [
     description: _i18n.t('给一次性水晶加上红色边框'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/BetterRefillGems',
+    exclude_from_download_all: true,
   },
   {
     name: 'Better Ice Walls',
     description: _i18n.t('优化冰墙显示，具有减小贴图厚度等多种选项'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/BetterIceWalls',
+    exclude_from_download_all: true,
   },
   {
     name: 'Better Move Blocks',
     description: _i18n.t('给移动块加上白色边框，避免因为背景太黑了看不到'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/Better%20Move%20Blocks',
+    exclude_from_download_all: true,
   },
 ].filter(v => v);
 
@@ -282,7 +285,7 @@ export const _skinMods = () => [
   },
 ];
 
-export const _mapMods = ()=>[
+export const _mapMods = () => [
   {
     name: 'StrawberryJam Collab （草莓酱）',
     description: '全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家',
