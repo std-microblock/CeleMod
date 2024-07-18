@@ -1,6 +1,12 @@
 import _i18n from 'src/i18n';
 export const _functionalMods = () => [
   {
+    name: 'Collab Lobby UI',
+    description: _i18n.t('在大地图中按 M 显示 Collab 地图选择器'),
+    download_url:
+      'https://celeste.weg.fan/api/v2/download/mods/CollabLobbyUI',
+  },
+  {
     name: 'MiaoCelesteNet',
     description: _i18n.t('群服联机'),
     download_url:
@@ -84,6 +90,7 @@ export const _functionalMods = () => [
     description: _i18n.t('已收集的草莓不变蓝'),
     download_url:
       'https://celeste.weg.fan/api/v2/download/mods/notnot%27s%20I%20Hate%20Blueberries',
+    exclude_from_download_all: true,
   },
   {
     name: 'Infinite Backups',
@@ -92,20 +99,9 @@ export const _functionalMods = () => [
       'https://celeste.weg.fan/api/v2/download/mods/InfiniteBackups',
   },
   {
-    name: 'Vanilla Tweaks',
-    description: _i18n.t('小工具合集：草莓统计、视角引导、跳过序章、尖刺置前'),
-    download_url: 'https://celeste.weg.fan/api/v2/download/mods/VanillaTweaks',
-  },
-  {
     name: 'Mouse Controls',
     description: _i18n.t('鼠标操控'),
     download_url: 'https://celeste.weg.fan/api/v2/download/mods/MouseControls',
-  },
-  {
-    name: 'Video Music Fix',
-    description: _i18n.t('复活时将BGM同步到上次存档，便于视频剪辑'),
-    download_url:
-      'https://celeste.weg.fan/api/v2/download/mods/VideoRecordingMusic',
   },
   {
     name: 'Better Refill Gems',

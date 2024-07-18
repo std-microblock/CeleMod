@@ -116,6 +116,7 @@ export const RecommendMods = () => {
                 for (const mod of functionalMods
                   .filter(v => (!v.visible || v.visible(_i18n.currentLang)))
                   .filter((mod) => !installedMods.some((m) => m.name === modNameFromUrl(mod.download_url)))
+                  .filter(v => !v.exclude_from_download_all)
                 ) {
                   // @ts-ignore
                   refDownloadHandlers.current[mod.name].download();
@@ -131,7 +132,7 @@ export const RecommendMods = () => {
                 !mod.visible || mod.visible(_i18n.currentLang)
               ) && <RMod
                 name={mod.name}
-                startDownloadHandler={  
+                startDownloadHandler={
                   ((refDownloadHandlers.current[mod.name] ??= {}), refDownloadHandlers.current[mod.name])
                 }
                 download_url={mod.download_url}
