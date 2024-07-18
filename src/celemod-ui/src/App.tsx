@@ -172,7 +172,7 @@ export default () => {
                 className="page"
                 style={{
                   display: key === page ? 'block' : 'none',
-                  width: '85vw',
+                  width: 'calc(100vw - 150px)',
                 }}
               >
                 {value}
