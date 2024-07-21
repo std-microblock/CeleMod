@@ -59,6 +59,7 @@ export const createModManageContext = () => {
         if (gamePath) {
 
             callRemote("get_everest_version", gamePath, (ver: string) => {
+                console.log("[modManage] Everest version", ver)
                 if (ver && ver.length > 2) {
                     setTimeout(() => {
                         const popup = createPopup(

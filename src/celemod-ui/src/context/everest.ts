@@ -20,6 +20,7 @@ export const useEverestInstallState =
         setEverestInstallState: (everestInstallState: EverestInstallState) => set({ everestInstallState })
     }));
 
+let lastGamePath
 export const useEverestCtx = () => {
     const { currentEverestVersion, setCurrentEverestVersion } = useCurrentEverestVersion();
     const [gamePath] = useGamePath();
@@ -42,10 +43,14 @@ export const useEverestCtx = () => {
         }
     }
 
-    useEffect(() => {
-        if (gamePath)
+    if (lastGamePath !== gamePath) {
+        lastGamePath = gamePath;
+
+        if (gamePath) {
             ctx.updateEverestVersion();
-    }, [gamePath])
+        }
+    }
 
     return ctx;
+
 }
