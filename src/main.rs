@@ -14,7 +14,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
 };
-use winapi::um::winuser::ShowWindow;
+
 
 extern crate msgbox;
 
@@ -781,6 +781,7 @@ impl Handler {
         {
             #[cfg(not(debug_assertions))]
             {
+                use winapi::um::winuser::ShowWindow;
                 use winapi::um::winuser::{ShowWindow, SW_SHOW};
                 unsafe {
                     ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_SHOW);
@@ -840,6 +841,7 @@ fn main() {
     // windows only
     #[cfg(windows)]
     {
+        use winapi::um::winuser::ShowWindow;
         use winapi::um::winuser::SetProcessDPIAware;
         unsafe {
             SetProcessDPIAware();
