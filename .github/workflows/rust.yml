@@ -31,7 +31,7 @@ jobs:
           ./target/release/cele-mod.exe
           ./target/release/aria2c.exe
           ./target/release/sciter.dll
-    build-linux:
+  build-linux:
     runs-on: ubuntu-20.04
     steps:
     - name: Install dependencies
