@@ -781,7 +781,6 @@ impl Handler {
         {
             #[cfg(not(debug_assertions))]
             {
-                use winapi::um::winuser::ShowWindow;
                 use winapi::um::winuser::{ShowWindow, SW_SHOW};
                 unsafe {
                     ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_SHOW);
