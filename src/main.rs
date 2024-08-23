@@ -135,29 +135,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
         let res: anyhow::Result<_> = try {
-            let yaml = if entry
-                .path()
-                .extension()
-                .context("Unable to get the extension")?
-                == "zip"
-            {
-                let cache_path = entry
-                    .path()
-                    .parent()
-                    .unwrap()
-                    .parent()
-                    .unwrap()
-                    .join("celemod_yaml_cache")
-                    .join(entry.path().with_extension("yaml").file_name().unwrap());
-
-                let mod_date = entry.metadata()?.modified().unwrap();
-                let cache_date = cache_path.metadata().ok().map(|v| v.modified().unwrap());
-
-                if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
-                    extract_mod_for_yaml(&entry.path())?;
-                }
-                read_to_string_bom(&cache_path)?
-            } else if entry.file_type().unwrap().is_dir() {
+            let yaml = if entry.file_type().unwrap().is_dir() {
                 let cache_path = entry.path().read_dir()?.find(|v| {
                     v.as_ref()
                         .map(|v| {
@@ -179,6 +157,28 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                         continue;
                     }
                 }
+            } else if entry
+                .path()
+                .extension()
+                .context("Unable to get the extension")?
+                == "zip"
+            {
+                let cache_path = entry
+                    .path()
+                    .parent()
+                    .unwrap()
+                    .parent()
+                    .unwrap()
+                    .join("celemod_yaml_cache")
+                    .join(entry.path().with_extension("yaml").file_name().unwrap());
+
+                let mod_date = entry.metadata()?.modified().unwrap();
+                let cache_date = cache_path.metadata().ok().map(|v| v.modified().unwrap());
+
+                if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
+                    extract_mod_for_yaml(&entry.path())?;
+                }
+                read_to_string_bom(&cache_path)?
             } else {
                 println!(
                     "[ WARNING ] Failed to find yaml, skipping {:?}",
