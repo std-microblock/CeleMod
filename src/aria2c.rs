@@ -1,4 +1,5 @@
-use std::io::{BufRead, BufReader};
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::{BufRead, BufReader, Write};
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use std::path::Path;
@@ -30,12 +31,83 @@ lazy_static! {
     };
 }
 
-pub struct DownloadCallbackInfo<'a> {
+pub struct DownloadCallbackInfo {
     pub progress: f32,
-    pub child: &'a mut std::process::Child,
 }
 
-pub fn download_file_with_progress(
+pub fn download_file_with_progress_ureq(
+    url: &str,
+    output_path: &str,
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+) -> anyhow::Result<()> {
+    let tmp_dir_path = std::env::temp_dir().join("CelemodTemp");
+    if !tmp_dir_path.exists() {
+        std::fs::create_dir(&tmp_dir_path)?;
+    }
+    let mut hasher = DefaultHasher::new();
+    url.hash(&mut hasher);
+    let tmp_output_path = tmp_dir_path
+        .join(format!("{}.tmp", hasher.finish()))
+        .to_str()
+        .unwrap()
+        .to_string();
+
+    let output_path = Path::new(output_path);
+    let mut req = ureq::get(url);
+    let req = 
+        req.set("Connection", "keep-alive")
+            .set(
+                "User-Agent",
+                format!(
+                    "CeleMod/{}-{} ureq",
+                    env!("VERSION"),
+                    &env!("GIT_HASH")[..6]
+                )
+                .as_str(),
+            )
+            .set("Accept-Encoding", "gzip, deflate, br")
+            .set("Accept", "*/*")
+            .set("Cache-Control", "no-cache");
+
+    let mut resp = req.call();
+    let mut file = std::fs::File::create(output_path)?;
+    let mut total_size = 0;
+    let mut downloaded_size = 0;
+    let mut buffer = [0u8; 1024 * 1024];
+    let mut progress = 0.0;
+    let mut last_progress = 0.0;
+    match resp {
+        Ok(mut resp) => {
+            total_size = resp
+                .header("Content-Length")
+                .unwrap_or("0")
+                .parse()
+                .unwrap();
+            let mut reader = resp.into_reader();
+            loop {
+                let read_size = reader.read(&mut buffer)?;
+                if read_size == 0 {
+                    break;
+                }
+
+                file.write_all(&buffer[..read_size])?;
+                downloaded_size += read_size;
+                progress = (downloaded_size as f32 / total_size as f32) * 100.0;
+                if progress - last_progress > 0.1 {
+                    progress_callback(DownloadCallbackInfo { progress });
+                    last_progress = progress;
+                }
+            }
+        }
+        Err(e) => {
+            bail!(e);
+        }
+    }
+    progress_callback(DownloadCallbackInfo { progress: 100.0 });
+    Ok(())
+}
+
+pub fn download_file_with_progress_aria2c(
     url: &str,
     output_path: &str,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
@@ -44,8 +116,6 @@ pub fn download_file_with_progress(
     let aria2c_path = &*ARIA2C_PATH;
 
     println!("[ ARIA2C ] Downloading {} to {}", url, output_path);
-
-
 
     let output_path = Path::new(output_path);
     // 构建 aria2c 命令
@@ -117,10 +187,7 @@ pub fn download_file_with_progress(
                     progress
                 };
                 if let Ok(progress) = progress {
-                    progress_callback(DownloadCallbackInfo {
-                        progress,
-                        child: &mut child,
-                    });
+                    progress_callback(DownloadCallbackInfo { progress });
                 }
             }
 
@@ -135,11 +202,27 @@ pub fn download_file_with_progress(
     match child.wait() {
         Ok(status) => {
             if !status.success() || !Path::new(output_path).exists() {
-                bail!(format!("Failed to download file. Reason: {}", err.lock().unwrap()))
+                bail!(format!(
+                    "Failed to download file. Reason: {}",
+                    err.lock().unwrap()
+                ))
             } else {
                 Ok(())
             }
         }
         Err(_) => bail!("Failed to download file."),
+    }
+}
+
+pub fn download_file_with_progress(
+    url: &str,
+    output_path: &str,
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    use_aria2: bool,
+) -> anyhow::Result<()> {
+    if use_aria2 {
+        download_file_with_progress_aria2c(url, output_path, progress_callback, true)
+    } else {
+        download_file_with_progress_ureq(url, output_path, progress_callback)
     }
 }

@@ -244,9 +244,9 @@ fn download_and_install_mod(
     url: &str,
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
-    multi_thread: bool,
+    use_ureq: bool,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    aria2c::download_file_with_progress(url, dest, progress_callback, multi_thread)?;
+    aria2c::download_file_with_progress(url, dest, progress_callback, use_ureq)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
