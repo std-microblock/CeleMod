@@ -769,7 +769,8 @@ export const Manage = () => {
 
             if (recursive) {
               if (enabled) {
-                const deps = mod?.dependencies;
+                const deps = mod?.dependencies
+                  .filter((v) => checkOptionalDep || !v.optional)
 
                 for (const dep of deps ?? []) {
                   if (!('_missing' in dep)) {
@@ -782,7 +783,9 @@ export const Manage = () => {
                   (v) =>
                     !('_missing' in v) &&
                     !v.dependedBy.some((v) => v.enabled && v.name !== name)
-                );
+                ).filter((v) =>
+                  checkOptionalDep || !v.optional
+                )
 
                 for (const dep of orphanDeps ?? []) {
                   addToSwitchList(dep.name);
@@ -842,7 +845,8 @@ export const Manage = () => {
       fullTree,
       showUpdate,
       alwaysOnMods,
-      modComments
+      modComments,
+      checkOptionalDep
     ]
   );
 
