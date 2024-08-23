@@ -15,7 +15,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
 };
-use winapi::um::winuser::ShowWindow;
+
 
 extern crate msgbox;
 
@@ -841,6 +841,7 @@ fn main() {
     // windows only
     #[cfg(windows)]
     {
+        use winapi::um::winuser::ShowWindow;
         use winapi::um::winuser::SetProcessDPIAware;
         unsafe {
             SetProcessDPIAware();
