@@ -21,7 +21,6 @@ export const Multiplayer = () => {
       'get_installed_miaonet',
       selectedPath + '/Mods',
       (installed: boolean) => {
-        console.log(installed);
         setInstalledMiaoNet(installed);
       }
     );

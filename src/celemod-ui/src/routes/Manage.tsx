@@ -546,7 +546,7 @@ export const Manage = () => {
       }
     }
 
-    console.log('hasUpdateMods', JSON.stringify(mods, null, 4));
+    // console.log('hasUpdateMods', JSON.stringify(mods, null, 4));
 
     return mods;
   }, [latestModInfos, installedModMap]);
