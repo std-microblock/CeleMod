@@ -59,3 +59,24 @@ jobs:
         name: linux
         path: |
           ./target/release/cele-mod
+  build-osx:
+    runs-on: macos-latest
+    steps:
+    - name: Install dependencies
+      run: |
+        brew install pango
+        brew install gtk+3
+    - uses: actions/checkout@v3
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+    - name: Build Rust
+      run: cargo build --verbose --release
+    - uses: actions/upload-artifact@v4.3.1
+      with:
+        name: osx
+        path: |
+          ./target/release/cele-mod
