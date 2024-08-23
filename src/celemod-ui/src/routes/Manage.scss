@@ -7,6 +7,7 @@
     .modList {
 
         .title {
+
             html[lang="pt-BR"] &,
             html[lang="ru-RU"] & {
                 font-size: 16px;
@@ -36,8 +37,9 @@
         }
 
         button {
-            html[lang="pt-BR"] & ,
-            html[lang="ru-RU"] &{
+
+            html[lang="pt-BR"] &,
+            html[lang="ru-RU"] & {
                 font-size: 10px !important;
             }
         }
@@ -157,7 +159,7 @@
                 border-radius: 100px;
             }
 
-            
+
         }
     }
 
@@ -170,8 +172,26 @@
 
     .modVersion {
         font-size: 10px;
-        margin: 0 6px;
+        margin-left: 6px;
         display: inline-block;
         color: rgba(255, 255, 255, 0.4);
+    }
+
+    .modComment {
+        font-size: 15px;
+        margin-left: 6px;
+        display: inline-block;
+        color: rgba(255, 255, 255, 0.575);
+        cursor: text;
+    }
+    
+    .modCommentInput {
+        margin: 0 6px;
+        padding: 0 6px;
+        border-radius: 10px;
+        border: none;
+        background: #222;
+        color: theme.$fg;
+        box-shadow: 0 2px 5px #00000040;
     }
 }

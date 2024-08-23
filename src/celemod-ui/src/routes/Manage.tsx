@@ -8,6 +8,7 @@ import {
   useCurrentBlacklistProfile,
   useGamePath,
   useInstalledMods,
+  useModComments,
   useStorage,
 } from '../states';
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -69,6 +70,8 @@ const modListContext = createContext<{
     version: string;
     gb_file: string;
   }[];
+  modComments: { [name: string]: string };
+  setModComment: (name: string, comment: string) => void;
 } | null>({} as any);
 
 const ModBadge = ({
@@ -128,20 +131,20 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
         onClick={
           gbFileID !== null
             ? async () => {
-                setState(_i18n.t('下载中'));
-                download.downloadMod(name, gbFileID, {
-                  onProgress: (task, progress) => {
-                    setState(`${progress}% (${task.subtasks.length})`);
-                  },
-                  onFinished: () => {
-                    setState(_i18n.t('下载完成'));
-                    ctx?.reloadMods();
-                  },
-                  onFailed: () => {
-                    setState(_i18n.t('下载失败'));
-                  },
-                });
-              }
+              setState(_i18n.t('下载中'));
+              download.downloadMod(name, gbFileID, {
+                onProgress: (task, progress) => {
+                  setState(`${progress}% (${task.subtasks.length})`);
+                },
+                onFinished: () => {
+                  setState(_i18n.t('下载完成'));
+                  ctx?.reloadMods();
+                },
+                onFailed: () => {
+                  setState(_i18n.t('下载失败'));
+                },
+              });
+            }
             : undefined
         }
       >
@@ -214,12 +217,19 @@ const ModLocal = ({
 
   const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
 
+  const [editingComment, setEditingComment] = useState(false);
+  const refCommentInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editingComment) {
+      refCommentInput.current?.focus();
+    }
+  }, [editingComment]);
+
   return (
     <div className={`m-mod ${enabled && 'enabled'}`} key={id}>
       <span
-        className={`expandBtn ${expanded && 'expanded'} ${
-          hasDeps && 'clickable'
-        }`}
+        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
+          }`}
         onClick={() => setExpanded(!expanded)}
       >
         {hasDeps && (!optional || ctx?.fullTree) ? (
@@ -245,8 +255,8 @@ const ModLocal = ({
         {isAlwaysOn
           ? _i18n.t('始终开启')
           : enabled
-          ? _i18n.t('已启用')
-          : _i18n.t('已禁用')}
+            ? _i18n.t('已启用')
+            : _i18n.t('已禁用')}
       </ModBadge>
 
       {enabled &&
@@ -324,7 +334,28 @@ const ModLocal = ({
         </ModBadge>
       )}
 
-      <span>{name}</span>
+      <span
+        className="modName"
+        onClick={() => setEditingComment(true)}
+      >{name}</span>
+      {!editingComment && ctx?.modComments[name] && (
+        <span className="modComment" onClick={() => {
+          setEditingComment(true);
+        }}>{ctx?.modComments[name]}</span>
+      )}
+      {
+        editingComment && (
+          <input type="text" value={ctx?.modComments[name] ?? ''} ref={refCommentInput} className="modCommentInput"
+            onInput={(e) => ctx?.setModComment(name, (e.target as any).value)}
+            onKeyUp={(e) => {
+              if (e.keyCode === 257 || e.keyCode === 256) { // enter or esc
+                setEditingComment(false);
+              }
+            }}
+            onBlur={() => setEditingComment(false)} />
+        )
+      }
+
       <span className="modVersion">{version}</span>
       {(!optional || ctx?.fullTree) && expanded && (
         <div className={`childTree ${expanded && 'expanded'}`}>
@@ -660,6 +691,7 @@ export const Manage = () => {
     modsTreeRef.current?.scrollTo(0, 0);
   }, [excludeDependents]);
   const globalCtx = useGlobalContext();
+  const [modComments, setModComments] = useModComments()
   const manageCtx = useMemo(
     () => ({
       hasUpdateMods,
@@ -668,6 +700,12 @@ export const Manage = () => {
         else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));
       },
       alwaysOnMods,
+      modComments, setModComment(name: string, comment: string) {
+        setModComments({
+          ...modComments,
+          [name]: comment
+        });
+      },
       batchSwitchMod: (names: string[], enabled: boolean) => {
         if (!enabled) names = names.filter((v) => !alwaysOnMods.includes(v));
         if (!currentProfile) return;
@@ -804,6 +842,7 @@ export const Manage = () => {
       fullTree,
       showUpdate,
       alwaysOnMods,
+      modComments
     ]
   );
 

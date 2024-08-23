@@ -163,3 +163,5 @@ export const [initUseMultiThread, useUseMultiThread] = createPersistedStateByKey
 export const [initAlwaysOnMods, useAlwaysOnMods] = createPersistedStateByKey('alwaysOnMods', [])
 
 export const [initSearchSort, useSearchSort] = createPersistedStateByKey<'new' | 'updateAdded' | 'updated' | 'views' | 'likes'>('searchSort', 'likes')
+
+export const [initModComments, useModComments] = createPersistedStateByKey('modComments', {})

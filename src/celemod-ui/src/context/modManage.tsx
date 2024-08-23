@@ -6,6 +6,7 @@ import {
     useStorage,
     initGamePath,
     useCurrentEverestVersion,
+    initModComments,
 } from '../states';
 import { useEffect, useMemo } from 'preact/hooks';
 import { createPopup } from 'src/components/Popup';
@@ -14,6 +15,8 @@ import { ProgressIndicator } from 'src/components/Progress';
 
 let lastGamePath = '';
 export const createModManageContext = () => {
+    initModComments();
+    
     const { setInstalledMods } = useInstalledMods();
 
     const [gamePath] = useGamePath();
