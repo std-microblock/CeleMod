@@ -772,6 +772,8 @@ export const Manage = () => {
                 const deps = mod?.dependencies
                   .filter((v) => checkOptionalDep || !v.optional)
 
+                // console.log('also enable', deps?.map(v => v.name).join(','), 'for', name);
+
                 for (const dep of deps ?? []) {
                   if (!('_missing' in dep)) {
                     if (excludeFromAutoEnableList.includes(dep.name)) continue;
@@ -882,10 +884,15 @@ export const Manage = () => {
               onClick={() => {
                 manageCtx.switchMod(
                   [...installedModsTree.values()]
-                    .map((v) => v.name)
-                    .filter((v) => !alwaysOnMods.includes(v)),
+                    .filter((v) => {
+                      return ('_missing' in v) || v.enabled;
+                    })
+                    .map((v) => v.name),
                   false
                 );
+                manageCtx.switchMod(
+                  alwaysOnMods, true, true
+                )
               }}
             >
               {_i18n.t('禁用全部')}
