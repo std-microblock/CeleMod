@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader},
-    path::PathBuf,
+    os::windows::fs::MetadataExt,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::Arc,
 };
@@ -56,11 +57,8 @@ pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>
     Ok(Arc::clone(&MOD_INFO_CACHED))
 }
 
-pub fn check_everest_installed(game_path: &str) -> bool {
-    std::path::Path::new(&format!("{}/Celeste.Mod.mm.dll", game_path)).exists()
-}
-
 static MAGIC_STR: &str = "EverestBuild";
+static MAGIC_STR_ONLY_ORIGIN_EXE: &str = "_StarJumpEnd+<StartCirclingPlayer>";
 
 pub fn get_everest_version(game_path: &str) -> Option<i32> {
     fn check_file(path: String) -> Option<i32> {
@@ -78,13 +76,19 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         Some(str)
     }
 
-    if check_everest_installed(game_path) {
-        check_file(game_path.to_owned() + "/Celeste.exe")
-            .or(check_file(game_path.to_owned() + "/Celeste.dll"))
-            .or(None)
-    } else {
-        None
-    }
+    check_file(game_path.to_owned() + "/Celeste.exe")
+        .or_else(|| {
+            if let Ok(data) = std::fs::read(game_path.to_owned() + "/Celeste.exe")
+                && data
+                    .windows(MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes().len())
+                    .any(|window| window == MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes())
+            {
+                None
+            } else {
+                check_file(game_path.to_owned() + "/Celeste.dll")
+            }
+        })
+        .or(None)
 }
 
 fn run_command(

@@ -1,5 +1,6 @@
 #![feature(try_blocks)]
 #![feature(slice_pattern)]
+#![feature(let_chains)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};

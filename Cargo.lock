@@ -1564,7 +1564,7 @@ checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
 [[package]]
 name = "sciter-rs"
 version = "0.5.58"
-source = "git+https://github.com/MicroCBer/rust-sciter#0d95e1910d7ea0dcccb2cc774ba189dfe5b5c8ba"
+source = "git+https://github.com/MicroCBer/rust-sciter#518076af3956161030ee4b40516082d3e58ddb1a"
 dependencies = [
  "lazy_static",
  "libc",
