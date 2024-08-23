@@ -758,6 +758,7 @@ impl Handler {
                     std::process::exit(0);
                 }
                 Err(e) => {
+                    println!("Failed to download update: {}", e);
                     callback
                         .call(None, &make_args!("failed", e.to_string()), None)
                         .unwrap();
