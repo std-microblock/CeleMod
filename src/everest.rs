@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader},
-    os::windows::fs::MetadataExt,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::Arc,
