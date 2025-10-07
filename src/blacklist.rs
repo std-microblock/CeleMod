@@ -56,9 +56,10 @@ pub fn get_current_profile(game_path: &String) -> anyhow::Result<String> {
 
     if blacklist.exists() {
         let data = fs::read_to_string(blacklist).unwrap();
+        let profile_name = data.lines().next().map(|line| line.replace("# Profile: ", "")).unwrap_or("Default".to_string());
         let current_profile = profiles
             .iter()
-            .find(|v| v.name == data.lines().next().unwrap().replace("# Profile: ", ""));
+            .find(|v| v.name == profile_name);
 
         if let Some(current_profile) = current_profile {
             Ok(current_profile.name.clone())
