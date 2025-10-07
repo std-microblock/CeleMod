@@ -87,7 +87,7 @@ export const Mod = memo(
         <div className="operations">
           <Button
             onClick={async () => {
-              if (downloadTask || props.isInstalled) return;
+              if (downloadTask) return;
 
               const down = (name: string, fileid: string) => {
                 setDownloadTask(
