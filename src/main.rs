@@ -1,6 +1,5 @@
 #![feature(try_blocks)]
 #![feature(slice_pattern)]
-#![feature(let_chains)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
@@ -890,7 +889,7 @@ fn main() {
     {
         sciter::set_options(sciter::RuntimeOptions::DebugMode(true)).unwrap();
         sciter::set_options(sciter::RuntimeOptions::ScriptFeatures(
-            sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_SOCKET_IO as u8,
+            sciter::SCRIPT_RUNTIME_FEATURES::ALLOW_SOCKET_IO.bits(),
         ))
         .unwrap();
 
