@@ -370,7 +370,7 @@ const ModLocal = ({
       <span className="modVersion">{version}</span>
       {ctx?.showDetailed && (
         <span className="modDetails">
-          {formatSize(size)} · {file}
+          [{formatSize(size)} · {file}]
         </span>
       )}
       {(!optional || ctx?.fullTree) && expanded && (
