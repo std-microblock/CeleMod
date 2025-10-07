@@ -198,7 +198,7 @@ export const Search = () => {
                     });
                   }
                 }),
-              [currentPage]
+              [currentPage, type]
             )}
             modFolder={selectedPath + '/Mods'}
           />
