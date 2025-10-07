@@ -120,6 +120,23 @@ pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile
             profiles.push(profile);
         }
     }
+
+    // If no profiles exist, create a default empty profile
+    if profiles.is_empty() {
+        let profile = ModBlacklistProfile {
+            name: "Default".to_string(),
+            mods: vec![],
+        };
+        let blacklist_path = Path::new(game_path).join("celemod_blacklist_profiles");
+        fs::create_dir_all(&blacklist_path).unwrap();
+        fs::write(
+            blacklist_path.join("Default.json"),
+            serde_json::to_string_pretty(&profile).unwrap(),
+        )
+        .unwrap();
+        profiles.push(profile);
+    }
+
     profiles
 }
 

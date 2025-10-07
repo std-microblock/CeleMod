@@ -17,6 +17,7 @@ import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import { GlobalContext, useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
+import { createPopup, PopupContext } from '../components/Popup';
 
 type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version';
 
@@ -753,58 +754,72 @@ export const Manage = () => {
         enabled: boolean,
         recursive = true
       ) => {
-        if (currentProfile) {
-          const switchList: string[] = [];
-          const excludeFromAutoEnableList = [
-            'CelesteNet.Client',
-            'Miao.CelesteNet.Client',
-          ];
+        if (!currentProfile) {
+          createPopup(() => {
+            const { hide } = useContext(PopupContext);
+            return (
+              <div className="popup-content">
+                <div className="title">{_i18n.t('未选择 Profile')}</div>
+                <div className="content">{_i18n.t('请先选择一个 Profile 后再启用/禁用 Mod')}</div>
+                <div className="buttons">
+                  <button onClick={hide}>{_i18n.t('确定')}</button>
+                </div>
+              </div>
+            );
+          });
+          return;
+        }
 
-          const addToSwitchList = (name: string) => {
-            const mod = installedModMap.get(name);
-            if (mod) {
-              mod.enabled = enabled;
-              switchList.push(name);
-            }
+        const switchList: string[] = [];
+        const excludeFromAutoEnableList = [
+          'CelesteNet.Client',
+          'Miao.CelesteNet.Client',
+        ];
 
-            if (recursive) {
-              if (enabled) {
-                const deps = mod?.dependencies
-                  .filter((v) => checkOptionalDep || !v.optional)
+        const addToSwitchList = (name: string) => {
+          const mod = installedModMap.get(name);
+          if (mod) {
+            mod.enabled = enabled;
+            switchList.push(name);
+          }
 
-                // console.log('also enable', deps?.map(v => v.name).join(','), 'for', name);
+          if (recursive) {
+            if (enabled) {
+              const deps = mod?.dependencies
+                .filter((v) => checkOptionalDep || !v.optional)
 
-                for (const dep of deps ?? []) {
-                  if (!('_missing' in dep)) {
-                    if (excludeFromAutoEnableList.includes(dep.name)) continue;
-                    addToSwitchList(dep.name);
-                  }
-                }
-              } else {
-                const orphanDeps = mod?.dependencies.filter(
-                  (v) =>
-                    !('_missing' in v) &&
-                    !v.dependedBy.some((v) => v.enabled && v.name !== name)
-                ).filter((v) =>
-                  checkOptionalDep || !v.optional
-                )
+              // console.log('also enable', deps?.map(v => v.name).join(','), 'for', name);
 
-                for (const dep of orphanDeps ?? []) {
+              for (const dep of deps ?? []) {
+                if (!('_missing' in dep)) {
+                  if (excludeFromAutoEnableList.includes(dep.name)) continue;
                   addToSwitchList(dep.name);
                 }
               }
+            } else {
+              const orphanDeps = mod?.dependencies.filter(
+                (v) =>
+                  !('_missing' in v) &&
+                  !v.dependedBy.some((v) => v.enabled && v.name !== name)
+              ).filter((v) =>
+                checkOptionalDep || !v.optional
+              )
+
+              for (const dep of orphanDeps ?? []) {
+                addToSwitchList(dep.name);
+              }
             }
-          };
-
-          if (typeof names === 'string') {
-            names = [names];
           }
-          for (const name of names) {
-            addToSwitchList(name);
-          }
+        };
 
-          manageCtx.batchSwitchMod(switchList, enabled);
+        if (typeof names === 'string') {
+          names = [names];
         }
+        for (const name of names) {
+          addToSwitchList(name);
+        }
+
+        manageCtx.batchSwitchMod(switchList, enabled);
 
         setHasUnsavedChanges(true);
       },
