@@ -52,6 +52,7 @@ pub fn download_file_with_progress_ureq(
         .unwrap()
         .to_string();
 
+    let tmp_path = Path::new(&tmp_output_path);
     let output_path = Path::new(output_path);
     let mut req = ureq::get(url);
     let req = 
@@ -70,7 +71,7 @@ pub fn download_file_with_progress_ureq(
             .set("Cache-Control", "no-cache");
 
     let mut resp = req.call();
-    let mut file = std::fs::File::create(output_path)?;
+    let mut file = std::fs::File::create(&tmp_path)?;
     let mut total_size = 0;
     let mut downloaded_size = 0;
     let mut buffer = [0u8; 1024 * 1024];
@@ -104,6 +105,7 @@ pub fn download_file_with_progress_ureq(
         }
     }
     progress_callback(DownloadCallbackInfo { progress: 100.0 });
+    std::fs::rename(&tmp_path, output_path)?;
     Ok(())
 }
 
