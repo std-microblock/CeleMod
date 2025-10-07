@@ -100,6 +100,7 @@ struct LocalMod {
     deps: Vec<ModDependency>,
     version: String,
     file: String,
+    size: u64,
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -223,12 +224,15 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 -1
             };
 
+            let size = entry.metadata()?.len();
+
             mods.push(LocalMod {
                 name,
                 version,
                 game_banana_id: gbid,
                 deps,
                 file: entry.file_name().to_str().unwrap().to_string(),
+                size,
             });
         };
 

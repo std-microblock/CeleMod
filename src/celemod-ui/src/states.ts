@@ -69,6 +69,7 @@ export interface BackendModInfo {
     deps: BackendDep[],
     version: string,
     file: string,
+    size: number,
 }
 
 export const useInstalledMods = create<{

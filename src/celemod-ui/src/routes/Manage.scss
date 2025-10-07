@@ -194,4 +194,11 @@
         color: theme.$fg;
         box-shadow: 0 2px 5px #00000040;
     }
+
+    .modDetails {
+        padding: 0 6px;
+        font-size: 8px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 6px;
+    }
 }

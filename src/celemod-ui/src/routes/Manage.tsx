@@ -37,6 +37,7 @@ interface ModInfo {
   _deps: BackendDep[]; // raw deps
   resolveDependencies: () => DepResolveResult;
   file: string;
+  size: number;
   duplicateCount: number;
   duplicateFiles: string[];
 }
@@ -65,6 +66,7 @@ const modListContext = createContext<{
   reloadMods: () => void;
   fullTree: boolean;
   showUpdate: boolean;
+  showDetailed: boolean;
   alwaysOnMods: string[];
   switchAlwaysOn: (name: string, enabled: boolean) => void;
   autoDisableNewMods: boolean;
@@ -179,6 +181,7 @@ const ModLocal = ({
   version,
   optional = false,
   file,
+  size,
   duplicateCount,
   duplicateFiles,
 }: ModInfo & { optional?: boolean }) => {
@@ -341,6 +344,10 @@ const ModLocal = ({
       <span
         className="modName"
         onClick={() => setEditingComment(true)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          callRemote('open_url', ctx?.modFolder || '');
+        }}
       >{name}</span>
       {!editingComment && ctx?.modComments[name] && (
         <span className="modComment" onClick={() => {
@@ -361,6 +368,11 @@ const ModLocal = ({
       }
 
       <span className="modVersion">{version}</span>
+      {ctx?.showDetailed && (
+        <span className="modDetails">
+          {formatSize(size)} · {file}
+        </span>
+      )}
       {(!optional || ctx?.fullTree) && expanded && (
         <div className={`childTree ${expanded && 'expanded'}`}>
           {dependencies.map((v) => (
@@ -413,6 +425,12 @@ const Profile = ({ name, current }: { name: string; current: boolean }) => {
 const alphabet =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- _';
 
+const formatSize = (size: number) => {
+  const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+};
+
 let lastApplyReq = -1;
 
 export const Manage = () => {
@@ -440,6 +458,7 @@ export const Manage = () => {
   const [checkOptionalDep, setCheckOptionalDep] = useState(false);
   const [fullTree, setFullTree] = useState(false);
   const [showUpdate, setShowUpdate] = useState(true);
+  const [showDetailed, setShowDetailed] = useState(false);
 
   const installedModMap = useMemo(() => {
     const modMap = new Map<string, ModInfo>();
@@ -453,6 +472,7 @@ export const Manage = () => {
         dependencies: [],
         dependedBy: [],
         file: mod.file,
+        size: mod.size,
         _deps: mod.deps,
         resolveDependencies: () => {
           let status = 'resolved';
@@ -858,6 +878,7 @@ export const Manage = () => {
       },
       fullTree,
       showUpdate,
+      showDetailed,
     }),
     [
       currentProfile,
@@ -866,6 +887,7 @@ export const Manage = () => {
       modPath,
       fullTree,
       showUpdate,
+      showDetailed,
       alwaysOnMods,
       modComments,
       checkOptionalDep
@@ -988,6 +1010,18 @@ export const Manage = () => {
               />
 
               {_i18n.t('自动禁用新安装的Mod')}
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={showDetailed}
+                onChange={(e) => {
+                  // @ts-ignore
+                  setShowDetailed(e.target.checked);
+                }}
+              />
+
+              {_i18n.t('显示详细信息')}
             </label>
           </div>
           <div
