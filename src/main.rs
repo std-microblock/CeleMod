@@ -653,6 +653,26 @@ impl Handler {
         }
     }
 
+    fn get_current_blacklist_content(&self, game_path: String) -> String {
+        let result = blacklist::get_current_blacklist_content(&game_path);
+        if let Err(e) = result {
+            eprintln!("Failed to get current blacklist content: {}", e);
+            "".to_string()
+        } else {
+            result.unwrap()
+        }
+    }
+
+    fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
+        let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
+        if let Err(e) = result {
+            eprintln!("Failed to sync blacklist profile: {}", e);
+            format!("Failed to sync blacklist profile: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
     fn open_url(&self, url: String) {
         if let Err(e) = open::that(url) {
             eprintln!("Failed to open url: {}", e);
@@ -843,6 +863,8 @@ impl sciter::EventHandler for Handler {
         fn verify_celeste_install(String);
         fn get_mod_latest_info(Value);
         fn show_log_window();
+        fn get_current_blacklist_content(String);
+        fn sync_blacklist_profile_from_file(String, String);
     }
 }
 

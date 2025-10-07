@@ -1,13 +1,14 @@
 import _i18n from 'src/i18n';
 import { useI18N } from 'src/i18n';
 import { h } from 'preact';
-import { useMemo, useState } from 'preact/hooks';
+import { useContext, useMemo, useState } from 'preact/hooks';
 import { GameSelector } from '../components/GameSelector';
 import { Icon } from '../components/Icon';
 import { callRemote, selectGamePath, useBlockingMask } from '../utils';
 // @ts-ignore
 import strawberry from '../resources/Celemod.png';
 import {
+  useAlwaysOnMods,
   useCurrentBlacklistProfile,
   useCurrentLang,
   useGamePath,
@@ -20,7 +21,7 @@ import { ModBlacklistProfile } from '../ipc/blacklist';
 import { useEffect } from 'react';
 import { Button } from '../components/Button';
 import './Home.scss';
-import { createPopup } from '../components/Popup';
+import { createPopup, PopupContext } from '../components/Popup';
 import { useEnableAcrylic } from 'src/context/theme';
 import { useGlobalContext } from 'src/App';
 
@@ -76,6 +77,43 @@ export const Home = () => {
       profiles.find((v) => v.name === currentProfileName) || null
     );
   }, [currentProfileName, profiles]);
+
+  const [alwaysOnMods] = useAlwaysOnMods();
+
+  useEffect(() => {
+    if (!currentProfile || !gamePath) return;
+    const checkSync = () => {
+      const content = callRemote('get_current_blacklist_content', gamePath);
+      const disabledFiles = content.split('\n').map(v => v.trim()).filter(v => v && !v.startsWith('#')).sort();
+      const expectedDisabledFiles = currentProfile.mods
+        .filter(m => !alwaysOnMods.includes(m.name))
+        .map(m => m.file)
+        .sort();
+      if (JSON.stringify(expectedDisabledFiles) !== JSON.stringify(disabledFiles)) {
+        const popup = createPopup(() => {
+          const { hide } = useContext(PopupContext);
+          return (
+            <div className="popup-content">
+              <h2>{_i18n.t('同步黑名单 Mod 列表')}</h2>
+              <p>{_i18n.t('当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？')}</p>
+              <p>{_i18n.t('注意，该功能不支持通配符等')}</p>
+              <div className="buttons">
+                <button onClick={() => {
+                  callRemote('sync_blacklist_profile_from_file', gamePath, currentProfileName);
+                  callRemote('get_blacklist_profiles', gamePath, (data: string) => {
+                    setProfiles(JSON.parse(data));
+                  });
+                  hide();
+                }}>{_i18n.t('同步')}</button>
+                <button onClick={() => hide()}>{_i18n.t('忽略')}</button>
+              </div>
+            </div>
+          );
+        });
+      }
+    };
+    checkSync();
+  }, [currentProfile, gamePath, alwaysOnMods, currentProfileName]);
 
   const formatTime = (time: number) => {
     if (time === 0) return _i18n.t('未知');

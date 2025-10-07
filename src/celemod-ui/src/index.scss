@@ -301,3 +301,37 @@ input[type="checkbox"]:disabled {
     }
   }
 }
+
+
+.popup-content {
+  background: $bg1;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  max-width: 400px;
+  margin: 0 auto;
+  border: 1px solid $bg2;
+
+  .title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 15px;
+    color: $fg;
+  }
+
+  .content {
+    margin-bottom: 25px;
+    color: $fg1;
+    line-height: 1.5;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    button {
+      margin: 4px;
+    }
+  }
+}
