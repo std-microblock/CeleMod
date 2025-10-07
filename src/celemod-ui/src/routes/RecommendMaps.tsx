@@ -16,7 +16,7 @@ import theRoadLessTravelledImg from '../resources/collabs/the-road-less-travelle
 import { callRemote, horizontalScrollMouseWheelHandler } from 'src/utils';
 import { Button } from 'src/components/Button';
 import { memo } from 'preact/compat';
-import { useInstalledMods } from 'src/states';
+import { useAutoDisableNewMods, useInstalledMods } from 'src/states';
 import { useState } from 'react';
 import { useGlobalContext } from 'src/App';
 
@@ -25,6 +25,7 @@ export const RecommendMaps = () => {
   // if (noEverest) return noEverest;
 
   const { installedMods } = useInstalledMods();
+  const [autoDisableNewMods] = useAutoDisableNewMods();
   const ctx = useGlobalContext();
   const InstallButton = ({ name, url }) => {
     const installed = installedMods.some((mod) => mod.name === name);
@@ -42,6 +43,7 @@ export const RecommendMaps = () => {
             name,
             parseInt(gbFileId) === -1 ? url : gbFileId,
             {
+              autoDisableNewMods,
               onProgress(task, progress) {
                 setState(
                   `${progress}% (${

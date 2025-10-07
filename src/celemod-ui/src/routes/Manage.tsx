@@ -5,6 +5,7 @@ import {
   BackendDep,
   BackendModInfo,
   useAlwaysOnMods,
+  useAutoDisableNewMods,
   useCurrentBlacklistProfile,
   useGamePath,
   useInstalledMods,
@@ -66,6 +67,7 @@ const modListContext = createContext<{
   showUpdate: boolean;
   alwaysOnMods: string[];
   switchAlwaysOn: (name: string, enabled: boolean) => void;
+  autoDisableNewMods: boolean;
   hasUpdateMods: {
     name: string;
     version: string;
@@ -134,6 +136,7 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
             ? async () => {
               setState(_i18n.t('下载中'));
               download.downloadMod(name, gbFileID, {
+                autoDisableNewMods: ctx?.autoDisableNewMods || false,
                 onProgress: (task, progress) => {
                   setState(`${progress}% (${task.subtasks.length})`);
                 },
@@ -416,6 +419,7 @@ export const Manage = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
   const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
+  const [autoDisableNewMods, setAutoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
   const modPath = gamePath + '/Mods';
 
@@ -701,6 +705,7 @@ export const Manage = () => {
         else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));
       },
       alwaysOnMods,
+      autoDisableNewMods,
       modComments, setModComment(name: string, comment: string) {
         setModComments({
           ...modComments,
@@ -972,6 +977,18 @@ export const Manage = () => {
 
               {_i18n.t('显示更新')}
             </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={autoDisableNewMods}
+                onChange={(e) => {
+                  // @ts-ignore
+                  setAutoDisableNewMods(e.target.checked);
+                }}
+              />
+
+              {_i18n.t('自动禁用新安装的Mod')}
+            </label>
           </div>
           <div
             className="opers"
@@ -992,6 +1009,7 @@ export const Manage = () => {
                       mod.name,
                       mod.gb_file === '-1' ? mod.url : mod.gb_file,
                       {
+                        autoDisableNewMods: manageCtx.autoDisableNewMods,
                         onProgress: (task, progress) => {
                           console.log(task, progress);
                         },

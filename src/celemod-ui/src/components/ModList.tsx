@@ -13,6 +13,7 @@ import InfiniteLoader from 'react-window-infinite-loader';
 import { memo } from 'preact/compat';
 import { Content } from '../api/wegfan';
 import { Download } from '../context/download';
+import { useAutoDisableNewMods } from '../states';
 import { useGlobalContext } from '../App';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
@@ -71,6 +72,7 @@ export const Mod = memo(
     isInstalled: boolean;
   }) => {
     const { download, modManage } = useGlobalContext();
+    const [autoDisableNewMods] = useAutoDisableNewMods();
     const { mod } = props;
     const preview = mod.previewUrl;
 
@@ -92,6 +94,7 @@ export const Mod = memo(
               const down = (name: string, fileid: string) => {
                 setDownloadTask(
                   download.downloadMod(name, fileid, {
+                    autoDisableNewMods,
                     onProgress: (task) => setDownloadTask({ ...task }),
                     onFailed: (task) => setDownloadTask({ ...task }),
                     onFinished: (task) => {

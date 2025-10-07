@@ -14,8 +14,8 @@ pub struct ModBlacklist {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModBlacklistProfile {
-    name: String,
-    mods: Vec<ModBlacklist>,
+    pub name: String,
+    pub mods: Vec<ModBlacklist>,
 }
 
 pub fn apply_mod_blacklist_profile(

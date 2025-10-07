@@ -105,7 +105,8 @@ pub fn download_file_with_progress_ureq(
         }
     }
     progress_callback(DownloadCallbackInfo { progress: 100.0 });
-    std::fs::rename(&tmp_path, output_path)?;
+    std::fs::copy(&tmp_path, output_path)?;
+    std::fs::remove_file(&tmp_path)?;
     Ok(())
 }
 

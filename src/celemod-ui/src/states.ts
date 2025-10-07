@@ -164,4 +164,6 @@ export const [initAlwaysOnMods, useAlwaysOnMods] = createPersistedStateByKey('al
 
 export const [initSearchSort, useSearchSort] = createPersistedStateByKey<'new' | 'updateAdded' | 'updated' | 'views' | 'likes'>('searchSort', 'likes')
 
+export const [initAutoDisableNewMods, useAutoDisableNewMods] = createPersistedStateByKey('autoDisableNewMods', false)
+
 export const [initModComments, useModComments] = createPersistedStateByKey('modComments', {})

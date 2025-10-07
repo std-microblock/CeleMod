@@ -299,7 +299,7 @@ fn get_celestes() -> Vec<Game> {
     games
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 enum DownloadStatus {
     Waiting,
     Downloading,
@@ -326,6 +326,7 @@ impl Handler {
         name: String,
         url: String,
         mods_dir: String,
+        auto_disable_new_mods: bool,
         callback: sciter::Value,
         _use_cn_proxy: bool,
         multi_thread: bool,
@@ -449,6 +450,31 @@ impl Handler {
                     tasklist[i_task - 1].data = "100".to_string();
                     if i_task < tasklist.len() {
                         tasklist[i_task].status = DownloadStatus::Downloading;
+                    }
+                }
+
+                // Auto-disable new mods if enabled
+                if auto_disable_new_mods {
+                    let game_path = Path::new(&mods_dir).parent().unwrap().to_str().unwrap().to_string();
+                    let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
+                    let mut new_mods = vec![];
+                    for task in tasklist.borrow().iter() {
+                        if task.status == DownloadStatus::Finished {
+                            new_mods.push(task.name.clone());
+                        }
+                    }
+                    if !new_mods.is_empty() {
+                        let installed_mods = get_installed_mods_sync(mods_dir.clone());
+                        let mods_to_disable: Vec<(&String, &String)> = new_mods.iter()
+                            .filter_map(|name| {
+                                installed_mods.iter().find(|m| m.name == *name).map(|m| (&m.name, &m.file))
+                            })
+                            .collect();
+                        if !mods_to_disable.is_empty() {
+                            for profile in profiles {
+                                blacklist::switch_mod_blacklist_profile(&game_path, &profile.name, mods_to_disable.clone(), false)?;
+                            }
+                        }
                     }
                 }
 
@@ -793,7 +819,7 @@ impl Handler {
 
 impl sciter::EventHandler for Handler {
     dispatch_script_call! {
-        fn download_mod(String, String, String, Value, bool, bool);
+        fn download_mod(String, String, String, bool, Value, bool, bool);
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);

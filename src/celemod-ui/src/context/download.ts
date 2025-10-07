@@ -78,6 +78,7 @@ export const createDownloadContext = () => {
         downloadTasks,
         downloadMod: (name: string, gb_fileid_or_url: string, {
             force = false,
+            autoDisableNewMods = false,
             onProgress = (task: Download.TaskInfo, progress: number) => { },
             onFinished = (task: Download.TaskInfo) => { },
             onFailed = (task: Download.TaskInfo, error: string) => { }
@@ -124,7 +125,7 @@ export const createDownloadContext = () => {
 
                 eventBus.dispatchEvent('taskListChanged')
 
-                callRemote("download_mod", name, url, gamePath + "/Mods/", (_subtasks: string, state: "pending" | "failed" | "finished") => {
+                callRemote("download_mod", name, url, gamePath + "/Mods/", autoDisableNewMods, (_subtasks: string, state: "pending" | "failed" | "finished") => {
                     console.log(_subtasks, state)
                     const subtasks = JSON.parse(_subtasks) as BackendDownloadInfo[];
                     const task = downloadTasks.current[name];

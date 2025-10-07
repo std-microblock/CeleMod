@@ -1,7 +1,7 @@
 import _i18n, { useI18N } from 'src/i18n';
 import './RecommendMods.scss';
 import { h } from 'preact';
-import { useGamePath, useInstalledMods } from '../states';
+import { useAutoDisableNewMods, useGamePath, useInstalledMods } from '../states';
 import { Mod } from '../components/ModList';
 import { Button } from '../components/Button';
 import { useState, useEffect } from 'react';
@@ -22,6 +22,7 @@ const RMod = ({
   installed,
   startDownloadHandler,
   modsFolder,
+  autoDisableNewMods,
 }: {
   name: string;
   download_url: string;
@@ -29,6 +30,7 @@ const RMod = ({
   installed?: boolean;
   startDownloadHandler?: any;
   modsFolder?: string;
+  autoDisableNewMods: boolean;
 }) => {
   const [state, setState] = useState(
     installed ? _i18n.t('已安装') : _i18n.t('下载')
@@ -43,6 +45,7 @@ const RMod = ({
       if (!!data) {
         const [gbFileId, version] = JSON.parse(data);
         ctx.download.downloadMod(name, parseInt(gbFileId) === -1 ? download_url : gbFileId, {
+          autoDisableNewMods,
           onProgress(task, progress) {
             setState(
               `${progress}% (${task.subtasks.filter((v) => v.state === 'Finished').length
@@ -92,6 +95,7 @@ export const RecommendMods = () => {
   const skinMods = _skinMods()
 
   const { installedMods } = useInstalledMods();
+  const [autoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
   const modsPath = gamePath + '/Mods';
   const refDownloadHandlers = useRef(
@@ -138,6 +142,7 @@ export const RecommendMods = () => {
                 download_url={mod.download_url}
                 description={mod.description}
                 modsFolder={modsPath}
+                autoDisableNewMods={autoDisableNewMods}
                 installed={installedMods.some(
                   (m) => m.name === modNameFromUrl(mod.download_url)
                 )}
@@ -154,6 +159,7 @@ export const RecommendMods = () => {
                 download_url={mod.download_url}
                 description={mod.description}
                 modsFolder={modsPath}
+                autoDisableNewMods={autoDisableNewMods}
                 startDownloadHandler={
                   // @ts-ignore
                   refDownloadHandlers.current[mod.name]
