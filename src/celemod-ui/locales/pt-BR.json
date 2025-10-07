@@ -209,5 +209,15 @@
   "单图，美术和音乐都很好": "Fotos, arte e música solteiras são muito boas",
   "MB 自己很喜欢的一张图，有 20-30 面，感觉很平和（中文名是自己翻译的）": "A foto favorita de MB, com 20 a 30 rostos, parece muito pacífica (o nome chinês é minha própria tradução)",
   "A 面难度在 5A - 6A，B面/C面有一些技巧，难度在 7B 的样子": "Uma dificuldade lateral em 5a -6a, b -aside/c lado tem algumas habilidades, a dificuldade é 7b, parece 7b",
-  "使用 aria2c 多线程下载": "Use ARIA2C Multi -Thread Download"
+  "使用 aria2c 多线程下载": "Use ARIA2C Multi -Thread Download",
+  "同步黑名单 Mod 列表": "Sincronize a lista de mod da lista negra",
+  "当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？": "O Blacklist.txt atual é diferente do arquivo de configuração. Deseja sincronizar os arquivos de configuração para corresponder?",
+  "注意，该功能不支持通配符等": "Observe que esta função não suporta caracteres curinga, etc.",
+  "同步": "síncrono",
+  "忽略": "negligência",
+  "未选择 Profile": "Perfil não selecionado",
+  "请先选择一个 Profile 后再启用/禁用 Mod": "Selecione um perfil antes de ativar/desativar o mod",
+  "确定": "Claro",
+  "自动禁用新安装的Mod": "Desativar automaticamente mods recém -instalados",
+  "显示详细信息": "Mostre detalhes"
 }

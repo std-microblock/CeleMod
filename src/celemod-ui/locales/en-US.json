@@ -209,5 +209,15 @@
   "单图，美术和音乐都很好": "Single pictures, art and music are very good",
   "MB 自己很喜欢的一张图，有 20-30 面，感觉很平和（中文名是自己翻译的）": "MB's favorite picture, with 20-30 faces, feels very peaceful (the Chinese name is my own translation)",
   "A 面难度在 5A - 6A，B面/C面有一些技巧，难度在 7B 的样子": "A side difficulty in 5A -6A, B -side/C side has some skills, the difficulty is 7b, it looks like 7B",
-  "使用 aria2c 多线程下载": "Use ARIA2C multi -thread download"
+  "使用 aria2c 多线程下载": "Use ARIA2C multi -thread download",
+  "同步黑名单 Mod 列表": "Synchronize blacklist Mod list",
+  "当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？": "The current blacklist.txt is different from the configuration file. Do you want to sync the configuration files to match?",
+  "注意，该功能不支持通配符等": "Note that this function does not support wildcard characters, etc.",
+  "同步": "synchronous",
+  "忽略": "neglect",
+  "未选择 Profile": "Profile not selected",
+  "请先选择一个 Profile 后再启用/禁用 Mod": "Please select a Profile before enabling/disabling Mod",
+  "确定": "Sure",
+  "自动禁用新安装的Mod": "Automatically disable newly installed mods",
+  "显示详细信息": "Show details"
 }
