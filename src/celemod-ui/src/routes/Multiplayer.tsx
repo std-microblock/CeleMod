@@ -57,7 +57,7 @@ export const Multiplayer = () => {
       <p>{_i18n.t('你需要在 Celeste 群服论坛 注册一个账号')}</p>
       <Button
         onClick={() => {
-          callRemote('open_url', 'https://celeste.centralteam.cn/');
+          callRemote('open_url', 'https://bbs.celemiao.com/');
         }}
       >
         {_i18n.t('进入注册页')}
