@@ -5,6 +5,8 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  release:
+    types: [published]
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,13 +26,19 @@ jobs:
       run: cargo build --verbose --release
     - name: Copy Dependencies
       run: cp ./resources/aria2c.exe ./target/release/aria2c.exe && cp ./resources/sciter.dll ./target/release/sciter.dll
+    - name: Create Windows zip
+      run: |
+        $VERSION = "${{ github.ref_name }}".Substring(1)
+        Compress-Archive -Path ./target/release/cele-mod.exe,./target/release/aria2c.exe,./target/release/sciter.dll -DestinationPath "celemod-${VERSION}-windows.zip"
+        echo "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - uses: actions/upload-artifact@v4.3.1
       with:
-        name: windows
-        path:  |
-          ./target/release/cele-mod.exe
-          ./target/release/aria2c.exe
-          ./target/release/sciter.dll
+        name: windows-exe
+        path: ./target/release/cele-mod.exe
+    - uses: actions/upload-artifact@v4.3.1
+      with:
+        name: windows-zip
+        path: celemod-${{ env.VERSION }}-windows.zip
   build-linux:
     runs-on: ubuntu-22.04
     steps:
@@ -54,11 +62,16 @@ jobs:
         components: rustfmt, clippy
     - name: Build Rust
       run: cargo build --verbose --release
+    - name: Create Linux zip
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        zip "celemod-${VERSION}-linux.zip" ./target/release/cele-mod
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4.3.1
       with:
-        name: linux
-        path: |
-          ./target/release/cele-mod
+        name: linux-zip
+        path: celemod-${{ env.VERSION }}-linux.zip
   build-osx:
     runs-on: macos-latest
     steps:
@@ -76,38 +89,48 @@ jobs:
         components: rustfmt, clippy
     - name: Build Rust
       run: cargo build --verbose --release
+    - name: Create OSX zip
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        zip "celemod-${VERSION}-osx.zip" ./target/release/cele-mod
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
     - uses: actions/upload-artifact@v4.3.1
       with:
-        name: osx
-        path: |
-          ./target/release/cele-mod
+        name: osx-zip
+        path: celemod-${{ env.VERSION }}-osx.zip
   release:
-    needs: [build-windows, build-linux, build-osx]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [build-windows, build-linux, build-osx]
+    if: github.event_name == 'release'
     steps:
-    - uses: actions/checkout@v3
-    - name: Get version
-      run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
     - uses: actions/download-artifact@v4
       with:
-        name: windows
-        path: artifacts/windows/
+        name: windows-exe
+        path: .
     - uses: actions/download-artifact@v4
       with:
-        name: linux
-        path: artifacts/linux/
+        name: windows-zip
+        path: .
     - uses: actions/download-artifact@v4
       with:
-        name: osx
-        path: artifacts/osx/
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
+        name: linux-zip
+        path: .
+    - uses: actions/download-artifact@v4
       with:
-        tag_name: v${{ env.VERSION }}
+        name: osx-zip
+        path: .
+    - name: Prepare release files
+      run: |
+        VERSION=${{ github.ref_name }}
+        VERSION=${VERSION#v}
+        mv cele-mod.exe "cele-mod-no-dependencies-${VERSION}.exe"
+    - uses: softprops/action-gh-release@v1
+      with:
         files: |
-          artifacts/windows/*
-          artifacts/linux/*
-          artifacts/osx/*
+          cele-mod-no-dependencies-${VERSION}.exe
+          celemod-${VERSION}-windows.zip
+          celemod-${VERSION}-linux.zip
+          celemod-${VERSION}-osx.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
