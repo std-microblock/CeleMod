@@ -66,6 +66,7 @@ jobs:
       run: |
         brew install pango
         brew install gtk+3
+        brew install protobuf
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
