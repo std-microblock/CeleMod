@@ -171,7 +171,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                     .join("celemod_yaml_cache")
                     .join(entry.path().with_extension("yaml").file_name().unwrap());
 
-                let mod_date = entry.metadata()?.modified().unwrap();
+                let mod_date = entry.metadata().unwrap().modified().unwrap();
                 let cache_date = cache_path.metadata().ok().map(|v| v.modified().unwrap());
 
                 if !cache_path.exists() || cache_date.is_none() || cache_date.unwrap() < mod_date {
