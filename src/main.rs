@@ -667,6 +667,10 @@ impl Handler {
         }
     }
 
+    fn is_using_cache(&self) -> bool {
+        everest::is_using_cache()
+    }
+
     fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
         let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
         if let Err(e) = result {
@@ -869,6 +873,7 @@ impl sciter::EventHandler for Handler {
         fn show_log_window();
         fn get_current_blacklist_content(String);
         fn sync_blacklist_profile_from_file(String, String);
+        fn is_using_cache();
     }
 }
 
@@ -886,6 +891,13 @@ fn main() {
         std::fs::copy(current_exe, new_exe).unwrap();
         std::process::Command::new(new_exe).spawn().unwrap();
         return;
+    }
+
+    // set cwd to exe directory
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            std::env::set_current_dir(dir).unwrap();
+        }
     }
 
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));

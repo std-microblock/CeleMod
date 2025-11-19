@@ -8,7 +8,7 @@ use std::{
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::Arc,
+    sync::{atomic::AtomicBool, Arc},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -21,12 +21,51 @@ pub struct ModInfoCached {
     pub download_url: String,
 }
 
+static USING_CACHE: AtomicBool = AtomicBool::new(false);
+
+pub fn is_using_cache() -> bool {
+    USING_CACHE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 lazy_static! {
     static ref MOD_INFO_CACHED: Arc<HashMap<String, ModInfoCached>> = {
-        let mods = get_mod_online_wegfan().unwrap();
+        let mods = match get_mod_online_wegfan() {
+            Ok(fetched) => {
+                save_mod_cache(&fetched);
+                USING_CACHE.store(false, std::sync::atomic::Ordering::Relaxed);
+                fetched
+            }
+            Err(e) => {
+                eprintln!("Failed to fetch mod list: {}", e);
+                if let Some(cached) = load_mod_cache() {
+                    println!("Using cached mod list");
+                    USING_CACHE.store(true, std::sync::atomic::Ordering::Relaxed);
+                    cached
+                } else {
+                    eprintln!("No cache available");
+                    USING_CACHE.store(false, std::sync::atomic::Ordering::Relaxed);
+                    vec![]
+                }
+            }
+        };
         let mods = mods.into_iter().map(|v| (v.name.clone(), v)).collect();
         Arc::new(mods)
     };
+}
+
+fn load_mod_cache() -> Option<Vec<ModInfoCached>> {
+    let cache_path = std::env::current_dir().ok()?.join("mod_cache.json");
+    let data = std::fs::read_to_string(cache_path).ok()?;
+    serde_json::from_str(&data).ok()
+}
+
+fn save_mod_cache(mods: &[ModInfoCached]) {
+    if let Ok(dir) = std::env::current_dir() {
+        let cache_path = dir.join("mod_cache.json");
+        if let Ok(data) = serde_json::to_string(mods) {
+            let _ = std::fs::write(cache_path, data);
+        }
+    }
 }
 
 pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
@@ -35,6 +74,7 @@ pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
             "User-Agent",
             &format!("CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]),
         )
+        .timeout(std::time::Duration::from_secs(20))
         .set("Accept-Encoding", "gzip, deflate, br")
         .call()?
         .into_json()?;
