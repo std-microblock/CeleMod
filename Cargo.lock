@@ -204,7 +204,7 @@ dependencies = [
 
 [[package]]
 name = "cele-mod"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "anyhow",
  "game-scanner",
