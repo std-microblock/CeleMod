@@ -81,3 +81,33 @@ jobs:
         name: osx
         path: |
           ./target/release/cele-mod
+  release:
+    needs: [build-windows, build-linux, build-osx]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Get version
+      run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+    - uses: actions/download-artifact@v4
+      with:
+        name: windows
+        path: artifacts/windows/
+    - uses: actions/download-artifact@v4
+      with:
+        name: linux
+        path: artifacts/linux/
+    - uses: actions/download-artifact@v4
+      with:
+        name: osx
+        path: artifacts/osx/
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ env.VERSION }}
+        files: |
+          artifacts/windows/*
+          artifacts/linux/*
+          artifacts/osx/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
