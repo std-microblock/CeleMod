@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use aria2c::DownloadCallbackInfo;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
@@ -15,10 +15,9 @@ use std::{
     rc::Rc,
 };
 
-
 extern crate msgbox;
 
-use sciter::{dispatch_script_call, make_args, Value, GFX_LAYER};
+use sciter::{GFX_LAYER, Value, dispatch_script_call, make_args};
 
 extern crate lazy_static;
 extern crate sciter;
@@ -247,9 +246,9 @@ fn download_and_install_mod(
     url: &str,
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
-    use_ureq: bool,
+    use_aria2: bool,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    aria2c::download_file_with_progress(url, dest, progress_callback, use_ureq)?;
+    aria2c::download_file_with_progress(url, dest, progress_callback, use_aria2)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
@@ -380,7 +379,9 @@ impl Handler {
                                 &current_task.dest,
                                 &mut move |progress| {
                                     (tasklist2.try_borrow_mut().unwrap())[i_task].data =
-                                        progress.progress.to_string();
+                                        format!("{:.2}", progress.progress);
+                                    (tasklist2.try_borrow_mut().unwrap())[i_task].status =
+                                        DownloadStatus::Downloading;
                                     post_callback(&tasklist2.borrow(), "pending");
                                 },
                                 multi_thread,
@@ -459,7 +460,12 @@ impl Handler {
 
                 // Auto-disable new mods if enabled
                 if auto_disable_new_mods {
-                    let game_path = Path::new(&mods_dir).parent().unwrap().to_str().unwrap().to_string();
+                    let game_path = Path::new(&mods_dir)
+                        .parent()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string();
                     let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
                     let mut new_mods = vec![];
                     for task in tasklist.borrow().iter() {
@@ -469,14 +475,23 @@ impl Handler {
                     }
                     if !new_mods.is_empty() {
                         let installed_mods = get_installed_mods_sync(mods_dir.clone());
-                        let mods_to_disable: Vec<(&String, &String)> = new_mods.iter()
+                        let mods_to_disable: Vec<(&String, &String)> = new_mods
+                            .iter()
                             .filter_map(|name| {
-                                installed_mods.iter().find(|m| m.name == *name).map(|m| (&m.name, &m.file))
+                                installed_mods
+                                    .iter()
+                                    .find(|m| m.name == *name)
+                                    .map(|m| (&m.name, &m.file))
                             })
                             .collect();
                         if !mods_to_disable.is_empty() {
                             for profile in profiles {
-                                blacklist::switch_mod_blacklist_profile(&game_path, &profile.name, mods_to_disable.clone(), false)?;
+                                blacklist::switch_mod_blacklist_profile(
+                                    &game_path,
+                                    &profile.name,
+                                    mods_to_disable.clone(),
+                                    false,
+                                )?;
                             }
                         }
                     }
@@ -739,6 +754,33 @@ impl Handler {
         });
     }
 
+    fn delete_mods(&self, game_path: String, mod_names: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let mods_folder_path = Path::new(&game_path)
+                .join("Mods")
+                .to_string_lossy()
+                .to_string();
+            let mod_names: Vec<String> = serde_json::from_str(&mod_names).unwrap();
+
+            let mut failed_mods = Vec::new();
+
+            for mod_name in &mod_names {
+                if let Err(e) = rm_mod(&mods_folder_path, mod_name) {
+                    eprintln!("Failed to remove mod {}: {}", mod_name, e);
+                    failed_mods.push(format!("{}: {}", mod_name, e));
+                }
+            }
+
+            let result = if failed_mods.is_empty() {
+                "Success".to_string()
+            } else {
+                format!("Failed to remove some mods: {}", failed_mods.join(", "))
+            };
+
+            callback.call(None, &make_args!(result), None).unwrap();
+        });
+    }
+
     fn get_everest_version(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let version = everest::get_everest_version(&game_path);
@@ -836,7 +878,7 @@ impl Handler {
         {
             #[cfg(not(debug_assertions))]
             {
-                use winapi::um::winuser::{ShowWindow, SW_SHOW};
+                use winapi::um::winuser::{SW_SHOW, ShowWindow};
                 unsafe {
                     ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_SHOW);
                 }
@@ -862,6 +904,7 @@ impl sciter::EventHandler for Handler {
         fn remove_mod_blacklist_profile(String, String);
         fn get_mod_update(String, Value);
         fn rm_mod(String, String);
+        fn delete_mods(String, String, Value);
         fn get_everest_version(String, Value);
         fn download_and_install_everest(String, String, Value);
         fn celemod_version();
@@ -905,13 +948,13 @@ fn main() {
     // windows only
     #[cfg(windows)]
     {
-        use winapi::um::winuser::ShowWindow;
         use winapi::um::winuser::SetProcessDPIAware;
+        use winapi::um::winuser::ShowWindow;
         unsafe {
             SetProcessDPIAware();
             #[cfg(debug_assertions)]
             {
-                use winapi::um::wincon::{AttachConsole, ATTACH_PARENT_PROCESS};
+                use winapi::um::wincon::{ATTACH_PARENT_PROCESS, AttachConsole};
                 AttachConsole(ATTACH_PARENT_PROCESS);
             }
             #[cfg(not(debug_assertions))]
@@ -929,9 +972,14 @@ fn main() {
             .parent()
             .unwrap()
             .join("sciter.dll")
-            .exists() && !Path::new("./sciter.dll").exists()
+            .exists()
+            && !Path::new("./sciter.dll").exists()
         {
-            let _ = msgbox::create("sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.", "Dependency Missing", msgbox::IconType::Error);
+            let _ = msgbox::create(
+                "sciter.dll not found\nPlease extract all the files in the zip into a folder.\nIf you are using CI builds, obtain dependencies from the latest release build first.",
+                "Dependency Missing",
+                msgbox::IconType::Error,
+            );
             panic!("sciter.dll not found");
         }
     }

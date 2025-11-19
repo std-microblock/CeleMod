@@ -60,6 +60,7 @@ const modListContext = createContext<{
   switchMod: (id: string, enabled: boolean, recursive?: boolean) => void;
   switchProfile: (name: string) => void;
   removeProfile: (name: string) => void;
+  deleteMod: (name: string) => void;
   modFolder: string;
   gamePath: string;
   currentProfileName: string;
@@ -187,6 +188,7 @@ const ModLocal = ({
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const ctx = useContext(modListContext);
 
@@ -233,7 +235,12 @@ const ModLocal = ({
   }, [editingComment]);
 
   return (
-    <div className={`m-mod ${enabled && 'enabled'}`} key={id}>
+    <div
+      className={`m-mod ${enabled && 'enabled'}`}
+      key={id}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <span
         className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
           }`}
@@ -371,6 +378,15 @@ const ModLocal = ({
       {ctx?.showDetailed && (
         <span className="modDetails">
           [{formatSize(size)} · {file}]
+        </span>
+      )}
+      {hovered && (
+        <span
+          className="delete-btn"
+          onClick={() => ctx?.deleteMod(name)}
+          title={_i18n.t('删除 Mod')}
+        >
+          <Icon name="delete" />
         </span>
       )}
       {(!optional || ctx?.fullTree) && expanded && (
@@ -866,6 +882,102 @@ export const Manage = () => {
         callRemote('new_mod_blacklist_profile', gamePath, name);
         setProfilesCallback((profiles) => profiles.concat({ name, mods: [] }));
         setCurrentProfileName(name);
+      },
+      deleteMod: (name: string) => {
+        const modToDelete = installedModMap.get(name);
+        if (!modToDelete) return;
+
+        // Find mods that depend on this mod
+        const dependentMods = modToDelete.dependedBy;
+
+        // Find orphaned mods (mods that will have no references after deletion)
+        const orphanedMods: ModInfo[] = [];
+        const checkOrphans = (mod: ModInfo) => {
+          for (const dep of mod.dependencies) {
+            if ('_missing' in dep) continue;
+            const depInfo = installedModMap.get(dep.name);
+            if (!depInfo) continue;
+
+            // Check if this dependency will be orphaned after deletion
+            const remainingDependents = depInfo.dependedBy.filter(
+              m => m.name !== name && !orphanedMods.includes(m)
+            );
+
+            if (remainingDependents.length === 0 && !orphanedMods.includes(depInfo)) {
+              orphanedMods.push(depInfo);
+              checkOrphans(depInfo);
+            }
+          }
+        };
+        checkOrphans(modToDelete);
+
+        createPopup(() => {
+          const { hide } = useContext(PopupContext);
+          const [selectedOrphans, setSelectedOrphans] = useState<string[]>(orphanedMods.map(m => m.name));
+
+          const handleDelete = () => {
+            const modsToDelete = [name, ...selectedOrphans];
+            callRemote('delete_mods', gamePath, JSON.stringify(modsToDelete), () => {
+              manageCtx.reloadMods();
+              hide();
+            });
+          };
+
+          return (
+            <div className="delete-mod-popup">
+              <div className="title">{_i18n.t('删除 Mod 确认')}</div>
+
+              {dependentMods.length > 0 && (
+                <div className="warning-section">
+                  <div className="warning-title">{_i18n.t('⚠️ 警告：以下 Mod 依赖此 Mod')}</div>
+                  <div className="dependent-mods">
+                    {dependentMods.map(mod => (
+                      <div key={mod.name} className="dependent-mod">
+                        {mod.name} {mod.version} {mod.enabled ? '' : _i18n.t('(已禁用)')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="delete-target">
+                {_i18n.t('将要删除：')} <strong>{name} {modToDelete.version}</strong>
+              </div>
+
+              {orphanedMods.length > 0 && (
+                <div className="orphan-section">
+                  <div className="orphan-title">{_i18n.t('以下 Mod 将不再被任何 Mod 引用，是否一并删除？')}</div>
+                  <div className="orphan-list">
+                    {orphanedMods.map(mod => (
+                      <label key={mod.name} className="orphan-item">
+                        <input
+                          type="checkbox"
+                          checked={selectedOrphans.includes(mod.name)}
+                          onChange={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (target.checked) {
+                              setSelectedOrphans([...selectedOrphans, mod.name]);
+                            } else {
+                              setSelectedOrphans(selectedOrphans.filter(n => n !== mod.name));
+                            }
+                          }}
+                        />
+                        <span>{mod.name} {mod.version}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="buttons">
+                <button onClick={hide}>{_i18n.t('取消')}</button>
+                <button className="delete-confirm" onClick={handleDelete}>
+                  {_i18n.t('确认删除')}
+                </button>
+              </div>
+            </div>
+          );
+        });
       },
       gamePath,
       modFolder: modPath,

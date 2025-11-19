@@ -219,5 +219,14 @@
   "请先选择一个 Profile 后再启用/禁用 Mod": "Selecione um perfil antes de ativar/desativar o mod",
   "确定": "Claro",
   "自动禁用新安装的Mod": "Desativar automaticamente mods recém -instalados",
-  "显示详细信息": "Mostre detalhes"
+  "显示详细信息": "Mostre detalhes",
+  "离线模式": "离线模式",
+  "正在使用缓存的 Mod 数据，可能已过期或不完整": "正在使用缓存的 Mod 数据，可能已过期或不完整",
+  "删除 Mod": "删除 Mod",
+  "删除 Mod 确认": "删除 Mod 确认",
+  "⚠️ 警告：以下 Mod 依赖此 Mod": "⚠️ 警告：以下 Mod 依赖此 Mod",
+  "(已禁用)": "(已禁用)",
+  "将要删除：": "将要删除：",
+  "以下 Mod 将不再被任何 Mod 引用，是否一并删除？": "以下 Mod 将不再被任何 Mod 引用，是否一并删除？",
+  "确认删除": "确认删除"
 }
