@@ -186,7 +186,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 continue;
             };
 
-            let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml)?;
+            let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml).unwrap();
 
             let mut deps: Vec<ModDependency> = Vec::new();
 
@@ -223,7 +223,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 -1
             };
 
-            let size = entry.metadata()?.len();
+            let size = entry.metadata().unwrap().len();
 
             mods.push(LocalMod {
                 name,
