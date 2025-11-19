@@ -135,7 +135,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         let entry = entry.unwrap();
         let res: anyhow::Result<_> = try {
             let yaml = if entry.file_type().unwrap().is_dir() {
-                let cache_path = entry.path().read_dir()?.find(|v| {
+                let cache_path = entry.path().read_dir().unwrap().find(|v| {
                     v.as_ref()
                         .map(|v| {
                             let name = v.file_name().to_string_lossy().to_string().to_lowercase();
