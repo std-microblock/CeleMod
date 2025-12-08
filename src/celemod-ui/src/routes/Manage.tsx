@@ -59,6 +59,7 @@ type ModDepInfo = ModInfoProbablyMissing & {
 
 const modListContext = createContext<{
   switchMod: (id: string, enabled: boolean, recursive?: boolean) => void;
+  switchModFavorite: (id: string, favorite: boolean) => void;
   switchProfile: (name: string) => void;
   removeProfile: (name: string) => void;
   deleteMod: (name: string) => void;
@@ -352,6 +353,10 @@ const ModLocal = ({
 
       <span
         className={`modFavorite ${favorite ? 'active' : ''}`}
+        onClick={() => {
+          ctx?.switchModFavorite(name, !favorite);
+        }}
+        title={favorite ? _i18n.t('取消偏爱') : _i18n.t('设为偏爱')}
       ><Icon name="heart" /></span>
 
       <span
@@ -873,6 +878,19 @@ export const Manage = () => {
         manageCtx.batchSwitchMod(switchList, enabled);
 
         setHasUnsavedChanges(true);
+      },
+      switchModFavorite: (id: string, favorite: boolean) => {
+        const result = callRemote('toggle_mod_favorite', modPath, id, favorite);
+        if (result === 'Success') {
+          // Update local state
+          const backendMod = installedMods.find((v) => v.name === id);
+          if (backendMod) {
+            backendMod.favorite = favorite;
+            setInstalledMods([...installedMods]);
+          }
+        } else {
+          console.error('Failed to toggle mod favorite:', result);
+        }
       },
       switchProfile: (name: string) => {
         if (hasUnsavedChanges) return;

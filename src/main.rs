@@ -140,6 +140,13 @@ fn read_favorites(mods_folder_path: &str) -> Vec<String> {
     Vec::new()
 }
 
+fn write_favorites(mods_folder_path: &str, favorites: &[String]) -> anyhow::Result<()> {
+    let favorites_path = Path::new(mods_folder_path).join("favorites.txt");
+    let content = favorites.join("\n");
+    fs::write(&favorites_path, content)?;
+    Ok(())
+}
+
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached_new().unwrap();
@@ -703,6 +710,44 @@ impl Handler {
         everest::is_using_cache()
     }
 
+    fn toggle_mod_favorite(
+        &self,
+        mods_folder_path: String,
+        mod_name: String,
+        favorite: bool,
+    ) -> String {
+        let res: anyhow::Result<()> = try {
+            let installed_mods = get_installed_mods_sync(mods_folder_path.clone());
+            let target_mod = installed_mods
+                .iter()
+                .find(|m| m.name == mod_name)
+                .context("Mod not found")?;
+
+            let mod_file = &target_mod.file;
+            let mut favorites = read_favorites(&mods_folder_path);
+
+            if favorite {
+                if !favorites.contains(mod_file) {
+                    favorites.push(mod_file.clone());
+                    write_favorites(&mods_folder_path, &favorites)?;
+                }
+            } else {
+                let original_len = favorites.len();
+                favorites.retain(|f| f != mod_file);
+                if favorites.len() != original_len {
+                    write_favorites(&mods_folder_path, &favorites)?;
+                }
+            }
+        };
+
+        if let Err(e) = res {
+            eprintln!("Failed to toggle mod favorite: {}", e);
+            format!("Failed to toggle mod favorite: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
     fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
         let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
         if let Err(e) = result {
@@ -934,6 +979,7 @@ impl sciter::EventHandler for Handler {
         fn get_current_blacklist_content(String);
         fn sync_blacklist_profile_from_file(String, String);
         fn is_using_cache();
+        fn toggle_mod_favorite(String, String, bool);
     }
 }
 
