@@ -100,6 +100,7 @@ struct LocalMod {
     version: String,
     file: String,
     size: u64,
+    favorite: bool,
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -127,9 +128,22 @@ fn parse_version(mod_version: &serde_yaml::Value) -> String {
     }
 }
 
+fn read_favorites(mods_folder_path: &str) -> Vec<String> {
+    let favorites_path = Path::new(mods_folder_path).join("favorites.txt");
+    if let Ok(content) = fs::read_to_string(&favorites_path) {
+        return content
+            .lines()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty() && !s.starts_with('#'))
+            .collect();
+    }
+    Vec::new()
+}
+
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached_new().unwrap();
+    let favorites = read_favorites(&mods_folder_path);
 
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
@@ -224,14 +238,17 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
             };
 
             let size = entry.metadata().unwrap().len();
+            let file = entry.file_name().to_str().unwrap().to_string();
+            let is_favorite = favorites.contains(&file);
 
             mods.push(LocalMod {
                 name,
                 version,
                 game_banana_id: gbid,
                 deps,
-                file: entry.file_name().to_str().unwrap().to_string(),
+                file,
                 size,
+                favorite: is_favorite,
             });
         };
 

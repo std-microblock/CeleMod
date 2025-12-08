@@ -40,6 +40,7 @@ interface ModInfo {
   size: number;
   duplicateCount: number;
   duplicateFiles: string[];
+  favorite: boolean;
 }
 
 interface MissingModDepInfo {
@@ -185,6 +186,7 @@ const ModLocal = ({
   size,
   duplicateCount,
   duplicateFiles,
+  favorite,
 }: ModInfo & { optional?: boolean }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
@@ -349,6 +351,10 @@ const ModLocal = ({
       )}
 
       <span
+        className={`modFavorite ${favorite ? 'active' : ''}`}
+      ><Icon name="heart" /></span>
+
+      <span
         className="modName"
         onClick={() => setEditingComment(true)}
         onContextMenu={(e) => {
@@ -475,6 +481,8 @@ export const Manage = () => {
   const [fullTree, setFullTree] = useState(false);
   const [showUpdate, setShowUpdate] = useState(true);
   const [showDetailed, setShowDetailed] = useState(false);
+  const [alwaysShowFavorites, setAlwaysShowFavorites] = useState(true);
+  const [protectFavorites, setProtectFavorites] = useState(true);
 
   const installedModMap = useMemo(() => {
     const modMap = new Map<string, ModInfo>();
@@ -490,6 +498,7 @@ export const Manage = () => {
         file: mod.file,
         size: mod.size,
         _deps: mod.deps,
+        favorite: mod.favorite,
         resolveDependencies: () => {
           let status = 'resolved';
           let message = '';
@@ -693,7 +702,7 @@ export const Manage = () => {
 
     const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
       if (filter && checkFilter(filter, mod)) return;
-      if (!isRoot) {
+      if (!isRoot && ("_missing" in mod || !alwaysShowFavorites || !mod.favorite)) {
         modTree.delete(mod.name);
       }
       if ('_missing' in mod) {
@@ -725,7 +734,7 @@ export const Manage = () => {
     return [...modTree.values()].sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     );
-  }, [installedModMap, excludeDependents, filter]);
+  }, [installedModMap, excludeDependents, filter, alwaysShowFavorites]);
 
   useEffect(() => {
     // @ts-ignore
@@ -841,6 +850,7 @@ export const Manage = () => {
               const orphanDeps = mod?.dependencies.filter(
                 (v) =>
                   !('_missing' in v) &&
+                  !(protectFavorites && v.favorite) &&
                   !v.dependedBy.some((v) => v.enabled && v.name !== name)
               ).filter((v) =>
                 checkOptionalDep || !v.optional
@@ -895,6 +905,8 @@ export const Manage = () => {
         const checkOrphans = (mod: ModInfo) => {
           for (const dep of mod.dependencies) {
             if ('_missing' in dep) continue;
+            if (protectFavorites && dep.favorite) continue;
+
             const depInfo = installedModMap.get(dep.name);
             if (!depInfo) continue;
 
@@ -1002,7 +1014,8 @@ export const Manage = () => {
       showDetailed,
       alwaysOnMods,
       modComments,
-      checkOptionalDep
+      checkOptionalDep,
+      protectFavorites,
     ]
   );
 
@@ -1134,6 +1147,34 @@ export const Manage = () => {
               />
 
               {_i18n.t('显示详细信息')}
+            </label>
+            <label
+              title={_i18n.t('启用后，偏爱的 Mod 将始终显示在列表中，即使它被其他 Mod 依赖')}
+            >
+              <input
+                type="checkbox"
+                checked={alwaysShowFavorites}
+                onChange={(e) => {
+                  // @ts-ignore
+                  setAlwaysShowFavorites(e.target.checked);
+                }}
+              />
+
+              {_i18n.t('总是显示偏爱的 Mod')}
+            </label>
+            <label
+              title={_i18n.t('启用后，偏爱的 Mod 不会被自动禁用或删除')}
+            >
+              <input
+                type="checkbox"
+                checked={protectFavorites}
+                onChange={(e) => {
+                  // @ts-ignore
+                  setProtectFavorites(e.target.checked);
+                }}
+              />
+
+              {_i18n.t('保护偏爱的 Mod')}
             </label>
           </div>
           <div
