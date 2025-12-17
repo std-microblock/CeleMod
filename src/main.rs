@@ -100,6 +100,7 @@ struct LocalMod {
     version: String,
     file: String,
     size: u64,
+    favorite: bool,
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -127,9 +128,29 @@ fn parse_version(mod_version: &serde_yaml::Value) -> String {
     }
 }
 
+fn read_favorites(mods_folder_path: &str) -> Vec<String> {
+    let favorites_path = Path::new(mods_folder_path).join("favorites.txt");
+    if let Ok(content) = fs::read_to_string(&favorites_path) {
+        return content
+            .lines()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty() && !s.starts_with('#'))
+            .collect();
+    }
+    Vec::new()
+}
+
+fn write_favorites(mods_folder_path: &str, favorites: &[String]) -> anyhow::Result<()> {
+    let favorites_path = Path::new(mods_folder_path).join("favorites.txt");
+    let content = favorites.join("\n");
+    fs::write(&favorites_path, content)?;
+    Ok(())
+}
+
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached_new().unwrap();
+    let favorites = read_favorites(&mods_folder_path);
 
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
@@ -224,14 +245,17 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
             };
 
             let size = entry.metadata().unwrap().len();
+            let file = entry.file_name().to_str().unwrap().to_string();
+            let is_favorite = favorites.contains(&file);
 
             mods.push(LocalMod {
                 name,
                 version,
                 game_banana_id: gbid,
                 deps,
-                file: entry.file_name().to_str().unwrap().to_string(),
+                file,
                 size,
+                favorite: is_favorite,
             });
         };
 
@@ -686,6 +710,44 @@ impl Handler {
         everest::is_using_cache()
     }
 
+    fn toggle_mod_favorite(
+        &self,
+        mods_folder_path: String,
+        mod_name: String,
+        favorite: bool,
+    ) -> String {
+        let res: anyhow::Result<()> = try {
+            let installed_mods = get_installed_mods_sync(mods_folder_path.clone());
+            let target_mod = installed_mods
+                .iter()
+                .find(|m| m.name == mod_name)
+                .context("Mod not found")?;
+
+            let mod_file = &target_mod.file;
+            let mut favorites = read_favorites(&mods_folder_path);
+
+            if favorite {
+                if !favorites.contains(mod_file) {
+                    favorites.push(mod_file.clone());
+                    write_favorites(&mods_folder_path, &favorites)?;
+                }
+            } else {
+                let original_len = favorites.len();
+                favorites.retain(|f| f != mod_file);
+                if favorites.len() != original_len {
+                    write_favorites(&mods_folder_path, &favorites)?;
+                }
+            }
+        };
+
+        if let Err(e) = res {
+            eprintln!("Failed to toggle mod favorite: {}", e);
+            format!("Failed to toggle mod favorite: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
     fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
         let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
         if let Err(e) = result {
@@ -917,6 +979,7 @@ impl sciter::EventHandler for Handler {
         fn get_current_blacklist_content(String);
         fn sync_blacklist_profile_from_file(String, String);
         fn is_using_cache();
+        fn toggle_mod_favorite(String, String, bool);
     }
 }
 
