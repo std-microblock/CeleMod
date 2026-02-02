@@ -114,16 +114,25 @@ fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
 }
 
 fn parse_version(mod_version: &serde_yaml::Value) -> String {
-    if mod_version.is_f64() {
-        mod_version.as_f64().unwrap().to_string()
-    } else {
-        let v = mod_version.as_str().unwrap_or("1.0.0").to_string();
+    // 1. 处理数字类型 (如 YAML 中写 1.0)
+    if let Some(f) = mod_version.as_f64() {
+        return f.to_string();
+    }
 
-        if v.chars().all(|c| c.is_ascii_digit() || c == '.') {
-            v
-        } else {
-            "1.0.0".to_string()
-        }
+    // 2. 处理字符串类型
+    let v_str = mod_version.as_str().unwrap_or("1.0.0");
+
+    // 3. 去除前缀 (例如 "v0.3.3" -> "0.3.3")
+    // 找到第一个数字出现的位置
+    let start_idx = v_str.find(|c: char| c.is_ascii_digit()).unwrap_or(0);
+    let trimmed = &v_str[start_idx..];
+
+    // 4. 验证基本合法性
+    // SemVer 允许数字、点、连字符和加号 (0.3.3-dev3+build1)
+    if !trimmed.is_empty() && trimmed.chars().next().unwrap().is_ascii_digit() {
+        trimmed.to_string()
+    } else {
+        "1.0.0".to_string()
     }
 }
 
