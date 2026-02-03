@@ -169,6 +169,23 @@
         margin-bottom: 10px;
     }
 
+    .modFavorite {
+        color: rgba(192, 192, 192, 0.3);
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &.active {
+            color: rgba(255, 64, 129, 0.7);
+        }
+
+        &:hover {
+            color: rgba(255, 64, 129, 0.5);
+        }
+
+        &.active:hover {
+            color: rgba(255, 64, 129, 1);
+        }
+    }
 
     .modVersion {
         font-size: 10px;

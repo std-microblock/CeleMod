@@ -70,6 +70,7 @@ export interface BackendModInfo {
     version: string,
     file: string,
     size: number,
+    favorite: boolean,
 }
 
 export const useInstalledMods = create<{
