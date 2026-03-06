@@ -8,8 +8,16 @@ html,
 body {
     overflow-y: hidden;
     overflow-x: visible;
-    background: #00000000 !important;
 }
+
+html {
+    background: #050505 !important;
+}
+
+html[window-blurbehind] {
+    background:transparent !important;
+}
+
 
 
 @set v-scroll-indicator {

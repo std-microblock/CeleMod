@@ -6,7 +6,7 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sciter-rs = {git = "https://github.com/MicroCBer/rust-sciter"}
+sciter-rs = {git = "https://github.com/MicroCBer/rust-sciter", rev = "ae7ca76a5000c1e3c9ed61d4d74c9313e8dcbf90"}
 game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 lazy_static = "*"
 anyhow = "*"

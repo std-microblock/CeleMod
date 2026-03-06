@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo build 2>&1)"
+    ]
+  }
+}

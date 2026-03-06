@@ -999,10 +999,15 @@ fn main() {
     #[cfg(target_os = "linux")]
     let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_OPENGL));
 
+    // #[cfg(target_os = "macos")]
+    // let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_VULKAN));
+
     let mut frame = sciter::WindowBuilder::main()
         .with_size((800, 600))
-        .glassy()
-        .alpha()
+        // .glassy()
+        // .alpha()
+        .with_title()
+        .resizeable()
         .closeable()
         .create();
 
