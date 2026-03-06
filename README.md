@@ -41,3 +41,9 @@ An alternative mod manager for Celeste
 ### Credits
 
 [@WEGFan](https://github.com/WEGFan) 提供镜像和社区 API、蔚蓝实现等相关知识
+
+### 其它
+
+我们使用的 Sciter 版本是 `5.0.2.17`，你可以在这里找到其预构建二进制：
+
+https://gitlab.com/sciter-engine/sciter-js-sdk/-/blob/5.0.2.17/bin/
