@@ -1092,14 +1092,22 @@ fn main() {
     // #[cfg(target_os = "macos")]
     // let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_VULKAN));
 
-    let mut frame = sciter::WindowBuilder::main()
-        .with_size((800, 600))
-        // .glassy()
-        // .alpha()
-        .with_title()
+    let mut builder = sciter::WindowBuilder::main()
+        .with_size((800, 600));
+    
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.with_title()
         .resizeable()
-        .closeable()
-        .create();
+        .closeable();
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        builder = builder.glassy().alpha();
+    }
+
+    let mut frame = builder.create();
 
     #[cfg(debug_assertions)]
     {
