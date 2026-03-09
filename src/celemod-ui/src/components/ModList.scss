@@ -48,20 +48,8 @@
         z-index: 1;
         padding: 15px;
         width: 100%;
-        background-color: unquote(theme.$bg+"aa");
-        backdrop-filter: blur(10px);
-
-        // &::before {
-        //     content: "";
-        //     
-        //     position: absolute;
-        //     bottom: 0;
-        //     left: 0;
-        //     right: 0;
-        //     height: 90px;
-        //     z-index: -100;
-        //     // 
-        // }
+        background: linear-gradient(to top, unquote(theme.$bg+"ff"), unquote(theme.$bg+"aa"));
+        // backdrop-filter: blur(10px);
 
         .name {
             font-size: 16px;
