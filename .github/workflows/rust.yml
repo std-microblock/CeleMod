@@ -92,10 +92,17 @@ jobs:
         Categories=Game;Utility;
         EOF
 
+        # Create AppRun wrapper script to set GDK_BACKEND=x11
+        cat > AppDir/AppRun << 'EOF'
+        #!/bin/sh
+        export GDK_BACKEND=x11
+        exec "$(dirname "$(readlink -f "$0")")/usr/bin/cele-mod" "$@"
+        EOF
+        chmod +x AppDir/AppRun
+
         # Create symlinks
         ln -s usr/share/applications/celemod.desktop AppDir/celemod.desktop
         ln -s usr/share/icons/hicolor/256x256/apps/celemod.png AppDir/celemod.png
-        ln -s usr/bin/cele-mod AppDir/AppRun
     - name: Build AppImage
       run: |
         ARCH=x86_64 ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage || true
