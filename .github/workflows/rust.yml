@@ -140,11 +140,7 @@ jobs:
         override: true
         components: rustfmt, clippy
     - name: Build Rust MacOS
-      if: runner.os == 'macOS'
       run: export CMAKE_POLICY_VERSION_MINIMUM=3.5 && cargo build --verbose --release
-    - name: Build Rust
-      if: runner.os != 'macOS'
-      run: cargo build --verbose --release
     - name: Create macOS app bundle
       run: |
         mkdir -p CeleMod.app/Contents/MacOS

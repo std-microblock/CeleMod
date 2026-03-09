@@ -953,7 +953,6 @@ fn main() {
     }
 
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
-
     // Linux: extract embedded libsciter.so at startup
     #[cfg(target_os = "linux")]
     {
@@ -969,7 +968,7 @@ fn main() {
 
         if !lib_path.exists() {
             println!("Extracting {}...", lib_name);
-            let lib_bytes = include_bytes_zstd::include_bytes_zstd!("../resources/libsciter.so", 19);
+            let lib_bytes = include_bytes_zstd::include_bytes_zstd!("resources/libsciter.so", 19);
             let mut file = std::fs::File::create(&lib_path).expect("Failed to create libsciter.so");
             file.write_all(&lib_bytes).expect("Failed to write libsciter.so");
 
