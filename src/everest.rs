@@ -1,8 +1,9 @@
-use crate::{aria2c, wegfan};
+use crate::{ureq, wegfan};
 
 use anyhow::bail;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use ::ureq::get;
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader},
@@ -69,7 +70,7 @@ fn save_mod_cache(mods: &[ModInfoCached]) {
 }
 
 pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
-    let mut response: serde_json::Value = ureq::get("https://celeste.weg.fan/api/v2/mod/list")
+    let mut response: serde_json::Value = get("https://celeste.weg.fan/api/v2/mod/list")
         .set(
             "User-Agent",
             &format!("CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]),
@@ -185,7 +186,7 @@ pub fn download_and_install_everest(
     let temp_path = temp_path.to_str().unwrap();
     let game_path = game_path.to_str().unwrap();
 
-    aria2c::download_file_with_progress(
+    ureq::download_file_with_progress(
         url,
         temp_path,
         &mut |callback| {

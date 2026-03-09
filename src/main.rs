@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 use anyhow::{Context, bail};
-use aria2c::DownloadCallbackInfo;
+use ureq::DownloadCallbackInfo;
 use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
@@ -40,7 +40,7 @@ use sciter::{GFX_LAYER, Value, dispatch_script_call, make_args};
 extern crate lazy_static;
 extern crate sciter;
 
-mod aria2c;
+mod ureq;
 mod blacklist;
 mod everest;
 mod wegfan;
@@ -273,9 +273,9 @@ fn download_and_install_mod(
     url: &str,
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
-    use_aria2: bool,
+    multi_thread: bool,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    aria2c::download_file_with_progress(url, dest, progress_callback, use_aria2)?;
+    ureq::download_file_with_progress(url, dest, progress_callback, multi_thread)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
@@ -921,7 +921,7 @@ impl Handler {
     fn do_self_update(&self, url: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let tmp = std::env::temp_dir().join("cele-mod.exe");
-            match aria2c::download_file_with_progress(
+            match ureq::download_file_with_progress(
                 &url,
                 tmp.to_string_lossy().as_ref(),
                 &mut |progress| {

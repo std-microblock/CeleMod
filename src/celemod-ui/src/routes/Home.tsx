@@ -234,7 +234,7 @@ export const Home = () => {
             }}
           />
 
-          {_i18n.t('使用 aria2c 多线程下载')}
+          {_i18n.t('使用 ureq 多线程下载')}
         </label>
       </div>
 

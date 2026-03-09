@@ -25,9 +25,9 @@ jobs:
     - name: Build Rust
       run: cargo build --verbose --release
     - name: Copy Dependencies
-      run: cp ./resources/aria2c.exe ./target/release/aria2c.exe && cp ./resources/sciter.dll ./target/release/sciter.dll
+      run: cp cp ./resources/sciter.dll ./target/release/sciter.dll
     - name: Create Windows zip
-      run: Compress-Archive -Path ./target/release/cele-mod.exe,./target/release/aria2c.exe,./target/release/sciter.dll -DestinationPath "celemod-windows.zip"
+      run: Compress-Archive -Path ./target/release/cele-mod.exe,./target/release/sciter.dll -DestinationPath "celemod-windows.zip"
     - uses: actions/upload-artifact@v4.3.1
       with:
         name: windows-exe
