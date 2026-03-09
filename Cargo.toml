@@ -23,7 +23,10 @@ msgbox = "0.7.0"
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "*", features = ["wincon", "consoleapi"] }
 
-[target.'cfg(unix)'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
+include-bytes-zstd = "*"
+
+[target.'cfg(target_os = "macos")'.dependencies]
 
 [build-dependencies]
 winres = "0.1.12"

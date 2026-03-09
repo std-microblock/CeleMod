@@ -49,7 +49,8 @@ jobs:
           clang \
           libpango-1.0-0 \
           libatk1.0-dev \
-          libgtk-3-dev
+          libgtk-3-dev \
+          file
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -59,13 +60,70 @@ jobs:
         components: rustfmt, clippy
     - name: Build Rust
       run: cargo build --verbose --release
-    - name: Create Linux zip
-      run: zip "celemod-linux.zip" ./target/release/cele-mod
+    - name: Download AppImage tools
+      run: |
+        wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x linuxdeploy-x86_64.AppImage appimagetool-x86_64.AppImage
+    - name: Create AppDir
+      run: |
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/lib
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/applications
+
+        # Copy binary and library
+        cp ./target/release/cele-mod AppDir/usr/bin/cele-mod
+        cp ./resources/libsciter.so AppDir/usr/lib/libsciter.so
+        chmod +x AppDir/usr/bin/cele-mod
+
+        # Copy icon
+        cp ./resources/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/celemod.png
+
+        # Create .desktop file
+        cat > AppDir/usr/share/applications/celemod.desktop << 'EOF'
+        [Desktop Entry]
+        Name=CeleMod
+        Comment=Celeste Mod Manager
+        Exec=cele-mod
+        Icon=celemod
+        Terminal=false
+        Type=Application
+        Categories=Game;Utility;
+        EOF
+
+        # Create symlinks
+        ln -s usr/share/applications/celemod.desktop AppDir/celemod.desktop
+        ln -s usr/share/icons/hicolor/256x256/apps/celemod.png AppDir/celemod.png
+        ln -s usr/bin/cele-mod AppDir/AppRun
+    - name: Build AppImage
+      run: |
+        ARCH=x86_64 ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage || true
+        # Fallback: use appimagetool directly if linuxdeploy fails
+        if [ ! -f CeleMod-*.AppImage ]; then
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir CeleMod-x86_64.AppImage
+        fi
+        mv CeleMod-*.AppImage celemod-linux.AppImage || true
+    - name: Create zip fallback
+      run: |
+        mkdir -p celemod-linux
+        cp ./target/release/cele-mod celemod-linux/cele-mod
+        cp ./resources/libsciter.so celemod-linux/libsciter.so
+        cp ./resources/icon.png celemod-linux/celemod.png
+        zip -r "celemod-linux.zip" celemod-linux
     - uses: actions/upload-artifact@v4.3.1
       with:
         name: linux-zip
         path: celemod-linux.zip
-  build-osx:
+    - uses: actions/upload-artifact@v4.3.1
+      with:
+        name: linux-appimage
+        path: celemod-linux.AppImage
+    - uses: actions/upload-artifact@v4.3.1
+      with:
+        name: linux-zip
+        path: celemod-linux.zip
+  build-macos:
     runs-on: macos-latest
     steps:
     - name: Install dependencies
@@ -73,6 +131,7 @@ jobs:
         brew install pango
         brew install gtk+3
         brew install protobuf
+        brew install create-dmg
     - uses: actions/checkout@v3
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
@@ -82,15 +141,76 @@ jobs:
         components: rustfmt, clippy
     - name: Build Rust
       run: cargo build --verbose --release
-    - name: Create OSX zip
-      run: zip "celemod-osx.zip" ./target/release/cele-mod
+    - name: Create macOS app bundle
+      run: |
+        mkdir -p CeleMod.app/Contents/MacOS
+        mkdir -p CeleMod.app/Contents/Resources
+        cp ./target/release/cele-mod CeleMod.app/Contents/MacOS/CeleMod
+        cp ./resources/libsciter.dylib CeleMod.app/Contents/MacOS/libsciter.dylib
+        cp ./resources/icon.icns CeleMod.app/Contents/Resources/AppIcon.icns
+        chmod +x CeleMod.app/Contents/MacOS/CeleMod
+
+        # Create Info.plist with icon
+        cat > CeleMod.app/Contents/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleDevelopmentRegion</key>
+            <string>en</string>
+            <key>CFBundleExecutable</key>
+            <string>CeleMod</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.celemod.app</string>
+            <key>CFBundleInfoDictionaryVersion</key>
+            <string>6.0</string>
+            <key>CFBundleName</key>
+            <string>CeleMod</string>
+            <key>CFBundleDisplayName</key>
+            <string>CeleMod</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.13</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>NSHumanReadableCopyright</key>
+            <string>Copyright © 2024 CeleMod. All rights reserved.</string>
+        </dict>
+        </plist>
+        EOF
+    - name: Create DMG (optional)
+      run: |
+        create-dmg --volname "CeleMod" --volicon "./resources/icon.icns" --window-pos 200 120 --window-size 800 400 --icon-size 100 --app-drop-link 600 185 "CeleMod.dmg" "CeleMod.app" || true
+        # If create-dmg fails, just zip the app
+        if [ ! -f CeleMod.dmg ]; then
+          zip -r "celemod-macos.zip" CeleMod.app
+        fi
+    - name: Prepare artifact
+      run: |
+        if [ -f CeleMod.dmg ]; then
+          mv CeleMod.dmg celemod-macos.dmg
+        else
+          # Ensure zip exists
+          if [ ! -f celemod-macos.zip ]; then
+            zip -r "celemod-macos.zip" CeleMod.app
+          fi
+        fi
     - uses: actions/upload-artifact@v4.3.1
       with:
-        name: osx-zip
-        path: celemod-osx.zip
+        name: macos-app
+        path: |
+          celemod-macos.dmg
+          celemod-macos.zip
   release:
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux, build-osx]
+    needs: [build-windows, build-linux, build-macos]
     if: github.event_name == 'release'
     steps:
     - uses: actions/download-artifact@v4
@@ -107,7 +227,11 @@ jobs:
         path: .
     - uses: actions/download-artifact@v4
       with:
-        name: osx-zip
+        name: linux-appimage
+        path: .
+    - uses: actions/download-artifact@v4
+      with:
+        name: macos-app
         path: .
     - name: Prepare release files
       run: mv cele-mod.exe "cele-mod-no-dependencies.exe"
@@ -117,6 +241,8 @@ jobs:
           cele-mod-no-dependencies.exe
           celemod-windows.zip
           celemod-linux.zip
-          celemod-osx.zip
+          celemod-linux.AppImage
+          celemod-macos.dmg
+          celemod-macos.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
