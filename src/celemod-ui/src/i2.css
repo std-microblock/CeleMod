@@ -14,11 +14,13 @@ html {
     background: #050505 !important;
 }
 
-html[window-blurbehind] {
+html[window-blurbehind]:not([platform="Windows"]) {
     background:transparent !important;
 }
 
-
+html[window-blurbehind][platform="Windows"] {
+    background:#05050599 !important;
+}
 
 @set v-scroll-indicator {
     .slider {

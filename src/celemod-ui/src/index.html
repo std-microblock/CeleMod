@@ -7,6 +7,7 @@
   window-min-width="800px"
   window-min-height="600px"
   window-icon="./Celemod.b5f3f7f9.png"
+  window-frame="solid"
 >
   <head>
     <meta charset="utf-8" />
@@ -69,8 +70,8 @@
         document.querySelector(".win-ctrl").style.display = "none";
       } else {
         document.body.parentElement.setAttribute('window-frame', 'solid');
-        document.body.parentElement.style.background = '#00000066'
       }
+      document.body.parentElement.setAttribute('platform', env.PLATFORM);
 
       Window.this.isResizable = true;
       window.isMaximizable = true;
