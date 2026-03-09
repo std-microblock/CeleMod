@@ -177,7 +177,9 @@
                     top: 0;
 
                     .bar {
-                        background: lighten(theme.$primary, 5%);
+                        background: theme.$primary;
+                        height: 3px;
+                        border-radius: 4px;
                     }
                 }
             }
