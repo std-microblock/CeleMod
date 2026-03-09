@@ -185,6 +185,9 @@ jobs:
         </dict>
         </plist>
         EOF
+    - name: Ad-hoc sign app bundle
+      run: |
+        codesign --force --deep -s - CeleMod.app
     - name: Create DMG (optional)
       run: |
         create-dmg --volname "CeleMod" --volicon "./resources/icon.icns" --window-pos 200 120 --window-size 800 400 --icon-size 100 --app-drop-link 600 185 "CeleMod.dmg" "CeleMod.app" || true
