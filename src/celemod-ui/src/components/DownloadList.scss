@@ -1,104 +1,200 @@
-@use "../index.scss"as theme;
+@use "../index.scss" as theme;
 
 .downloadList {
-    width: 200px;
-    min-height: 200px;
+    width: 280px;
+    min-height: 80px;
+    max-height: 400px;
     background: theme.$bg1;
-    border-radius: 10px;
-    border: none;
-    padding: 0 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0;
     color: theme.$fg1;
+    overflow: hidden;
 
-    .infoLine {
-        width: 200px;
-        height: 20px;
-        flow: horizontal-flow;
+    h2 {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        color: theme.$fg3;
+        margin: 0;
+        padding: 12px 14px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flow: horizontal;
         vertical-align: middle;
-        position: relative;
 
-        .name {
-            white-space: nowrap;
-            text-wrap: none;
-            overflow: hidden;
-            width: 200px;
-            height: 20px;
-            text-overflow: ellipsis;
-        }
-
-        button {
-            opacity: 0.8;
-            padding: 0;
-            padding-top: 2px;
-
-            &:hover {
-                opacity: 1;
-                background: none;
-            }
-        }
-
-        .b1 {
-            opacity: 0.3;
-        }
-
-        .name {
-            width: 80%;
-        }
-
-    }
-
-    .progressLine {
-        width: 100%;
-        flow: horizontal-flow;
-        vertical-align: middle;
-        position: relative;
-        height: 4px;
-        // margin-top: -6px;
-
-        .progress {
-            width: calc(100% - 35px);
-            height: 4px;
-            background: theme.$bg3;
-            border-radius: 5px;
-            margin: 5px 0;
-            overflow: hidden;
-            flow: horizontal-flow;
-            position: relative;
-
-            .bar {
-                height: 100%;
-                background: theme.$fg1;
-                width: 0;
-                transition: .5s width;
-            }
-
-        }
-
-        .text {
-            min-width: max-content;
-            white-space: nowrap;
-            font-size: 8px;
-            margin: 0;
-            padding: 0;
-            position: absolute;
-            top: -5px;
-            right: 5px;
-            text-shadow: 0 0 5px rgba(0, 0, 0, 0.479);
-            color: theme.$fg2;
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: theme.$primary;
+            margin-right: 7px;
+            animation: pulse 2s infinite;
         }
     }
 
     .taskList {
-        overflow-y: scroll;
-        height: max-content;
-        max-height: 200px;
+        overflow-y: auto;
+        max-height: 340px;
+        padding: 6px 0;
+    }
 
-        .subTasks {
-            padding-left: 5px;
-            margin: 0;
-            margin-left: 5px;
-            list-style: none;
+    .task {
+        padding: 8px 14px;
+        transition: background 0.15s;
 
-            border-left: 3px solid #ffffff2f;
+        &:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        label {
+            display: block;
+            cursor: default;
         }
     }
+
+    .infoLine {
+        width: 100%;
+        height: 20px;
+        position: relative;
+        margin-bottom: 6px;
+
+        button {
+            display: inline-block;
+            opacity: 0.35;
+            padding: 0;
+            width: 16px;
+            height: 20px;
+            flow: horizontal;
+            vertical-align: middle;
+            horizontal-align: center;
+            background: none;
+            border: none;
+            box-shadow: none;
+            transition: opacity 0.15s;
+            cursor: pointer;
+
+            &:hover {
+                opacity: 0.7;
+                background: none;
+                box-shadow: none;
+            }
+        }
+
+        .name {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 500;
+            color: theme.$fg;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: absolute;
+            left: 20px;
+            right: 40px;
+            top: 2px;
+        }
+
+        .progress-label {
+            display: inline-block;
+            font-size: 10px;
+            color: theme.$fg3;
+            opacity: 0.7;
+            position: absolute;
+            right: 0;
+            top: 3px;
+        }
+    }
+
+    .progressLine {
+        width: 100%;
+        height: 6px;
+        position: relative;
+        margin-bottom: 2px;
+
+        .progress {
+            position: absolute;
+            left: 0;
+            right: 38px;
+            top: 1px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+
+            .bar {
+                height: 100%;
+                background: theme.$primary;
+                border-radius: 4px;
+                transition: width 0.4s ease-in-out;
+                width: 0;
+            }
+        }
+
+        .text {
+            display: inline-block;
+            font-size: 10px;
+            color: theme.$fg3;
+            opacity: 0.7;
+            position: absolute;
+            right: 0;
+            top: -3px;
+        }
+    }
+
+    .subTasks {
+        margin-top: 6px;
+        margin-left: 20px;
+        padding-left: 10px;
+        border-left: 2px solid rgba(167, 127, 219, 0.25);
+
+        .subTask {
+            padding: 5px 0;
+
+            &:not(:last-child) {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            }
+
+            .name {
+                font-size: 11px;
+                color: theme.$fg2;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 4px;
+                opacity: 0.8;
+                width: 100%;
+            }
+
+            .progressLine {
+                height: 4px;
+                margin-bottom: 0;
+
+                .progress {
+                    right: 38px;
+                    height: 3px;
+                    top: 0;
+
+                    .bar {
+                        background: lighten(theme.$primary, 5%);
+                    }
+                }
+            }
+
+            .error {
+                flow: horizontal;
+                vertical-align: middle;
+                font-size: 10px;
+                color: #ef596f;
+                margin-top: 4px;
+                opacity: 0.85;
+            }
+        }
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }

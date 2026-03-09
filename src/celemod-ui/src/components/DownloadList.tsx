@@ -7,7 +7,7 @@ import { useRef, useState } from 'preact/hooks';
 import { Icon } from './Icon';
 import { Download } from '../context/download';
 
-const Task = ({ task, width }: { task: Download.TaskInfo; width: number }) => {
+const Task = ({ task }: { task: Download.TaskInfo }) => {
   const all = task.subtasks.length;
   const finished = task.subtasks.filter((v) => v.state === 'Finished').length;
 
@@ -26,20 +26,7 @@ const Task = ({ task, width }: { task: Download.TaskInfo; width: number }) => {
             {<Icon name={expanded ? 'i-down' : 'i-right'} />}
           </button>
           <span className="name">{task.name}</span>
-        </div>
-
-        <div className="progressLine">
-          <div class="progress">
-            <div
-              class="bar"
-              style={{
-                width: `${(finished / all) * width}px`,
-              }}
-            ></div>
-          </div>
-          <div class="text">
-            {finished} / {all}
-          </div>
+          <span className="progress-label">{finished}/{all}</span>
         </div>
       </label>
       {expanded && (
@@ -54,7 +41,7 @@ const Task = ({ task, width }: { task: Download.TaskInfo; width: number }) => {
                     <div
                       class="bar"
                       style={{
-                        width: `${(subtask.progress * width) / 100}px`,
+                        width: `${subtask.progress}%`,
                       }}
                     ></div>
                   </div>
@@ -86,8 +73,6 @@ export const DownloadListMenu = () => {
     });
   }, []);
 
-  const width = 180;
-
   return (
     <menu className="popup downloadList">
       <h2>{_i18n.t('下载任务')}</h2>
@@ -95,7 +80,7 @@ export const DownloadListMenu = () => {
         {Object.values(downloadTasks)
           .filter((v) => v.state !== 'finished')
           .map((task) => (
-            <Task task={task} width={width} />
+            <Task task={task} />
           ))}
       </div>
     </menu>
