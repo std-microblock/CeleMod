@@ -1,5 +1,3 @@
-[Linux Support](./Linux.md)
-
 <div align=center>
 <img src="src\celemod-ui\src\resources\Celemod.png" />
 
