@@ -65,8 +65,11 @@
     <link rel="stylesheet" href="./index.scss" />
     <link rel="stylesheet" href="i2.css" />
     <script>
-      if (env.PLATFORM !== "Windows")
+      if (env.PLATFORM !== "Windows") {
         document.querySelector(".win-ctrl").style.display = "none";
+      } else {
+        document.body.parentElement.setAttribute('window-frame', 'solid');
+      }
 
       Window.this.isResizable = true;
       window.isMaximizable = true;
