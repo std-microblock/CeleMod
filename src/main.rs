@@ -870,11 +870,12 @@ impl Handler {
 
     fn get_everest_version(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
-            let version = everest::get_everest_version(&game_path);
-            let version = if let Some(version) = version {
-                version.to_string()
+            let version = if is_test_mode() {
+                "4000".to_string()
             } else {
-                "".to_string()
+                everest::get_everest_version(&game_path)
+                    .map(|v| v.to_string())
+                    .unwrap_or_default()
             };
             callback.call(None, &make_args!(version), None).unwrap();
         });
@@ -887,6 +888,10 @@ impl Handler {
         callback: sciter::Value,
     ) {
         std::thread::spawn(move || {
+            if is_test_mode() {
+                callback.call(None, &make_args!("Success"), None).unwrap();
+                return;
+            }
             let callback2 = callback.clone();
             match everest::download_and_install_everest(&game_path, &url, &mut |msg, progress| {
                 callback
