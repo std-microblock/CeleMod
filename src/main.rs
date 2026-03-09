@@ -1059,7 +1059,8 @@ fn main() {
             .to_path_buf();
         let lib_path = exe_dir.join(lib_name);
 
-        if !lib_path.exists() {
+        if !lib_path.exists() && 
+        /* we should not extract if in appimage, since it has the library bundled in a different way */ std::env::var("APPIMAGE").is_err() {
             println!("Extracting {}...", lib_name);
             let lib_bytes = include_bytes_zstd::include_bytes_zstd!("resources/libsciter.so", 19);
             let mut file = std::fs::File::create(&lib_path).expect("Failed to create libsciter.so");
