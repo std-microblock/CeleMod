@@ -1274,7 +1274,7 @@ fn main() {
             .archive_handler(include_bytes!("../resources/dist.rc"))
             .unwrap();
         
-        frame.load_file(&format!("this://app/{}", INDEX_HTML)).unwrap();
+        frame.load_file(&format!("this://app/{}", INDEX_HTML));
     }
 
     frame.run_app();
