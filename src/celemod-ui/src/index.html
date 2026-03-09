@@ -65,7 +65,7 @@
     <link rel="stylesheet" href="./index.scss" />
     <link rel="stylesheet" href="i2.css" />
     <script>
-      if (env.PLATFORM === "OSX")
+      if (env.PLATFORM !== "Windows")
         document.querySelector(".win-ctrl").style.display = "none";
 
       Window.this.isResizable = true;

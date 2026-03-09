@@ -40,8 +40,8 @@ export const createThemeContext = () => {
 
   useEffect(() => {
     if (!storage) return;
-    // @ts-ignore
     console.log("set blur behind", enableAcrylic);
+    // @ts-ignore
     Window.this.blurBehind = enableAcrylic
       ? "dark ultra source-desktop"
       : "none";

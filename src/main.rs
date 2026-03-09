@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use anyhow::{Context, bail};
 use aria2c::DownloadCallbackInfo;
+use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
 use std::{
@@ -13,8 +14,24 @@ use std::{
     fs,
     path::{Path, PathBuf},
     rc::Rc,
+    sync::atomic::{AtomicBool, Ordering},
 };
-use dirs;
+
+static TEST_MODE: AtomicBool = AtomicBool::new(false);
+
+fn is_test_mode() -> bool {
+    TEST_MODE.load(Ordering::Relaxed)
+}
+
+fn get_test_game_path() -> PathBuf {
+    let path = std::env::temp_dir().join("celemod_test_game");
+    let _ = std::fs::create_dir_all(path.join("Mods"));
+    #[cfg(windows)]
+    let _ = std::fs::write(path.join("Celeste.exe"), b"");
+    #[cfg(unix)]
+    let _ = std::fs::write(path.join("Celeste"), b"");
+    path
+}
 
 extern crate msgbox;
 
@@ -526,6 +543,9 @@ impl Handler {
     }
 
     fn get_celeste_dirs(&self) -> String {
+        if is_test_mode() {
+            return get_test_game_path().to_string_lossy().to_string();
+        }
         get_celestes()
             .iter()
             .map(|game| game.path.clone().unwrap().to_str().unwrap().to_string())
@@ -732,18 +752,16 @@ impl Handler {
                 // Migrate old database to new location
                 println!("Migrating database from {:?} to {:?}", old_path, new_path);
                 match std::fs::read(&old_path) {
-                    Ok(data) => {
-                        match std::fs::write(&new_path, &data) {
-                            Ok(_) => {
-                                let _ = std::fs::remove_file(&old_path);
-                                println!("Database migration completed");
-                            }
-                            Err(e) => {
-                                eprintln!("Failed to write new database: {}", e);
-                                return old_path.to_string_lossy().to_string();
-                            }
+                    Ok(data) => match std::fs::write(&new_path, &data) {
+                        Ok(_) => {
+                            let _ = std::fs::remove_file(&old_path);
+                            println!("Database migration completed");
                         }
-                    }
+                        Err(e) => {
+                            eprintln!("Failed to write new database: {}", e);
+                            return old_path.to_string_lossy().to_string();
+                        }
+                    },
                     Err(e) => {
                         eprintln!("Failed to read old database: {}", e);
                         return old_path.to_string_lossy().to_string();
@@ -932,6 +950,9 @@ impl Handler {
     }
 
     fn verify_celeste_install(&self, path: String) -> bool {
+        if is_test_mode() && path == get_test_game_path().to_string_lossy() {
+            return true;
+        }
         let path = Path::new(&path);
         let checklist = vec!["Celeste.exe", "Celeste"];
         for file in checklist {
@@ -991,8 +1012,14 @@ impl sciter::EventHandler for Handler {
 }
 
 fn main() {
-    // parse /update command line argument
+    // parse command line arguments
     let args: Vec<String> = std::env::args().collect();
+
+    if args.contains(&"--test-mode".to_string()) {
+        TEST_MODE.store(true, Ordering::Relaxed);
+        println!("Running in test mode (no game required)");
+    }
+
     if args.len() == 3 && args[1] == "/update" {
         // sleep for a bit to let the old process exit
         std::thread::sleep(std::time::Duration::from_secs_f32(0.5));
@@ -1031,7 +1058,8 @@ fn main() {
             println!("Extracting {}...", lib_name);
             let lib_bytes = include_bytes_zstd::include_bytes_zstd!("resources/libsciter.so", 19);
             let mut file = std::fs::File::create(&lib_path).expect("Failed to create libsciter.so");
-            file.write_all(&lib_bytes).expect("Failed to write libsciter.so");
+            file.write_all(&lib_bytes)
+                .expect("Failed to write libsciter.so");
 
             // Set library file permissions
             #[cfg(unix)]
@@ -1092,17 +1120,14 @@ fn main() {
     // #[cfg(target_os = "macos")]
     // let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_VULKAN));
 
-    let mut builder = sciter::WindowBuilder::main()
-        .with_size((800, 600));
-    
-    #[cfg(target_os = "macos")]
+    let mut builder = sciter::WindowBuilder::main().with_size((800, 600));
+
+    #[cfg(not(target_os = "windows"))]
     {
-        builder = builder.with_title()
-        .resizeable()
-        .closeable();
+        builder = builder.with_title().resizeable().closeable();
     }
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     {
         builder = builder.glassy().alpha();
     }
