@@ -19,6 +19,7 @@ strip_bom = "1.0.0"
 open = "*"
 include-bytes-zstd = "*"
 msgbox = "0.7.0"
+dirs = "*"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "*", features = ["wincon", "consoleapi"] }

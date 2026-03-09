@@ -33,21 +33,11 @@ declare global {
 
 export const useStorage = () => {
     if (!window.configStorage) {
-        let path = './cele-mod.db';
-        const exists = (path)=>{
-            try {
-                sys.fs.statSync(path);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-        if (exists('../../cele-mod.db')) {
-            path = '../../cele-mod.db';
-        }
+        // Get database path from Rust backend (handles migration)
+        const dbPath = callRemote("get_database_path");
 
-        console.log('useStorage', path)
-        window.configStorage = storage.open(path);
+        console.log('useStorage', dbPath)
+        window.configStorage = storage.open(dbPath);
 
         window.addEventListener('beforeunload', () => {
             configStorage.close();

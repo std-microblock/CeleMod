@@ -119,10 +119,6 @@ jobs:
       with:
         name: linux-appimage
         path: celemod-linux.AppImage
-    - uses: actions/upload-artifact@v4.3.1
-      with:
-        name: linux-zip
-        path: celemod-linux.zip
   build-macos:
     runs-on: macos-latest
     steps:

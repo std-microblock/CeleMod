@@ -14,6 +14,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
 };
+use dirs;
 
 extern crate msgbox;
 
@@ -695,6 +696,65 @@ impl Handler {
         everest::is_using_cache()
     }
 
+    fn get_database_path(&self) -> String {
+        use std::io::Read;
+
+        // Get home directory
+        let home_dir = match dirs::home_dir() {
+            Some(dir) => dir,
+            None => {
+                // Fallback to current directory
+                return "./cele-mod.db".to_string();
+            }
+        };
+
+        let celemod_dir = home_dir.join(".celemod");
+        let new_path = celemod_dir.join("cele-mod.db");
+
+        // Old paths
+        let old_cwd_path = Path::new("./cele-mod.db").to_path_buf();
+        let old_parent_path = Path::new("../../cele-mod.db").to_path_buf();
+
+        // Ensure ~/.celemod directory exists
+        let _ = std::fs::create_dir_all(&celemod_dir);
+
+        // Check if old database exists and new one doesn't
+        let old_db_path = if old_parent_path.exists() {
+            Some(old_parent_path)
+        } else if old_cwd_path.exists() {
+            Some(old_cwd_path)
+        } else {
+            None
+        };
+
+        if let Some(old_path) = old_db_path {
+            if !new_path.exists() {
+                // Migrate old database to new location
+                println!("Migrating database from {:?} to {:?}", old_path, new_path);
+                match std::fs::read(&old_path) {
+                    Ok(data) => {
+                        match std::fs::write(&new_path, &data) {
+                            Ok(_) => {
+                                let _ = std::fs::remove_file(&old_path);
+                                println!("Database migration completed");
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to write new database: {}", e);
+                                return old_path.to_string_lossy().to_string();
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to read old database: {}", e);
+                        return old_path.to_string_lossy().to_string();
+                    }
+                }
+            }
+        }
+
+        new_path.to_string_lossy().to_string()
+    }
+
     fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
         let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
         if let Err(e) = result {
@@ -926,6 +986,7 @@ impl sciter::EventHandler for Handler {
         fn get_current_blacklist_content(String);
         fn sync_blacklist_profile_from_file(String, String);
         fn is_using_cache();
+        fn get_database_path();
     }
 }
 
