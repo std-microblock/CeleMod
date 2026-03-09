@@ -1008,6 +1008,24 @@ export const Manage = () => {
 
   const { download } = useGlobalContext();
 
+  // Collect all unique missing dependencies across all installed mods
+  const missingDeps = useMemo(() => {
+    const missing = new Map<string, string>(); // name -> version
+    for (const mod of installedModMap.values()) {
+      for (const dep of mod._deps) {
+        if (excludeList.includes(dep.name)) continue;
+        if (!installedModMap.has(dep.name)) {
+          if (!missing.has(dep.name)) {
+            missing.set(dep.name, dep.version);
+          }
+        }
+      }
+    }
+    return [...missing.entries()].map(([name, version]) => ({ name, version }));
+  }, [installedModMap]);
+
+  const [fixDepsState, setFixDepsState] = useState<'idle' | 'downloading'>('idle');
+
   return (
     <div className="manage">
       <modListContext.Provider value={manageCtx}>
@@ -1179,6 +1197,48 @@ export const Manage = () => {
                 }}
               >
                 {hasUpdateBtnState}
+              </button>
+            )}
+            {missingDeps.length > 0 && (
+              <button
+                onClick={() => {
+                  if (fixDepsState === 'downloading') return;
+                  setFixDepsState('downloading');
+                  const remaining = new Set(missingDeps.map((d) => d.name));
+                  for (const dep of missingDeps) {
+                    callRemote('get_mod_update', dep.name, (data: string) => {
+                      if (!data) {
+                        remaining.delete(dep.name);
+                        if (remaining.size === 0) {
+                          setFixDepsState('idle');
+                          manageCtx.reloadMods();
+                        }
+                        return;
+                      }
+                      const [gbFileId] = JSON.parse(data);
+                      download.downloadMod(dep.name, gbFileId, {
+                        autoDisableNewMods: manageCtx.autoDisableNewMods,
+                        onFinished: () => {
+                          remaining.delete(dep.name);
+                          if (remaining.size === 0) {
+                            setFixDepsState('idle');
+                            manageCtx.reloadMods();
+                          }
+                        },
+                        onFailed: () => {
+                          remaining.delete(dep.name);
+                          if (remaining.size === 0) {
+                            setFixDepsState('idle');
+                          }
+                        },
+                      });
+                    });
+                  }
+                }}
+              >
+                {fixDepsState === 'downloading'
+                  ? _i18n.t('下载中')
+                  : _i18n.t('补全缺失依赖 ({count})', { count: missingDeps.length })}
               </button>
             )}
           </div>

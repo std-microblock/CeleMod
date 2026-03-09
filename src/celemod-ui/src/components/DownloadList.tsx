@@ -34,7 +34,7 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
           {task.subtasks
             .filter((v) => v.state !== 'Finished')
             .map((subtask) => (
-              <div class="subTask">
+              <div class="subTask" key={subtask.name}>
                 <div class="name">{subtask.name}</div>
                 <div className="progressLine">
                   <div class="progress">

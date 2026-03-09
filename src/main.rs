@@ -10,11 +10,10 @@ use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
 use std::{
-    cell::RefCell,
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
-    rc::Rc,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}},
 };
 
 static TEST_MODE: AtomicBool = AtomicBool::new(false);
@@ -367,125 +366,214 @@ impl Handler {
             .unwrap()
             .to_string();
         std::thread::spawn(move || {
-            let res: anyhow::Result<()> = try {
-                let cbkc = callback.clone();
+            // tasklist is shared across all download threads
+            let tasklist: Arc<Mutex<Vec<DownloadInfo>>> = Arc::new(Mutex::new(Vec::new()));
+            // track queued dep names to avoid duplicates
+            let queued_deps: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
+            // count of active download threads (including the root)
+            let active_count: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(0));
+            // whether any task has failed
+            let any_failed: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
-                let mut installed_deps: Vec<i64> = vec![];
+            let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
 
-                let tasklist: Rc<RefCell<Vec<DownloadInfo>>> = Rc::new(RefCell::new(Vec::new()));
-
-                tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
+            {
+                let mut tl = tasklist.lock().unwrap();
+                tl.push(DownloadInfo {
                     name: name.clone(),
                     url: url.clone(),
                     dest: dest.clone(),
                     status: DownloadStatus::Waiting,
                     data: "".to_string(),
                 });
+                queued_deps.lock().unwrap().insert(name.clone());
+            }
 
-                let mod_data = get_mod_cached_new()?;
+            let mod_data = match get_mod_cached_new() {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("Failed to get mod data: {}", e);
+                    callback
+                        .call(None, &make_args!(format!("Failed to get mod data: {}", e)), None)
+                        .unwrap();
+                    return;
+                }
+            };
 
-                let post_callback = |tasklist: &Vec<DownloadInfo>, state: &str| {
-                    cbkc.call(
-                        None,
-                        &make_args!(serde_json::to_string(&tasklist).unwrap(), state),
-                        None,
-                    )
-                    .unwrap();
-                };
+            // post_callback is called with the current tasklist snapshot
+            // Wrap callback in a newtype to make it Sync (sciter::Value is Send but not Sync;
+            // Value::call posts to the UI thread internally so concurrent calls are safe)
+            struct SyncCallback(sciter::Value);
+            unsafe impl Sync for SyncCallback {}
+            let sync_cb = Arc::new(SyncCallback(callback.clone()));
+            let post_callback: Arc<dyn Fn(&Vec<DownloadInfo>, &str) + Send + Sync> = {
+                let sync_cb = Arc::clone(&sync_cb);
+                Arc::new(move |tasklist: &Vec<DownloadInfo>, state: &str| {
+                    sync_cb.0
+                        .call(
+                            None,
+                            &make_args!(serde_json::to_string(tasklist).unwrap(), state),
+                            None,
+                        )
+                        .unwrap();
+                })
+            };
 
-                let mut i_task = 0;
-                while tasklist.borrow().len() != i_task {
-                    let tasklist2 = Rc::clone(&tasklist);
-
-                    let deps = {
-                        let deps = {
-                            let current_task = tasklist.borrow()[i_task].clone();
-
-                            download_and_install_mod(
-                                &current_task.url,
-                                &current_task.dest,
-                                &mut move |progress| {
-                                    (tasklist2.try_borrow_mut().unwrap())[i_task].data =
-                                        format!("{:.2}", progress.progress);
-                                    (tasklist2.try_borrow_mut().unwrap())[i_task].status =
-                                        DownloadStatus::Downloading;
-                                    post_callback(&tasklist2.borrow(), "pending");
-                                },
-                                multi_thread,
-                            )
-                        };
-
-                        match deps {
-                            Ok(deps) => {
-                                let task = &mut tasklist.try_borrow_mut().unwrap()[i_task];
-                                task.status = DownloadStatus::Finished;
-                                deps
-                            }
-                            Err(e) => {
-                                let mut tasklist = tasklist.try_borrow_mut().unwrap();
-                                let task = &mut tasklist[i_task];
-                                task.status = DownloadStatus::Failed;
-                                task.data = e.to_string();
-                                let _ = fs::remove_file(&task.dest);
-                                post_callback(&tasklist, "failed");
-                                return;
-                            }
-                        }
+            // Spawn a download task for a single mod entry (by index in tasklist)
+            // Returns the thread handle
+            fn spawn_download_task(
+                task_index: usize,
+                tasklist: Arc<Mutex<Vec<DownloadInfo>>>,
+                queued_deps: Arc<Mutex<HashSet<String>>>,
+                active_count: Arc<AtomicUsize>,
+                any_failed: Arc<AtomicBool>,
+                mod_data: Arc<std::collections::HashMap<String, crate::everest::ModInfoCached>>,
+                mods_dir: String,
+                multi_thread: bool,
+                post_callback: Arc<dyn Fn(&Vec<DownloadInfo>, &str) + Send + Sync>,
+                done_tx: std::sync::mpsc::Sender<()>,
+            ) {
+                active_count.fetch_add(1, Ordering::SeqCst);
+                std::thread::spawn(move || {
+                    let task_info = {
+                        let tl = tasklist.lock().unwrap();
+                        tl[task_index].clone()
                     };
 
-                    println!("Deps: {deps:#?}");
+                    // Update status to Downloading
+                    {
+                        let mut tl = tasklist.lock().unwrap();
+                        tl[task_index].status = DownloadStatus::Downloading;
+                        post_callback(&tl, "pending");
+                    }
 
-                    post_callback(&tasklist.borrow(), "pending");
+                    let result = {
+                        let tasklist_clone = Arc::clone(&tasklist);
+                        let post_cb_clone = Arc::clone(&post_callback);
+                        download_and_install_mod(
+                            &task_info.url,
+                            &task_info.dest,
+                            &mut move |progress| {
+                                let mut tl = tasklist_clone.lock().unwrap();
+                                tl[task_index].data = format!("{:.2}", progress.progress);
+                                tl[task_index].status = DownloadStatus::Downloading;
+                                post_cb_clone(&tl, "pending");
+                            },
+                            multi_thread,
+                        )
+                    };
 
-                    let installed_mods = get_installed_mods_sync(mods_dir.clone());
-                    for (dep, min_ver) in deps {
-                        // search in installed mods
-                        let dep = dep.clone();
-                        let min_ver = min_ver.clone();
-
-                        if installed_mods.iter().any(|mod_| {
-                            mod_.name == dep && compare_version(&mod_.version, &min_ver) >= 0
-                        }) {
-                            continue;
-                        }
-
-                        if mod_data.contains_key(&dep) {
-                            let data = &mod_data[&dep];
-                            let dest = Path::new(&dest)
-                                .with_file_name(dep.clone() + ".zip")
-                                .to_str()
-                                .unwrap()
-                                .to_string();
-
-                            let id = data.game_banana_id;
-
-                            if !installed_deps.contains(&id) {
-                                let url = data.download_url.clone();
-
-                                installed_deps.push(id);
-                                tasklist.try_borrow_mut().unwrap().push(DownloadInfo {
-                                    name: dep.clone(),
-                                    url,
-                                    dest,
-                                    status: DownloadStatus::Waiting,
-                                    data: "0".to_string(),
-                                });
+                    match result {
+                        Ok(deps) => {
+                            {
+                                let mut tl = tasklist.lock().unwrap();
+                                tl[task_index].status = DownloadStatus::Finished;
+                                tl[task_index].data = "100".to_string();
+                                post_callback(&tl, "pending");
                             }
-                        } else {
-                            println!("[ WARNING ] Failed to resolve {dep}");
+
+                            println!("Deps for {}: {deps:#?}", task_info.name);
+
+                            // Queue new dependency downloads
+                            let installed_mods = get_installed_mods_sync(mods_dir.clone());
+                            let new_tasks: Vec<DownloadInfo> = {
+                                let mut queued = queued_deps.lock().unwrap();
+                                deps.into_iter()
+                                    .filter_map(|(dep, min_ver)| {
+                                        if installed_mods.iter().any(|m| {
+                                            m.name == dep && compare_version(&m.version, &min_ver) >= 0
+                                        }) {
+                                            return None;
+                                        }
+                                        if queued.contains(&dep) {
+                                            return None;
+                                        }
+                                        if let Some(data) = mod_data.get(&dep) {
+                                            queued.insert(dep.clone());
+                                            let dep_dest = Path::new(&mods_dir)
+                                                .join(make_path_compatible_name(&dep) + ".zip")
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string();
+                                            Some(DownloadInfo {
+                                                name: dep,
+                                                url: data.download_url.clone(),
+                                                dest: dep_dest,
+                                                status: DownloadStatus::Waiting,
+                                                data: "0".to_string(),
+                                            })
+                                        } else {
+                                            println!("[ WARNING ] Failed to resolve {dep}");
+                                            None
+                                        }
+                                    })
+                                    .collect()
+                            };
+
+                            // Add new tasks to tasklist and spawn threads for each
+                            let new_indices: Vec<usize> = {
+                                let mut tl = tasklist.lock().unwrap();
+                                let start = tl.len();
+                                tl.extend(new_tasks);
+                                (start..tl.len()).collect()
+                            };
+
+                            for idx in new_indices {
+                                spawn_download_task(
+                                    idx,
+                                    Arc::clone(&tasklist),
+                                    Arc::clone(&queued_deps),
+                                    Arc::clone(&active_count),
+                                    Arc::clone(&any_failed),
+                                    Arc::clone(&mod_data),
+                                    mods_dir.clone(),
+                                    multi_thread,
+                                    Arc::clone(&post_callback),
+                                    done_tx.clone(),
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            any_failed.store(true, Ordering::SeqCst);
+                            let mut tl = tasklist.lock().unwrap();
+                            tl[task_index].status = DownloadStatus::Failed;
+                            tl[task_index].data = e.to_string();
+                            let _ = fs::remove_file(&tl[task_index].dest);
+                            post_callback(&tl, "failed");
                         }
                     }
 
-                    i_task += 1;
-                    let mut tasklist = tasklist.try_borrow_mut().unwrap();
-                    tasklist[i_task - 1].status = DownloadStatus::Finished;
-                    tasklist[i_task - 1].data = "100".to_string();
-                    if i_task < tasklist.len() {
-                        tasklist[i_task].status = DownloadStatus::Downloading;
+                    // Decrement active count; if zero, signal done
+                    if active_count.fetch_sub(1, Ordering::SeqCst) == 1 {
+                        let _ = done_tx.send(());
                     }
-                }
+                });
+            }
 
-                // Auto-disable new mods if enabled
+            // Kick off download for the root mod (index 0)
+            spawn_download_task(
+                0,
+                Arc::clone(&tasklist),
+                Arc::clone(&queued_deps),
+                Arc::clone(&active_count),
+                Arc::clone(&any_failed),
+                Arc::clone(&mod_data),
+                mods_dir.clone(),
+                multi_thread,
+                Arc::clone(&post_callback),
+                done_tx,
+            );
+
+            // Wait for all downloads to complete
+            let _ = done_rx.recv();
+
+            if any_failed.load(Ordering::SeqCst) {
+                // already reported "failed" from the failing thread
+                return;
+            }
+
+            // Auto-disable new mods if enabled
+            let res: anyhow::Result<()> = try {
                 if auto_disable_new_mods {
                     let game_path = Path::new(&mods_dir)
                         .parent()
@@ -494,12 +582,13 @@ impl Handler {
                         .unwrap()
                         .to_string();
                     let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
-                    let mut new_mods = vec![];
-                    for task in tasklist.borrow().iter() {
-                        if task.status == DownloadStatus::Finished {
-                            new_mods.push(task.name.clone());
-                        }
-                    }
+                    let new_mods: Vec<String> = {
+                        let tl = tasklist.lock().unwrap();
+                        tl.iter()
+                            .filter(|t| t.status == DownloadStatus::Finished)
+                            .map(|t| t.name.clone())
+                            .collect()
+                    };
                     if !new_mods.is_empty() {
                         let installed_mods = get_installed_mods_sync(mods_dir.clone());
                         let mods_to_disable: Vec<(&String, &String)> = new_mods
@@ -523,20 +612,15 @@ impl Handler {
                         }
                     }
                 }
-
                 println!("Download finished");
-
-                post_callback(&tasklist.borrow(), "finished");
+                let tl = tasklist.lock().unwrap();
+                post_callback(&tl, "finished");
             };
 
             if let Err(e) = res {
-                eprintln!("Failed to download mod: {}", e);
+                eprintln!("Failed post-download: {}", e);
                 callback
-                    .call(
-                        None,
-                        &make_args!(format!("Failed to download mod: {}", e)),
-                        None,
-                    )
+                    .call(None, &make_args!(format!("Failed: {}", e)), None)
                     .unwrap();
             }
         });
