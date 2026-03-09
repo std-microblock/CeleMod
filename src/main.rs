@@ -1125,7 +1125,7 @@ fn main() {
     // #[cfg(target_os = "macos")]
     // let _ = sciter::set_options(sciter::RuntimeOptions::GfxLayer(GFX_LAYER::SKIA_VULKAN));
 
-    let mut builder = sciter::WindowBuilder::main().with_size((800, 600));
+    let mut builder = sciter::WindowBuilder::main().with_size((800, 640));
 
     #[cfg(not(target_os = "windows"))]
     {
