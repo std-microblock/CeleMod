@@ -1254,19 +1254,27 @@ fn main() {
 
     frame.event_handler(Handler);
 
+    #[cfg(target_os = "windows")]
+    const INDEX_HTML: &str = "index_windows.html";
+
+    #[cfg(not(target_os = "windows"))]
+    const INDEX_HTML: &str = "index.html";
+
+
     #[cfg(debug_assertions)]
     frame.load_html(
         read_to_string_bom(Path::new("../../src/celemod-ui/debug_index.html"))
             .unwrap()
-            .as_bytes(),
-        Some("app://index.html"),
-    );
+            .as_bytes(), Some(
+                &format!("app://{}", INDEX_HTML)
+            ));
     #[cfg(not(debug_assertions))]
     {
         frame
             .archive_handler(include_bytes!("../resources/dist.rc"))
             .unwrap();
-        frame.load_file("this://app/index.html");
+        
+        frame.load_file(&format!("this://app/{}", INDEX_HTML)).unwrap();
     }
 
     frame.run_app();

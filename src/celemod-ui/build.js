@@ -3,7 +3,7 @@ const { join } = require("path");
 const { fileURLToPath } = require("url");
 
 let bundler = new Parcel({
-  entries: "./src/index.html",
+  entries: ["./src/index.html", "./src/index_windows.html"],
   defaultConfig: "@parcel/config-default",
   serveOptions: {
     port: 1234,
