@@ -449,6 +449,89 @@ const formatSize = (size: number) => {
 
 let lastApplyReq = -1;
 
+const ModOptionsOrderPanel = ({
+  gamePath,
+  currentProfileName,
+  currentProfile,
+  installedMods,
+  onOrderChange,
+}: {
+  gamePath: string;
+  currentProfileName: string;
+  currentProfile: import('../ipc/blacklist').ModBlacklistProfile | null;
+  installedMods: import('../states').BackendModInfo[];
+  onOrderChange: (order: string[]) => void;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const order: string[] = currentProfile?.mod_options_order ?? [];
+
+  const allFiles = useMemo(() => {
+    const files = installedMods.map((m) => m.file);
+    const inOrder = order.filter((f) => files.includes(f));
+    const rest = files
+      .filter((f) => !order.includes(f))
+      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    return [...inOrder, ...rest];
+  }, [installedMods, order]);
+
+  const applyOrder = (newOrder: string[]) => {
+    onOrderChange(newOrder);
+    callRemote('set_mod_options_order', gamePath, currentProfileName, JSON.stringify(newOrder));
+  };
+
+  const move = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= allFiles.length) return;
+    const next = [...allFiles];
+    [next[index], next[target]] = [next[target], next[index]];
+    applyOrder(next);
+  };
+
+  const moveToTop = (index: number) => {
+    if (index === 0) return;
+    const next = [...allFiles];
+    const [item] = next.splice(index, 1);
+    next.unshift(item);
+    applyOrder(next);
+  };
+
+  if (!currentProfile) return null;
+
+  return (
+    <div className="mod-options-order">
+      <div className="moo-header" onClick={() => setExpanded((v) => !v)}>
+        <Icon name={expanded ? 'i-down' : 'i-right'} />
+        <span>{_i18n.t('Mod Options 顺序')}</span>
+      </div>
+      {expanded && (
+        <div className="moo-list">
+          {allFiles.map((file, i) => (
+            <div className="moo-item" key={file}>
+              <span className="moo-name" title={file}>{file}</span>
+              <span className="moo-btns">
+                <button
+                  className={i === 0 ? 'disabled' : ''}
+                  onClick={() => moveToTop(i)}
+                  title={_i18n.t('置顶')}
+                >⤒</button>
+                <button
+                  className={i === 0 ? 'disabled' : ''}
+                  onClick={() => move(i, -1)}
+                >↑</button>
+                <button
+                  className={i === allFiles.length - 1 ? 'disabled' : ''}
+                  onClick={() => move(i, 1)}
+                >↓</button>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Manage = () => {
   const noEverest = enforceEverest();
   if (noEverest) return noEverest;
@@ -1280,6 +1363,19 @@ export const Manage = () => {
               {_i18n.t('新建')}
             </Button>
           </div>
+
+          <ModOptionsOrderPanel
+            gamePath={gamePath}
+            currentProfileName={currentProfileName}
+            currentProfile={currentProfile}
+            installedMods={installedMods}
+            onOrderChange={(newOrder) => {
+              if (currentProfile) {
+                currentProfile.mod_options_order = newOrder;
+                setCurrentProfile({ ...currentProfile });
+              }
+            }}
+          />
         </div>
       </modListContext.Provider>
     </div>

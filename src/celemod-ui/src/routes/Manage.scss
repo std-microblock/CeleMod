@@ -161,6 +161,85 @@
 
 
         }
+
+        .mod-options-order {
+            margin-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 8px;
+
+            .moo-header {
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.7);
+                padding: 2px 0 4px;
+
+                &:hover {
+                    color: rgba(255, 255, 255, 0.9);
+                }
+
+                span {
+                    margin-left: 4px;
+                }
+            }
+
+            .moo-list {
+                margin-top: 4px;
+                max-height: 320px;
+                overflow-y: auto;
+
+                .moo-item {
+                    position: relative;
+                    padding: 3px 72px 3px 4px;
+                    border-radius: 4px;
+                    height: 20px;
+
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.05);
+                    }
+
+                    .moo-name {
+                        display: inline-block;
+                        font-size: 11px;
+                        color: rgba(255, 255, 255, 0.7);
+                        width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+
+                    .moo-btns {
+                        position: absolute;
+                        right: 4px;
+                        top: 2px;
+                        flow: horizontal-flow;
+
+                        button {
+                            width: 20px;
+                            height: 20px;
+                            padding: 0;
+                            border: none;
+                            border-radius: 3px;
+                            background: rgba(255, 255, 255, 0.1);
+                            color: rgba(255, 255, 255, 0.6);
+                            cursor: pointer;
+                            font-size: 11px;
+                            margin-left: 2px;
+
+                            &:hover {
+                                background: rgba(255, 255, 255, 0.2);
+                                color: white;
+                            }
+
+                            &.disabled {
+                                opacity: 0.25;
+                                cursor: default;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     .title {

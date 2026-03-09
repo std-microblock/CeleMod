@@ -6,4 +6,5 @@ export interface ModBlacklist {
 export interface ModBlacklistProfile {
     name: string,
     mods: ModBlacklist[],
+    mod_options_order: string[],
 }

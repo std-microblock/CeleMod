@@ -867,6 +867,20 @@ impl Handler {
         }
     }
 
+    fn set_mod_options_order(&self, game_path: String, profile_name: String, order_json: String) -> String {
+        let order: Vec<String> = match serde_json::from_str(&order_json) {
+            Ok(v) => v,
+            Err(e) => return format!("Failed to parse order: {}", e),
+        };
+        let result = blacklist::set_mod_options_order(&game_path, &profile_name, order);
+        if let Err(e) = result {
+            eprintln!("Failed to set mod options order: {}", e);
+            format!("Failed to set mod options order: {}", e)
+        } else {
+            "Success".to_string()
+        }
+    }
+
     fn open_url(&self, url: String) {
         if let Err(e) = open::that(url) {
             eprintln!("Failed to open url: {}", e);
@@ -1097,6 +1111,7 @@ impl sciter::EventHandler for Handler {
         fn sync_blacklist_profile_from_file(String, String);
         fn is_using_cache();
         fn get_database_path();
+        fn set_mod_options_order(String, String, String);
     }
 }
 
