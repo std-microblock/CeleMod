@@ -159,8 +159,13 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
 
     for entry in fs::read_dir(mods_folder_path).unwrap() {
         let entry = entry.unwrap();
+        println!("Checking mod entry: {:?}", entry.file_name());
         let res: anyhow::Result<_> = try {
-            let yaml = if entry.file_type().unwrap().is_dir() {
+            if false {
+                anyhow::Ok(())?
+            }
+
+            let yaml = if entry.file_type().context("invalid file type")?.is_dir() {
                 let cache_path = entry.path().read_dir().unwrap().find(|v| {
                     v.as_ref()
                         .map(|v| {
@@ -212,7 +217,12 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 continue;
             };
 
-            let yaml: serde_yaml::Value = serde_yaml::from_str(&yaml).unwrap();
+            let yaml = serde_yaml::from_str(&yaml);
+            if let Err(e) = yaml {
+                println!("[ WARNING ] Failed to parse {:?}: {}", entry.file_name(), e);
+                continue;
+            }
+            let yaml: serde_yaml::Value = yaml.unwrap();
 
             let mut deps: Vec<ModDependency> = Vec::new();
 
