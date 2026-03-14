@@ -185,12 +185,14 @@ const ModLocal = ({
   size,
   duplicateCount,
   duplicateFiles,
-}: ModInfo & { optional?: boolean }) => {
+  renderPath = [],
+}: ModInfo & { optional?: boolean; renderPath?: string[] }) => {
   const { download } = useGlobalContext();
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const ctx = useContext(modListContext);
+  const hasCycle = renderPath.includes(name);
 
   const hasDeps = useMemo(
     () => dependencies.some((v) => !excludeList.includes(v.name)),
@@ -287,6 +289,12 @@ const ModLocal = ({
             {_i18n.t('依赖·版本不匹配')}
           </ModBadge>
         ) : null)}
+
+      {hasCycle && (
+        <ModBadge bg="#9c27b0" color="white">
+          {_i18n.t('循环依赖')}
+        </ModBadge>
+      )}
 
       {optional && (
         <ModBadge bg="#ff9800" color="white">
@@ -389,10 +397,10 @@ const ModLocal = ({
           <Icon name="delete" />
         </span>
       )}
-      {(!optional || ctx?.fullTree) && expanded && (
+      {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
         <div className={`childTree ${expanded && 'expanded'}`}>
           {dependencies.map((v) => (
-            <Mod {...v} />
+            <Mod {...v} renderPath={[...renderPath, name]} />
           ))}
         </div>
       )}
@@ -400,7 +408,7 @@ const ModLocal = ({
   );
 };
 
-const Mod = (props: ModDepInfo) => {
+const Mod = (props: ModDepInfo & { renderPath?: string[] }) => {
   if (excludeList.includes(props.name)) {
     return null;
   }
@@ -574,39 +582,52 @@ export const Manage = () => {
         size: mod.size,
         _deps: mod.deps,
         resolveDependencies: () => {
-          let status = 'resolved';
-          let message = '';
-
-          const mergeSM = (
-            s: {
-              status: DepState;
-              message: string;
-            },
-            name: String
+          const resolveModDependencies = (
+            current: BackendModInfo,
+            visiting = new Set<string>()
           ) => {
-            if (s.status === 'resolved') return;
-            if (status === 'resolved') {
-              status = s.status;
+            if (visiting.has(current.name)) {
+              return { status: 'resolved', message: '' } as DepResolveResult;
             }
-            message += ` | ${name}(${s.status}):${s.message}`;
-          };
 
-          for (const dep of mod.deps) {
-            if (
-              excludeList.includes(dep.name) ||
-              (dep.optional && !checkOptionalDep)
-            )
-              continue;
+            visiting.add(current.name);
 
-            if (!modMap.has(dep.name)) {
-              mergeSM({ status: 'missing', message: '' }, dep.name);
-            } else {
+            let status = 'resolved';
+            let message = '';
+
+            const mergeSM = (
+              s: {
+                status: DepState;
+                message: string;
+              },
+              name: string
+            ) => {
+              if (s.status === 'resolved') return;
+              if (status === 'resolved') {
+                status = s.status;
+              }
+              message += ` | ${name}(${s.status}):${s.message}`;
+            };
+
+            for (const dep of current.deps) {
+              if (
+                excludeList.includes(dep.name) ||
+                (dep.optional && !checkOptionalDep)
+              ) {
+                continue;
+              }
+
+              if (!modMap.has(dep.name)) {
+                mergeSM({ status: 'missing', message: '' }, dep.name);
+                continue;
+              }
+
               const installedDep = modMap.get(dep.name)!;
               if (compareVersion(installedDep.version, dep.version) < 0) {
                 mergeSM(
                   {
                     status: 'mismatched-version',
-                    message: `${mod.name} requires ${installedDep.name} >= ${dep.version} but got ${installedDep.version}`,
+                    message: `${current.name} requires ${installedDep.name} >= ${dep.version} but got ${installedDep.version}`,
                   },
                   dep.name
                 );
@@ -616,18 +637,25 @@ export const Manage = () => {
                 mergeSM(
                   {
                     status: 'not-enabled',
-                    message: `${mod.name} requires ${installedDep.name} to be enabled`,
+                    message: `${current.name} requires ${installedDep.name} to be enabled`,
                   },
                   dep.name
                 );
               }
 
-              const depRes = installedDep.resolveDependencies();
-              mergeSM(depRes, dep.name);
+              const depBackend = installedMods.find((v) => v.name === dep.name);
+              if (depBackend) {
+                const depRes = resolveModDependencies(depBackend, visiting);
+                mergeSM(depRes, dep.name);
+              }
             }
-          }
 
-          return { status, message } as DepResolveResult;
+            visiting.delete(current.name);
+
+            return { status, message } as DepResolveResult;
+          };
+
+          return resolveModDependencies(mod);
         },
         duplicateCount: 1,
         duplicateFiles: [mod.file],
@@ -900,11 +928,18 @@ export const Manage = () => {
           'Miao.CelesteNet.Client',
         ];
 
+        const visited = new Set<string>();
+
         const addToSwitchList = (name: string) => {
+          if (visited.has(name)) return;
+          visited.add(name);
+
           const mod = installedModMap.get(name);
           if (mod) {
             mod.enabled = enabled;
             switchList.push(name);
+          } else {
+            return;
           }
 
           if (recursive) {
@@ -975,7 +1010,12 @@ export const Manage = () => {
 
         // Find orphaned mods (mods that will have no references after deletion)
         const orphanedMods: ModInfo[] = [];
+        const visited = new Set<string>();
+
         const checkOrphans = (mod: ModInfo) => {
+          if (visited.has(mod.name)) return;
+          visited.add(mod.name);
+
           for (const dep of mod.dependencies) {
             if ('_missing' in dep) continue;
             const depInfo = installedModMap.get(dep.name);
