@@ -569,6 +569,10 @@ export const Manage = () => {
 
   const installedModMap = useMemo(() => {
     const modMap = new Map<string, ModInfo>();
+    const backendModMap = new Map<string, BackendModInfo>();
+    for (const mod of installedMods) {
+      backendModMap.set(mod.name, mod);
+    }
 
     for (const mod of installedMods) {
       const modInfo: ModInfo = {
@@ -643,7 +647,7 @@ export const Manage = () => {
                 );
               }
 
-              const depBackend = installedMods.find((v) => v.name === dep.name);
+              const depBackend = backendModMap.get(dep.name);
               if (depBackend) {
                 const depRes = resolveModDependencies(depBackend, visiting);
                 mergeSM(depRes, dep.name);
