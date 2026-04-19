@@ -51,6 +51,36 @@ export const createModManageContext = () => {
                 });
             });
         },
+        checkInvalidZipMods: () => {
+            if (!gamePath) return;
+            callRemote('get_invalid_zip_mod_files', gamePath + '/Mods', (data: string) => {
+                const invalidFiles = JSON.parse(data) as string[];
+                if (invalidFiles.length === 0) return;
+
+                createPopup(() => {
+                    const { hide } = useContext(PopupContext);
+
+                    return (
+                        <div className="popup-content">
+                            <div className="title">{_i18n.t('发现无效 Mod 压缩包')}</div>
+                            <div className="content">
+                                <p>{_i18n.t('以下文件不是有效的 zip，继续保留可能导致游戏崩溃：')}</p>
+                                <p>{invalidFiles.join(', ')}</p>
+                            </div>
+                            <div className="buttons">
+                                <button onClick={hide}>{_i18n.t('暂不处理')}</button>
+                                <button onClick={() => {
+                                    callRemote('delete_mod_files', gamePath + '/Mods', JSON.stringify(invalidFiles), () => {
+                                        ctx.reloadMods();
+                                        hide();
+                                    });
+                                }}>{_i18n.t('删除这些文件')}</button>
+                            </div>
+                        </div>
+                    );
+                });
+            });
+        },
         gamePath,
         modsPath: gamePath + '/Mods',
     };
@@ -82,6 +112,7 @@ export const createModManageContext = () => {
                             .reloadMods()
                             .then((mods) => {
                                 popup.hide();
+                                ctx.checkInvalidZipMods();
                                 const is_using_cache = callRemote('is_using_cache');
                                 if (is_using_cache)
                                     createPopup(() => {

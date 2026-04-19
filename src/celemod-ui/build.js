@@ -85,14 +85,14 @@ const postBuildAction = () => {
 
   console.log("- Post-build actions complete, bundling");
 
-  const process = require("child_process");
+  const proc = require("child_process");
 
   const packfolderPath =
     process.platform === "win32"
       ? join(__dirname, "../../sciter/packfolder.exe")
       : join(__dirname, "../../sciter/packfolder-mac");
 
-  const res = process.execSync(
+  const res = proc.execSync(
     `${packfolderPath} ./dist ${join(
       __dirname,
       "../../resources/dist.rc",

@@ -76,20 +76,36 @@ fn download_multi_thread(
         .set("Accept", "*/*")
         .call();
 
-    let (content_length, supports_range) = match head {
+    let mut content_length = 0;
+    let head_supports_range = match head {
         Ok(resp) => {
-            let cl: u64 = resp
+            content_length = resp
                 .header("Content-Length")
                 .unwrap_or("0")
                 .parse()
                 .unwrap_or(0);
-            let range_ok = resp
-                .header("Accept-Ranges")
+            resp.header("Accept-Ranges")
                 .map(|v| v != "none")
-                .unwrap_or(false);
-            (cl, range_ok && cl > 0)
+                .unwrap_or(false)
         }
-        Err(_) => (0, false),
+        Err(_) => false,
+    };
+
+    // 有些 CDN 会在 HEAD 上声称支持 Range，但真正的 GET Range 只返回 200。
+    // 这里先做一次 bytes=0-0 探测，确认真的会返回 206 再启用多线程。
+    let probe = make_request(url).set("Range", "bytes=0-0").call();
+    let supports_range = match probe {
+        Ok(resp) if resp.status() == 206 => {
+            if content_length == 0 {
+                content_length = resp
+                    .header("Content-Range")
+                    .and_then(|value| value.rsplit('/').next())
+                    .and_then(|value| value.parse().ok())
+                    .unwrap_or(0);
+            }
+            head_supports_range || content_length > 0
+        }
+        _ => false,
     };
 
     if !supports_range || content_length == 0 {
@@ -129,14 +145,20 @@ fn download_multi_thread(
 
             match resp {
                 Ok(resp) => {
+                    if resp.status() != 206 {
+                        errors.lock().unwrap().push(format!(
+                            "Range request {} returned status {}",
+                            range,
+                            resp.status()
+                        ));
+                        return;
+                    }
                     let mut reader = resp.into_reader();
                     let mut buffer = vec![0u8; 256 * 1024];
                     let mut offset = start;
 
                     // 用独立文件句柄 seek 写入对应区段
-                    let file = std::fs::OpenOptions::new()
-                        .write(true)
-                        .open(&output_path);
+                    let file = std::fs::OpenOptions::new().write(true).open(&output_path);
                     match file {
                         Ok(mut file) => loop {
                             let n = match reader.read(&mut buffer) {

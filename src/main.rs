@@ -103,6 +103,69 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     }
 }
 
+fn is_valid_zip_archive(path: &Path) -> bool {
+    std::fs::File::open(path)
+        .ok()
+        .and_then(|file| zip::ZipArchive::new(file).ok())
+        .is_some()
+}
+
+fn get_invalid_zip_mod_files(mods_folder_path: &str) -> Vec<String> {
+    let Ok(entries) = fs::read_dir(mods_folder_path) else {
+        return Vec::new();
+    };
+
+    entries
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().map(|v| v.is_file()).unwrap_or(false))
+        .filter(|entry| entry.path().extension().map(|v| v == "zip").unwrap_or(false))
+        .filter(|entry| !is_valid_zip_archive(&entry.path()))
+        .filter_map(|entry| entry.file_name().into_string().ok())
+        .collect()
+}
+
+fn delete_mod_files(mods_folder_path: &str, file_names: &[String]) -> anyhow::Result<()> {
+    for file_name in file_names {
+        let safe_name = Path::new(file_name)
+            .file_name()
+            .context("Invalid mod file name")?;
+        let path = Path::new(mods_folder_path).join(safe_name);
+        if path.exists() {
+            fs::remove_file(path)?;
+        }
+    }
+    Ok(())
+}
+
+fn download_mod_archive(url: &str, dest: &str, progress_callback: &mut dyn FnMut(DownloadCallbackInfo), multi_thread: bool) -> anyhow::Result<()> {
+    let tmp_dir = std::env::temp_dir().join("CelemodTemp").join("mods");
+    std::fs::create_dir_all(&tmp_dir)?;
+
+    let file_name = Path::new(dest)
+        .file_name()
+        .context("Failed to resolve destination file name")?;
+    let tmp_dest = tmp_dir.join(file_name);
+
+    let result: anyhow::Result<()> = try {
+        ureq::download_file_with_progress(
+            url,
+            tmp_dest.to_string_lossy().as_ref(),
+            progress_callback,
+            multi_thread,
+        )?;
+
+        if !is_valid_zip_archive(&tmp_dest) {
+            bail!("Downloaded file is not a valid zip archive");
+        }
+
+        std::fs::copy(&tmp_dest, dest)
+            .with_context(|| format!("Failed to move downloaded file to {}", dest))?;
+    };
+
+    std::fs::remove_file(&tmp_dest).ok();
+    result
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct ModDependency {
     name: String,
@@ -284,7 +347,7 @@ fn download_and_install_mod(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    ureq::download_file_with_progress(url, dest, progress_callback, multi_thread)?;
+    download_mod_archive(url, dest, progress_callback, multi_thread)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
@@ -714,6 +777,19 @@ impl Handler {
         });
     }
 
+    fn get_invalid_zip_mod_files(&self, mods_folder_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let invalid_mods = get_invalid_zip_mod_files(&mods_folder_path);
+            callback
+                .call(
+                    None,
+                    &make_args!(serde_json::to_string(&invalid_mods).unwrap()),
+                    None,
+                )
+                .unwrap();
+        });
+    }
+
     fn get_blacklist_profiles(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
@@ -976,6 +1052,18 @@ impl Handler {
         });
     }
 
+    fn delete_mod_files(&self, mods_folder_path: String, file_names: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            let file_names: Vec<String> = serde_json::from_str(&file_names).unwrap_or_default();
+            let result = match delete_mod_files(&mods_folder_path, &file_names) {
+                Ok(()) => "Success".to_string(),
+                Err(e) => format!("Failed to remove some files: {}", e),
+            };
+
+            callback.call(None, &make_args!(result), None).unwrap();
+        });
+    }
+
     fn get_everest_version(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let version = if is_test_mode() {
@@ -1096,6 +1184,7 @@ impl sciter::EventHandler for Handler {
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);
+        fn get_invalid_zip_mod_files(String, Value);
         fn get_installed_miaonet(String, Value);
         fn start_game(String);
         fn open_url(String);
@@ -1108,6 +1197,7 @@ impl sciter::EventHandler for Handler {
         fn get_mod_update(String, Value);
         fn rm_mod(String, String);
         fn delete_mods(String, String, Value);
+        fn delete_mod_files(String, String, Value);
         fn get_everest_version(String, Value);
         fn download_and_install_everest(String, String, Value);
         fn celemod_version();
