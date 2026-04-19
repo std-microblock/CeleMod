@@ -19,6 +19,7 @@ import { Button } from '../components/Button';
 import { GlobalContext, useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
 import { createPopup, PopupContext } from '../components/Popup';
+import { ProgressIndicator } from '../components/Progress';
 
 type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version';
 
@@ -48,6 +49,19 @@ interface MissingModDepInfo {
   optional: boolean;
   version: string;
   _missing: true;
+}
+
+interface FullModCheckIssue {
+  file: string;
+  error: string;
+}
+
+interface FullModCheckProgress {
+  current: number;
+  total: number;
+  file: string;
+  done: boolean;
+  issues: FullModCheckIssue[];
 }
 
 type ModInfoProbablyMissing = ModInfo | MissingModDepInfo;
@@ -566,6 +580,7 @@ export const Manage = () => {
   const [fullTree, setFullTree] = useState(false);
   const [showUpdate, setShowUpdate] = useState(true);
   const [showDetailed, setShowDetailed] = useState(false);
+  const [fullCheckRunning, setFullCheckRunning] = useState(false);
 
   const installedModMap = useMemo(() => {
     const modMap = new Map<string, ModInfo>();
@@ -1135,6 +1150,119 @@ export const Manage = () => {
 
   const { download } = useGlobalContext();
 
+  const startFullModCheck = () => {
+    if (fullCheckRunning) return;
+    setFullCheckRunning(true);
+
+    createPopup(() => {
+      const { hide } = useContext(PopupContext);
+      const [progress, setProgress] = useState<FullModCheckProgress>({
+        current: 0,
+        total: 0,
+        file: '',
+        done: false,
+        issues: [],
+      });
+      const [deleteState, setDeleteState] = useState<'idle' | 'deleting' | 'done' | 'failed'>('idle');
+
+      useEffect(() => {
+        callRemote('check_all_mod_contents', modPath, (data: string) => {
+          const next = JSON.parse(data) as FullModCheckProgress;
+          setProgress(next);
+          if (next.done) {
+            setFullCheckRunning(false);
+          }
+        });
+      }, []);
+
+      const progressValue = progress.total === 0 ? 0 : progress.current;
+      const issueCount = progress.issues.length;
+      const deleteBrokenMods = () => {
+        if (deleteState === 'deleting' || issueCount === 0) return;
+        setDeleteState('deleting');
+        callRemote(
+          'delete_mod_files',
+          modPath,
+          JSON.stringify(progress.issues.map((issue) => issue.file)),
+          () => {
+            setDeleteState('done');
+            manageCtx.reloadMods();
+          }
+        );
+      };
+
+      return (
+        <div className="popup-content full-mod-check-popup">
+          <div className="title">{_i18n.t('检查全部 Mod 是否正常')}</div>
+          {!progress.done ? (
+            <div className="content full-mod-check-content">
+              <div className="progress-wrap">
+                <ProgressIndicator
+                  value={progressValue}
+                  max={progress.total || 1}
+                  size={80}
+                  lineWidth={6}
+                />
+              </div>
+              <p>{_i18n.t('正在检查 Mod 实际内容，这可能需要一些时间。')}</p>
+              <p>
+                {_i18n.t('进度：{current}/{total}', {
+                  current: progress.current,
+                  total: progress.total,
+                })}
+              </p>
+              {progress.file && (
+                <p>
+                  {_i18n.t('当前文件：{file}', { file: progress.file })}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="content full-mod-check-content">
+              <p>
+                {issueCount === 0
+                  ? _i18n.t('检查完成，未发现损坏的 Mod 压缩包。')
+                  : _i18n.t('检查完成，发现 {count} 个损坏或无法完整读取的 Mod 压缩包。', {
+                    count: issueCount,
+                  })}
+              </p>
+              {issueCount > 0 && (
+                <div className="issues">
+                  {progress.issues.map((issue) => (
+                    <div className="issue-item" key={issue.file}>
+                      <div className="issue-file">{issue.file}</div>
+                      <div className="issue-error">{issue.error}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {deleteState === 'done' && (
+                <p>{_i18n.t('已删除损坏的 Mod 压缩包。')}</p>
+              )}
+            </div>
+          )}
+          <div className="buttons">
+            {progress.done && issueCount > 0 && deleteState !== 'done' && (
+              <button onClick={deleteBrokenMods}>
+                {deleteState === 'deleting'
+                  ? _i18n.t('删除中...')
+                  : _i18n.t('删除这些损坏 Mod')}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (!progress.done) return;
+                hide();
+              }}
+            >
+              {progress.done ? _i18n.t('确定') : _i18n.t('检查中...')}
+            </button>
+          </div>
+        </div>
+      );
+    }, { cancelable: false });
+  };
+
   // Collect all unique missing dependencies across all installed mods
   const missingDeps = useMemo(() => {
     const missing = new Map<string, string>(); // name -> version
@@ -1287,6 +1415,11 @@ export const Manage = () => {
               marginTop: '5px',
             }}
           >
+            <button onClick={startFullModCheck} disabled={fullCheckRunning}>
+              {fullCheckRunning
+                ? _i18n.t('检查中...')
+                : _i18n.t('检查全部 Mod 是否正常')}
+            </button>
             {showUpdate && hasUpdateMods.length !== 0 && (
               <button
                 onClick={() => {

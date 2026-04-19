@@ -430,3 +430,52 @@
         }
     }
 }
+
+.full-mod-check-popup {
+    width: 520px;
+    max-width: 90vw;
+
+    .full-mod-check-content {
+        flow: vertical;
+        horizontal-align: center;
+
+        >* {
+            width: max-content;
+            max-width: 100%;
+        }
+
+        .progress-wrap {
+            margin-bottom: 16px;
+            width: max-content;
+            horizontal-align: center;
+        }
+
+        .issues {
+            max-height: 240px;
+            overflow-y: auto;
+            text-align: left;
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            width: 100%;
+        }
+
+        .issue-item {
+            margin-bottom: 12px;
+        }
+
+        .issue-file {
+            font-weight: 700;
+            color: theme.$fg;
+            margin-bottom: 4px;
+        }
+
+        .issue-error {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    }
+}

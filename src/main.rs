@@ -12,6 +12,7 @@ use game_scanner::prelude::Game;
 use std::{
     collections::HashSet,
     fs,
+    io::Read,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}},
 };
@@ -122,6 +123,101 @@ fn get_invalid_zip_mod_files(mods_folder_path: &str) -> Vec<String> {
         .filter(|entry| !is_valid_zip_archive(&entry.path()))
         .filter_map(|entry| entry.file_name().into_string().ok())
         .collect()
+}
+
+#[derive(Debug, Serialize, Clone)]
+struct FullModCheckIssue {
+    file: String,
+    error: String,
+}
+
+#[derive(Debug, Serialize)]
+struct FullModCheckProgress {
+    current: usize,
+    total: usize,
+    file: String,
+    done: bool,
+    issues: Vec<FullModCheckIssue>,
+}
+
+fn get_zip_mod_entries(mods_folder_path: &str) -> Vec<fs::DirEntry> {
+    let Ok(entries) = fs::read_dir(mods_folder_path) else {
+        return Vec::new();
+    };
+
+    entries
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().map(|v| v.is_file()).unwrap_or(false))
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .map(|v| v.eq_ignore_ascii_case("zip"))
+                .unwrap_or(false)
+        })
+        .collect()
+}
+
+fn check_zip_mod_file_content(path: &Path) -> anyhow::Result<()> {
+    let file = fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    let mut buffer = vec![0_u8; 64 * 1024];
+
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        loop {
+            let read = entry.read(&mut buffer)?;
+            if read == 0 {
+                break;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn check_all_mod_contents(
+    mods_folder_path: &str,
+    progress_callback: &mut dyn FnMut(FullModCheckProgress),
+) {
+    let entries = get_zip_mod_entries(mods_folder_path);
+    let total = entries.len();
+    let mut issues = Vec::new();
+
+    progress_callback(FullModCheckProgress {
+        current: 0,
+        total,
+        file: String::new(),
+        done: total == 0,
+        issues: Vec::new(),
+    });
+
+    if total == 0 {
+        return;
+    }
+
+    for (index, entry) in entries.into_iter().enumerate() {
+        let path = entry.path();
+        let file_name = entry.file_name().to_string_lossy().to_string();
+        if let Err(err) = check_zip_mod_file_content(&path) {
+            issues.push(FullModCheckIssue {
+                file: file_name.clone(),
+                error: format!("{err:#}"),
+            });
+        }
+
+        progress_callback(FullModCheckProgress {
+            current: index + 1,
+            total,
+            file: file_name,
+            done: index + 1 == total,
+            issues: if index + 1 == total {
+                issues.clone()
+            } else {
+                Vec::new()
+            },
+        });
+    }
 }
 
 fn delete_mod_files(mods_folder_path: &str, file_names: &[String]) -> anyhow::Result<()> {
@@ -790,6 +886,20 @@ impl Handler {
         });
     }
 
+    fn check_all_mod_contents(&self, mods_folder_path: String, callback: sciter::Value) {
+        std::thread::spawn(move || {
+            check_all_mod_contents(&mods_folder_path, &mut |progress| {
+                callback
+                    .call(
+                        None,
+                        &make_args!(serde_json::to_string(&progress).unwrap()),
+                        None,
+                    )
+                    .unwrap();
+            });
+        });
+    }
+
     fn get_blacklist_profiles(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
@@ -1185,6 +1295,7 @@ impl sciter::EventHandler for Handler {
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);
         fn get_invalid_zip_mod_files(String, Value);
+        fn check_all_mod_contents(String, Value);
         fn get_installed_miaonet(String, Value);
         fn start_game(String);
         fn open_url(String);
