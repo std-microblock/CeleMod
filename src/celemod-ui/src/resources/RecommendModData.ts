@@ -20,6 +20,7 @@ export const _functionalMods = () =>
       download_url:
         'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
       visible: (lang) => lang !== 'zh-CN',
+      exclude_from_download_all: true,
     },
     {
       name: _i18n.t('蔚蓝Mod中国镜像'),
@@ -44,6 +45,7 @@ export const _functionalMods = () =>
       name: 'CelesteTAS',
       description: _i18n.t('用于编写TAS，也可以显示碰撞箱、数值面板等'),
       download_url: 'https://celeste.weg.fan/api/v2/download/mods/CelesteTAS',
+      exclude_from_download_all: true,
     },
     {
       name: 'Celeste Randomizer',
@@ -76,6 +78,7 @@ export const _functionalMods = () =>
       name: 'Celeste Input History',
       description: _i18n.t('显示按键输入历史'),
       download_url: 'https://celeste.weg.fan/api/v2/download/mods/InputHistory',
+      exclude_from_download_all: true,
     },
     {
       name: 'Stamina Meter',

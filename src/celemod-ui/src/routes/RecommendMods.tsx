@@ -127,7 +127,7 @@ export const RecommendMods = () => {
                 }
               }}
             >
-              {_i18n.t('下载所有')}
+              {_i18n.t('下载推荐')}
             </Button>
           </h2>
           <div className="list">
