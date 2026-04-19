@@ -89,13 +89,22 @@ export const Home = () => {
         .filter(m => !alwaysOnMods.includes(m.name))
         .map(m => m.file)
         .sort();
-      if (JSON.stringify(expectedDisabledFiles) !== JSON.stringify(disabledFiles)) {
+      if (expectedDisabledFiles.some(file => !disabledFiles.includes(file)) ||
+        disabledFiles.some(file => !expectedDisabledFiles.includes(file))) {
         const popup = createPopup(() => {
           const { hide } = useContext(PopupContext);
           return (
             <div className="popup-content">
               <h2>{_i18n.t('同步黑名单 Mod 列表')}</h2>
               <p>{_i18n.t('当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？')}</p>
+              <p>
+                {
+                  `不同的 Mod: ${[...new Set([
+                    ...expectedDisabledFiles.filter(file => !disabledFiles.includes(file)),
+                    ...disabledFiles.filter(file => !expectedDisabledFiles.includes(file)),
+                  ])].join(', ')}`
+                }
+              </p>
               <p>{_i18n.t('注意，该功能不支持通配符等')}</p>
               <div className="buttons">
                 <button onClick={() => {
