@@ -1269,6 +1269,7 @@ export const Manage = () => {
     for (const mod of installedModMap.values()) {
       for (const dep of mod._deps) {
         if (excludeList.includes(dep.name)) continue;
+        if (dep.optional && !checkOptionalDep) continue;
         if (!installedModMap.has(dep.name)) {
           if (!missing.has(dep.name)) {
             missing.set(dep.name, dep.version);
