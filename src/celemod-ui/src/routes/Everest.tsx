@@ -195,9 +195,11 @@ export const Everest = () => {
           <span className="ti">{_i18n.t('未安装 Everest')}</span>
         )}
       </div>
-      <div className="manual-everest-version" onClick={showManualVersionPopup}>
-        {_i18n.t('我已安装 Everest，但未显示')}
-      </div>
+      {
+        !currentEverestVersion && <div className="manual-everest-version" onClick={showManualVersionPopup}>
+          {_i18n.t('我已安装 Everest，但未显示')}
+        </div>
+      }
       {installingUrl === null ? (
         <Fragment>
           {everestData ? (

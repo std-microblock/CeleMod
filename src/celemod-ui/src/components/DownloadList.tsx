@@ -59,9 +59,9 @@ const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) =>
           </button>
           <span className="name">{task.name}</span>
           {action && (
-            <span className="taskInlineAction" title={action.title} onClick={action.onClick}>
+            <button className="taskInlineAction" title={action.title} onClick={action.onClick}>
               <Icon name={action.icon} />
-            </span>
+            </button>
           )}
           <span className="progress-label">{finished}/{all}</span>
         </div>

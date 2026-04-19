@@ -97,6 +97,9 @@
         }
 
         .taskInlineAction {
+            flow: horizontal;
+            vertical-align: middle;
+            horizontal-align: center;
             position: absolute;
             right: 24px;
             top: 1px;
@@ -105,9 +108,6 @@
             color: theme.$fg3;
             opacity: 0.45;
             cursor: pointer;
-            flow: horizontal-flow;
-            horizontal-align: center;
-            vertical-align: middle;
 
             &:hover {
                 opacity: 0.9;
