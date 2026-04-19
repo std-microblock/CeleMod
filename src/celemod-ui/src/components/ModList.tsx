@@ -17,6 +17,7 @@ import { useAutoDisableNewMods } from '../states';
 import { useGlobalContext } from '../App';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
+import { sanitizeDescriptionHtml } from '../sanitizeDescriptionHtml';
 // @ts-ignore
 import celemodIcon from '../resources/Celemod.png';
 
@@ -239,26 +240,15 @@ export const Mod = memo(
                     useEffect(() => {
                       if (!refContent.current) return;
                       refContent.current.innerHTML = '';
-                      // strip all script execution from the description
-                      const div = document.createElement('div');
-                      div.innerHTML = data?.description ?? '';
+                      refContent.current.appendChild(
+                        sanitizeDescriptionHtml(data?.description ?? '')
+                      );
+
+                      // Keep external links going through the native opener.
                       // @ts-ignore
-                      for (const script of div.querySelectorAll(
-                        'script, iframe, style, link, meta'
-                      ))
-                        script.remove();
-                      // @ts-ignore
-                      for (const ele of div.querySelectorAll('*')) {
-                        // remove all event listeners
-                        for (const key in ele) {
-                          if (key.startsWith('on')) {
-                            ele[key] = null;
-                          }
-                        }
-                      }
-                      // @ts-ignore
-                      for (const a of div.querySelectorAll('a')) {
-                        const url = a.href || a.getAttribute('href');
+                      for (const a of refContent.current.querySelectorAll('a')) {
+                        const url = a.getAttribute('href');
+                        if (!url) continue;
                         a.href = '#';
                         a.onclick = (e: any) => {
                           e.preventDefault();
@@ -266,11 +256,10 @@ export const Mod = memo(
                           callRemote('open_url', url);
                         };
                       }
-                      // @ts-ignore
-                      for (const img of div.querySelectorAll('img'))
-                        img.style.maxWidth = '300px';
 
-                      refContent.current.appendChild(div);
+                      // @ts-ignore
+                      for (const img of refContent.current.querySelectorAll('img'))
+                        img.style.maxWidth = '300px';
                     }, [data]);
 
                     if (!data)
