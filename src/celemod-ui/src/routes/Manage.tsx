@@ -1458,7 +1458,7 @@ export const Manage = () => {
               >
                 {hasUpdateBtnState}
               </button>
-            )}
+            )}&nbsp;
             {missingDeps.length > 0 && (
               <button
                 onClick={() => {

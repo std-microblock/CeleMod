@@ -1,12 +1,19 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::io::{BufWriter, Seek, SeekFrom, Write};
+use std::io::{BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use std::time::Instant;
 
 use anyhow::{bail, Context};
 
 pub struct DownloadCallbackInfo {
     pub progress: f32,
+    pub downloaded_bytes: u64,
+    pub total_bytes: u64,
+    pub speed_bytes_per_sec: f64,
 }
 
 const NUM_THREADS: usize = 8;
@@ -32,6 +39,7 @@ fn download_single(
     url: &str,
     writer: &mut dyn Write,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     let resp = make_request(url).call()?;
     let total_size: u64 = resp
@@ -44,8 +52,12 @@ fn download_single(
     let mut buffer = vec![0u8; 256 * 1024];
     let mut downloaded: u64 = 0;
     let mut last_progress = -1.0f32;
+    let started = Instant::now();
 
     loop {
+        if cancel_flag.load(Ordering::Relaxed) {
+            bail!("Download canceled");
+        }
         let n = reader.read(&mut buffer)?;
         if n == 0 {
             break;
@@ -55,7 +67,13 @@ fn download_single(
         if total_size > 0 {
             let progress = (downloaded as f32 / total_size as f32) * 100.0;
             if progress - last_progress >= 0.1 {
-                progress_callback(DownloadCallbackInfo { progress });
+                let elapsed = started.elapsed().as_secs_f64().max(0.001);
+                progress_callback(DownloadCallbackInfo {
+                    progress,
+                    downloaded_bytes: downloaded,
+                    total_bytes: total_size,
+                    speed_bytes_per_sec: downloaded as f64 / elapsed,
+                });
                 last_progress = progress;
             }
         }
@@ -69,6 +87,7 @@ fn download_multi_thread(
     url: &str,
     output_path: &Path,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     // HEAD 请求探测
     let head = ureq::head(url)
@@ -112,7 +131,7 @@ fn download_multi_thread(
         // 退化为单线程
         let mut file = std::fs::File::create(output_path)?;
         let mut writer = BufWriter::new(&mut file);
-        return download_single(url, &mut writer, progress_callback);
+        return download_single(url, &mut writer, progress_callback, cancel_flag);
     }
 
     // 预分配文件
@@ -123,6 +142,7 @@ fn download_multi_thread(
     let downloaded_bytes: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
     let mut handles = Vec::with_capacity(NUM_THREADS);
     let errors: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+    let started = Instant::now();
 
     for i in 0..NUM_THREADS {
         let start = i as u64 * chunk_size;
@@ -134,6 +154,8 @@ fn download_multi_thread(
         let output_path = output_path.to_path_buf();
         let downloaded_bytes = Arc::clone(&downloaded_bytes);
         let errors = Arc::clone(&errors);
+        let cancel_flag = Arc::clone(cancel_flag);
+        let loop_cancel_flag = Arc::clone(&cancel_flag);
 
         let handle = std::thread::spawn(move || {
             let range = format!("bytes={}-{}", start, end);
@@ -161,6 +183,9 @@ fn download_multi_thread(
                     let file = std::fs::OpenOptions::new().write(true).open(&output_path);
                     match file {
                         Ok(mut file) => loop {
+                            if loop_cancel_flag.load(Ordering::Relaxed) {
+                                return;
+                            }
                             let n = match reader.read(&mut buffer) {
                                 Ok(n) => n,
                                 Err(e) => {
@@ -191,15 +216,25 @@ fn download_multi_thread(
             }
         });
         handles.push(handle);
+        if cancel_flag.load(Ordering::Relaxed) {
+            break;
+        }
     }
 
     // 主线程轮询进度
     loop {
+        if cancel_flag.load(Ordering::Relaxed) {
+            break;
+        }
         let all_done = handles.iter().all(|h| h.is_finished());
         let downloaded = *downloaded_bytes.lock().unwrap();
         let progress = (downloaded as f32 / content_length as f32) * 100.0;
+        let elapsed = started.elapsed().as_secs_f64().max(0.001);
         progress_callback(DownloadCallbackInfo {
             progress: progress.min(99.0),
+            downloaded_bytes: downloaded,
+            total_bytes: content_length,
+            speed_bytes_per_sec: downloaded as f64 / elapsed,
         });
         if all_done {
             break;
@@ -211,12 +246,21 @@ fn download_multi_thread(
         handle.join().ok();
     }
 
+    if cancel_flag.load(Ordering::Relaxed) {
+        bail!("Download canceled");
+    }
+
     let errs = errors.lock().unwrap();
     if !errs.is_empty() {
         bail!("Download failed: {}", errs.join("; "));
     }
 
-    progress_callback(DownloadCallbackInfo { progress: 100.0 });
+    progress_callback(DownloadCallbackInfo {
+        progress: 100.0,
+        downloaded_bytes: content_length,
+        total_bytes: content_length,
+        speed_bytes_per_sec: 0.0,
+    });
     Ok(())
 }
 
@@ -225,6 +269,7 @@ pub fn download_file_with_progress(
     output_path: &str,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
+    cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     println!("[ DOWNLOAD ] {} -> {}", url, output_path);
 
@@ -239,11 +284,11 @@ pub fn download_file_with_progress(
     let output = Path::new(output_path);
 
     let result = if multi_thread {
-        download_multi_thread(url, &tmp_path, progress_callback)
+        download_multi_thread(url, &tmp_path, progress_callback, cancel_flag)
     } else {
         let mut file = std::fs::File::create(&tmp_path)?;
         let mut writer = BufWriter::new(&mut file);
-        download_single(url, &mut writer, progress_callback)
+        download_single(url, &mut writer, progress_callback, cancel_flag)
     };
 
     match result {
@@ -251,7 +296,12 @@ pub fn download_file_with_progress(
             std::fs::copy(&tmp_path, output)
                 .with_context(|| format!("Failed to move downloaded file to {:?}", output))?;
             std::fs::remove_file(&tmp_path).ok();
-            progress_callback(DownloadCallbackInfo { progress: 100.0 });
+            progress_callback(DownloadCallbackInfo {
+                progress: 100.0,
+                downloaded_bytes: output.metadata().map(|m| m.len()).unwrap_or(0),
+                total_bytes: output.metadata().map(|m| m.len()).unwrap_or(0),
+                speed_bytes_per_sec: 0.0,
+            });
             Ok(())
         }
         Err(e) => {

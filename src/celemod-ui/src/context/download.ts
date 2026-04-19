@@ -29,6 +29,9 @@ export namespace Download {
         to: string;
         state: "Downloading" | "Finished" | "Failed" | "Waiting";
         error?: string;
+        downloadedBytes: number;
+        totalBytes: number;
+        speedBytesPerSec: number;
     }
 
     export type State = Preparing | Downloading | Downloaded | Failed;
@@ -36,6 +39,7 @@ export namespace Download {
     export interface TaskInfo {
         name: string;
         subtasks: SubtaskInfo[];
+        source?: string;
         mod: {
             name: string;
             id?: string;
@@ -43,6 +47,7 @@ export namespace Download {
         state: "finished" | "failed" | "pending";
         error?: string;
         progress: number;
+        canceled?: boolean;
     }
 }
 
@@ -52,6 +57,9 @@ interface BackendDownloadInfo {
     dest: string;
     status: "Waiting" | "Downloading" | "Finished" | "Failed";
     data: string;
+    downloaded_bytes: number;
+    total_bytes: number;
+    speed_bytes_per_sec: number;
 }
 
 const makePathName = (name: string) => {
@@ -76,6 +84,14 @@ export const createDownloadContext = () => {
     const ctx = {
         eventBus,
         downloadTasks,
+        cancelDownload(name: string) {
+            const task = downloadTasks.current[name];
+            if (!task || task.state !== 'pending') return false;
+            task.canceled = true;
+            callRemote('cancel_download_mod', name);
+            eventBus.dispatchEvent('taskListChanged');
+            return true;
+        },
         downloadMod: (name: string, gb_fileid_or_url: string, {
             force = false,
             autoDisableNewMods = false,
@@ -100,6 +116,7 @@ export const createDownloadContext = () => {
                     const task = {
                         name,
                         subtasks: [],
+                        source: gb_fileid_or_url,
                         mod: {
                             name
                         },
@@ -116,11 +133,13 @@ export const createDownloadContext = () => {
                 downloadTasks.current[name] = {
                     name,
                     subtasks: [],
+                    source: gb_fileid_or_url,
                     mod: {
                         name
                     },
                     state: "pending",
-                    progress: 0
+                    progress: 0,
+                    canceled: false,
                 }
 
                 eventBus.dispatchEvent('taskListChanged')
@@ -136,14 +155,21 @@ export const createDownloadContext = () => {
                         from: s.url,
                         to: s.dest,
                         error: s.status === "Failed" ? s.data : undefined,
-                        state: s.status
+                        state: s.status,
+                        downloadedBytes: s.downloaded_bytes || 0,
+                        totalBytes: s.total_bytes || 0,
+                        speedBytesPerSec: s.speed_bytes_per_sec || 0,
                     }));
 
                     task.state = state;
                     if (state === "finished") {
+                        task.canceled = false;
                         onFinished(task);
                     } else if (state === "failed") {
                         task.error = subtasks.find(s => s.status === "Failed")?.data;
+                        if (task.error === 'Download canceled') {
+                            task.canceled = true;
+                        }
                         onFailed(task, "Download failed");
                     } else {
                         task.progress = parseFloat(subtasks.find(s => s.status === "Downloading")?.data || "0");

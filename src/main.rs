@@ -10,7 +10,7 @@ use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs,
     io::Read,
     path::{Path, PathBuf},
@@ -39,6 +39,10 @@ use sciter::{GFX_LAYER, Value, dispatch_script_call, make_args};
 
 extern crate lazy_static;
 extern crate sciter;
+
+lazy_static::lazy_static! {
+    static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
+}
 
 mod ureq;
 mod blacklist;
@@ -234,6 +238,11 @@ fn delete_mod_files(mods_folder_path: &str, file_names: &[String]) -> anyhow::Re
 }
 
 fn download_mod_archive(url: &str, dest: &str, progress_callback: &mut dyn FnMut(DownloadCallbackInfo), multi_thread: bool) -> anyhow::Result<()> {
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, &cancel_flag)
+}
+
+fn download_mod_archive_with_cancel(url: &str, dest: &str, progress_callback: &mut dyn FnMut(DownloadCallbackInfo), multi_thread: bool, cancel_flag: &Arc<AtomicBool>) -> anyhow::Result<()> {
     let tmp_dir = std::env::temp_dir().join("CelemodTemp").join("mods");
     std::fs::create_dir_all(&tmp_dir)?;
 
@@ -248,6 +257,7 @@ fn download_mod_archive(url: &str, dest: &str, progress_callback: &mut dyn FnMut
             tmp_dest.to_string_lossy().as_ref(),
             progress_callback,
             multi_thread,
+            cancel_flag,
         )?;
 
         if !is_valid_zip_archive(&tmp_dest) {
@@ -442,8 +452,9 @@ fn download_and_install_mod(
     dest: &String,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
+    cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    download_mod_archive(url, dest, progress_callback, multi_thread)?;
+    download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
 
     let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
 
@@ -512,6 +523,9 @@ struct DownloadInfo {
     dest: String,
     status: DownloadStatus,
     data: String,
+    downloaded_bytes: u64,
+    total_bytes: u64,
+    speed_bytes_per_sec: f64,
 }
 
 fn make_path_compatible_name(name: &str) -> String {
@@ -537,6 +551,11 @@ impl Handler {
         std::thread::spawn(move || {
             // tasklist is shared across all download threads
             let tasklist: Arc<Mutex<Vec<DownloadInfo>>> = Arc::new(Mutex::new(Vec::new()));
+            let cancel_flag: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+            DOWNLOAD_CANCEL_FLAGS
+                .lock()
+                .unwrap()
+                .insert(name.clone(), Arc::clone(&cancel_flag));
             // track queued dep names to avoid duplicates
             let queued_deps: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
             // count of active download threads (including the root)
@@ -554,6 +573,9 @@ impl Handler {
                     dest: dest.clone(),
                     status: DownloadStatus::Waiting,
                     data: "".to_string(),
+                    downloaded_bytes: 0,
+                    total_bytes: 0,
+                    speed_bytes_per_sec: 0.0,
                 });
                 queued_deps.lock().unwrap().insert(name.clone());
             }
@@ -593,6 +615,7 @@ impl Handler {
             fn spawn_download_task(
                 task_index: usize,
                 tasklist: Arc<Mutex<Vec<DownloadInfo>>>,
+                cancel_flag: Arc<AtomicBool>,
                 queued_deps: Arc<Mutex<HashSet<String>>>,
                 active_count: Arc<AtomicUsize>,
                 any_failed: Arc<AtomicBool>,
@@ -619,16 +642,21 @@ impl Handler {
                     let result = {
                         let tasklist_clone = Arc::clone(&tasklist);
                         let post_cb_clone = Arc::clone(&post_callback);
+                        let cancel_flag = Arc::clone(&cancel_flag);
                         download_and_install_mod(
                             &task_info.url,
                             &task_info.dest,
                             &mut move |progress| {
                                 let mut tl = tasklist_clone.lock().unwrap();
                                 tl[task_index].data = format!("{:.2}", progress.progress);
+                                tl[task_index].downloaded_bytes = progress.downloaded_bytes;
+                                tl[task_index].total_bytes = progress.total_bytes;
+                                tl[task_index].speed_bytes_per_sec = progress.speed_bytes_per_sec;
                                 tl[task_index].status = DownloadStatus::Downloading;
                                 post_cb_clone(&tl, "pending");
                             },
                             multi_thread,
+                            &cancel_flag,
                         )
                     };
 
@@ -638,6 +666,7 @@ impl Handler {
                                 let mut tl = tasklist.lock().unwrap();
                                 tl[task_index].status = DownloadStatus::Finished;
                                 tl[task_index].data = "100".to_string();
+                                tl[task_index].speed_bytes_per_sec = 0.0;
                                 post_callback(&tl, "pending");
                             }
 
@@ -670,6 +699,9 @@ impl Handler {
                                                 dest: dep_dest,
                                                 status: DownloadStatus::Waiting,
                                                 data: "0".to_string(),
+                                                downloaded_bytes: 0,
+                                                total_bytes: 0,
+                                                speed_bytes_per_sec: 0.0,
                                             })
                                         } else {
                                             println!("[ WARNING ] Failed to resolve {dep}");
@@ -691,6 +723,7 @@ impl Handler {
                                 spawn_download_task(
                                     idx,
                                     Arc::clone(&tasklist),
+                                    Arc::clone(&cancel_flag),
                                     Arc::clone(&queued_deps),
                                     Arc::clone(&active_count),
                                     Arc::clone(&any_failed),
@@ -707,6 +740,7 @@ impl Handler {
                             let mut tl = tasklist.lock().unwrap();
                             tl[task_index].status = DownloadStatus::Failed;
                             tl[task_index].data = e.to_string();
+                            tl[task_index].speed_bytes_per_sec = 0.0;
                             let _ = fs::remove_file(&tl[task_index].dest);
                             post_callback(&tl, "failed");
                         }
@@ -723,6 +757,7 @@ impl Handler {
             spawn_download_task(
                 0,
                 Arc::clone(&tasklist),
+                Arc::clone(&cancel_flag),
                 Arc::clone(&queued_deps),
                 Arc::clone(&active_count),
                 Arc::clone(&any_failed),
@@ -737,6 +772,7 @@ impl Handler {
             let _ = done_rx.recv();
 
             if any_failed.load(Ordering::SeqCst) {
+                DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
                 // already reported "failed" from the failing thread
                 return;
             }
@@ -784,6 +820,7 @@ impl Handler {
                 println!("Download finished");
                 let tl = tasklist.lock().unwrap();
                 post_callback(&tl, "finished");
+                DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
             };
 
             if let Err(e) = res {
@@ -793,6 +830,15 @@ impl Handler {
                     .unwrap();
             }
         });
+    }
+
+    fn cancel_download_mod(&self, name: String) -> bool {
+        if let Some(flag) = DOWNLOAD_CANCEL_FLAGS.lock().unwrap().get(&name) {
+            flag.store(true, Ordering::Relaxed);
+            true
+        } else {
+            false
+        }
     }
 
     fn get_celeste_dirs(&self) -> String {
@@ -855,7 +901,7 @@ impl Handler {
         std::thread::spawn(move || {
             let installed = get_installed_mods_sync(mods_folder_path)
                 .into_iter()
-                .any(|p| p.name == "Miao.CelesteNet.Client");
+                .any(|p| p.name == "MiaoNet");
             callback.call(None, &make_args!(installed), None).unwrap();
         });
     }
@@ -1227,6 +1273,7 @@ impl Handler {
     fn do_self_update(&self, url: String, callback: sciter::Value) {
         std::thread::spawn(move || {
             let tmp = std::env::temp_dir().join("cele-mod.exe");
+            let cancel_flag = Arc::new(AtomicBool::new(false));
             match ureq::download_file_with_progress(
                 &url,
                 tmp.to_string_lossy().as_ref(),
@@ -1240,6 +1287,7 @@ impl Handler {
                         .unwrap();
                 },
                 false,
+                &cancel_flag,
             ) {
                 Ok(()) => {
                     // replace the current exe with the downloaded one
@@ -1291,6 +1339,7 @@ impl Handler {
 impl sciter::EventHandler for Handler {
     dispatch_script_call! {
         fn download_mod(String, String, String, bool, Value, bool, bool);
+        fn cancel_download_mod(String);
         fn get_celeste_dirs();
         fn get_installed_mod_ids(String, Value);
         fn get_installed_mods(String, Value);

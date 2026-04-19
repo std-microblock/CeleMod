@@ -185,6 +185,7 @@ pub fn download_and_install_everest(
 
     let temp_path = temp_path.to_str().unwrap();
     let game_path = game_path.to_str().unwrap();
+    let cancel_flag = Arc::new(AtomicBool::new(false));
 
     ureq::download_file_with_progress(
         url,
@@ -193,6 +194,7 @@ pub fn download_and_install_everest(
             progress_callback("Downloading Everest".to_string(), callback.progress);
         },
         false,
+        &cancel_flag,
     )?;
 
     progress_callback("Installing Everest".to_string(), 50.0);
