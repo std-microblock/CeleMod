@@ -1303,7 +1303,7 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     {
-        builder = builder.glassy().alpha().closeable();
+        builder = builder.glassy().closeable();
     }
 
     let mut frame = builder.create();
