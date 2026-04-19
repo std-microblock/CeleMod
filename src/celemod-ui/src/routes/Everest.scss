@@ -40,6 +40,25 @@
         }
     }
 
+    .manual-everest-version {
+        margin: 8px 0 20px;
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 13px;
+        width: max-content;
+        cursor: pointer;
+
+        &:hover {
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+
+    .manual-everest-popup {
+        input {
+            width: 100%;
+            margin-top: 10px;
+        }
+    }
+
     .channels {
         flow: horizontal-flow;
 

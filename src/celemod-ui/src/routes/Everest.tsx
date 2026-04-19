@@ -18,6 +18,7 @@ import { GlobalContext, useGlobalContext } from '../App';
 //@ts-ignore
 import everest from '../resources/everest.png';
 import { ProgressIndicator } from '../components/Progress';
+import { createPopup, PopupContext } from '../components/Popup';
 
 interface Maddie480EverestVersion {
   date: string;
@@ -141,6 +142,42 @@ export const Everest = () => {
       .then((v) => setEverestData(v));
   }, []);
 
+  const showManualVersionPopup = () => {
+    createPopup(() => {
+      const { hide } = useContext(PopupContext);
+      const [manualVersion, setManualVersion] = useState(currentEverestVersion || '');
+
+      return (
+        <div className="popup-content manual-everest-popup">
+          <div className="title">{_i18n.t('手动指定 Everest 版本')}</div>
+          <div className="content">
+            <p>{_i18n.t('如果你已经安装了 Everest，但 CeleMod 没有正确识别，可以在这里手动填写版本号。')}</p>
+            <p>{_i18n.t('注意：如果实际上没有安装 Everest，就无法通过 Mod 方式启动游戏。')}</p>
+            <input
+              type="text"
+              value={manualVersion}
+              placeholder={_i18n.t('例如 4000')}
+              onInput={(e) => setManualVersion((e.target as HTMLInputElement).value)}
+            />
+          </div>
+          <div className="buttons">
+            <button onClick={hide}>{_i18n.t('取消')}</button>
+            <button
+              onClick={() => {
+                const version = manualVersion.trim();
+                if (!version) return;
+                setCurrentEverestVersion(version);
+                hide();
+              }}
+            >
+              {_i18n.t('确认')}
+            </button>
+          </div>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="everest">
       <img src={everest} alt="" srcset="" width={300} />
@@ -157,6 +194,9 @@ export const Everest = () => {
         ) : (
           <span className="ti">{_i18n.t('未安装 Everest')}</span>
         )}
+      </div>
+      <div className="manual-everest-version" onClick={showManualVersionPopup}>
+        {_i18n.t('我已安装 Everest，但未显示')}
       </div>
       {installingUrl === null ? (
         <Fragment>

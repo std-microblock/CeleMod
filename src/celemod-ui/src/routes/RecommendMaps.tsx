@@ -21,8 +21,8 @@ import { useState } from 'react';
 import { useGlobalContext } from 'src/App';
 
 export const RecommendMaps = () => {
-  // const noEverest = enforceEverest();
-  // if (noEverest) return noEverest;
+  const noEverest = enforceEverest();
+  if (noEverest) return noEverest;
 
   const { installedMods } = useInstalledMods();
   const [autoDisableNewMods] = useAutoDisableNewMods();
