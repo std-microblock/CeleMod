@@ -41,7 +41,7 @@ export const Multiplayer = () => {
           other: _i18n.t('蔚蓝群服联机 Mod'),
           downloadUrl: () =>
             Promise.resolve(
-              'https://celeste.voidsd.top/mods/miaonet/latest'
+              'https://celeste.weg.fan/api/v2/download/mods/MiaoNet'
             ),
           previewUrl:
             'https://images.gamebanana.com/img/Webpage/Game/Profile/Background/5b05699bd0a6b.jpg',

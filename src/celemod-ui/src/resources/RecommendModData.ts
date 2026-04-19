@@ -8,10 +8,10 @@ export const _functionalMods = () =>
         'https://celeste.weg.fan/api/v2/download/mods/CollabLobbyUI',
     },
     {
-      name: 'MiaoCelesteNet',
+      name: 'MiaoNet+',
       description: _i18n.t('群服联机'),
       download_url:
-        'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client',
+        'https://celeste.weg.fan/api/v2/download/mods/MiaoNet',
       visible: (lang) => lang === 'zh-CN',
     },
     {
