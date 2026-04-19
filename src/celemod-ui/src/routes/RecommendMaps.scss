@@ -6,7 +6,7 @@
     overflow-y: scroll;
     // white-space: nowrap;
     // height: 100vh;
-    width: 900px;
+    width: 800px;
     height: calc(100vh - 140px);
   }
   .collab {
@@ -22,7 +22,7 @@
     html:not([lang="zh-CN"]) & {
         height: 490px;
     }
-    width: 350px;
+    width: 330px;
     background-color: theme.$bg1;
 
     border: 1px solid theme.$bg2;
