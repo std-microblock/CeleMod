@@ -8,7 +8,7 @@ export const _functionalMods = () =>
         'https://celeste.weg.fan/api/v2/download/mods/CollabLobbyUI',
     },
     {
-      name: 'MiaoNet+',
+      name: 'MiaoNet',
       description: _i18n.t('群服联机'),
       download_url:
         'https://celeste.weg.fan/api/v2/download/mods/MiaoNet',
@@ -21,6 +21,11 @@ export const _functionalMods = () =>
         'https://celeste.weg.fan/api/v2/download/mods/CelesteNet.Client',
       visible: (lang) => lang !== 'zh-CN',
       exclude_from_download_all: true,
+    },
+    {
+      name: 'CelesteEmojis',
+      description: _i18n.t('为聊天框加入了更多可用的 Emoji'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/CelesteEmojis',
     },
     {
       name: _i18n.t('蔚蓝Mod中国镜像'),
@@ -51,12 +56,14 @@ export const _functionalMods = () =>
       name: 'Celeste Randomizer',
       description: _i18n.t('生成随机地图，可用于联机'),
       download_url: 'https://celeste.weg.fan/api/v2/download/mods/Randomizer',
+      exclude_from_download_all: true,
     },
     {
       name: 'Randomizer Chinese Lang Pack',
       description: _i18n.t('随机地图菜单中文翻译'),
       download_url:
         'https://celeste.weg.fan/api/v2/download/mods/RandomizerChineseLangPack',
+      exclude_from_download_all: true,
     },
     {
       name: 'Helper Test Map Hider',
@@ -73,12 +80,29 @@ export const _functionalMods = () =>
       name: 'Death Markers',
       description: _i18n.t('标记每次死亡的位置'),
       download_url: 'https://celeste.weg.fan/api/v2/download/mods/DeathMarkers',
+      exclude_from_download_all: true,
+    },
+    {
+      name: 'Golden QOL',
+      description: _i18n.t('添加了一些炼金相关实用功能 (例如带金死亡后不直接重开)'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/Golden%20QOL',
+      exclude_from_download_all: true,
+    },
+    {
+      name: 'Think Twice Before Retry (TTBR)',
+      description: _i18n.t('在携带金草莓时为 "重试" 功能添加了二次确认'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/ThinkTwiceBeforeRetry',
     },
     {
       name: 'Celeste Input History',
       description: _i18n.t('显示按键输入历史'),
       download_url: 'https://celeste.weg.fan/api/v2/download/mods/InputHistory',
       exclude_from_download_all: true,
+    },
+    {
+      name: 'Input Display',
+      description: _i18n.t('按键映射, 不过没 Celeste Input History 那么挡屏幕'),
+      download_url: 'https://celeste.weg.fan/api/v2/download/mods/InputDisplay',
     },
     {
       name: 'Stamina Meter',
@@ -109,13 +133,13 @@ export const _functionalMods = () =>
       description: _i18n.t('鼠标操控'),
       download_url:
         'https://celeste.weg.fan/api/v2/download/mods/MouseControls',
+      exclude_from_download_all: true,
     },
     {
       name: 'Better Refill Gems',
       description: _i18n.t('给一次性水晶加上红色边框'),
       download_url:
         'https://celeste.weg.fan/api/v2/download/mods/BetterRefillGems',
-      exclude_from_download_all: true,
     },
     {
       name: 'Better Ice Walls',
