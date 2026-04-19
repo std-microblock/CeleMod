@@ -36,12 +36,12 @@ export const Multiplayer = () => {
 
       <Mod
         mod={{
-          name: 'Celeste.Miao.Net',
-          author: 'MiaoWoo',
+          name: 'MiaoNet+',
+          author: 'Saplonily',
           other: _i18n.t('蔚蓝群服联机 Mod'),
           downloadUrl: () =>
             Promise.resolve(
-              'https://celeste.weg.fan/api/v2/download/mods/Miao.CelesteNet.Client'
+              'https://celeste.voidsd.top/mods/miaonet/latest'
             ),
           previewUrl:
             'https://images.gamebanana.com/img/Webpage/Game/Profile/Background/5b05699bd0a6b.jpg',
