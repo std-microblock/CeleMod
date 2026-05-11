@@ -1,15 +1,15 @@
 use crate::{ureq, wegfan};
 
-use anyhow::bail;
+use ::ureq::get;
+use anyhow::{Context, bail};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use ::ureq::get;
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -101,8 +101,8 @@ static MAGIC_STR: &str = "EverestBuild";
 static MAGIC_STR_ONLY_ORIGIN_EXE: &str = "_StarJumpEnd+<StartCirclingPlayer>";
 
 pub fn get_everest_version(game_path: &str) -> Option<i32> {
-    fn check_file(path: String) -> Option<i32> {
-        println!("Checking {path}");
+    fn check_file(path: PathBuf) -> Option<i32> {
+        println!("Checking {}", path.display());
         let buf = std::fs::read(path).ok()?;
         let str = unsafe { std::str::from_utf8_unchecked(&buf) };
         let pos = str.find(MAGIC_STR);
@@ -116,16 +116,18 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         Some(str)
     }
 
-    check_file(game_path.to_owned() + "/Celeste.exe")
+    let game_path = resolve_everest_install_path(Path::new(game_path));
+
+    check_file(game_path.join("Celeste.exe"))
         .or_else(|| {
-            if let Ok(data) = std::fs::read(game_path.to_owned() + "/Celeste.exe")
+            if let Ok(data) = std::fs::read(game_path.join("Celeste.exe"))
                 && data
                     .windows(MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes().len())
                     .any(|window| window == MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes())
             {
                 None
             } else {
-                check_file(game_path.to_owned() + "/Celeste.dll")
+                check_file(game_path.join("Celeste.dll"))
             }
         })
         .or(None)
@@ -139,7 +141,6 @@ fn run_command(
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
     const CREATE_NO_WINDOW: u32 = 0x08000000;
-    const DETACHED_PROCESS: u32 = 0x00000008;
     #[cfg(target_os = "windows")]
     use std::os::windows::process::CommandExt;
     #[cfg(target_os = "windows")]
@@ -151,9 +152,38 @@ fn run_command(
             .ok_or_else(|| anyhow::anyhow!("Invalid installer path"))?,
     );
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let metadata = std::fs::metadata(&installer_path)?;
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(permissions.mode() | 0o755);
+        std::fs::set_permissions(&installer_path, permissions)?;
+    }
+
     let mut child = cmd.spawn()?;
-    let stdout = child.stdout.take().unwrap();
+    let stdout = child
+        .stdout
+        .take()
+        .context("Failed to capture installer stdout")?;
+    let stderr = child
+        .stderr
+        .take()
+        .context("Failed to capture installer stderr")?;
     let reader = BufReader::new(stdout);
+    let stderr_handle = std::thread::spawn(move || {
+        let mut lines = Vec::new();
+        for line in BufReader::new(stderr).lines() {
+            match line {
+                Ok(line) => lines.push(line),
+                Err(err) => {
+                    lines.push(format!("Failed to read installer stderr: {err}"));
+                    break;
+                }
+            }
+        }
+        lines
+    });
 
     let mut line_count = 50f32;
     for line in reader.lines() {
@@ -162,15 +192,56 @@ fn run_command(
         progress_callback(line, line_count);
     }
 
-    let output = child.wait_with_output()?;
+    let status = child.wait()?;
+    let stderr = stderr_handle
+        .join()
+        .unwrap_or_else(|_| vec!["Failed to join installer stderr reader".to_string()])
+        .join("\n");
 
-    let stderr = String::from_utf8(output.stderr)?;
-
-    if !output.status.success() {
+    if !status.success() {
         bail!("Command failed with error: {}", stderr);
     }
 
     Ok(())
+}
+
+fn resolve_everest_install_path(game_path: &Path) -> PathBuf {
+    #[cfg(target_os = "macos")]
+    {
+        let bundled_resources = game_path
+            .join("Celeste.app")
+            .join("Contents")
+            .join("Resources");
+        if bundled_resources.exists() {
+            return bundled_resources;
+        }
+
+        let resources = game_path.join("Contents").join("Resources");
+        if resources.exists() {
+            return resources;
+        }
+    }
+
+    game_path.to_path_buf()
+}
+
+#[cfg(target_os = "windows")]
+fn installer_name() -> anyhow::Result<&'static str> {
+    match std::env::consts::ARCH {
+        "x86_64" => Ok("MiniInstaller-win64.exe"),
+        "x86" => Ok("MiniInstaller-win.exe"),
+        arch => bail!("Unsupported Windows architecture: {arch}"),
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn installer_name() -> anyhow::Result<&'static str> {
+    Ok("MiniInstaller-osx")
+}
+
+#[cfg(target_os = "linux")]
+fn installer_name() -> anyhow::Result<&'static str> {
+    Ok("MiniInstaller-linux")
 }
 
 pub fn download_and_install_everest(
@@ -181,10 +252,8 @@ pub fn download_and_install_everest(
     let generate_backup = false;
 
     let temp_path = std::env::temp_dir().join("everest.zip");
-    let game_path = std::path::Path::new(game_path);
-
     let temp_path = temp_path.to_str().unwrap();
-    let game_path = game_path.to_str().unwrap();
+    let game_path = resolve_everest_install_path(std::path::Path::new(game_path));
     let cancel_flag = Arc::new(AtomicBool::new(false));
 
     ureq::download_file_with_progress(
@@ -203,19 +272,16 @@ pub fn download_and_install_everest(
     let mut archive = zip::ZipArchive::new(std::fs::File::open(temp_path)?)?;
     let archive_len = archive.len();
 
-    let backup_dir = std::path::Path::new(game_path).join("backup");
+    let backup_dir = game_path.join("backup");
 
     for i in 0..archive_len {
         let mut file = archive.by_index(i)?;
         let dist_name = file.mangled_name();
         // strip /main/ from the name
         let dist_name = dist_name.strip_prefix("main/")?;
-        let outpath = std::path::Path::new(game_path).join(dist_name);
+        let outpath = game_path.join(dist_name);
         let status_str = format!("Extracting {}", outpath.display());
-        progress_callback(
-            status_str,
-            (i as f32) / (archive_len as f32) / 2f32 * 100f32,
-        );
+        progress_callback(status_str, 50.0 + (i as f32) / (archive_len as f32) * 40.0);
         if file.name().ends_with('/') {
             std::fs::create_dir_all(&outpath)?;
         } else {
@@ -235,22 +301,12 @@ pub fn download_and_install_everest(
 
             let mut outfile = std::fs::File::create(&outpath)?;
             std::io::copy(&mut file, &mut outfile)?;
+            outfile.flush()?;
         }
     }
 
-    let target = match std::env::consts::ARCH {
-        "x86_64" => "win-x64",
-        "x86" => "win-x86",
-        _ => unimplemented!("Unsupported target"),
-    };
-
-    let installer_name = match target {
-        "win-x64" => "MiniInstaller-win64.exe",
-        "win-x86" => "MiniInstaller-win.exe",
-        _ => unimplemented!("Unsupported target"),
-    };
-
-    let installer_path = std::path::Path::new(game_path).join(installer_name);
+    progress_callback("Running Everest installer".to_string(), 90.0);
+    let installer_path = game_path.join(installer_name()?);
 
     run_command(installer_path, progress_callback)
 }
