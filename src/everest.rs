@@ -1,15 +1,20 @@
 use crate::{ureq, wegfan};
 
+#[cfg(target_os = "windows")]
 use anyhow::bail;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use ::ureq::get;
 use std::{
     collections::HashMap,
-    io::{BufRead, BufReader},
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
+    path::Path,
     sync::{atomic::AtomicBool, Arc},
+};
+#[cfg(target_os = "windows")]
+use std::{
+    io::{BufRead, BufReader},
+    path::PathBuf,
+    process::{Command, Stdio},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -131,6 +136,7 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         .or(None)
 }
 
+#[cfg(target_os = "windows")]
 fn run_command(
     installer_path: PathBuf,
     progress_callback: &mut dyn FnMut(String, f32),
@@ -238,19 +244,24 @@ pub fn download_and_install_everest(
         }
     }
 
-    let target = match std::env::consts::ARCH {
-        "x86_64" => "win-x64",
-        "x86" => "win-x86",
-        _ => unimplemented!("Unsupported target"),
-    };
+    #[cfg(target_os = "windows")]
+    {
+        let target = match std::env::consts::ARCH {
+            "x86_64" => "win-x64",
+            "x86" => "win-x86",
+            _ => unimplemented!("Unsupported target"),
+        };
 
-    let installer_name = match target {
-        "win-x64" => "MiniInstaller-win64.exe",
-        "win-x86" => "MiniInstaller-win.exe",
-        _ => unimplemented!("Unsupported target"),
-    };
+        let installer_name = match target {
+            "win-x64" => "MiniInstaller-win64.exe",
+            "win-x86" => "MiniInstaller-win.exe",
+            _ => unimplemented!("Unsupported target"),
+        };
 
-    let installer_path = std::path::Path::new(game_path).join(installer_name);
+        let installer_path = std::path::Path::new(game_path).join(installer_name);
 
-    run_command(installer_path, progress_callback)
+        run_command(installer_path, progress_callback)?;
+    }
+
+    Ok(())
 }
