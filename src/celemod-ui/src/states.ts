@@ -141,7 +141,7 @@ const createPersistedStateByKey = <T>(key: string, defaultValue: T) => createPer
 export const [initMirror, useMirror, currentMirror] = createPersistedStateByKey('mirror', 'wegfan')
 export const [initGamePath, useGamePath] = createPersistedState<string>('', storage => {
     if (storage?.root?.lastGamePath)
-        return storage.root.lastGamePath
+        return callRemote("normalize_game_path", storage.root.lastGamePath)
     const paths = callRemote("get_celeste_dirs").split("\n").filter((v: string | null) => v);
     return paths[0]
 }, (storage, data, save) => {

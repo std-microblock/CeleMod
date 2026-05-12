@@ -134,7 +134,11 @@ export const selectGamePath = (successCallback) => {
     // strip file:// and Celeste.exe
     const prefix = "file://".length;
     const decoded = decodeURI(res);
-    const path = dirname(decoded.slice(prefix));
+    const path = callRemote("normalize_game_path", dirname(decoded.slice(prefix)));
+    if (!callRemote("verify_celeste_install", path)) {
+      alert("Invalid Celeste install path.");
+      return;
+    }
     console.log("Selected", path);
     successCallback(path);
     return path;

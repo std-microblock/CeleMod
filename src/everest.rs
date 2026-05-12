@@ -116,7 +116,7 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         Some(str)
     }
 
-    let game_path = resolve_everest_install_path(Path::new(game_path));
+    let game_path = Path::new(game_path);
 
     check_file(game_path.join("Celeste.exe"))
         .or_else(|| {
@@ -205,26 +205,6 @@ fn run_command(
     Ok(())
 }
 
-fn resolve_everest_install_path(game_path: &Path) -> PathBuf {
-    #[cfg(target_os = "macos")]
-    {
-        let bundled_resources = game_path
-            .join("Celeste.app")
-            .join("Contents")
-            .join("Resources");
-        if bundled_resources.exists() {
-            return bundled_resources;
-        }
-
-        let resources = game_path.join("Contents").join("Resources");
-        if resources.exists() {
-            return resources;
-        }
-    }
-
-    game_path.to_path_buf()
-}
-
 #[cfg(target_os = "windows")]
 fn installer_name() -> anyhow::Result<&'static str> {
     match std::env::consts::ARCH {
@@ -253,7 +233,7 @@ pub fn download_and_install_everest(
 
     let temp_path = std::env::temp_dir().join("everest.zip");
     let temp_path = temp_path.to_str().unwrap();
-    let game_path = resolve_everest_install_path(std::path::Path::new(game_path));
+    let game_path = std::path::Path::new(game_path);
     let cancel_flag = Arc::new(AtomicBool::new(false));
 
     ureq::download_file_with_progress(

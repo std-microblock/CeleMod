@@ -5,7 +5,6 @@
 use serde::{Deserialize, Serialize};
 
 use anyhow::{Context, bail};
-use ureq::DownloadCallbackInfo;
 use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
@@ -14,8 +13,12 @@ use std::{
     fs,
     io::Read,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+    },
 };
+use ureq::DownloadCallbackInfo;
 
 static TEST_MODE: AtomicBool = AtomicBool::new(false);
 
@@ -44,9 +47,9 @@ lazy_static::lazy_static! {
     static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
 }
 
-mod ureq;
 mod blacklist;
 mod everest;
+mod ureq;
 mod wegfan;
 
 #[macro_use]
@@ -123,7 +126,13 @@ fn get_invalid_zip_mod_files(mods_folder_path: &str) -> Vec<String> {
     entries
         .filter_map(|entry| entry.ok())
         .filter(|entry| entry.file_type().map(|v| v.is_file()).unwrap_or(false))
-        .filter(|entry| entry.path().extension().map(|v| v == "zip").unwrap_or(false))
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .map(|v| v == "zip")
+                .unwrap_or(false)
+        })
         .filter(|entry| !is_valid_zip_archive(&entry.path()))
         .filter_map(|entry| entry.file_name().into_string().ok())
         .collect()
@@ -237,12 +246,23 @@ fn delete_mod_files(mods_folder_path: &str, file_names: &[String]) -> anyhow::Re
     Ok(())
 }
 
-fn download_mod_archive(url: &str, dest: &str, progress_callback: &mut dyn FnMut(DownloadCallbackInfo), multi_thread: bool) -> anyhow::Result<()> {
+fn download_mod_archive(
+    url: &str,
+    dest: &str,
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    multi_thread: bool,
+) -> anyhow::Result<()> {
     let cancel_flag = Arc::new(AtomicBool::new(false));
     download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, &cancel_flag)
 }
 
-fn download_mod_archive_with_cancel(url: &str, dest: &str, progress_callback: &mut dyn FnMut(DownloadCallbackInfo), multi_thread: bool, cancel_flag: &Arc<AtomicBool>) -> anyhow::Result<()> {
+fn download_mod_archive_with_cancel(
+    url: &str,
+    dest: &str,
+    progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
+    multi_thread: bool,
+    cancel_flag: &Arc<AtomicBool>,
+) -> anyhow::Result<()> {
     let tmp_dir = std::env::temp_dir().join("CelemodTemp").join("mods");
     std::fs::create_dir_all(&tmp_dir)?;
 
@@ -326,8 +346,14 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mut mods = Vec::new();
     let mod_data = get_mod_cached_new().unwrap();
 
-    for entry in fs::read_dir(mods_folder_path).unwrap() {
-        let entry = entry.unwrap();
+    let Ok(entries) = fs::read_dir(mods_folder_path) else {
+        return mods;
+    };
+
+    for entry in entries {
+        let Ok(entry) = entry else {
+            continue;
+        };
         println!("Checking mod entry: {:?}", entry.file_name());
         let res: anyhow::Result<_> = try {
             if false {
@@ -508,6 +534,91 @@ fn get_celestes() -> Vec<Game> {
     games
 }
 
+fn normalize_game_path(path: &str) -> String {
+    normalize_game_path_buf(Path::new(path))
+        .to_string_lossy()
+        .to_string()
+}
+
+fn normalize_game_path_buf(path: &Path) -> PathBuf {
+    #[cfg(target_os = "macos")]
+    {
+        fn has_game_artifact(path: &Path) -> bool {
+            path.join("Celeste.exe").is_file()
+                || path.join("Celeste.dll").is_file()
+                || path.join("Celeste").is_file()
+        }
+
+        fn is_named(path: &Path, name: &str) -> bool {
+            path.file_name().and_then(|v| v.to_str()) == Some(name)
+        }
+
+        fn resources_if_valid(path: PathBuf) -> Option<PathBuf> {
+            if path.is_dir()
+                && (has_game_artifact(&path)
+                    || path
+                        .parent()
+                        .map(|contents| contents.join("MacOS").join("Celeste").is_file())
+                        .unwrap_or(false))
+            {
+                Some(path)
+            } else {
+                None
+            }
+        }
+
+        let path = if path.is_file() {
+            path.parent().unwrap_or(path)
+        } else {
+            path
+        };
+
+        if is_named(path, "Resources") {
+            if let Some(resources) = resources_if_valid(path.to_path_buf()) {
+                return resources;
+            }
+        }
+
+        if is_named(path, "MacOS") {
+            if let Some(contents) = path.parent() {
+                if let Some(resources) = resources_if_valid(contents.join("Resources")) {
+                    return resources;
+                }
+            }
+        }
+
+        if is_named(path, "Contents") {
+            if let Some(resources) = resources_if_valid(path.join("Resources")) {
+                return resources;
+            }
+        }
+
+        if path.extension().and_then(|v| v.to_str()) == Some("app") {
+            if let Some(resources) = resources_if_valid(path.join("Contents").join("Resources")) {
+                return resources;
+            }
+        }
+
+        if let Some(resources) =
+            resources_if_valid(path.join("Celeste.app").join("Contents").join("Resources"))
+        {
+            return resources;
+        }
+
+        if has_game_artifact(path) {
+            if let Some(parent) = path.parent() {
+                if is_named(parent, "Contents") {
+                    if let Some(resources) = resources_if_valid(parent.join("Resources")) {
+                        return resources;
+                    }
+                }
+            }
+        }
+    }
+
+    path.to_path_buf()
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 enum DownloadStatus {
     Waiting,
@@ -543,6 +654,10 @@ impl Handler {
         _use_cn_proxy: bool,
         multi_thread: bool,
     ) {
+        if let Err(e) = std::fs::create_dir_all(&mods_dir) {
+            eprintln!("Failed to create mods dir {}: {}", mods_dir, e);
+        }
+
         let dest = Path::new(&mods_dir)
             .join(make_path_compatible_name(&name) + ".zip")
             .to_str()
@@ -585,7 +700,11 @@ impl Handler {
                 Err(e) => {
                     eprintln!("Failed to get mod data: {}", e);
                     callback
-                        .call(None, &make_args!(format!("Failed to get mod data: {}", e)), None)
+                        .call(
+                            None,
+                            &make_args!(format!("Failed to get mod data: {}", e)),
+                            None,
+                        )
                         .unwrap();
                     return;
                 }
@@ -600,7 +719,8 @@ impl Handler {
             let post_callback: Arc<dyn Fn(&Vec<DownloadInfo>, &str) + Send + Sync> = {
                 let sync_cb = Arc::clone(&sync_cb);
                 Arc::new(move |tasklist: &Vec<DownloadInfo>, state: &str| {
-                    sync_cb.0
+                    sync_cb
+                        .0
                         .call(
                             None,
                             &make_args!(serde_json::to_string(tasklist).unwrap(), state),
@@ -679,7 +799,8 @@ impl Handler {
                                 deps.into_iter()
                                     .filter_map(|(dep, min_ver)| {
                                         if installed_mods.iter().any(|m| {
-                                            m.name == dep && compare_version(&m.version, &min_ver) >= 0
+                                            m.name == dep
+                                                && compare_version(&m.version, &min_ver) >= 0
                                         }) {
                                             return None;
                                         }
@@ -847,29 +968,53 @@ impl Handler {
         }
         get_celestes()
             .iter()
-            .map(|game| game.path.clone().unwrap().to_str().unwrap().to_string())
+            .map(|game| normalize_game_path_buf(&game.path.clone().unwrap()))
+            .map(|path| path.to_string_lossy().to_string())
             .collect::<Vec<String>>()
             .join("\n")
     }
 
     fn start_game(&self, path: String) {
+        let path = normalize_game_path(&path);
         let celestes = get_celestes();
-        let game = celestes
-            .iter()
-            .find(|game| game.path.clone().unwrap().to_str().unwrap() == path)
-            .unwrap();
-        game_scanner::manager::launch_game(game).unwrap();
+        if let Some(game) = celestes.iter().find(|game| {
+            normalize_game_path_buf(&game.path.clone().unwrap())
+                .to_string_lossy()
+                .to_string()
+                == path
+        }) {
+            game_scanner::manager::launch_game(game).unwrap();
+        } else {
+            self.start_game_directly(path, false);
+        }
     }
 
     fn start_game_directly(&self, path: String, origin: bool) {
+        let path = normalize_game_path(&path);
+        let path = Path::new(&path);
+
         #[cfg(windows)]
-        let file = "Celeste.exe";
+        let game = path.join("Celeste.exe");
 
-        #[cfg(unix)]
-        let file = "Celeste";
+        #[cfg(all(unix, not(target_os = "macos")))]
+        let game = path.join("Celeste");
 
-        let game = Path::new(&path).join(file);
-        let game_origin = Path::new(&path).join("orig").join(file);
+        #[cfg(target_os = "macos")]
+        let game = {
+            let direct = path.join("Celeste");
+            if direct.exists() {
+                direct
+            } else if path.file_name().and_then(|name| name.to_str()) == Some("Resources") {
+                path.parent().unwrap_or(path).join("MacOS").join("Celeste")
+            } else {
+                direct
+            }
+        };
+
+        let game_origin = path.join("orig").join(
+            game.file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("Celeste")),
+        );
 
         if origin {
             if game_origin.exists() {
@@ -948,6 +1093,7 @@ impl Handler {
 
     fn get_blacklist_profiles(&self, game_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
+            let game_path = normalize_game_path(&game_path);
             let profiles = blacklist::get_mod_blacklist_profiles(&game_path);
             callback
                 .call(
@@ -965,6 +1111,7 @@ impl Handler {
         profile_name: String,
         always_on_mods: String,
     ) -> String {
+        let game_path = normalize_game_path(&game_path);
         let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap();
         let result =
             blacklist::apply_mod_blacklist_profile(&game_path, &profile_name, &always_on_mods);
@@ -984,6 +1131,7 @@ impl Handler {
         mod_files: String,
         enabled: bool,
     ) -> String {
+        let game_path = normalize_game_path(&game_path);
         let mod_names: Vec<String> = serde_json::from_str(&mod_names).unwrap();
         let mod_files: Vec<String> = serde_json::from_str(&mod_files).unwrap();
         let mods: Vec<(&String, &String)> = mod_names.iter().zip(mod_files.iter()).collect();
@@ -999,6 +1147,7 @@ impl Handler {
     }
 
     fn new_mod_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
+        let game_path = normalize_game_path(&game_path);
         let result = blacklist::new_mod_blacklist_profile(&game_path, &profile_name);
         if let Err(e) = result {
             eprintln!("Failed to create blacklist profile: {}", e);
@@ -1009,6 +1158,7 @@ impl Handler {
     }
 
     fn get_current_profile(&self, game_path: String) -> String {
+        let game_path = normalize_game_path(&game_path);
         let result = blacklist::get_current_profile(&game_path);
         if let Err(e) = result {
             eprintln!("Failed to get current profile: {}", e);
@@ -1019,6 +1169,7 @@ impl Handler {
     }
 
     fn remove_mod_blacklist_profile(&self, game_path: String, profile_name: String) -> String {
+        let game_path = normalize_game_path(&game_path);
         let result = blacklist::remove_mod_blacklist_profile(&game_path, &profile_name);
         if let Err(e) = result {
             eprintln!("Failed to remove blacklist profile: {}", e);
@@ -1029,6 +1180,7 @@ impl Handler {
     }
 
     fn get_current_blacklist_content(&self, game_path: String) -> String {
+        let game_path = normalize_game_path(&game_path);
         let result = blacklist::get_current_blacklist_content(&game_path);
         if let Err(e) = result {
             eprintln!("Failed to get current blacklist content: {}", e);
@@ -1100,6 +1252,7 @@ impl Handler {
     }
 
     fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
+        let game_path = normalize_game_path(&game_path);
         let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
         if let Err(e) = result {
             eprintln!("Failed to sync blacklist profile: {}", e);
@@ -1109,7 +1262,13 @@ impl Handler {
         }
     }
 
-    fn set_mod_options_order(&self, game_path: String, profile_name: String, order_json: String) -> String {
+    fn set_mod_options_order(
+        &self,
+        game_path: String,
+        profile_name: String,
+        order_json: String,
+    ) -> String {
+        let game_path = normalize_game_path(&game_path);
         let order: Vec<String> = match serde_json::from_str(&order_json) {
             Ok(v) => v,
             Err(e) => return format!("Failed to parse order: {}", e),
@@ -1183,6 +1342,7 @@ impl Handler {
 
     fn delete_mods(&self, game_path: String, mod_names: String, callback: sciter::Value) {
         std::thread::spawn(move || {
+            let game_path = normalize_game_path(&game_path);
             let mods_folder_path = Path::new(&game_path)
                 .join("Mods")
                 .to_string_lossy()
@@ -1208,7 +1368,12 @@ impl Handler {
         });
     }
 
-    fn delete_mod_files(&self, mods_folder_path: String, file_names: String, callback: sciter::Value) {
+    fn delete_mod_files(
+        &self,
+        mods_folder_path: String,
+        file_names: String,
+        callback: sciter::Value,
+    ) {
         std::thread::spawn(move || {
             let file_names: Vec<String> = serde_json::from_str(&file_names).unwrap_or_default();
             let result = match delete_mod_files(&mods_folder_path, &file_names) {
@@ -1225,6 +1390,7 @@ impl Handler {
             let version = if is_test_mode() {
                 "4000".to_string()
             } else {
+                let game_path = normalize_game_path(&game_path);
                 everest::get_everest_version(&game_path)
                     .map(|v| v.to_string())
                     .unwrap_or_default()
@@ -1244,6 +1410,7 @@ impl Handler {
                 callback.call(None, &make_args!("Success"), None).unwrap();
                 return;
             }
+            let game_path = normalize_game_path(&game_path);
             let callback2 = callback.clone();
             match everest::download_and_install_everest(&game_path, &url, &mut |msg, progress| {
                 callback
@@ -1312,14 +1479,30 @@ impl Handler {
         if is_test_mode() && path == get_test_game_path().to_string_lossy() {
             return true;
         }
+        let path = normalize_game_path(&path);
         let path = Path::new(&path);
-        let checklist = vec!["Celeste.exe", "Celeste"];
+        let checklist = vec!["Celeste.exe", "Celeste", "Celeste.dll"];
         for file in checklist {
             if path.join(file).exists() {
                 return true;
             }
         }
+        #[cfg(target_os = "macos")]
+        {
+            if path.file_name().and_then(|name| name.to_str()) == Some("Resources")
+                && path
+                    .parent()
+                    .map(|contents| contents.join("MacOS").join("Celeste").exists())
+                    .unwrap_or(false)
+            {
+                return true;
+            }
+        }
         false
+    }
+
+    fn normalize_game_path(&self, path: String) -> String {
+        normalize_game_path(&path)
     }
 
     fn show_log_window(&self) {
@@ -1365,6 +1548,7 @@ impl sciter::EventHandler for Handler {
         fn do_self_update(String, Value);
         fn start_game_directly(String, bool);
         fn verify_celeste_install(String);
+        fn normalize_game_path(String);
         fn get_mod_latest_info(Value);
         fn show_log_window();
         fn get_current_blacklist_content(String);
@@ -1489,20 +1673,19 @@ fn main() {
     #[cfg(not(target_os = "windows"))]
     const INDEX_HTML: &str = "index.html";
 
-
     #[cfg(debug_assertions)]
     frame.load_html(
         read_to_string_bom(Path::new("../../src/celemod-ui/debug_index.html"))
             .unwrap()
-            .as_bytes(), Some(
-                &format!("app://{}", INDEX_HTML)
-            ));
+            .as_bytes(),
+        Some(&format!("app://{}", INDEX_HTML)),
+    );
     #[cfg(not(debug_assertions))]
     {
         frame
             .archive_handler(include_bytes!("../resources/dist.rc"))
             .unwrap();
-        
+
         frame.load_file(&format!("this://app/{}", INDEX_HTML));
     }
 
