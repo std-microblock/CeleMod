@@ -1418,7 +1418,7 @@ impl Handler {
                     .unwrap();
             }) {
                 Ok(()) => {
-                    callback2.call(None, &make_args!("Success"), None).unwrap();
+                    callback2.call(None, &make_args!("Success", 100.0), None).unwrap();
                 }
                 Err(e) => {
                     callback2

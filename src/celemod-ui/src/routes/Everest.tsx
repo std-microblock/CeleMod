@@ -106,7 +106,7 @@ export const Everest = () => {
     setInstallingUrl(url);
     setInstallProgress(null);
     setFailedReason(null);
-    setInstallState('Downloading Everest');
+    setInstallState('[1/3] Download Everest');
     callRemote(
       'download_and_install_everest',
       gamePath,
@@ -284,7 +284,7 @@ export const Everest = () => {
                   />
                 </div>
                 <div className="tip">
-                  {installState === 'Downloading Everest'
+                  {installState?.startsWith('[1/3]')
                     ? _i18n.t('正在下载')
                     : _i18n.t('正在安装')}
                 </div>
