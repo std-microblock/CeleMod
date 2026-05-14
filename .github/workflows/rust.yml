@@ -3,7 +3,7 @@ name: Rust
 on:
   workflow_dispatch:
   push:
-    branches: [ "master", "fix-mac-install" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
   release:
@@ -13,10 +13,34 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-windows:
+  build-ui:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: yarn
+        cache-dependency-path: src/celemod-ui/yarn.lock
+    - name: Install UI dependencies
+      working-directory: src/celemod-ui
+      run: yarn install --frozen-lockfile
+    - name: Build UI resources
+      working-directory: src/celemod-ui
+      run: yarn build
+    - uses: actions/upload-artifact@v4.3.1
+      with:
+        name: ui-dist
+        path: resources/dist.rc
+  build-windows:
+    needs: build-ui
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v4
+      with:
+        name: ui-dist
+        path: resources
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -38,6 +62,7 @@ jobs:
         name: windows-zip
         path: celemod-windows.zip
   build-linux:
+    needs: build-ui
     runs-on: ubuntu-22.04
     steps:
     - name: Install dependencies
@@ -53,6 +78,10 @@ jobs:
           libgtk-3-dev \
           file
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v4
+      with:
+        name: ui-dist
+        path: resources
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
@@ -128,6 +157,7 @@ jobs:
         name: linux-appimage
         path: celemod-linux.AppImage
   build-macos:
+    needs: build-ui
     runs-on: macos-latest
     steps:
     - name: Install dependencies
@@ -137,6 +167,10 @@ jobs:
         brew install protobuf
         brew install create-dmg
     - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v4
+      with:
+        name: ui-dist
+        path: resources
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
