@@ -32,6 +32,22 @@ interface Maddie480EverestVersion {
   isNative: boolean;
 }
 
+const getInstallTip = (state: string | null) => {
+  if (state?.startsWith('[1/3]')) return '正在下载';
+  if (state?.startsWith('[2/3]')) return '正在解压';
+  return '正在安装';
+};
+
+const getInstallDetail = (state: string | null) => {
+  if (!state) return null;
+  return state
+    .replace(/^\[\d+\/\d+\]\s*/, '')
+    .replace(/^Download Everest:?/i, '')
+    .replace(/^Extract Everest files:?/i, '')
+    .replace(/^Run MiniInstaller:?/i, '')
+    .trim();
+};
+
 const Channel = ({
   dataFull,
   branch,
@@ -283,13 +299,11 @@ export const Everest = () => {
                       })}
                   />
                 </div>
-                <div className="tip">
-                  {installState?.startsWith('[1/3]')
-                    ? _i18n.t('正在下载')
-                    : _i18n.t('正在安装')}
-                </div>
+                <div className="tip">{getInstallTip(installState)}</div>
                 <div className="url">{installingUrl}</div>
-                <div className="state">{installState}</div>
+                {getInstallDetail(installState) ? (
+                  <div className="state">{getInstallDetail(installState)}</div>
+                ) : null}
               </Fragment>
             )}
           </div>

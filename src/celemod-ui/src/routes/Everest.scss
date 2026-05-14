@@ -135,9 +135,8 @@
         horizontal-align: center;
 
         .wrapperin {
-            padding-right: 20px;
-            padding-bottom: 10px;
-            font-size: 100px;
+            padding-bottom: 14px;
+            font-size: 88px;
         }
 
         &>* {
@@ -145,30 +144,33 @@
         }
 
         .tip {
-            font-size: 20px;
+            font-size: 34px;
             font-weight: 700;
-            margin-right: 20px;
+            margin-right: 0;
+            margin-bottom: 8px;
         }
 
         .url {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
-            margin-right: 12px;
-            max-width: 90%;
+            max-width: 78%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            opacity: 0.8;
+            opacity: 0.62;
         }
 
         .state {
-            font-size: 15px;
-            font-weight: 700;
-            margin-top: 10px;
-            padding-right: 20px;
-            width: 90%;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 8px;
+            width: 78%;
             text-align: center;
             horizontal-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0.72;
 
             textarea {
                 text-align: left;
