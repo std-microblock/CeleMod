@@ -32,6 +32,7 @@ export const Home = () => {
     const paths = callRemote('get_celeste_dirs')
       .split('\n')
       .filter((v: string | null) => v);
+    console.log('[path] Home get_celeste_dirs', { gamePath, paths });
     if (!gamePath && paths.length > 0) {
       // setGamePath(paths[0]);
     }
@@ -174,11 +175,17 @@ export const Home = () => {
             onSelect={(e: InputEvent) => {
               // @ts-ignore
               const value = e.target.value;
+              console.log('[path] Home GameSelector onSelect', {
+                previousGamePath: gamePath,
+                selectedValue: value,
+              });
               if (value === '__other__') {
                 // @ts-ignore
                 e.target.value = gamePath;
                 selectGamePath(setGamePath);
-              } else setGamePath(value);
+              } else {
+                setGamePath(value);
+              }
             }}
             launchGame={(v) => {
               lastUseMap[currentProfileName] = Date.now();

@@ -1,8 +1,9 @@
 name: Rust
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "fix-mac-install" ]
   pull_request:
     branches: [ "master" ]
   release:
