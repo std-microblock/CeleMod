@@ -13,18 +13,8 @@ export const GameSelector = (props: {
   const [gamePath] = useGamePath();
 
   if (!props.paths.includes(gamePath)) {
-    console.log('[path] GameSelector appending current gamePath to scanned paths', {
-      gamePath,
-      scannedPaths: props.paths,
-    });
     props.paths.push(gamePath);
   }
-
-  console.log('[path] GameSelector render', {
-    gamePath,
-    paths: props.paths,
-    selected: gamePath || props.paths[0],
-  });
 
   return (
     <div class="gameSelector">
@@ -60,13 +50,7 @@ export const GameSelector = (props: {
       <button
         style={{ marginLeft: 5, borderRadius: 4 }}
         onClick={() => {
-          const modsPath = (gamePath || props.paths[0]) + '/Mods';
-          console.log('[path] GameSelector open Mods folder', {
-            gamePath,
-            fallbackPath: props.paths[0],
-            modsPath,
-          });
-          callRemote('open_url', modsPath);
+          callRemote('open_url', (gamePath || props.paths[0]) + '/Mods');
         }}
       >
         {_i18n.t('Mods 文件夹')}

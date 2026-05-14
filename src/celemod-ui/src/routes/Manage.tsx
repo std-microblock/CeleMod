@@ -561,7 +561,6 @@ export const Manage = () => {
   const [autoDisableNewMods, setAutoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
   const modPath = gamePath + '/Mods';
-  console.log('[path] Manage render paths', { gamePath, modPath });
 
   const {
     profiles,
@@ -1127,9 +1126,7 @@ export const Manage = () => {
       currentProfile,
       currentProfileName,
       reloadMods() {
-        console.log('[path] Manage reloadMods', { gamePath, modPath });
         callRemote('get_installed_mods', modPath, (data: string) => {
-          console.log('[path] Manage reloadMods finished', { gamePath, modPath });
           setInstalledMods(JSON.parse(data));
         });
       },
@@ -1305,8 +1302,7 @@ export const Manage = () => {
           <div className="opers">
             <Button
               onClick={() => {
-                console.log('[path] Manage open Mods folder', { gamePath, modPath });
-                callRemote('open_url', modPath);
+                callRemote('open_url', gamePath + '/Mods');
               }}
             >
               {_i18n.t('打开 Mods 文件夹')}

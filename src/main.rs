@@ -535,14 +535,9 @@ fn get_celestes() -> Vec<Game> {
 }
 
 fn normalize_game_path(path: &str) -> String {
-    let normalized = normalize_game_path_buf(Path::new(path))
+    normalize_game_path_buf(Path::new(path))
         .to_string_lossy()
-        .to_string();
-    println!(
-        "[ PATH ] normalize_game_path: {:?} -> {:?}",
-        path, normalized
-    );
-    normalized
+        .to_string()
 }
 
 fn normalize_game_path_buf(path: &Path) -> PathBuf {
@@ -659,10 +654,6 @@ impl Handler {
         _use_cn_proxy: bool,
         multi_thread: bool,
     ) {
-        println!(
-            "[ PATH ] download_mod received: name={:?}, mods_dir={:?}",
-            name, mods_dir
-        );
         if let Err(e) = std::fs::create_dir_all(&mods_dir) {
             eprintln!("Failed to create mods dir {}: {}", mods_dir, e);
         }
@@ -672,7 +663,6 @@ impl Handler {
             .to_str()
             .unwrap()
             .to_string();
-        println!("[ PATH ] download_mod dest: {:?}", dest);
         std::thread::spawn(move || {
             // tasklist is shared across all download threads
             let tasklist: Arc<Mutex<Vec<DownloadInfo>>> = Arc::new(Mutex::new(Vec::new()));
@@ -976,22 +966,12 @@ impl Handler {
         if is_test_mode() {
             return get_test_game_path().to_string_lossy().to_string();
         }
-        let paths = get_celestes()
+        get_celestes()
             .iter()
-            .map(|game| {
-                let raw = game.path.clone().unwrap();
-                let normalized = normalize_game_path_buf(&raw);
-                println!(
-                    "[ PATH ] get_celeste_dirs entry: raw={:?}, normalized={:?}",
-                    raw, normalized
-                );
-                normalized
-            })
+            .map(|game| normalize_game_path_buf(&game.path.clone().unwrap()))
             .map(|path| path.to_string_lossy().to_string())
             .collect::<Vec<String>>()
-            .join("\n");
-        println!("[ PATH ] get_celeste_dirs result: {:?}", paths);
-        paths
+            .join("\n")
     }
 
     fn start_game(&self, path: String) {
@@ -1073,10 +1053,6 @@ impl Handler {
 
     fn get_installed_mods(&self, mods_folder_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
-            println!(
-                "[ PATH ] get_installed_mods received mods_folder_path={:?}",
-                mods_folder_path
-            );
             let installed_mods = get_installed_mods_sync(mods_folder_path);
             callback
                 .call(
@@ -1090,10 +1066,6 @@ impl Handler {
 
     fn get_invalid_zip_mod_files(&self, mods_folder_path: String, callback: sciter::Value) {
         std::thread::spawn(move || {
-            println!(
-                "[ PATH ] get_invalid_zip_mod_files received mods_folder_path={:?}",
-                mods_folder_path
-            );
             let invalid_mods = get_invalid_zip_mod_files(&mods_folder_path);
             callback
                 .call(
@@ -1362,10 +1334,6 @@ impl Handler {
 
     fn rm_mod(&self, mods_folder_path: String, mod_name: String) {
         std::thread::spawn(move || {
-            println!(
-                "[ PATH ] rm_mod received: mods_folder_path={:?}, mod_name={:?}",
-                mods_folder_path, mod_name
-            );
             if let Err(e) = rm_mod(&mods_folder_path, &mod_name) {
                 eprintln!("Failed to remove mod: {}", e);
             }

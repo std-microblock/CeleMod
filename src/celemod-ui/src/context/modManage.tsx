@@ -29,7 +29,7 @@ export const createModManageContext = () => {
 
         storage.root ??= {};
         storage.root.lastGamePath = gamePath;
-        console.log('[path] modManage saving lastGamePath', { gamePath });
+        console.log('saving game path', gamePath);
         save();
     }, [gamePath, storage]);
 
@@ -43,10 +43,8 @@ export const createModManageContext = () => {
                     rj('game path not set');
                     return;
                 }
-                const modsPath = gamePath + '/Mods';
-                console.log('[path] modManage reloadMods', { gamePath, modsPath });
-                callRemote('get_installed_mods', modsPath, (data: string) => {
-                    console.log('[path] modManage reloadMods finished', { gamePath, modsPath });
+                callRemote('get_installed_mods', gamePath + '/Mods', (data: string) => {
+                    console.log('mod reload finished');
                     const da = JSON.parse(data);
                     rs(da);
                     setInstalledMods(da);
@@ -55,9 +53,7 @@ export const createModManageContext = () => {
         },
         checkInvalidZipMods: () => {
             if (!gamePath) return;
-            const modsPath = gamePath + '/Mods';
-            console.log('[path] modManage checkInvalidZipMods', { gamePath, modsPath });
-            callRemote('get_invalid_zip_mod_files', modsPath, (data: string) => {
+            callRemote('get_invalid_zip_mod_files', gamePath + '/Mods', (data: string) => {
                 const invalidFiles = JSON.parse(data) as string[];
                 if (invalidFiles.length === 0) return;
 
@@ -74,8 +70,7 @@ export const createModManageContext = () => {
                             <div className="buttons">
                                 <button onClick={hide}>{_i18n.t('暂不处理')}</button>
                                 <button onClick={() => {
-                                    console.log('[path] modManage delete invalid zip mods', { gamePath, modsPath, invalidFiles });
-                                    callRemote('delete_mod_files', modsPath, JSON.stringify(invalidFiles), () => {
+                                    callRemote('delete_mod_files', gamePath + '/Mods', JSON.stringify(invalidFiles), () => {
                                         ctx.reloadMods();
                                         hide();
                                     });

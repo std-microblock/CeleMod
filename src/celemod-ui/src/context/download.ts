@@ -109,19 +109,9 @@ export const createDownloadContext = () => {
                 else url = `https://gamebanana.com/dl/${gb_fileid}`
             }
 
-            const modsDir = gamePath + "/Mods/";
-            console.log('[path] downloadMod resolved paths', {
-                name,
-                gamePath,
-                modsDir,
-                source: gb_fileid_or_url,
-                force,
-            });
-
             if (installedMods.find(m => m.name === name)) {
                 if (force) {
-                    console.log('[path] downloadMod rm_mod before force update', { name, modsDir });
-                    callRemote("rm_mod", modsDir, name)
+                    callRemote("rm_mod", gamePath + "/Mods/", name)
                 } else {
                     const task = {
                         name,
@@ -154,8 +144,7 @@ export const createDownloadContext = () => {
 
                 eventBus.dispatchEvent('taskListChanged')
 
-                console.log('[path] downloadMod call backend download_mod', { name, modsDir, url });
-                callRemote("download_mod", name, url, modsDir, autoDisableNewMods, (_subtasks: string, state: "pending" | "failed" | "finished") => {
+                callRemote("download_mod", name, url, gamePath + "/Mods/", autoDisableNewMods, (_subtasks: string, state: "pending" | "failed" | "finished") => {
                     console.log(_subtasks, state)
                     const subtasks = JSON.parse(_subtasks) as BackendDownloadInfo[];
                     const task = downloadTasks.current[name];
