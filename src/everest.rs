@@ -188,7 +188,7 @@ fn run_command(
     let mut line_count = 0f32;
     for line in reader.lines() {
         let line = line?;
-        line_count = (line_count + 1).min(99.0);
+        line_count = (line_count + 1.0).min(99.0);
         progress_callback(format!("[3/3] Run MiniInstaller: {line}"), line_count);
     }
 
