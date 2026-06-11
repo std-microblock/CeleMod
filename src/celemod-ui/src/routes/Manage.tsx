@@ -821,7 +821,14 @@ export const Manage = () => {
       modTree.set(mod.name, mod);
     }
 
+    // Track the current DFS stack so dependency cycles terminate. Optional
+    // dependencies commonly form cycles (e.g. two mods that mutually enhance
+    // each other); without this guard, enabling "检查可选依赖" makes dfsRemove
+    // recurse forever and overflow the stack. Same idiom as renderPath
+    // cycle detection above and the `visited` sets used by other traversals.
+    const dfsPath = new Set<string>();
     const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
+      if (dfsPath.has(mod.name)) return;
       if (filter && checkFilter(filter, mod)) return;
       if (!isRoot) {
         modTree.delete(mod.name);
@@ -830,13 +837,15 @@ export const Manage = () => {
         return;
       }
 
+      dfsPath.add(mod.name);
       for (const dep of mod.dependencies) {
-        if ((dep as any)._missing || dep.optional) {
+        if ((dep as any)._missing || (dep.optional && !checkOptionalDep)) {
           continue;
         }
 
         dfsRemove(dep);
       }
+      dfsPath.delete(mod.name);
     };
 
     if (excludeDependents)
@@ -855,7 +864,7 @@ export const Manage = () => {
     return [...modTree.values()].sort((a, b) =>
       a.name.toLowerCase().localeCompare(b.name.toLowerCase())
     );
-  }, [installedModMap, excludeDependents, filter]);
+  }, [installedModMap, excludeDependents, filter, checkOptionalDep]);
 
   useEffect(() => {
     // @ts-ignore
