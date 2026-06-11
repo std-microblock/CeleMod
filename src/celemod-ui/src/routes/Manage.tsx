@@ -4,12 +4,23 @@ import './Manage.scss';
 import {
   BackendDep,
   BackendModInfo,
+  initAutoDisableNewMods,
+  initCheckOptionalDep,
+  initExcludeDependents,
+  initFullTree,
+  initShowDetailed,
+  initShowUpdate,
   useAlwaysOnMods,
   useAutoDisableNewMods,
+  useCheckOptionalDep,
   useCurrentBlacklistProfile,
+  useExcludeDependents,
+  useFullTree,
   useGamePath,
   useInstalledMods,
   useModComments,
+  useShowDetailed,
+  useShowUpdate,
   useStorage,
 } from '../states';
 import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -575,11 +586,19 @@ export const Manage = () => {
 
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const [excludeDependents, setExcludeDependents] = useState(true);
-  const [checkOptionalDep, setCheckOptionalDep] = useState(false);
-  const [fullTree, setFullTree] = useState(false);
-  const [showUpdate, setShowUpdate] = useState(true);
-  const [showDetailed, setShowDetailed] = useState(false);
+  // Load persisted preference toggles from storage (each init* hook mounts
+  // the useEffect in createPersistedState that reads storage.root[key]).
+  initAutoDisableNewMods();
+  initExcludeDependents();
+  initCheckOptionalDep();
+  initFullTree();
+  initShowUpdate();
+  initShowDetailed();
+  const [excludeDependents, setExcludeDependents] = useExcludeDependents();
+  const [checkOptionalDep, setCheckOptionalDep] = useCheckOptionalDep();
+  const [fullTree, setFullTree] = useFullTree();
+  const [showUpdate, setShowUpdate] = useShowUpdate();
+  const [showDetailed, setShowDetailed] = useShowDetailed();
   const [fullCheckRunning, setFullCheckRunning] = useState(false);
 
   const installedModMap = useMemo(() => {

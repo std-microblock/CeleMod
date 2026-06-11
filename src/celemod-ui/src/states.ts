@@ -157,4 +157,11 @@ export const [initSearchSort, useSearchSort] = createPersistedStateByKey<'new' |
 
 export const [initAutoDisableNewMods, useAutoDisableNewMods] = createPersistedStateByKey('autoDisableNewMods', false)
 
+// Manage-page preference toggles (persisted across restarts)
+export const [initCheckOptionalDep, useCheckOptionalDep] = createPersistedStateByKey('checkOptionalDep', false)
+export const [initExcludeDependents, useExcludeDependents] = createPersistedStateByKey('excludeDependents', true)
+export const [initFullTree, useFullTree] = createPersistedStateByKey('fullTree', false)
+export const [initShowUpdate, useShowUpdate] = createPersistedStateByKey('showUpdate', true)
+export const [initShowDetailed, useShowDetailed] = createPersistedStateByKey('showDetailed', false)
+
 export const [initModComments, useModComments] = createPersistedStateByKey('modComments', {})
