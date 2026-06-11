@@ -115,6 +115,7 @@
   "打开 Mods 文件夹": "Open Mods Folder",
   "禁用全部": "Disable All",
   "启用全部": "Enable All",
+  "启用全部依赖": "Enable All Deps",
   "检查可选依赖": "Check Optional Deps",
   "显示完整树": "Full Tree",
   "显示更新": "Show Updates",

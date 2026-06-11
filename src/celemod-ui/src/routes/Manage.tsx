@@ -1364,6 +1364,19 @@ export const Manage = () => {
             >
               {_i18n.t('启用全部')}
             </Button>
+            &nbsp;&nbsp;
+            <Button
+              onClick={() => {
+                manageCtx.switchMod(
+                  [...installedModMap.values()]
+                    .filter((v) => v.enabled)
+                    .map((v) => v.name),
+                  true
+                );
+              }}
+            >
+              {_i18n.t('启用全部依赖')}
+            </Button>
           </div>
           <div className="options">
             <label>
