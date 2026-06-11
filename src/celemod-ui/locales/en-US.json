@@ -116,6 +116,8 @@
   "禁用全部": "Disable All",
   "启用全部": "Enable All",
   "启用全部依赖": "Enable All Deps",
+  "{alt} 已开启": "{alt} enabled",
+  "{alt} 已开启，可替代本 Mod": "{alt} is enabled, substitutes this mod",
   "检查可选依赖": "Check Optional Deps",
   "显示完整树": "Full Tree",
   "显示更新": "Show Updates",

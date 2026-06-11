@@ -128,6 +128,8 @@
   "禁用全部": "Désactiver tous les",
   "启用全部": "Activer tout",
   "启用全部依赖": "Activer toutes les dépendances",
+  "{alt} 已开启": "{alt} activé",
+  "{alt} 已开启，可替代本 Mod": "{alt} est activé, remplace ce mod",
   "应用修改": "Modification de l'application",
   "主树隐藏依赖": "Dépendance cachée de l'arbre principal",
   "检查可选依赖": "Vérifier les dépendances facultatives",

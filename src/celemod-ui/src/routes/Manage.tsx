@@ -81,6 +81,19 @@ type ModDepInfo = ModInfoProbablyMissing & {
   optional: boolean;
 };
 
+// Mods that can stand in for one another: if any one in the list is enabled,
+// a dependency on any *other* member is treated as satisfied. Special-case for
+// the multiplayer clients — CelesteNet.Client and its CN fork MiaoNet.
+// (MiaoNet's installed name is literally "MiaoNet"; see main.rs
+// get_installed_miaonet.)
+const CELESTENET_ALT_LIST = ['CelesteNet.Client', 'MiaoNet', 'Miao.CelesteNet.Client'];
+// Returns the (raw) names of all enabled alternatives covering `name` (excludes
+// `name` itself). Empty if `name` isn't in the list or no alternative is on.
+const altCovering = (name: string, modMap: Map<string, ModInfo>): string[] => {
+  if (!CELESTENET_ALT_LIST.includes(name)) return [];
+  return CELESTENET_ALT_LIST.filter((alt) => alt !== name && modMap.get(alt)?.enabled);
+};
+
 const modListContext = createContext<{
   switchMod: (id: string, enabled: boolean, recursive?: boolean) => void;
   switchProfile: (name: string) => void;
@@ -95,6 +108,7 @@ const modListContext = createContext<{
   showDetailed: boolean;
   alwaysOnMods: string[];
   switchAlwaysOn: (name: string, enabled: boolean) => void;
+  isCoveredByAlt: (name: string) => string[];
   autoDisableNewMods: boolean;
   hasUpdateMods: {
     name: string;
@@ -252,6 +266,7 @@ const ModLocal = ({
   }, [name, ctx.hasUpdateMods]);
 
   const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
+  const coveredByAlt = ctx?.isCoveredByAlt?.(name) ?? [];
 
   const [editingComment, setEditingComment] = useState(false);
   const refCommentInput = useRef<HTMLInputElement>(null);
@@ -378,6 +393,20 @@ const ModLocal = ({
           }}
         >
           {updateString}
+        </ModBadge>
+      )}
+
+      {coveredByAlt.length > 0 && (
+        <ModBadge
+          bg="#0d47a1"
+          color="white"
+          title={_i18n.t('{alt} 已开启，可替代本 Mod', {
+            alt: coveredByAlt.join(', '),
+          })}
+        >
+          {_i18n.t('{alt} 已开启', {
+            alt: coveredByAlt.join(', '),
+          })}
         </ModBadge>
       )}
 
@@ -656,7 +685,9 @@ export const Manage = () => {
               }
 
               if (!modMap.has(dep.name)) {
-                mergeSM({ status: 'missing', message: '' }, dep.name);
+                if (altCovering(dep.name, modMap).length === 0) {
+                  mergeSM({ status: 'missing', message: '' }, dep.name);
+                }
                 continue;
               }
 
@@ -671,7 +702,7 @@ export const Manage = () => {
                 );
               }
 
-              if (!installedDep.enabled) {
+              if (!installedDep.enabled && altCovering(dep.name, modMap).length === 0) {
                 mergeSM(
                   {
                     status: 'not-enabled',
@@ -898,6 +929,7 @@ export const Manage = () => {
         if (enabled) setAlwaysOnMods([...alwaysOnMods, name]);
         else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));
       },
+      isCoveredByAlt: (name: string) => altCovering(name, installedModMap),
       alwaysOnMods,
       autoDisableNewMods,
       modComments, setModComment(name: string, comment: string) {
@@ -972,6 +1004,7 @@ export const Manage = () => {
         const switchList: string[] = [];
         const excludeFromAutoEnableList = [
           'CelesteNet.Client',
+          'MiaoNet',
           'Miao.CelesteNet.Client',
         ];
 
@@ -1165,6 +1198,7 @@ export const Manage = () => {
     [
       currentProfile,
       installedMods,
+      installedModMap,
       gamePath,
       modPath,
       fullTree,
