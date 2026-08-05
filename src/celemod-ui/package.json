@@ -1,22 +1,26 @@
 {
   "name": "celemod-ui",
-  "version": "0.1.8",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "vite build && node scripts/pack-ui.mjs",
-    "build:web": "vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "tauri": "node scripts/tauri.mjs",
     "typecheck": "tsc --noEmit",
     "translate": "di18n sync"
   },
   "dependencies": {
-    "path-browserify": "^1.0.1",
-    "preact": "^10.6.6",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-dialog": "^2.3.2",
+    "@tauri-apps/plugin-http": "^2.5.2",
+    "immer": "^10.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-window": "^1.8.9",
     "react-window-infinite-loader": "^1.0.9",
-    "zustand": "^4.3.9"
+    "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -25,14 +29,11 @@
     "@types/react-window": "^1.8.5",
     "@types/react-window-infinite-loader": "^1.0.6",
     "@types/ws": "^8.18.1",
+    "@tauri-apps/cli": "^2.8.0",
     "di18n-cli": "^0.1.29",
-    "esbuild": "^0.25.12",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "sass": "^1.83.0",
     "typescript": "^5.7.2",
-    "vite": "^6.1.0",
-    "ws": "^8.21.2"
+    "vite": "^6.1.0"
   },
   "packageManager": "pnpm@11.13.1"
 }

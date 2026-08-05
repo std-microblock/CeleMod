@@ -1,9 +1,9 @@
 import _i18n from 'src/i18n';
 import { createPopup } from './Popup';
-import { callRemote, celemodVersion, compareVersion } from '../utils';
+import { callRemote, compareVersion } from '../utils';
+import { fetch } from '../lib/http';
 import './SelfUpdate.scss';
-import { Fragment, h } from 'preact';
-import { useState } from 'preact/hooks';
+import { Fragment, useState } from 'react';
 import { ProgressIndicator } from './Progress';
 
 export interface UpdateInfo {
@@ -36,8 +36,7 @@ export const getLatestUpdateInfo = async () => {
 };
 
 export const checkUpdate = async () => {
-  // @ts-ignore
-  const currentVersion = celemodVersion
+  const currentVersion = (await callRemote<string>('celemod_version'))
     .split('')
     .filter((v) => v === '.' || !isNaN(parseInt(v)))
     .join('');

@@ -1,6 +1,5 @@
 import _i18n from 'src/i18n';
-import { Fragment, h } from 'preact';
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { Fragment, useContext, useEffect, useState } from 'react';
 import { useGlobalContext } from '../App';
 import {
   initAutoDisableNewMods,
@@ -12,6 +11,7 @@ import { callRemote } from '../utils';
 import { Icon } from './Icon';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import './DropInstaller.scss';
 
 interface LocalInstallProgress {
@@ -46,7 +46,7 @@ const getDroppedPaths = (event: any): string[] => {
     }
     if (!decoded.startsWith('file://')) return decoded;
     decoded = decoded.slice('file://'.length);
-    if (env.PLATFORM === 'Windows' && /^\/[A-Za-z]:/.test(decoded)) {
+    if (navigator.userAgent.includes('Windows') && /^\/[A-Za-z]:/.test(decoded)) {
       decoded = decoded.slice(1);
     }
     return decoded;
@@ -145,8 +145,8 @@ const LocalInstallPopup = ({
         ) : (
           <div className="local-install-progress">
             <ProgressIndicator
-              {...(progress?.progress > 0
-                ? { value: progress.progress, max: 100 }
+              {...((progress?.progress ?? 0) > 0
+                ? { value: progress?.progress ?? 0, max: 100 }
                 : { infinite: true })}
             />
             <div className="progress-title">
@@ -197,26 +197,20 @@ export const DropInstaller = () => {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    const target = document as any;
-    const onWillAcceptDrop = (event: any) => {
-      if (!localInstallRunning && getDroppedPaths(event).length > 0) {
-        consumeDropEvent(event);
+    let unlisten: (() => void) | undefined;
+    void getCurrentWindow().onDragDropEvent((event) => {
+      if (event.payload.type === 'enter') {
+        if (!localInstallRunning && event.payload.paths.length > 0) setDragging(true);
+        return;
       }
-    };
-    const onDragEnter = (event: any) => {
-      if (localInstallRunning || getDroppedPaths(event).length === 0) return;
-      consumeDropEvent(event);
-      setDragging(true);
-    };
-    const onDragLeave = (event: any) => {
-      consumeDropEvent(event);
-      setDragging(false);
-    };
-    const onDrop = (event: any) => {
-      const paths = getDroppedPaths(event);
+      if (event.payload.type === 'leave') {
+        setDragging(false);
+        return;
+      }
+      if (event.payload.type !== 'drop') return;
+      const paths = event.payload.paths;
       setDragging(false);
       if (localInstallRunning || paths.length === 0) return;
-      consumeDropEvent(event);
       if (!gamePath) {
         showMissingGamePopup();
         return;
@@ -250,24 +244,8 @@ export const DropInstaller = () => {
         ),
         { cancelable: false }
       );
-    };
-    const onDragCancel = (event: any) => {
-      consumeDropEvent(event);
-      setDragging(false);
-    };
-
-    target.on('willacceptdrop', onWillAcceptDrop);
-    target.on('dragenter', onDragEnter);
-    target.on('dragleave', onDragLeave);
-    target.on('drop', onDrop);
-    target.on('dragcancel', onDragCancel);
-    return () => {
-      target.off?.('willacceptdrop', onWillAcceptDrop);
-      target.off?.('dragenter', onDragEnter);
-      target.off?.('dragleave', onDragLeave);
-      target.off?.('drop', onDrop);
-      target.off?.('dragcancel', onDragCancel);
-    };
+    }).then((dispose) => { unlisten = dispose; }).catch(console.error);
+    return () => unlisten?.();
   }, [
     gamePath,
     autoDisableNewMods,

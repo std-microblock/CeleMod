@@ -1,7 +1,9 @@
-import { h, render } from "preact";
+import { createRoot } from 'react-dom/client';
 import App from "./App";
 import "./index.scss";
 import "./i2.css";
-import "./platform/window";
+import { initializeWindowChrome } from './tauri/window';
 
-render(<App />, document.getElementById("root")! as any);
+initializeWindowChrome();
+
+createRoot(document.getElementById('root')!).render(<App />);

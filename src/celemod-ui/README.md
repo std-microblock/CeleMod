@@ -1,6 +1,6 @@
 # CeleMod UI
 
-The Sciter-based frontend for CeleMod.
+The React frontend for the CeleMod Tauri 2 desktop application. Application state is managed with Zustand and Immer.
 
 ## Development
 
@@ -9,10 +9,13 @@ pnpm install
 pnpm dev
 ```
 
-Run the Rust application in debug mode after the Vite server starts. The debug
-loader connects to `http://localhost:1234`.
-Stylesheet changes are applied in place. JavaScript and TypeScript changes
-reload the Sciter page.
+Start the complete desktop application from this directory:
+
+```bash
+pnpm tauri dev
+```
+
+Vite runs on `http://localhost:1420` and provides normal React hot module replacement.
 
 ## Build
 
@@ -20,8 +23,8 @@ reload the Sciter page.
 pnpm build
 ```
 
-Vite writes the web assets to `dist/`. The post-build script then applies the
-small Sciter compatibility transforms, creates `index_windows.html`, and packs
-the directory into `../../resources/dist.rc`.
+Vite writes the web assets to `dist/`. To create a native installer or bundle:
 
-Use `pnpm build:web` when only the unpacked Vite output is needed.
+```bash
+pnpm tauri build
+```

@@ -12,7 +12,7 @@ An alternative mod manager for Celeste
 ### Easy to use
 ✅ List of commonly used Mods, one-click installation  
 ✅ Super-fast download (multi-threaded download, @WEGFan mirror)  
-✅ Lightweight, only takes up 18M at startup  
+✅ Cross-platform desktop app powered by Tauri 2
 ✅ One-click analysis and dependency completion  
 ✅ One-click upgrade Mod  
 ✅ Search by category, multiple sorting methods  
@@ -22,7 +22,7 @@ An alternative mod manager for Celeste
 ✅ Tree-like Mod management, dependencies are clear at a glance  
 ✅ Multiple Mods can be downloaded at the same time without blocking  
 ✅ Mod details preview in the software  
-✅ Acrylic UI   
+✅ Native WebView + React UI
 
 
 ### Screenshots
@@ -39,3 +39,20 @@ An alternative mod manager for Celeste
 @Destro and @Rhuan Brazilian Portuguese translation
 
 [@dzhake](https://github.com/dzhake) Russian translation
+
+### Development
+
+CeleMod uses Tauri 2, React, Zustand, and Immer. Install Node.js 20+, pnpm, Rust nightly, and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform.
+
+```bash
+pnpm --dir src/celemod-ui install
+pnpm --dir src/celemod-ui tauri dev
+```
+
+Run the frontend checks and build the desktop bundle with:
+
+```bash
+pnpm --dir src/celemod-ui typecheck
+pnpm --dir src/celemod-ui build
+pnpm --dir src/celemod-ui tauri build
+```

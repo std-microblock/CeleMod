@@ -1,13 +1,5 @@
 <!DOCTYPE html>
-<html
-  lang="en"
-  window-alignment="5"
-  window-corners="round"
-  window-maximizable="true"
-  window-min-width="800px"
-  window-min-height="600px"
-  window-icon="./src/resources/Celemod.png"
->
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -15,7 +7,6 @@
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <title>CeleMod</title>
-    <script>/* @sciter-runtime */</script>
   </head>
   <body>
     <div class="dummy"></div>
@@ -23,11 +14,11 @@
       <div class="caption-hash"></div>
       <div class="caption-version"></div>
     </span>
-    <div role="window-caption">CeleMod</div>
+    <div class="window-caption" data-tauri-drag-region>CeleMod</div>
     <span class="win-ctrl">
-      <button role="window-minimize"><icon|minus /></button>
-      <button role="window-maximize"><icon|landscape /></button>
-      <button class="close" role="window-close"><icon|cancel /></button>
+      <button id="window-minimize" aria-label="Minimize">&minus;</button>
+      <button id="window-maximize" aria-label="Maximize">&#9633;</button>
+      <button id="window-close" class="close" aria-label="Close">&times;</button>
     </span>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>

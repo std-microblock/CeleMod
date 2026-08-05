@@ -3,14 +3,13 @@ import { callRemote } from '../utils';
 import {
     useInstalledMods,
     useGamePath,
-    useStorage,
     initGamePath,
     useCurrentEverestVersion,
     initModComments,
 } from '../states';
-import { useEffect, useMemo, useContext } from 'preact/hooks';
+import { useEffect, useMemo, useContext } from 'react';
 import { createPopup, PopupContext } from 'src/components/Popup';
-import { Fragment, h } from 'preact';
+import { Fragment } from 'react';
 import { ProgressIndicator } from 'src/components/Progress';
 
 let lastGamePath = '';
@@ -20,18 +19,6 @@ export const createModManageContext = () => {
     const { setInstalledMods } = useInstalledMods();
 
     const [gamePath] = useGamePath();
-
-    const { storage, save } = useStorage();
-
-    useEffect(() => {
-        if (!gamePath) return;
-        if (!storage) return;
-
-        storage.root ??= {};
-        storage.root.lastGamePath = gamePath;
-        console.log('saving game path', gamePath);
-        save();
-    }, [gamePath, storage]);
 
     initGamePath();
 
@@ -110,10 +97,10 @@ export const createModManageContext = () => {
                         );
                         ctx
                             .reloadMods()
-                            .then((mods) => {
+                            .then(async (mods) => {
                                 popup.hide();
                                 ctx.checkInvalidZipMods();
-                                const is_using_cache = callRemote('is_using_cache');
+                                const is_using_cache = await callRemote<boolean>('is_using_cache');
                                 if (is_using_cache)
                                     createPopup(() => {
                                         const { hide } = useContext(PopupContext);

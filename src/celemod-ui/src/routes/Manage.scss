@@ -2,7 +2,7 @@
 
 .manage {
     height: calc(100vh - 55px);
-    flow: horizontal-flow;
+    display: flex; flex-wrap: wrap;
 
     .modList {
 
@@ -68,7 +68,7 @@
             }
 
             margin-top: 8px;
-            behavior: virtual-list;
+            content-visibility: auto;
             overflow-y: scroll;
             height: calc(100vh - 160px);
 
@@ -98,7 +98,7 @@
     }
 
     .profiles {
-        behavior: virtual-list;
+        content-visibility: auto;
         overflow-y: scroll;
         height: calc(100vh - 50px);
         width: 200px;
@@ -134,7 +134,7 @@
         }
 
         .newProfile {
-            flow: horizontal-flow;
+            display: flex; flex-wrap: wrap;
             flow-columns: 160px 40px;
             width: 215px;
 
@@ -212,7 +212,7 @@
                         position: absolute;
                         right: 4px;
                         top: 2px;
-                        flow: horizontal-flow;
+                        display: flex; flex-wrap: wrap;
 
                         button {
                             width: 20px;
@@ -436,8 +436,8 @@
     max-width: 90vw;
 
     .full-mod-check-content {
-        flow: vertical;
-        horizontal-align: center;
+        display: flex; flex-direction: column;
+        justify-content: center;
 
         >* {
             width: max-content;
@@ -447,7 +447,7 @@
         .progress-wrap {
             margin-bottom: 16px;
             width: max-content;
-            horizontal-align: center;
+            justify-content: center;
         }
 
         .issues {

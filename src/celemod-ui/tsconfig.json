@@ -3,8 +3,7 @@
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "jsx": "react",
-    "jsxFactory": "h",
+    "jsx": "react-jsx",
     "lib": [
       "dom",
       "esnext"

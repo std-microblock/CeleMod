@@ -1,5 +1,4 @@
 import _i18n from 'src/i18n';
-import { h } from 'preact';
 import { useGlobalContext } from '../App';
 import { useCurrentEverestVersion } from '../states';
 import { Button } from './Button';
@@ -10,7 +9,7 @@ export const enforceEverest = () => {
   const { currentEverestVersion } = useCurrentEverestVersion();
   if (!currentEverestVersion)
     return (
-      <div class="no-everest">
+      <div className="no-everest">
         <h2>{_i18n.t('请先安装 Everest')}</h2>
         <pre>
           {_i18n.t(

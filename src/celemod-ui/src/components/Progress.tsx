@@ -1,5 +1,4 @@
-import { Fragment, h } from "preact";
-import { useRef } from "preact/hooks";
+import { Fragment, useRef } from 'react';
 import { useEffect } from "react";
 
 export const ProgressIndicator = ({

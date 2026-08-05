@@ -1,33 +1,3 @@
-[package]
-name = "cele-mod"
-version = "0.1.8"
-edition = "2024"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-sciter-rs = {git = "https://github.com/MicroCBer/rust-sciter", rev = "ae7ca76a5000c1e3c9ed61d4d74c9313e8dcbf90"}
-game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
-lazy_static = "*"
-anyhow = "*"
-zip = "*"
-serde = "*"
-serde_yaml = "0.9.25"
-serde_json = "1.0.104"
-ureq = { version = "*", features = ["json", "gzip", "tls"] }
-strip_bom = "1.0.0"
-open = "*"
-include-bytes-zstd = "*"
-msgbox = "0.7.0"
-dirs = "*"
-
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "*", features = ["wincon", "consoleapi"] }
-
-[target.'cfg(target_os = "linux")'.dependencies]
-include-bytes-zstd = "*"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-
-[build-dependencies]
-winres = "0.1.12"
+[workspace]
+members = ["src-tauri"]
+resolver = "2"

@@ -1,6 +1,5 @@
 import _i18n from 'src/i18n';
-import { Fragment, h } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { Fragment, useEffect, useState } from 'react';
 import { ModList } from '../components/ModList';
 import { getMods, Mod, SearchModResp } from '../api/xmao';
 import { currentMirror, initSearchSort, useCurrentEverestVersion, useGamePath, useMirror, useSearchSort } from '../states';

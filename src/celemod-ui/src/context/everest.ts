@@ -1,6 +1,6 @@
 import { callRemote } from "../utils";
 import { useInstalledMods, useGamePath, useCurrentEverestVersion } from "../states";
-import { useEffect } from "preact/hooks";
+import { useEffect } from 'react';
 import { create } from "zustand";
 
 export interface EverestInstallState {
@@ -20,7 +20,7 @@ export const useEverestInstallState =
         setEverestInstallState: (everestInstallState: EverestInstallState) => set({ everestInstallState })
     }));
 
-let lastGamePath
+let lastGamePath = '';
 export const useEverestCtx = () => {
     const { currentEverestVersion, setCurrentEverestVersion } = useCurrentEverestVersion();
     const [gamePath] = useGamePath();

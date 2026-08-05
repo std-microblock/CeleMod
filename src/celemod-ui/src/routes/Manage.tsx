@@ -1,5 +1,5 @@
 import _i18n from 'src/i18n';
-import { createContext, h } from 'preact';
+import { createContext } from 'react';
 import './Manage.scss';
 import {
   BackendDep,
@@ -21,13 +21,12 @@ import {
   useModComments,
   useShowDetailed,
   useShowUpdate,
-  useStorage,
 } from '../states';
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { callRemote, compareVersion } from '../utils';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
-import { GlobalContext, useGlobalContext } from '../App';
+import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
 import { createPopup, PopupContext } from '../components/Popup';
 import { ProgressIndicator } from '../components/Progress';
@@ -131,7 +130,7 @@ const ModBadge = ({
   color: string;
   bg: string;
   onClick?: () => void;
-  onContextMenu?: (e: MouseEvent) => void;
+  onContextMenu?: (e: React.MouseEvent<HTMLSpanElement>) => void;
   title?: string;
 }) => {
   return (
@@ -500,9 +499,6 @@ const Profile = ({ name, current }: { name: string; current: boolean }) => {
   );
 };
 
-const alphabet =
-  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- _';
-
 const formatSize = (size: number) => {
   const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
@@ -640,7 +636,7 @@ export const Manage = () => {
     for (const mod of installedMods) {
       const modInfo: ModInfo = {
         name: mod.name,
-        id: mod.game_banana_id,
+        id: mod.game_banana_id.toString(),
         enabled: currentProfile?.mods.every((v) => v.name !== mod.name) ?? true,
         version: mod.version,
         dependencies: [],
@@ -941,16 +937,17 @@ export const Manage = () => {
       batchSwitchMod: (names: string[], enabled: boolean) => {
         if (!enabled) names = names.filter((v) => !alwaysOnMods.includes(v));
         if (!currentProfile) return;
-        let files = [];
+        const files: string[] = [];
+        let nextMods = currentProfile.mods;
         for (const mod of names) {
           const backendMod = installedMods.find((v) => v.name === mod);
           if (backendMod) {
             files.push(backendMod.file);
-            if (!enabled) {
-              currentProfile.mods.push({
+            if (!enabled && !nextMods.some((item) => item.name === backendMod.name)) {
+              nextMods = [...nextMods, {
                 name: backendMod.name,
                 file: backendMod.file,
-              });
+              }];
             }
           }
         }
@@ -964,11 +961,9 @@ export const Manage = () => {
           enabled
         );
 
-        if (enabled)
-          currentProfile.mods =
-            currentProfile?.mods.filter((v) => !names.includes(v.name)) ?? [];
+        if (enabled) nextMods = nextMods.filter((v) => !names.includes(v.name));
 
-        setCurrentProfile({ ...currentProfile });
+        setCurrentProfile({ ...currentProfile, mods: nextMods });
         setHasUnsavedChanges(true);
 
         lastApplyReq = Date.now();
@@ -1600,9 +1595,7 @@ export const Manage = () => {
             <input
               type="text"
               placeholder={_i18n.t('Profile 名')}
-              /* @ts-ignore */
-              filter={alphabet}
-              maxlength={30}
+              maxLength={30}
             />
 
             <Button
@@ -1628,8 +1621,10 @@ export const Manage = () => {
             installedMods={installedMods}
             onOrderChange={(newOrder) => {
               if (currentProfile) {
-                currentProfile.mod_options_order = newOrder;
-                setCurrentProfile({ ...currentProfile });
+                setCurrentProfile({
+                  ...currentProfile,
+                  mod_options_order: newOrder,
+                });
               }
             }}
           />

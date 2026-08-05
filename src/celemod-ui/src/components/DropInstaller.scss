@@ -12,7 +12,7 @@
   border: 2px dashed $primary;
   border-radius: 12px;
   background: rgba($bg, 0.92);
-  horizontal-align: center;
+  justify-content: center;
   vertical-align: middle;
   text-align: center;
 
@@ -23,8 +23,8 @@
 }
 
 .drop-install-card {
-  flow: vertical;
-  horizontal-align: center;
+  display: flex; flex-direction: column;
+  justify-content: center;
   vertical-align: middle;
 
   > .icon {
@@ -55,8 +55,8 @@
 }
 
 .local-install-progress {
-  flow: vertical;
-  horizontal-align: center;
+  display: flex; flex-direction: column;
+  justify-content: center;
   padding: 18px 0 12px;
 
   .progress-title {
@@ -86,8 +86,8 @@
 }
 
 .install-summary {
-  flow: horizontal;
-  horizontal-align: center;
+  display: flex;
+  justify-content: center;
   vertical-align: middle;
   color: $fg;
   font-size: 16px;

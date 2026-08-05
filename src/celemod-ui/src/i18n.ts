@@ -1,7 +1,5 @@
-import { createContext } from 'preact';
-import { useContext, useReducer } from 'preact/hooks';
-import { useCurrentLang, useMirror, useStorage } from './states';
 import { useEffect, useMemo } from 'react';
+import { useAppStore, useCurrentLang, useMirror } from './states';
 
 import zhCN from 'locales/zh-CN.json';
 import enUS from 'locales/en-US.json';
@@ -10,74 +8,52 @@ import frFR from 'locales/fr-FR.json';
 import deDE from 'locales/de-DE.json';
 import ptBR from 'locales/pt-BR.json';
 
-const locales = {
-    'zh-CN': zhCN,
-    'en-US': enUS,
-    'de-DE': deDE,
-    'ru-RU': ruRU,
-    'fr-FR': frFR,
-    'pt-BR': ptBR
+const locales: Record<string, Record<string, string>> = {
+  'zh-CN': zhCN, 'en-US': enUS, 'de-DE': deDE,
+  'ru-RU': ruRU, 'fr-FR': frFR, 'pt-BR': ptBR,
 };
 
 let locale = 'zh-CN';
 
-export default {
-    t(key: string, slots = {}) {
-        let translated = locales[locale]?.[key] ?? key;
-
-        if (translated === '&&') {
-            translated = key;
-        }
-
-        for (const k in slots) {
-            translated = translated.replaceAll(`{${k}}`, slots[k]);
-        }
-        return translated;
-    },
-    get currentLang() {
-        return locale
+const i18n = {
+  t(key: string, slots: Record<string, string | number> = {}) {
+    const activeLocale = useAppStore.getState().currentLang || locale;
+    let translated = locales[activeLocale]?.[key] ?? key;
+    if (translated === '&&') translated = key;
+    for (const [slot, value] of Object.entries(slots)) {
+      translated = translated.replaceAll(`{${slot}}`, String(value));
     }
-}
+    return translated;
+  },
+  get currentLang() { return useAppStore.getState().currentLang || locale; },
+};
 
-export const I18NContext = createContext<
-    ReturnType<typeof createI18NContext>
->({} as any)
-
-export const useI18N = () => {
-    useCurrentLang();
-    return useContext(I18NContext);
-}
+export default i18n;
 
 export const createI18NContext = () => {
-    const { currentLang, setCurrentLang } = useCurrentLang();
-    const { storage, save } = useStorage();
-    const [mirror, setMirror] = useMirror();
+  const { currentLang, setCurrentLang } = useCurrentLang();
+  const [, setMirror] = useMirror();
 
-    const ctx = useMemo(() => ({
-        setLang(lang: string) {
-            console.log('set lang', lang)
-            document.body.parentElement.setAttribute('lang', lang)
-            locale = lang;
-            storage.root ??= {};
-            storage.root.lang = lang;
-            save()
-            setCurrentLang(lang);
-        },
-        currentLang
-    }), [currentLang, storage])
+  const api = useMemo(() => ({
+    setLang(lang: string) {
+      document.documentElement.lang = lang;
+      locale = lang;
+      setCurrentLang(lang);
+    },
+    currentLang,
+  }), [currentLang, setCurrentLang]);
 
-    useEffect(() => {
-        if (storage?.root?.lang)
-            ctx.setLang(storage.root.lang);
-        else if (env.language() === 'zh') {
-            ctx.setLang('zh-CN')
-            setMirror('wegfan')
-        }
-        else {
-            ctx.setLang('en-US')
-            setMirror('0x0ade')
-        }
-    }, [storage]);
+  useEffect(() => {
+    if (currentLang) {
+      api.setLang(currentLang);
+      return;
+    }
+    const isChinese = navigator.language.toLowerCase().startsWith('zh');
+    api.setLang(isChinese ? 'zh-CN' : 'en-US');
+    setMirror(isChinese ? 'wegfan' : '0x0ade');
+  }, []);
 
-    return ctx;
-}
+  return api;
+};
+
+export const useI18N = createI18NContext;

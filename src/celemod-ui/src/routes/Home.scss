@@ -2,12 +2,12 @@
 
 .home {
     select {
-        style-set: custom-select-dropdown;
+        appearance: auto;
         margin: 4px 0;
         width: max-content;
     }
     .profiles {
-        // flow: horizontal-flow;
+        // display: flex; flex-wrap: wrap;
         overflow-x: scroll;
         overflow-y: hidden;
         white-space: nowrap;
@@ -50,7 +50,7 @@
 
             .info {
                 width: 100px;
-                flow: horizontal-flow;
+                display: flex; flex-wrap: wrap;
 
                 .tips {
                     width: max-content;
@@ -129,7 +129,7 @@
     }
 
     .diff-title {
-        flow: horizontal;
+        display: flex;
         font-size: 12px;
         font-weight: 600;
         opacity: 0.8;
@@ -144,7 +144,7 @@
     }
 
     .diff-item {
-        flow: horizontal;
+        display: flex;
         vertical-align: middle;
         padding: 6px 8px;
         margin-top: 4px;
@@ -200,7 +200,7 @@
 }
 
 label {
-    flow: horizontal;
+    display: flex;
     vertical-align: middle;
 }
 
@@ -209,6 +209,9 @@ label {
     padding: 20px;
 
     .info {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        align-items: center;
 
         .title {
             margin-top: 20px;
@@ -228,8 +231,6 @@ label {
             margin-top: 20px;
         }
 
-        flow: grid(1 2,
-            1 3);
     }
 
     .config {

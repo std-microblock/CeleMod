@@ -5,7 +5,7 @@
 .filter {
     width: 100vw;
     select {
-        style-set: custom-select-dropdown;
+        appearance: auto;
     }
 
     .searchinput {
@@ -28,13 +28,13 @@
 
     button {
         display: inline-block;
-        flow: horizontal;
+        display: flex;
         vertical-align: middle;
         margin-left: -2px;
         margin-right: 7px;
     }
 
-    flow: horizontal;
+    display: flex;
     vertical-align: middle;
     display: inline-block;
     width: 100%;

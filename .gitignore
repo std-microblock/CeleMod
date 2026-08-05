@@ -1,4 +1,6 @@
 /target
+/src-tauri/gen
 cele-mod.db
 mod-cache-*
+/mod_cache.json
 translate_script.js

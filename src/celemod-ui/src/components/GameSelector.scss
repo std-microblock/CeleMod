@@ -4,13 +4,13 @@
     width: 100%;
 
     select {
-        style-set: custom-select-dropdown;
+        appearance: auto;
         margin: 10px 0;
     }
 
     .title {
         vertical-align: center;
-        flow: horizontal;
+        display: flex;
 
         .icon {
             margin-top: 2px;

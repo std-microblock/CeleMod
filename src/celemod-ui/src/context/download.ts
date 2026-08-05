@@ -1,6 +1,6 @@
 import { callRemote } from "../utils";
-import { useInstalledMods, useGamePath, useMirror as useMirror, useStorage, initUseMultiThread, useUseMultiThread } from "../states";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useInstalledMods, useGamePath, useMirror, initUseMultiThread, useUseMultiThread } from '../states';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EventTarget } from "../utils";
 
 export namespace Download {

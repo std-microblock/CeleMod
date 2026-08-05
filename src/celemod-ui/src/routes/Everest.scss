@@ -9,7 +9,7 @@
     }
 
     .line {
-        flow: horizontal-flow;
+        display: flex; flex-wrap: wrap;
         vertical-align: middle;
 
         &>* {
@@ -61,7 +61,7 @@
     }
 
     .channels {
-        flow: horizontal-flow;
+        display: flex; flex-wrap: wrap;
 
         .channel {
             width: 33%;
@@ -131,9 +131,9 @@
 
     .installing {
         width: 100%;
-        flow: vertical;
+        display: flex; flex-direction: column;
         vertical-align: middle;
-        horizontal-align: center;
+        justify-content: center;
 
         .wrapperin {
             padding-bottom: 14px;
@@ -167,7 +167,7 @@
             margin-top: 8px;
             width: 78%;
             text-align: center;
-            horizontal-align: center;
+            justify-content: center;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;

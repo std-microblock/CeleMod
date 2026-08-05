@@ -1,4 +1,5 @@
-import { URLSearchParams, celemodUA } from "../utils";
+import { URLSearchParams, getCelemodUA } from '../utils';
+import { fetch } from '../lib/http';
 
 export interface WegfanSubmissionSearchResult {
     content: Content[];
@@ -146,6 +147,7 @@ export const searchSubmission = async ({
     if (includeExclusiveSubmissions) params.set("includeExclusiveSubmissions", includeExclusiveSubmissions.toString());
     const url = `https://celeste.weg.fan/api/v2/submission/search?${params.toString()}`;
     console.log('Search URL:', url);
+    const celemodUA = await getCelemodUA();
     return fetch(url, {
         headers: {
             'User-Agent': celemodUA

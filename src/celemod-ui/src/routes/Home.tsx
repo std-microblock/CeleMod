@@ -1,7 +1,6 @@
 import _i18n from 'src/i18n';
 import { useI18N } from 'src/i18n';
-import { h } from 'preact';
-import { useContext, useMemo, useState } from 'preact/hooks';
+import { useContext, useState } from 'react';
 import { GameSelector } from '../components/GameSelector';
 import { Icon } from '../components/Icon';
 import { callRemote, selectGamePath, useBlockingMask } from '../utils';
@@ -14,7 +13,7 @@ import {
   useGamePath,
   useInstalledMods,
   useMirror,
-  useStorage,
+  useAppStore,
   useUseMultiThread,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
@@ -28,20 +27,16 @@ import { useGlobalContext } from 'src/App';
 export const Home = () => {
   useI18N();
   const [gamePath, setGamePath] = useGamePath();
-  const gamePaths = useMemo(() => {
-    const paths = callRemote('get_celeste_dirs')
-      .split('\n')
-      .filter((v: string | null) => v);
-    if (!gamePath && paths.length > 0) {
-      // setGamePath(paths[0]);
-    }
-    return paths;
+  const [gamePaths, setGamePaths] = useState<string[]>([]);
+  useEffect(() => {
+    void callRemote<string>('get_celeste_dirs')
+      .then((paths) => setGamePaths(paths.split('\n').filter(Boolean)))
+      .catch(console.error);
   }, [gamePath]);
   const globalCtx = useGlobalContext();
 
-  const [lastUseMap, setLastUseMap] = useState<{
-    [profile: string]: number;
-  }>({});
+  const lastUseMap = useAppStore((state) => state.lastUseMap);
+  const setLastUseMap = useAppStore((state) => state.setLastUseMap);
 
   const {
     profiles,
@@ -52,21 +47,11 @@ export const Home = () => {
     setCurrentProfile,
   } = useCurrentBlacklistProfile();
 
-  const { storage, save } = useStorage();
-
-  useEffect(() => {
-    if (storage) {
-      storage.root ??= {};
-      storage.root.lastUseMap ??= {};
-      setLastUseMap(storage.root.lastUseMap);
-    }
-  }, [storage]);
-
   const mask = useBlockingMask();
 
   useEffect(() => {
     if (!gamePath) return;
-    setCurrentProfileName(callRemote('get_current_profile', gamePath));
+    void callRemote<string>('get_current_profile', gamePath).then(setCurrentProfileName).catch(console.error);
     callRemote('get_blacklist_profiles', gamePath, (data: string) => {
       setProfiles(JSON.parse(data));
     });
@@ -82,8 +67,8 @@ export const Home = () => {
 
   useEffect(() => {
     if (!currentProfile || !gamePath) return;
-    const checkSync = () => {
-      const content = callRemote('get_current_blacklist_content', gamePath);
+    const checkSync = async () => {
+      const content = await callRemote<string>('get_current_blacklist_content', gamePath);
       const disabledFiles: string[] = content.split('\n').map(v => v.trim()).filter(v => v && !v.startsWith('#')).sort();
       const expectedDisabledFiles: string[] = currentProfile.mods
         .filter(m => !alwaysOnMods.includes(m.name))
@@ -154,8 +139,8 @@ export const Home = () => {
                   globalCtx.blacklist.switchProfile(currentProfileName);
                   hide();
                 }}>{_i18n.t('使用 CeleMod Profile')}</button>
-                <button onClick={() => {
-                  const importedProfileName = callRemote(
+                <button onClick={async () => {
+                  const importedProfileName = await callRemote<string>(
                     'import_blacklist_file_as_profile',
                     gamePath,
                     JSON.stringify(alwaysOnMods)
@@ -174,7 +159,7 @@ export const Home = () => {
         });
       }
     };
-    checkSync();
+    void checkSync().catch(console.error);
   }, [currentProfile, gamePath, alwaysOnMods, currentProfileName]);
 
   const formatTime = (time: number) => {
@@ -208,10 +193,10 @@ export const Home = () => {
   const { installedMods } = useInstalledMods();
 
   return (
-    <div class="home">
+    <div className="home">
       <div className="info">
         <span className="part">
-          <img src={strawberry} alt="" srcset="" />
+          <img src={strawberry} alt="" srcSet="" />
         </span>
         <span className="part">
           <div className="title">CeleMod</div>
@@ -234,9 +219,7 @@ export const Home = () => {
               } else setGamePath(value);
             }}
             launchGame={(v) => {
-              lastUseMap[currentProfileName] = Date.now();
-              setLastUseMap(lastUseMap);
-              save();
+              setLastUseMap({ ...lastUseMap, [currentProfileName]: Date.now() });
               mask.setMaskEnabled(true);
               mask.setMaskText(_i18n.t('正在启动'));
               callRemote(
@@ -309,7 +292,7 @@ export const Home = () => {
       <div className="config-block profiles">
         {profiles.map((v) => (
           <div
-            class={`profile ${v.name === currentProfileName && 'selected'}`}
+            className={`profile ${v.name === currentProfileName && 'selected'}`}
             onClick={() => {
               globalCtx.blacklist.switchProfile(v.name);
             }}
@@ -333,9 +316,7 @@ export const Home = () => {
                 (e) => {
                   e.stopPropagation();
                   globalCtx.blacklist.switchProfile(v.name);
-                  lastUseMap[v.name] = Date.now();
-                  save();
-                  setLastUseMap(lastUseMap);
+                  setLastUseMap({ ...lastUseMap, [v.name]: Date.now() });
                   mask.setMaskEnabled(true);
                   mask.setMaskText(_i18n.t('正在启动'));
                   setTimeout(() => {
@@ -377,7 +358,7 @@ export const Home = () => {
           <span>{_i18n.t('启用亚克力效果')}</span>
         </label>
 
-        <div class="languageSelect">
+        <div className="languageSelect">
           <span>{_i18n.t('语言/Language')}</span>&nbsp;
           <select
             onChange={(e: any) => {

@@ -1,15 +1,11 @@
-import { useState } from "preact/hooks";
-import { useEffect } from "react";
-// @ts-ignore
-import { dirname } from "path";
+import { useEffect, useState } from 'react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { callRemote } from './tauri/commands';
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-export const callRemote = (name: string, ...args: any[]) => {
-  // @ts-ignore
-  return Window.this.xcall(name, ...args);
-};
+export { callRemote };
 
 export const useBlockingMask = () => {
   const [maskEnabled, setMaskEnabled] = useState(false);
@@ -88,12 +84,13 @@ export class URLSearchParams {
   }
 }
 
-export const celemodVersion = callRemote("celemod_version");
-export const celemodHash = callRemote("celemod_hash");
-export const celemodUA = `CeleMod/${celemodVersion}-${celemodHash.substr(
-  0,
-  6,
-)}`;
+export const getCelemodUA = async () => {
+  const [version, hash] = await Promise.all([
+    callRemote<string>('celemod_version'),
+    callRemote<string>('celemod_hash'),
+  ]);
+  return `CeleMod/${version}-${hash.slice(0, 6)}`;
+};
 
 export const displayDate = (date_: string | Date) => {
   const date = new Date(date_);
@@ -121,21 +118,14 @@ export const compareVersion = (a: string, b: string) => {
   return 0;
 };
 
-export const selectGamePath = (successCallback) => {
-  // @ts-ignore
-  const res = Window.this.selectFile({
-    mode: "open",
-    filter:
-      env.PLATFORM === "Windows"
-        ? "Celeste.exe (Windows)|Celeste.exe|Celeste (*nix)|Celeste"
-        : "Celeste (*nix)|Celeste|Celeste.exe (Windows)|Celeste.exe",
+export const selectGamePath = async (successCallback: (path: string) => void) => {
+  const selected = await open({
+    multiple: false,
+    directory: true,
   });
-  if (res !== null) {
-    // strip file:// and Celeste.exe
-    const prefix = "file://".length;
-    const decoded = decodeURI(res);
-    const path = callRemote("normalize_game_path", dirname(decoded.slice(prefix)));
-    if (!callRemote("verify_celeste_install", path)) {
+  if (typeof selected === 'string') {
+    const path = await callRemote<string>('normalize_game_path', selected);
+    if (!await callRemote<boolean>('verify_celeste_install', path)) {
       alert("Invalid Celeste install path.");
       return;
     }

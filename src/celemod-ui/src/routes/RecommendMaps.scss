@@ -75,8 +75,8 @@
       position: absolute;
       bottom: 0px;
       padding: 10px;
-      flow: horizontal-flow;
-      horizontal-align: right;
+      display: flex; flex-wrap: wrap;
+      justify-content: flex-end;
       z-index: 999;
     }
   }

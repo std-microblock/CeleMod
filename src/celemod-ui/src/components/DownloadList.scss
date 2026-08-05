@@ -19,7 +19,7 @@
         margin: 0;
         padding: 12px 14px 10px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        flow: horizontal;
+        display: flex;
         vertical-align: middle;
 
         &::before {
@@ -66,9 +66,9 @@
             padding: 0;
             width: 16px;
             height: 20px;
-            flow: horizontal;
+            display: flex;
             vertical-align: middle;
-            horizontal-align: center;
+            justify-content: center;
             background: none;
             border: none;
             box-shadow: none;
@@ -97,9 +97,9 @@
         }
 
         .taskInlineAction {
-            flow: horizontal;
+            display: flex;
             vertical-align: middle;
-            horizontal-align: center;
+            justify-content: center;
             position: absolute;
             right: 24px;
             top: 1px;
@@ -163,7 +163,7 @@
     }
 
     .metaLine {
-        flow: horizontal-flow;
+        display: flex; flex-wrap: wrap;
         width: 100%;
         font-size: 10px;
         color: theme.$fg3;
@@ -222,7 +222,7 @@
             }
 
             .error {
-                flow: horizontal;
+                display: flex;
                 vertical-align: middle;
                 font-size: 10px;
                 color: #ef596f;

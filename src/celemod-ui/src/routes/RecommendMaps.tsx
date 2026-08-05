@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { enforceEverest } from 'src/components/EnforceEverestPage';
 import { Icon } from 'src/components/Icon';
 import './RecommendMaps.scss';
@@ -15,7 +14,7 @@ import theRoadLessTravelledImg from '../resources/collabs/the-road-less-travelle
 
 import { callRemote, horizontalScrollMouseWheelHandler } from 'src/utils';
 import { Button } from 'src/components/Button';
-import { memo } from 'preact/compat';
+import { memo } from 'react';
 import { useAutoDisableNewMods, useInstalledMods } from 'src/states';
 import { useState } from 'react';
 import { useGlobalContext } from 'src/App';

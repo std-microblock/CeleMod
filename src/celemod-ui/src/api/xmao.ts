@@ -1,4 +1,5 @@
 import { URLSearchParams } from "../utils";
+import { fetch } from '../lib/http';
 
 export interface SearchModResp {
     code: number;
@@ -46,4 +47,3 @@ export const getModFileId = (id: number) => {
         .then(v => v.json())
         .then(v => v.data as number)
 }
-

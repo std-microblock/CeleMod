@@ -1,6 +1,5 @@
 import _i18n from 'src/i18n';
 
-import { h } from 'preact';
 import { useGamePath, useInstalledMods } from '../states';
 import { Mod } from '../components/ModList';
 import { Button } from '../components/Button';

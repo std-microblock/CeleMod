@@ -1,5 +1,4 @@
 import _i18n from 'src/i18n';
-import { h } from 'preact';
 import { Icon } from './Icon';
 import './GameSelector.scss';
 import { callRemote, useBlockingMask } from '../utils';
@@ -17,7 +16,7 @@ export const GameSelector = (props: {
   }
 
   return (
-    <div class="gameSelector">
+    <div className="gameSelector">
       <div className="title">
         <Icon name="save" />
         <span>{_i18n.t('选择游戏路径')}</span>

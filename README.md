@@ -15,7 +15,7 @@ An alternative mod manager for Celeste
 ### 好用
 ✅ 常用 Mod 列表，一键安装  
 ✅ 国内超快下载（多线程下载，@WEGFan 镜像）  
-✅ 轻量级，启动占用仅 18M  
+✅ 基于 Tauri 2 的跨平台桌面应用
 ✅ 一键解析，补全依赖  
 ✅ 一键升级 Mod  
 ✅ 按类别搜索，多种排序方式  
@@ -26,7 +26,7 @@ An alternative mod manager for Celeste
 ✅ 树状 Mod 管理，依赖一目了然  
 ✅ 多个 Mod 同时下载，不阻塞  
 ✅ 软件内 Mod 详情预览  
-✅ 亚克力 UI  
+✅ 原生 WebView + React UI
 
 
 ### 页面展示
@@ -42,8 +42,19 @@ An alternative mod manager for Celeste
 
 [@WEGFan](https://github.com/WEGFan) 提供镜像和社区 API、蔚蓝实现等相关知识
 
-### 其它
+### 开发
 
-我们使用的 Sciter 版本是 `5.0.2.17`，你可以在这里找到其预构建二进制：
+CeleMod 使用 Tauri 2、React、Zustand 和 Immer。需要 Node.js 20+、pnpm、Rust nightly，以及当前平台的 [Tauri 系统依赖](https://v2.tauri.app/start/prerequisites/)。
 
-https://gitlab.com/sciter-engine/sciter-js-sdk/-/blob/5.0.2.17/bin/
+```bash
+pnpm --dir src/celemod-ui install
+pnpm --dir src/celemod-ui tauri dev
+```
+
+前端检查与桌面端构建：
+
+```bash
+pnpm --dir src/celemod-ui typecheck
+pnpm --dir src/celemod-ui build
+pnpm --dir src/celemod-ui tauri build
+```

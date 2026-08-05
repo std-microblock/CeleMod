@@ -1,9 +1,8 @@
 import _i18n from 'src/i18n';
-import { h } from 'preact';
 import './DownloadList.scss';
 import { useGlobalContext } from '../App';
 import { useEffect } from 'react';
-import { useRef, useState } from 'preact/hooks';
+import { useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Download } from '../context/download';
 
@@ -46,11 +45,11 @@ const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) =>
       : null;
 
   return (
-    <div class="task">
+    <div className="task">
       <label>
         <div className="infoLine">
           <button
-            class="b1"
+            className="b1"
             onClick={() => {
               setExpanded((v) => !v);
             }}
@@ -77,25 +76,25 @@ const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) =>
           {task.subtasks
             .filter((v) => v.state !== 'Finished' || v.error)
             .map((subtask) => (
-              <div class="subTask" key={subtask.name}>
-                <div class="name">{subtask.name}</div>
+              <div className="subTask" key={subtask.name}>
+                <div className="name">{subtask.name}</div>
                 <div className="progressLine">
-                  <div class="progress">
+                  <div className="progress">
                     <div
-                      class="bar"
+                      className="bar"
                       style={{
                         width: `${subtask.progress}%`,
                       }}
                     ></div>
                   </div>
-                  <div class="text">{subtask.progress}%</div>
+                  <div className="text">{subtask.progress}%</div>
                 </div>
                 <div className="metaLine subMetaLine">
                   <span>{formatBytes(subtask.downloadedBytes)}/{formatBytes(subtask.totalBytes)}</span>
                   <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
                 </div>
                 {subtask.state === 'Failed' && (
-                  <div class="error">
+                  <div className="error">
                     <Icon name="fail" />
                     {subtask.error}
                   </div>
@@ -108,7 +107,7 @@ const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) =>
   );
 };
 
-export const DownloadListMenu = () => {
+export const DownloadListMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { download } = useGlobalContext();
   const [downloadTasks, setDownloadTasks] = useState(
     download.downloadTasks.current
@@ -120,16 +119,20 @@ export const DownloadListMenu = () => {
     });
   }, []);
 
+  if (!open) return null;
   return (
-    <menu className="popup downloadList">
+    <div className="downloadListBackdrop" onClick={onClose}>
+    <menu className="popup downloadList" onClick={(event) => event.stopPropagation()}>
+      <button className="downloadListClose" onClick={onClose} aria-label={_i18n.t('关闭')}>×</button>
       <h2>{_i18n.t('下载任务')}</h2>
       <div className="taskList">
         {Object.values(downloadTasks)
           .filter((v) => v.state !== 'finished' || v.canceled)
           .map((task) => (
-            <Task task={task} download={download} />
+            <Task key={task.name} task={task} download={download} />
           ))}
       </div>
     </menu>
+    </div>
   );
 };

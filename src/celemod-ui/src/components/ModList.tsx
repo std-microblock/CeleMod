@@ -1,8 +1,8 @@
 import _i18n from 'src/i18n';
-import { Fragment, h } from 'preact';
+import { Fragment } from 'react';
 import './ModList.scss';
 import { Mod as GBMod, getModFileId } from '../api/xmao';
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { GameSelector } from './GameSelector';
@@ -10,7 +10,7 @@ import { Awaitable, callRemote, displayDate, horizontalScrollMouseWheelHandler }
 
 import { FixedSizeGrid, FixedSizeList } from 'react-window';
 import InfiniteLoader from 'react-window-infinite-loader';
-import { memo } from 'preact/compat';
+import { memo } from 'react';
 import { Content } from '../api/wegfan';
 import { Download } from '../context/download';
 import { useAutoDisableNewMods } from '../states';
@@ -30,7 +30,7 @@ const processLargeNum = (num: number) => {
 
 const BackgroundEle = memo(({ preview }: { preview: string }) => (
   <div className="bg">
-    <img src={preview + '?w=340'} alt="" srcset="" />
+    <img src={preview + '?w=340'} alt="" srcSet="" />
   </div>
 ));
 
@@ -84,7 +84,7 @@ export const Mod = memo(
     return (
       <div
         onClick={props.onClick}
-        class={`mod ${props.expanded && 'expanded'}`}
+        className={`mod ${props.expanded && 'expanded'}`}
         key={mod.name}
       >
         <div className="operations">
@@ -311,11 +311,11 @@ export const Mod = memo(
                               <img
                                 src={v + '?h=160'}
                                 alt=""
-                                srcset=""
+                                srcSet=""
                                 onClick={() =>
                                   createPopup(() => (
                                     <div className="image-view">
-                                      <img src={v} alt="" srcset="" />
+                                      <img src={v} alt="" srcSet="" />
                                     </div>
                                   ))
                                 }
@@ -375,7 +375,7 @@ export const ModList = (props: {
   if (installedModIDs === null)
     return (
       <div
-        class="loader"
+        className="loader"
         style={{
           position: 'fixed',
           bottom: 200,
@@ -384,7 +384,7 @@ export const ModList = (props: {
           right: 200,
         }}
       >
-        <div class="bar"></div>
+        <div className="bar"></div>
       </div>
     );
 
@@ -640,7 +640,7 @@ export const ModList = (props: {
 
       {loading && (
         <div
-          class="loader"
+          className="loader"
           style={{
             position: 'fixed',
             bottom: 0,
@@ -648,7 +648,7 @@ export const ModList = (props: {
             zIndex: 999,
           }}
         >
-          <div class="bar"></div>
+          <div className="bar"></div>
         </div>
       )}
 

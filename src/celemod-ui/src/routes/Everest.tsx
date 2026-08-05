@@ -1,6 +1,7 @@
 import _i18n from 'src/i18n';
-import { Fragment, createContext, h } from 'preact';
+import { Fragment, createContext } from 'react';
 import './Everest.scss';
+import { fetch } from '../lib/http';
 import {
   BackendDep,
   BackendModInfo,
@@ -10,11 +11,11 @@ import {
   useInstalledMods,
   useMirror,
 } from '../states';
-import { useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { callRemote, displayDate } from '../utils';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
-import { GlobalContext, useGlobalContext } from '../App';
+import { useGlobalContext } from '../App';
 //@ts-ignore
 import everest from '../resources/everest.png';
 import { ProgressIndicator } from '../components/Progress';
@@ -196,7 +197,7 @@ export const Everest = () => {
 
   return (
     <div className="everest">
-      <img src={everest} alt="" srcset="" width={300} />
+      <img src={everest} alt="" srcSet="" width={300} />
 
       <div className="line">
         {currentEverestVersion.length > 0 ? (
@@ -246,7 +247,7 @@ export const Everest = () => {
           ) : (
             <div
               style={{
-                horizontalAlign: 'center',
+                textAlign: 'center',
               }}
             >
               <ProgressIndicator infinite />

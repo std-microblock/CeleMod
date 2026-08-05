@@ -1,13 +1,12 @@
 import _i18n, { useI18N } from 'src/i18n';
 import './RecommendMods.scss';
-import { h } from 'preact';
 import { useAutoDisableNewMods, useGamePath, useInstalledMods } from '../states';
 import { Mod } from '../components/ModList';
 import { Button } from '../components/Button';
 import { useState, useEffect } from 'react';
 import { callRemote } from '../utils';
 import { _functionalMods, _skinMods } from '../resources/RecommendModData';
-import { useRef } from 'preact/hooks';
+import { useRef } from 'react';
 import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
 
