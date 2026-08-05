@@ -39,9 +39,15 @@ importers:
       '@types/react-window-infinite-loader':
         specifier: ^1.0.6
         version: 1.0.9
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       di18n-cli:
         specifier: ^0.1.29
         version: 0.1.29(typescript@5.9.3)
+      esbuild:
+        specifier: ^0.25.12
+        version: 0.25.12
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -57,6 +63,9 @@ importers:
       vite:
         specifier: ^6.1.0
         version: 6.4.3(@types/node@22.20.1)(sass@1.102.0)
+      ws:
+        specifier: ^8.21.2
+        version: 8.21.2
 
 packages:
 
@@ -704,6 +713,9 @@ packages:
 
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/types@3.10.1':
     resolution: {integrity: sha512-+3+FCUJIahE9q0lDi1WleYzjCwJs5hIsbugIgnbB+dSCYUxl8L6PwmsyOPFZde2hc1DlTo/xnkOgiTLSyAbHiQ==}
@@ -1527,6 +1539,18 @@ packages:
   write-file-atomic@3.0.3:
     resolution: {integrity: sha512-AvHcyZ5JnSfq3ioSyjrBkH9yW4m7Ayk8/9My/DD9onKeu/94fwrMocemO2QAJFAlnnDN+ZDS+ZjAR5ua1/PV/Q==}
 
+  ws@8.21.2:
+    resolution: {integrity: sha512-54dMVAo4WIe6SKy3vBgN+9bJZqqQ8IMRevAkOLQALhi49qkkQDQfWdAZ8KQlXiEabw88ARXXdUrlvtbKQX+aKw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xdg-basedir@4.0.0:
     resolution: {integrity: sha512-PSNhEJDejZYV7h50BohL09Er9VaIefr2LMAf3OEmpCkjOi34eYyQYAXUTjEQtZJTKcF0E2UKTh+osDLsgNim9Q==}
     engines: {node: '>=8'}
@@ -2082,6 +2106,10 @@ snapshots:
       csstype: 3.2.3
 
   '@types/responselike@1.0.3':
+    dependencies:
+      '@types/node': 22.20.1
+
+  '@types/ws@8.18.1':
     dependencies:
       '@types/node': 22.20.1
 
@@ -2936,6 +2964,8 @@ snapshots:
       is-typedarray: 1.0.0
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
+
+  ws@8.21.2: {}
 
   xdg-basedir@4.0.0: {}
 

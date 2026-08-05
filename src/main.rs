@@ -1673,23 +1673,28 @@ fn main() {
             .unwrap();
     }
 
+    #[cfg(debug_assertions)]
+    {
+        struct DebugHost;
+        impl sciter::HostHandler for DebugHost {}
+        frame.sciter_handler(DebugHost);
+    }
+
     frame.event_handler(Handler);
-
-    #[cfg(target_os = "windows")]
-    const INDEX_HTML: &str = "index_windows.html";
-
-    #[cfg(not(target_os = "windows"))]
-    const INDEX_HTML: &str = "index.html";
 
     #[cfg(debug_assertions)]
     frame.load_html(
-        read_to_string_bom(Path::new("../../src/celemod-ui/debug_index.html"))
-            .unwrap()
-            .as_bytes(),
-        Some(&format!("app://{}", INDEX_HTML)),
+        include_bytes!("celemod-ui/debug_index.html"),
+        Some("app://index.html"),
     );
     #[cfg(not(debug_assertions))]
     {
+        #[cfg(target_os = "windows")]
+        const INDEX_HTML: &str = "index_windows.html";
+
+        #[cfg(not(target_os = "windows"))]
+        const INDEX_HTML: &str = "index.html";
+
         frame
             .archive_handler(include_bytes!("../resources/dist.rc"))
             .unwrap();

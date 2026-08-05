@@ -10,7 +10,9 @@ pnpm dev
 ```
 
 Run the Rust application in debug mode after the Vite server starts. The debug
-loader connects to `http://127.0.0.1:5173`.
+loader connects to `http://localhost:1234`.
+JavaScript and stylesheet changes are applied in place without reloading the
+Sciter window.
 
 ## Build
 
