@@ -135,6 +135,7 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
 
 fn run_command(
     installer_path: PathBuf,
+    step_label: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
     let mut cmd = Command::new(&installer_path);
@@ -189,7 +190,7 @@ fn run_command(
     for line in reader.lines() {
         let line = line?;
         line_count = (line_count + 1.0).min(99.0);
-        progress_callback(format!("[3/3] Run MiniInstaller: {line}"), line_count);
+        progress_callback(format!("{step_label}: {line}"), line_count);
     }
 
     let status = child.wait()?;
@@ -202,7 +203,7 @@ fn run_command(
         bail!("Command failed with error: {}", stderr);
     }
 
-    progress_callback("[3/3] Run MiniInstaller".to_string(), 100.0);
+    progress_callback(step_label.to_string(), 100.0);
 
     Ok(())
 }
@@ -226,43 +227,51 @@ fn installer_name() -> anyhow::Result<&'static str> {
     Ok("MiniInstaller-linux")
 }
 
-pub fn download_and_install_everest(
-    game_path: &str,
-    url: &str,
+pub fn is_everest_install_archive(path: &Path) -> anyhow::Result<bool> {
+    let mut archive = zip::ZipArchive::new(std::fs::File::open(path)?)?;
+    let expected_installer = format!("main/{}", installer_name()?);
+    let mut has_installer = false;
+
+    for index in 0..archive.len() {
+        let file = archive.by_index(index)?;
+        let name = file.name();
+        if name == expected_installer {
+            has_installer = true;
+        }
+        if !name.starts_with("main/") {
+            return Ok(false);
+        }
+    }
+
+    Ok(has_installer)
+}
+
+fn install_everest_archive_with_steps(
+    game_path: &Path,
+    archive_path: &Path,
+    extract_step: &str,
+    installer_step: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
-    let generate_backup = false;
+    if !is_everest_install_archive(archive_path)? {
+        bail!("The zip is not an Everest install package for this platform");
+    }
 
-    let temp_path = std::env::temp_dir().join("everest.zip");
-    let temp_path = temp_path.to_str().unwrap();
-    let game_path = std::path::Path::new(game_path);
-    let cancel_flag = Arc::new(AtomicBool::new(false));
+    progress_callback(extract_step.to_string(), 0.0);
 
-    ureq::download_file_with_progress(
-        url,
-        temp_path,
-        &mut |callback| {
-            progress_callback("[1/3] Download Everest".to_string(), callback.progress);
-        },
-        false,
-        &cancel_flag,
-    )?;
-
-    progress_callback("[2/3] Extract Everest files".to_string(), 0.0);
-
-    // unzip everest/main/* to game_path and overwrite all
-    let mut archive = zip::ZipArchive::new(std::fs::File::open(temp_path)?)?;
+    let mut archive = zip::ZipArchive::new(std::fs::File::open(archive_path)?)?;
     let archive_len = archive.len();
-
     let backup_dir = game_path.join("backup");
+    let generate_backup = false;
 
     for i in 0..archive_len {
         let mut file = archive.by_index(i)?;
-        let dist_name = file.mangled_name();
-        // strip /main/ from the name
-        let dist_name = dist_name.strip_prefix("main/")?;
-        let outpath = game_path.join(dist_name);
-        let status_str = format!("[2/3] Extract Everest files: {}", outpath.display());
+        let dist_name = file
+            .mangled_name()
+            .strip_prefix("main/")?
+            .to_path_buf();
+        let outpath = game_path.join(&dist_name);
+        let status_str = format!("{extract_step}: {}", outpath.display());
         progress_callback(status_str, (i as f32) / (archive_len as f32) * 100.0);
         if file.name().ends_with('/') {
             std::fs::create_dir_all(&outpath)?;
@@ -273,7 +282,7 @@ pub fn download_and_install_everest(
 
             if outpath.exists() && generate_backup {
                 std::fs::create_dir_all(&backup_dir)?;
-                let backpath = backup_dir.join(dist_name);
+                let backpath = backup_dir.join(&dist_name);
                 std::fs::create_dir_all(backpath.parent().unwrap())?;
                 if backpath.exists() {
                     std::fs::remove_file(&backpath)?;
@@ -287,8 +296,52 @@ pub fn download_and_install_everest(
         }
     }
 
-    progress_callback("[3/3] Run MiniInstaller".to_string(), 0.0);
-    let installer_path = game_path.join(installer_name()?);
+    progress_callback(installer_step.to_string(), 0.0);
+    run_command(
+        game_path.join(installer_name()?),
+        installer_step,
+        progress_callback,
+    )
+}
 
-    run_command(installer_path, progress_callback)
+pub fn install_everest_archive(
+    game_path: &str,
+    archive_path: &Path,
+    progress_callback: &mut dyn FnMut(String, f32),
+) -> anyhow::Result<()> {
+    install_everest_archive_with_steps(
+        Path::new(game_path),
+        archive_path,
+        "[1/2] Extract local Everest package",
+        "[2/2] Run MiniInstaller",
+        progress_callback,
+    )
+}
+
+pub fn download_and_install_everest(
+    game_path: &str,
+    url: &str,
+    progress_callback: &mut dyn FnMut(String, f32),
+) -> anyhow::Result<()> {
+    let temp_path = std::env::temp_dir().join("everest.zip");
+    let game_path = std::path::Path::new(game_path);
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+
+    ureq::download_file_with_progress(
+        url,
+        temp_path.to_string_lossy().as_ref(),
+        &mut |callback| {
+            progress_callback("[1/3] Download Everest".to_string(), callback.progress);
+        },
+        false,
+        &cancel_flag,
+    )?;
+
+    install_everest_archive_with_steps(
+        game_path,
+        &temp_path,
+        "[2/3] Extract Everest files",
+        "[3/3] Run MiniInstaller",
+        progress_callback,
+    )
 }

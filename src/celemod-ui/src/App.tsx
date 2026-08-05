@@ -20,6 +20,7 @@ import { checkUpdate } from './components/SelfUpdate';
 import { createThemeContext } from './context/theme';
 import { createBlacklistContext } from './context/blacklist';
 import { RecommendMaps } from './routes/RecommendMaps';
+import { DropInstaller } from './components/DropInstaller';
 
 export const GlobalContext = createContext<{
   bus: EventTarget;
@@ -125,6 +126,7 @@ export default () => {
           }}
         >
           <DownloadListMenu />
+          <DropInstaller />
           <nav className="sidebar">
             <SidebarButton icon="home" name="Home" title={_i18n.t('主页')} />
             {gamePath && (

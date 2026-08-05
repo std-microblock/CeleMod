@@ -75,7 +75,7 @@ fn compare_version(a: &str, b: &str) -> i32 {
 
 struct Handler;
 
-fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
+fn read_mod_yaml_bytes(path: &Path) -> anyhow::Result<Vec<u8>> {
     let zipfile = std::fs::File::open(path)?;
     let mut archive = zip::ZipArchive::new(zipfile)?;
     let everest_name = archive
@@ -84,31 +84,42 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
         .context("Failed to find everest.yaml")?
         .to_string();
 
-    let everest = archive.by_name(&everest_name);
-    if let Ok(mut file) = everest {
-        use std::io::prelude::*;
+    let mut file = archive
+        .by_name(&everest_name)
+        .context("Failed to get everest.yaml")?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    Ok(buffer)
+}
 
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer)?;
-        let cache_dir = path
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("celemod_yaml_cache");
-        std::fs::create_dir_all(&cache_dir)?;
+fn parse_mod_yaml(path: &Path) -> anyhow::Result<serde_yaml::Value> {
+    use strip_bom::StripBom;
+    let buffer = read_mod_yaml_bytes(path)?;
+    Ok(serde_yaml::from_str(
+        String::from_utf8(buffer)?.strip_bom(),
+    )?)
+}
 
-        let mut file = std::fs::File::create(
-            cache_dir.join(path.with_extension("yaml").file_name().unwrap()),
-        )?;
-        file.write_all(&buffer)?;
-        use strip_bom::StripBom;
-        Ok(serde_yaml::from_str(
-            String::from_utf8(buffer)?.strip_bom(),
-        )?)
-    } else {
-        bail!("Failed to get everest.yaml")
-    }
+fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
+    use std::io::Write;
+    use strip_bom::StripBom;
+
+    let buffer = read_mod_yaml_bytes(path)?;
+    let cache_dir = path
+        .parent()
+        .context("Mod archive has no parent folder")?
+        .parent()
+        .context("Mods folder has no parent folder")?
+        .join("celemod_yaml_cache");
+    std::fs::create_dir_all(&cache_dir)?;
+
+    let mut file = std::fs::File::create(
+        cache_dir.join(path.with_extension("yaml").file_name().unwrap()),
+    )?;
+    file.write_all(&buffer)?;
+    Ok(serde_yaml::from_str(
+        String::from_utf8(buffer)?.strip_bom(),
+    )?)
 }
 
 fn is_valid_zip_archive(path: &Path) -> bool {
@@ -641,6 +652,259 @@ struct DownloadInfo {
 
 fn make_path_compatible_name(name: &str) -> String {
     name.replace([' ', ':', '/', '\\', '?', '*', '\"', '<', '>', '|'], "_")
+}
+
+#[derive(Debug, Clone, Copy)]
+enum LocalPackageKind {
+    Mod,
+    Everest,
+}
+
+impl LocalPackageKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Mod => "mod",
+            Self::Everest => "everest",
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalPackageInstallResult {
+    file: String,
+    package_type: String,
+    success: bool,
+    error: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LocalPackageInstallProgress {
+    current: usize,
+    total: usize,
+    file: String,
+    detail: String,
+    progress: f32,
+}
+
+fn classify_local_package(path: &Path) -> anyhow::Result<LocalPackageKind> {
+    if !path.is_file() {
+        bail!("Package is not a file");
+    }
+    if !path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.eq_ignore_ascii_case("zip"))
+        .unwrap_or(false)
+    {
+        bail!("Only zip packages are supported");
+    }
+
+    let file = fs::File::open(path)?;
+    let archive = zip::ZipArchive::new(file)?;
+    if archive
+        .file_names()
+        .any(|name| name == "everest.yaml" || name == "everest.yml")
+    {
+        return Ok(LocalPackageKind::Mod);
+    }
+    drop(archive);
+
+    if everest::is_everest_install_archive(path)? {
+        Ok(LocalPackageKind::Everest)
+    } else {
+        bail!("The zip is neither a Mod nor an Everest package for this platform")
+    }
+}
+
+fn replace_local_mod_archive(source: &Path, destination: &Path) -> anyhow::Result<()> {
+    let file_name = destination
+        .file_name()
+        .context("Failed to resolve Mod archive file name")?
+        .to_string_lossy();
+    let install_id = std::process::id();
+    let temporary = destination.with_file_name(format!(
+        ".{file_name}.celemod-installing-{install_id}"
+    ));
+    let backup = destination.with_file_name(format!(".{file_name}.celemod-backup-{install_id}"));
+
+    fs::remove_file(&temporary).ok();
+    fs::remove_file(&backup).ok();
+    fs::copy(source, &temporary).with_context(|| {
+        format!(
+            "Failed to copy package into {}",
+            destination.parent().unwrap_or(destination).display()
+        )
+    })?;
+
+    let had_existing = destination.exists();
+    if had_existing {
+        if let Err(error) = fs::rename(destination, &backup) {
+            fs::remove_file(&temporary).ok();
+            return Err(error).context("Failed to back up the existing Mod archive");
+        }
+    }
+
+    if let Err(error) = fs::rename(&temporary, destination) {
+        if had_existing {
+            fs::rename(&backup, destination).ok();
+        }
+        fs::remove_file(&temporary).ok();
+        return Err(error).context("Failed to finish installing the Mod archive");
+    }
+
+    fs::remove_file(&backup).ok();
+    Ok(())
+}
+
+fn install_local_mod(game_path: &Path, package_path: &Path) -> anyhow::Result<(String, String)> {
+    let yaml = parse_mod_yaml(package_path)?;
+    let mod_name = yaml[0]["Name"]
+        .as_str()
+        .context("everest.yaml is missing the Mod name")?
+        .to_string();
+    let source_name = package_path
+        .file_name()
+        .context("Package path has no file name")?;
+    let destination_name = source_name.to_string_lossy().to_string();
+    let mods_path = game_path.join("Mods");
+    fs::create_dir_all(&mods_path)?;
+    let destination = mods_path.join(source_name);
+
+    replace_local_mod_archive(package_path, &destination)?;
+    Ok((mod_name, destination_name))
+}
+
+fn disable_installed_local_mods(
+    game_path: &String,
+    installed_mods: &[(String, String)],
+) -> anyhow::Result<()> {
+    if installed_mods.is_empty() {
+        return Ok(());
+    }
+    let mods: Vec<(&String, &String)> = installed_mods
+        .iter()
+        .map(|(name, file)| (name, file))
+        .collect();
+    for profile in blacklist::get_mod_blacklist_profiles(game_path) {
+        blacklist::switch_mod_blacklist_profile(
+            game_path,
+            &profile.name,
+            mods.clone(),
+            false,
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod local_package_tests {
+    use super::*;
+    use std::io::Write;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use zip::write::SimpleFileOptions;
+
+    fn test_dir(name: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "celemod-{name}-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    fn write_zip(path: &Path, entries: &[(&str, &[u8])]) {
+        let file = fs::File::create(path).unwrap();
+        let mut writer = zip::ZipWriter::new(file);
+        for (name, contents) in entries {
+            writer
+                .start_file(*name, SimpleFileOptions::default())
+                .unwrap();
+            writer.write_all(contents).unwrap();
+        }
+        writer.finish().unwrap();
+    }
+
+    #[test]
+    fn identifies_and_installs_mod_archives() {
+        let root = test_dir("drop-mod");
+        let package = root.join("Test Mod.zip");
+        let game_path = root.join("game");
+        fs::create_dir_all(&game_path).unwrap();
+        write_zip(
+            &package,
+            &[(
+                "everest.yaml",
+                b"- Name: DropInstallTest\n  Version: 1.0.0\n",
+            )],
+        );
+
+        assert!(matches!(
+            classify_local_package(&package).unwrap(),
+            LocalPackageKind::Mod
+        ));
+        let installed = install_local_mod(&game_path, &package).unwrap();
+        assert_eq!(installed.0, "DropInstallTest");
+        assert_eq!(installed.1, "Test Mod.zip");
+        let installed_path = game_path.join("Mods").join(installed.1);
+        assert!(installed_path.is_file());
+
+        write_zip(
+            &package,
+            &[(
+                "everest.yaml",
+                b"- Name: DropInstallReplacement\n  Version: 2.0.0\n",
+            )],
+        );
+        install_local_mod(&game_path, &package).unwrap();
+        assert_eq!(
+            parse_mod_yaml(&installed_path).unwrap()[0]["Name"].as_str(),
+            Some("DropInstallReplacement")
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn identifies_platform_everest_archives() {
+        #[cfg(target_os = "windows")]
+        let installer = if std::env::consts::ARCH == "x86" {
+            "main/MiniInstaller-win.exe"
+        } else {
+            "main/MiniInstaller-win64.exe"
+        };
+        #[cfg(target_os = "macos")]
+        let installer = "main/MiniInstaller-osx";
+        #[cfg(target_os = "linux")]
+        let installer = "main/MiniInstaller-linux";
+
+        let root = test_dir("drop-everest");
+        let package = root.join("everest.zip");
+        write_zip(&package, &[(installer, b"installer")]);
+
+        assert!(matches!(
+            classify_local_package(&package).unwrap(),
+            LocalPackageKind::Everest
+        ));
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn rejects_unrecognized_zip_archives() {
+        let root = test_dir("drop-unknown");
+        let package = root.join("unknown.zip");
+        write_zip(&package, &[("readme.txt", b"not a package")]);
+
+        assert!(classify_local_package(&package).is_err());
+
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 impl Handler {
@@ -1437,6 +1701,152 @@ impl Handler {
         });
     }
 
+    fn install_local_packages(
+        &self,
+        game_path: String,
+        package_paths: String,
+        auto_disable_new_mods: bool,
+        callback: sciter::Value,
+    ) {
+        std::thread::spawn(move || {
+            let paths: Vec<String> = match serde_json::from_str(&package_paths) {
+                Ok(paths) => paths,
+                Err(error) => {
+                    callback
+                        .call(
+                            None,
+                            &make_args!("failed", format!("Invalid package list: {error}")),
+                            None,
+                        )
+                        .ok();
+                    return;
+                }
+            };
+            if paths.is_empty() {
+                callback
+                    .call(None, &make_args!("failed", "No packages were dropped"), None)
+                    .ok();
+                return;
+            }
+
+            let game_path = normalize_game_path(&game_path);
+            let normalized_game_path = Path::new(&game_path);
+            if !normalized_game_path.is_dir() {
+                callback
+                    .call(
+                        None,
+                        &make_args!("failed", "The selected Celeste folder does not exist"),
+                        None,
+                    )
+                    .ok();
+                return;
+            }
+
+            let total = paths.len();
+            let mut results = Vec::with_capacity(total);
+            let mut installed_mods = Vec::new();
+
+            for (index, path) in paths.iter().enumerate() {
+                let package_path = Path::new(path);
+                let file_name = package_path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().to_string())
+                    .unwrap_or_else(|| path.clone());
+                let current = index + 1;
+                let initial_progress = LocalPackageInstallProgress {
+                    current,
+                    total,
+                    file: file_name.clone(),
+                    detail: "Inspecting package".to_string(),
+                    progress: 0.0,
+                };
+                callback
+                    .call(
+                        None,
+                        &make_args!(
+                            "progress",
+                            serde_json::to_string(&initial_progress).unwrap()
+                        ),
+                        None,
+                    )
+                    .ok();
+
+                let kind = classify_local_package(package_path);
+                let package_type = kind
+                    .as_ref()
+                    .map(|kind| kind.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                let install_result: anyhow::Result<()> = match kind {
+                    Ok(LocalPackageKind::Mod) => {
+                        install_local_mod(normalized_game_path, package_path).map(|installed| {
+                            installed_mods.push(installed);
+                        })
+                    }
+                    Ok(LocalPackageKind::Everest) => {
+                        if is_test_mode() {
+                            Ok(())
+                        } else {
+                            everest::install_everest_archive(
+                                &game_path,
+                                package_path,
+                                &mut |detail, progress| {
+                                    let update = LocalPackageInstallProgress {
+                                        current,
+                                        total,
+                                        file: file_name.clone(),
+                                        detail,
+                                        progress,
+                                    };
+                                    callback
+                                        .call(
+                                            None,
+                                            &make_args!(
+                                                "progress",
+                                                serde_json::to_string(&update).unwrap()
+                                            ),
+                                            None,
+                                        )
+                                        .ok();
+                                },
+                            )
+                        }
+                    }
+                    Err(error) => Err(error),
+                };
+
+                results.push(match install_result {
+                    Ok(()) => LocalPackageInstallResult {
+                        file: file_name,
+                        package_type,
+                        success: true,
+                        error: String::new(),
+                    },
+                    Err(error) => LocalPackageInstallResult {
+                        file: file_name,
+                        package_type,
+                        success: false,
+                        error: format!("{error:#}"),
+                    },
+                });
+            }
+
+            if auto_disable_new_mods
+                && let Err(error) = disable_installed_local_mods(&game_path, &installed_mods)
+            {
+                eprintln!("Failed to auto-disable dropped Mods: {error:#}");
+            }
+
+            callback
+                .call(
+                    None,
+                    &make_args!("finished", serde_json::to_string(&results).unwrap()),
+                    None,
+                )
+                .ok();
+        });
+    }
+
     fn celemod_version(&self) -> String {
         env!("VERSION").to_string()
     }
@@ -1551,6 +1961,7 @@ impl sciter::EventHandler for Handler {
         fn delete_mod_files(String, String, Value);
         fn get_everest_version(String, Value);
         fn download_and_install_everest(String, String, Value);
+        fn install_local_packages(String, String, bool, Value);
         fn celemod_version();
         fn celemod_hash();
         fn do_self_update(String, Value);
