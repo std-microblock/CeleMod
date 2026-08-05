@@ -173,5 +173,13 @@
   "选择其他路径": "Choisissez d'autres chemins",
   "界面设置": "Paramètres d'interface",
   "语言": "langue",
-  "简体中文": "Chinois simplifié"
+  "简体中文": "Chinois simplifié",
+  "同步黑名单 Mod 列表": "Synchroniser la liste noire des mods",
+  "blacklist.txt 与当前 CeleMod Profile 不一致。请选择要保留的版本。": "blacklist.txt diffère du profil CeleMod actuel. Choisissez la version à conserver.",
+  "仅 CeleMod Profile 中禁用": "Désactivés uniquement dans le profil CeleMod",
+  "仅 blacklist.txt 中禁用": "Désactivés uniquement dans blacklist.txt",
+  "使用 CeleMod Profile": "Utiliser le profil CeleMod",
+  "将文件保存为新 Profile": "Enregistrer le fichier dans un nouveau profil",
+  "注意，该功能不支持通配符等": "Cette fonction ne prend pas en charge les caractères génériques.",
+  "忽略": "Ignorer"
 }

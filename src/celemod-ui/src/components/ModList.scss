@@ -1,4 +1,5 @@
-@use "../index.scss"as theme;
+@use "sass:color";
+@use "../styles/theme" as theme;
 
 .mod {
     // width: 50px;
@@ -48,7 +49,11 @@
         z-index: 1;
         padding: 15px;
         width: 100%;
-        background: linear-gradient(to top, unquote(theme.$bg+"ff"), unquote(theme.$bg+"aa"));
+        background: linear-gradient(
+            to top,
+            color.change(theme.$bg, $alpha: 1),
+            color.change(theme.$bg, $alpha: 0.67)
+        );
         // backdrop-filter: blur(10px);
 
         .name {
@@ -91,7 +96,7 @@
         transition: opacity .2s ease-in-out, height .2s ease-in-out;
 
         &>* {
-            border: 1px solid unquote(theme.$bg3+"66");
+            border: 1px solid color.change(theme.$bg3, $alpha: 0.4);
             border-radius: 5dip;
             margin-right: 5px;
         }

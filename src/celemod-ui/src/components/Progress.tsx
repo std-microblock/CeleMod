@@ -40,7 +40,7 @@ export const ProgressIndicator = ({
             const [refStart, refSize] = refData.current;
 
             if (infinite) targetSize = Math.sin(frame / 4) * Math.PI * 0.5 + Math.PI * 0.5;
-            else targetSize = value / max * Math.PI * 2;
+            else targetSize = Number(value) / Number(max) * Math.PI * 2;
 
             if (infinite || (
                 !infinite && Math.abs(refStart - (Math.PI / 2 * 3)) > 0.2

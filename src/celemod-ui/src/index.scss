@@ -1,13 +1,5 @@
-$bg: #131313;
-$bg1: #222222;
-$bg2: #333333;
-$bg3: #444444;
-$fg: #ffffff;
-$fg1: #d1d1d1;
-$fg2: #bbbbbb;
-$fg3: #aaaaaa;
-
-$primary: #a77fdb;
+@use "sass:color";
+@use "./styles/theme" as *;
 
 html {
   color: $fg;
@@ -16,13 +8,13 @@ html {
 }
 
 a {
-  color: lighten($primary, 10%);
+  color: color.adjust($primary, $lightness: 10%);
   text-decoration: none;
   margin: 0 4px;
   display: inline-block;
 
   &:hover {
-    color: darken($primary, 10%);
+    color: color.adjust($primary, $lightness: -10%);
   }
 }
 

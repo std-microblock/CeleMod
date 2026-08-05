@@ -270,22 +270,26 @@ pub fn get_current_blacklist_content(game_path: &String) -> anyhow::Result<Strin
     }
 }
 
-pub fn sync_blacklist_profile_from_file(
+pub fn import_blacklist_file_as_profile(
     game_path: &String,
-    profile_name: &String,
-) -> anyhow::Result<()> {
+    always_on_mod: &[String],
+) -> anyhow::Result<String> {
     let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
     if !blacklist.exists() {
-        return Ok(());
+        anyhow::bail!("blacklist.txt not found");
     }
+
     let data = fs::read_to_string(blacklist)?;
     let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
-    // Preserve existing mod_options_order if profile already exists
-    let existing_order = get_mod_blacklist_profiles(game_path)
-        .into_iter()
-        .find(|v| &v.name == profile_name)
-        .map(|v| v.mod_options_order)
-        .unwrap_or_default();
+
+    let profiles = get_mod_blacklist_profiles(game_path);
+    let mut profile_name = "blacklist.txt".to_string();
+    let mut suffix = 2;
+    while profiles.iter().any(|profile| profile.name == profile_name) {
+        profile_name = format!("blacklist.txt ({})", suffix);
+        suffix += 1;
+    }
+
     let profile = ModBlacklistProfile {
         name: profile_name.clone(),
         mods: data
@@ -303,7 +307,7 @@ pub fn sync_blacklist_profile_from_file(
                 file: v.to_string(),
             })
             .collect(),
-        mod_options_order: existing_order,
+        mod_options_order: vec![],
     };
     let blacklist_path = Path::new(game_path)
         .join("celemod_blacklist_profiles")
@@ -312,5 +316,11 @@ pub fn sync_blacklist_profile_from_file(
         blacklist_path,
         serde_json::to_string_pretty(&profile).unwrap(),
     )?;
-    Ok(())
+
+    // Make the imported profile current and rewrite the generated header. This also
+    // applies the user's always-on list, so the sync prompt does not immediately
+    // reappear for mods that CeleMod must keep enabled.
+    apply_mod_blacklist_profile(game_path, &profile_name, always_on_mod)?;
+
+    Ok(profile_name)
 }

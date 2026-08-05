@@ -1251,14 +1251,22 @@ impl Handler {
         new_path.to_string_lossy().to_string()
     }
 
-    fn sync_blacklist_profile_from_file(&self, game_path: String, profile_name: String) -> String {
+    fn import_blacklist_file_as_profile(
+        &self,
+        game_path: String,
+        always_on_mods: String,
+    ) -> String {
         let game_path = normalize_game_path(&game_path);
-        let result = blacklist::sync_blacklist_profile_from_file(&game_path, &profile_name);
+        let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
+            Ok(value) => value,
+            Err(e) => return format!("Failed to parse always-on mods: {}", e),
+        };
+        let result = blacklist::import_blacklist_file_as_profile(&game_path, &always_on_mods);
         if let Err(e) = result {
-            eprintln!("Failed to sync blacklist profile: {}", e);
-            format!("Failed to sync blacklist profile: {}", e)
+            eprintln!("Failed to import blacklist profile: {}", e);
+            format!("Failed to import blacklist profile: {}", e)
         } else {
-            "Success".to_string()
+            result.unwrap()
         }
     }
 
@@ -1552,7 +1560,7 @@ impl sciter::EventHandler for Handler {
         fn get_mod_latest_info(Value);
         fn show_log_window();
         fn get_current_blacklist_content(String);
-        fn sync_blacklist_profile_from_file(String, String);
+        fn import_blacklist_file_as_profile(String, String);
         fn is_using_cache();
         fn get_database_path();
         fn set_mod_options_order(String, String, String);

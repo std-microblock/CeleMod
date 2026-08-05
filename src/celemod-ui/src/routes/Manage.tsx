@@ -1078,7 +1078,11 @@ export const Manage = () => {
       },
       createProfile: (name: string) => {
         callRemote('new_mod_blacklist_profile', gamePath, name);
-        setProfilesCallback((profiles) => profiles.concat({ name, mods: [] }));
+        setProfilesCallback((profiles) => profiles.concat({
+          name,
+          mods: [],
+          mod_options_order: [],
+        }));
         setCurrentProfileName(name);
       },
       deleteMod: (name: string) => {
@@ -1598,7 +1602,7 @@ export const Manage = () => {
               placeholder={_i18n.t('Profile 名')}
               /* @ts-ignore */
               filter={alphabet}
-              maxlength="30"
+              maxlength={30}
             />
 
             <Button

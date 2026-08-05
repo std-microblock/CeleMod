@@ -84,36 +84,89 @@ export const Home = () => {
     if (!currentProfile || !gamePath) return;
     const checkSync = () => {
       const content = callRemote('get_current_blacklist_content', gamePath);
-      const disabledFiles = content.split('\n').map(v => v.trim()).filter(v => v && !v.startsWith('#')).sort();
-      const expectedDisabledFiles = currentProfile.mods
+      const disabledFiles: string[] = content.split('\n').map(v => v.trim()).filter(v => v && !v.startsWith('#')).sort();
+      const expectedDisabledFiles: string[] = currentProfile.mods
         .filter(m => !alwaysOnMods.includes(m.name))
         .map(m => m.file)
         .sort();
-      if (expectedDisabledFiles.some(file => !disabledFiles.includes(file)) ||
-        disabledFiles.some(file => !expectedDisabledFiles.includes(file))) {
-        const popup = createPopup(() => {
+      const onlyInProfile = [...new Set<string>(
+        expectedDisabledFiles.filter(file => !disabledFiles.includes(file))
+      )];
+      const onlyInFile = [...new Set<string>(
+        disabledFiles.filter(file => !expectedDisabledFiles.includes(file))
+      )];
+      if (onlyInProfile.length > 0 || onlyInFile.length > 0) {
+        createPopup(() => {
           const { hide } = useContext(PopupContext);
+          const [error, setError] = useState('');
+
+          const refreshProfiles = (selectedProfileName?: string) => {
+            callRemote('get_blacklist_profiles', gamePath, (data: string) => {
+              setProfiles(JSON.parse(data));
+              if (selectedProfileName) {
+                setCurrentProfileName(selectedProfileName);
+              }
+            });
+          };
+
           return (
-            <div className="popup-content">
-              <h2>{_i18n.t('同步黑名单 Mod 列表')}</h2>
-              <p>{_i18n.t('当前的 blacklist.txt 与配置文件不同。您想要同步配置文件以匹配吗？')}</p>
-              <p>
-                {
-                  `不同的 Mod: ${[...new Set([
-                    ...expectedDisabledFiles.filter(file => !disabledFiles.includes(file)),
-                    ...disabledFiles.filter(file => !expectedDisabledFiles.includes(file)),
-                  ])].join(', ')}`
-                }
-              </p>
-              <p>{_i18n.t('注意，该功能不支持通配符等')}</p>
+            <div className="popup-content blacklist-sync-popup">
+              <div className="title">{_i18n.t('同步黑名单 Mod 列表')}</div>
+              <div className="content">
+                {_i18n.t('blacklist.txt 与当前 CeleMod Profile 不一致。请选择要保留的版本。')}
+              </div>
+              <div className="blacklist-diff-list">
+                {onlyInProfile.length > 0 && (
+                  <section>
+                    <div className="diff-title">
+                      <span>{_i18n.t('仅 CeleMod Profile 中禁用')}</span>
+                      <span className="diff-count">{onlyInProfile.length}</span>
+                    </div>
+                    {onlyInProfile.map(file => (
+                      <div className="diff-item profile-only" key={`profile-${file}`} title={file}>
+                        <span className="diff-source">C</span>
+                        <span className="diff-file">{file}</span>
+                      </div>
+                    ))}
+                  </section>
+                )}
+                {onlyInFile.length > 0 && (
+                  <section>
+                    <div className="diff-title">
+                      <span>{_i18n.t('仅 blacklist.txt 中禁用')}</span>
+                      <span className="diff-count">{onlyInFile.length}</span>
+                    </div>
+                    {onlyInFile.map(file => (
+                      <div className="diff-item file-only" key={`file-${file}`} title={file}>
+                        <span className="diff-source">F</span>
+                        <span className="diff-file">{file}</span>
+                      </div>
+                    ))}
+                  </section>
+                )}
+              </div>
+              <div className="blacklist-sync-note">
+                {_i18n.t('注意，该功能不支持通配符等')}
+              </div>
+              {error && <div className="blacklist-sync-error">{error}</div>}
               <div className="buttons">
                 <button onClick={() => {
-                  callRemote('sync_blacklist_profile_from_file', gamePath, currentProfileName);
-                  callRemote('get_blacklist_profiles', gamePath, (data: string) => {
-                    setProfiles(JSON.parse(data));
-                  });
+                  globalCtx.blacklist.switchProfile(currentProfileName);
                   hide();
-                }}>{_i18n.t('同步')}</button>
+                }}>{_i18n.t('使用 CeleMod Profile')}</button>
+                <button onClick={() => {
+                  const importedProfileName = callRemote(
+                    'import_blacklist_file_as_profile',
+                    gamePath,
+                    JSON.stringify(alwaysOnMods)
+                  );
+                  if (importedProfileName.startsWith('Failed')) {
+                    setError(importedProfileName);
+                    return;
+                  }
+                  refreshProfiles(importedProfileName);
+                  hide();
+                }}>{_i18n.t('将文件保存为新 Profile')}</button>
                 <button onClick={() => hide()}>{_i18n.t('忽略')}</button>
               </div>
             </div>

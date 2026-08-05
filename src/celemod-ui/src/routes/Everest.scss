@@ -1,4 +1,5 @@
-@use "../index.scss"as theme;
+@use "sass:color";
+@use "../styles/theme" as theme;
 
 .everest {
     padding: 40px;
@@ -34,7 +35,7 @@
             margin-bottom: 20px;
             margin-left: 10px;
             display: inline-block;
-            color: mix(theme.$primary,
+            color: color.mix(theme.$primary,
                     theme.$fg,
                     50%);
         }

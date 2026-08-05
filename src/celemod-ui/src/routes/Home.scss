@@ -1,4 +1,4 @@
-@use "../index.scss"as theme;
+@use "../styles/theme" as theme;
 
 .home {
     select {
@@ -104,6 +104,99 @@
 
 .home>.config {
     margin-top: 10px;
+}
+
+.blacklist-sync-popup {
+    width: 520px;
+    max-width: 80vw;
+    text-align: left;
+
+    .content {
+        margin-bottom: 12px;
+    }
+
+    .blacklist-diff-list {
+        max-height: 230px;
+        overflow-y: auto;
+        padding: 8px;
+        border: 1px solid theme.$bg2;
+        border-radius: 8px;
+        background: theme.$bg;
+    }
+
+    section + section {
+        margin-top: 12px;
+    }
+
+    .diff-title {
+        flow: horizontal;
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0.8;
+        margin: 0 2px 6px;
+    }
+
+    .diff-count {
+        margin-left: auto;
+        padding: 1px 7px;
+        border-radius: 10px;
+        background: theme.$bg2;
+    }
+
+    .diff-item {
+        flow: horizontal;
+        vertical-align: middle;
+        padding: 6px 8px;
+        margin-top: 4px;
+        border-radius: 6px;
+        background: theme.$bg1;
+    }
+
+    .diff-source {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        text-align: center;
+        flex: 0 0 auto;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .profile-only .diff-source {
+        background: theme.$primary;
+    }
+
+    .file-only .diff-source {
+        background: #d97706;
+    }
+
+    .diff-file {
+        margin-left: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: monospace;
+        font-size: 12px;
+    }
+
+    .blacklist-sync-note {
+        margin-top: 10px;
+        font-size: 12px;
+        opacity: 0.65;
+    }
+
+    .blacklist-sync-error {
+        margin-top: 8px;
+        color: #ef4444;
+        font-size: 12px;
+    }
+
+    .buttons {
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
 }
 
 label {

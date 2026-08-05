@@ -1,7 +1,5 @@
 /node_modules
 /dist
-/.cache
+/.vite
 .DS_Store
-yarn-debug.log*
-yarn-error.log*
-.parcel-cache
+*.log

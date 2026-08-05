@@ -17,17 +17,18 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
+    - uses: pnpm/action-setup@v4
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: yarn
-        cache-dependency-path: src/celemod-ui/yarn.lock
+        cache: pnpm
+        cache-dependency-path: src/celemod-ui/pnpm-lock.yaml
     - name: Install UI dependencies
       working-directory: src/celemod-ui
-      run: yarn install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
     - name: Build UI resources
       working-directory: src/celemod-ui
-      run: yarn build
+      run: pnpm build
     - uses: actions/upload-artifact@v4.3.1
       with:
         name: ui-dist
