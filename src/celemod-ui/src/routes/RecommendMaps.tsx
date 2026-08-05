@@ -66,7 +66,7 @@ export const RecommendMaps = () => {
   };
 
   return (
-    <div>
+    <div className="recommend-maps-page">
       <div className="rec-map">
         <h1>{_i18n.t('推荐的地图')}</h1>
         <p>{_i18n.t('这里将会列出一些推荐安装的地图及其简介，请按需安装')}</p>

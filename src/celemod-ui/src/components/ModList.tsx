@@ -2,7 +2,7 @@ import _i18n from 'src/i18n';
 import { Fragment } from 'react';
 import './ModList.scss';
 import { Mod as GBMod, getModFileId } from '../api/xmao';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { GameSelector } from './GameSelector';
@@ -372,48 +372,15 @@ export const ModList = (props: {
     setLoading(props.loading ?? false);
   }, [props.loading]);
 
-  if (installedModIDs === null)
-    return (
-      <div
-        className="loader"
-        style={{
-          position: 'fixed',
-          bottom: 200,
-          height: 24,
-          left: 200,
-          right: 200,
-        }}
-      >
-        <div className="bar"></div>
-      </div>
-    );
-
   const refList: any = useRef(null);
 
-  const getVisibleRange = () => {
-    if (!refList.current) return { start: 0, end: 0, colWidth: 1 };
-    const padding = 40;
-    const childHeight =
-      refList.current.children[1].getBoundingClientRect().height +
-      GUTTER_SIZE * 2;
-    const start = Math.floor(
-      (refList.current.scrollTop - padding) / childHeight
-    );
-    const end = Math.ceil(
-      (refList.current.scrollTop + refList.current.offsetHeight - padding * 2) /
-      childHeight
-    );
-    const colWidth = Math.floor((refList.current?.offsetWidth || 0) / 340);
-    return { start, end, colWidth };
-  };
-
   useEffect(() => {
-    if (refList.current) {
-      refList.current.vlist.slidingWindowSize = 10;
+    if (installedModIDs !== null && refList.current) {
+      const listElement = refList.current;
       let reachedOnce = false;
       let scrollLocked = false;
-      refList.current.scrollTop = 40;
-      refList.current.addEventListener('mousewheel', (e: any) => {
+      listElement.scrollTop = 40;
+      const onWheel = (e: WheelEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -508,9 +475,11 @@ export const ModList = (props: {
           });
           reachedOnce = false;
         }
-      });
+      };
+      listElement.addEventListener('wheel', onWheel, { passive: false });
+      return () => listElement.removeEventListener('wheel', onWheel);
     }
-  }, [props.onLoadMore, props.haveMore]);
+  }, [installedModIDs, props.onLoadMore, props.haveMore, props.allowUpScroll]);
 
   const formatSize = (size: number) => {
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -518,38 +487,28 @@ export const ModList = (props: {
     return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
 
-  const [visible, setVisible] = useState(getVisibleRange());
-
-  useEffect(() => {
-    const onScroll = () => {
-      const range = getVisibleRange();
-      const c = refList.current.children;
-      for (let i = 0; i < c.length; i++) {
-        const line = Math.floor(i / range.colWidth);
-        if (line < range.start || line > range.end) {
-          const v = c[i];
-          const im = v.querySelector('img');
-          // im && (im.src = "")
-        }
-      }
-      setVisible(range);
-    };
-    refList.current.addEventListener('scroll', onScroll);
-
-    setTimeout(onScroll, 10);
-
-    return () => {
-      refList.current.removeEventListener('scroll', onScroll);
-    };
-  }, []);
+  if (installedModIDs === null)
+    return (
+      <div
+        className="loader"
+        style={{
+          position: 'fixed',
+          bottom: 200,
+          height: 24,
+          left: 200,
+          right: 200,
+        }}
+      >
+        <div className="bar"></div>
+      </div>
+    );
 
   return (
     <div>
       <div className="mod-list" ref={refList}>
         {<div className="padding"></div>}
         {props.mods.map((mod2, index) => {
-          const mod = useMemo(() => {
-            const res = {
+          const mod = {
               name: mod2.name,
               downloadUrl: () => {
                 const dedup = new Set();
@@ -599,20 +558,11 @@ export const ModList = (props: {
                   externalUrl: mod2.pageUrl,
                 }),
             };
-
-            return res;
-          }, [mod2]);
-          if (!mod) return (<div></div>) as any;
-
-          const line = Math.floor(index / visible.colWidth);
-          const col = index % visible.colWidth;
-          const visibleStart = visible.start;
-          const visibleEnd = visible.end;
-
-          const isVisible = true; //line >= visibleStart && line <= visibleEnd;
+          const isVisible = true;
 
           return (
             <div
+              key={`${mod2.gameBananaId ?? 'mod'}-${mod2.name}`}
               style={{
                 margin: GUTTER_SIZE,
                 boxSizing: 'border-box',

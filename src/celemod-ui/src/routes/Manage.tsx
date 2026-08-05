@@ -453,7 +453,7 @@ const ModLocal = ({
       {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
         <div className={`childTree ${expanded && 'expanded'}`}>
           {dependencies.map((v) => (
-            <Mod {...v} renderPath={[...renderPath, name]} />
+            <Mod key={v.name} {...v} renderPath={[...renderPath, name]} />
           ))}
         </div>
       )}
@@ -1579,7 +1579,7 @@ export const Manage = () => {
           </div>
           <div className="list" ref={modsTreeRef}>
             {installedModsTree.map((v) => (
-              <Mod {...(v as any)} />
+              <Mod key={v.name} {...(v as any)} />
             ))}
 
             <div className="padding"></div>
@@ -1588,7 +1588,7 @@ export const Manage = () => {
         <div className="profiles">
           <div className="title">{_i18n.t('Profile 列表')}</div>
           {profiles.map((v) => (
-            <Profile {...v} current={v.name === currentProfileName} />
+            <Profile key={v.name} {...v} current={v.name === currentProfileName} />
           ))}
 
           <div className="newProfile">

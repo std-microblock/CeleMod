@@ -59,13 +59,13 @@
         bottom: 20px;
         right: 0;
         width: 110px;
-        display: inline-block;
+        display: flex;
         justify-content: center;
-        vertical-align: center;
+        align-items: center;
 
         span {
             margin-right: 60px;
-            display: inline-block;
+            display: block;
         }
     }
 

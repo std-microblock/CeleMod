@@ -3,7 +3,7 @@
 
 
 .filter {
-    width: 100vw;
+    width: calc(100% - 20px);
     select {
         appearance: auto;
     }
@@ -18,7 +18,9 @@
     }
 
     input {
-        width: calc(100vw - 335px);
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
     }
 
     select {
@@ -27,16 +29,14 @@
     }
 
     button {
-        display: inline-block;
         display: flex;
-        vertical-align: middle;
+        align-items: center;
+        justify-content: center;
         margin-left: -2px;
         margin-right: 7px;
     }
 
     display: flex;
-    vertical-align: middle;
-    display: inline-block;
-    width: 100%;
-    margin: 3px 10px
+    align-items: center;
+    margin: 3px 10px;
 }

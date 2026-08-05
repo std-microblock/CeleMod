@@ -1,6 +1,12 @@
+.recommend-mods-page {
+    height: 100%;
+    overflow: hidden;
+}
+
 .mods {
     display: flex; flex-wrap: wrap;
     width: 100%;
+    height: calc(100% - 110px);
 
     .part {
         width: calc(50% - 5px);
@@ -21,7 +27,7 @@
         }
 
         .list {
-            height: calc(100vh - 200px);
+            height: calc(100% - 30px);
             width: 100%;
             overflow-y: scroll;
             content-visibility: auto;
@@ -53,8 +59,8 @@
                 }
 
                 .oper {
-                    vertical-align: middle;
                     display: flex; flex-wrap: wrap;
+                    align-items: center;
                     position: absolute;
                     right: 10px;
                     top: -5px;

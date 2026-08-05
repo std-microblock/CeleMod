@@ -10,6 +10,7 @@
     "frontendDist": "../src/celemod-ui/dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "label": "main",
@@ -18,7 +19,9 @@
         "height": 640,
         "minWidth": 800,
         "minHeight": 600,
-        "decorations": false,
+        "decorations": true,
+        "transparent": false,
+        "backgroundColor": [19, 19, 19, 255],
         "resizable": true,
         "dragDropEnabled": true
       }

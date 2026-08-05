@@ -18,6 +18,7 @@ import { createThemeContext } from './context/theme';
 import { createBlacklistContext } from './context/blacklist';
 import { RecommendMaps } from './routes/RecommendMaps';
 import { DropInstaller } from './components/DropInstaller';
+import { WindowTitlebar } from './components/WindowTitlebar';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
@@ -75,7 +76,9 @@ export default function App() {
   );
 
   return (
-    <Fragment>
+    <div className="app-frame">
+    <WindowTitlebar />
+    <div className="app-shell">
       <DownloadListMenu open={downloadMenuOpen} onClose={() => setDownloadMenuOpen(false)} />
       <DropInstaller />
       <nav className="sidebar">
@@ -96,16 +99,14 @@ export default function App() {
           <Icon name="download" />
         </button>
       </nav>
-      {Object.entries(pages).map(([name, Page]) => (
-        <div
-          className="page"
-          key={name}
-          hidden={name !== page}
-          style={{ width: 'calc(100vw - 150px)' }}
-        >
-          {name === page && <Page />}
-        </div>
-      ))}
-    </Fragment>
+      <main className="app-content">
+        {Object.entries(pages).map(([name, Page]) => (
+          <section className="page" key={name} hidden={name !== page}>
+            {name === page && <Page />}
+          </section>
+        ))}
+      </main>
+    </div>
+    </div>
   );
 }

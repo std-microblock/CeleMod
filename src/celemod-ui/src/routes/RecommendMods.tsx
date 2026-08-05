@@ -106,7 +106,7 @@ export const RecommendMods = () => {
   );
 
   return (
-    <div>
+    <div className="recommend-mods-page">
       <h1>{_i18n.t('推荐的模组')}</h1>
       <p>{_i18n.t('这里将会列出一些推荐安装的模组及其简介，请按需安装')}</p>
 
@@ -134,6 +134,7 @@ export const RecommendMods = () => {
               (
                 !mod.visible || mod.visible(_i18n.currentLang)
               ) && <RMod
+                key={mod.name}
                 name={mod.name}
                 startDownloadHandler={
                   ((refDownloadHandlers.current[mod.name] ??= {}), refDownloadHandlers.current[mod.name])
@@ -154,6 +155,7 @@ export const RecommendMods = () => {
           <div className="list">
             {skinMods.map((mod) => (
               <RMod
+                key={mod.name}
                 name={mod.name}
                 download_url={mod.download_url}
                 description={mod.description}

@@ -6,7 +6,7 @@ import { currentMirror, initSearchSort, useCurrentEverestVersion, useGamePath, u
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import { Content, searchSubmission } from '../api/wegfan';
 import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
@@ -26,7 +26,6 @@ const categoryIdMap = {
 
 export const Search = () => {
   const noEverest = enforceEverest();
-  if (noEverest) return noEverest;
 
   const [mods, setMods] = useState<Content[]>([]);
   const [type, setType] = useState<string>('');
@@ -69,6 +68,8 @@ export const Search = () => {
   useEffect(() => {
     loadingLock.current = false;
   }, [mods]);
+
+  if (noEverest) return noEverest;
 
   return (
     <Fragment>
@@ -124,15 +125,8 @@ export const Search = () => {
             loading={loading}
             mods={mods}
             haveMore={hasMore}
-            onLoadMore={useCallback(
-              (
-                type: string,
-                visibleRange: {
-                  start: number;
-                  end: number;
-                  colWidth: number;
-                }
-              ) =>
+            onLoadMore={
+              (type: string) =>
                 new Promise((rs) => {
                   console.log('load more', type);
                   const forceScroll = async (top: number) => {
@@ -196,9 +190,8 @@ export const Search = () => {
                       return v + 1;
                     });
                   }
-                }),
-              [currentPage, type]
-            )}
+                })
+            }
             modFolder={selectedPath + '/Mods'}
           />
         ) : (

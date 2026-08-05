@@ -145,7 +145,7 @@
 
     .diff-item {
         display: flex;
-        vertical-align: middle;
+        align-items: center;
         padding: 6px 8px;
         margin-top: 4px;
         border-radius: 6px;
@@ -201,7 +201,7 @@
 
 label {
     display: flex;
-    vertical-align: middle;
+    align-items: center;
 }
 
 

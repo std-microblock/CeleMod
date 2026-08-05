@@ -6,7 +6,8 @@
     width: 330px;
     height: 220px;
 
-    // position: relative;
+    position: relative;
+    isolation: isolate;
     // box-sizing: border-box;
     margin: 0;
     background: theme.$bg1;
@@ -14,7 +15,7 @@
 
     .bg {
         // display: none;
-        z-index: -10;
+        z-index: 0;
         position: absolute;
         top: 0;
         left: 0;
@@ -102,9 +103,8 @@
         }
 
         button {
-            display: inline-block;
             display: flex;
-            vertical-align: middle;
+            align-items: center;
         }
     }
 
@@ -137,11 +137,10 @@
 .mod-list {
     // position: relative;
     // bottom: 10px;
-    width: calc(100vw - 80px);
-    height: calc(100vh - 100px);
+    width: 100%;
+    height: calc(100% - 45px);
     // width: 730px;
     overflow-y: auto;
-    // flow-columns: repeat(3, 350px);
     content-visibility: auto;
     transition: .2s opacity;
 
@@ -247,8 +246,9 @@
     width: calc(100vw - 30px);
     height: calc(100vh - 30px);
     padding: 10px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    vertical-align: middle;
 
     img {
         max-width: calc(100vw - 30px);
@@ -258,8 +258,8 @@
 
 .download-file-popup {
     width: calc(100vw - 50px);
+    align-items: center;
     justify-content: center;
-    vertical-align: middle;
     display: flex; flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;

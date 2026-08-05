@@ -10,10 +10,9 @@ export const GameSelector = (props: {
   launchGame: (v: string) => void;
 }) => {
   const [gamePath] = useGamePath();
-
-  if (!props.paths.includes(gamePath)) {
-    props.paths.push(gamePath);
-  }
+  const paths = props.paths.includes(gamePath)
+    ? props.paths
+    : [...props.paths, gamePath].filter(Boolean);
 
   return (
     <div className="gameSelector">
@@ -21,9 +20,9 @@ export const GameSelector = (props: {
         <Icon name="save" />
         <span>{_i18n.t('选择游戏路径')}</span>
       </div>
-      <select onChange={props.onSelect} value={gamePath || props.paths[0]}>
-        {props.paths.map((p) => (
-          <option value={p}>{p}</option>
+      <select onChange={props.onSelect} value={gamePath || paths[0]}>
+        {paths.map((p) => (
+          <option value={p} key={p}>{p}</option>
         ))}
         <option value="__other__">{_i18n.t('选择其他路径')}</option>
       </select>
@@ -49,7 +48,7 @@ export const GameSelector = (props: {
       <button
         style={{ marginLeft: 5, borderRadius: 4 }}
         onClick={() => {
-          callRemote('open_url', (gamePath || props.paths[0]) + '/Mods');
+          callRemote('open_url', (gamePath || paths[0]) + '/Mods');
         }}
       >
         {_i18n.t('Mods 文件夹')}

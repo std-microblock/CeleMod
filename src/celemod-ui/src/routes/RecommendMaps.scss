@@ -1,28 +1,36 @@
 @use "../styles/theme" as theme;
 
+.recommend-maps-page,
+.rec-map {
+  height: 100%;
+  overflow: hidden;
+}
+
 .rec-map {
   .collabs {
     // overflow-x: scroll;
     overflow-y: scroll;
     // white-space: nowrap;
     // height: 100vh;
-    width: 800px;
-    height: calc(100vh - 140px);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    width: 100%;
+    height: calc(100% - 110px);
   }
   .collab {
     border-radius: 10px;
     overflow: hidden;
     background-size: 370px 208px;
-    margin: 12px 6px;
-    display: inline-block;
-    // float: left;
+    margin: 0;
+    display: block;
 
     height: 400px;
 
     html:not([lang="zh-CN"]) & {
         height: 490px;
     }
-    width: 330px;
+    width: 100%;
     background-color: theme.$bg1;
 
     border: 1px solid theme.$bg2;

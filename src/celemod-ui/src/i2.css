@@ -1,41 +1,21 @@
 * {
-    font-family: "Noto Sans SC", "Microsoft Yahei", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif !important;
-    scroll-behavior: smooth;
-}
-
-html,
-body {
-    overflow-y: hidden;
-    overflow-x: visible;
-}
-
-html {
-    background: #050505 !important;
-}
-
-html[window-blurbehind]:not([platform="Windows"]) {
-    background:transparent !important;
-}
-
-html[window-blurbehind][platform="Windows"] {
-    background:#05050599 !important;
-}
-
-* {
-    scrollbar-color: #444444 transparent;
-    scrollbar-width: thin;
+  font-family: "Noto Sans SC", "Microsoft Yahei", "Hiragino Sans GB",
+    "WenQuanYi Micro Hei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  scroll-behavior: smooth;
+  scrollbar-color: #56525f transparent;
+  scrollbar-width: thin;
 }
 
 *::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+  width: 7px;
+  height: 7px;
 }
 
 *::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-    background: #444444;
-    border-radius: 10px;
+  border-radius: 10px;
+  background: #56525f;
 }

@@ -292,6 +292,7 @@ export const Home = () => {
       <div className="config-block profiles">
         {profiles.map((v) => (
           <div
+            key={v.name}
             className={`profile ${v.name === currentProfileName && 'selected'}`}
             onClick={() => {
               globalCtx.blacklist.switchProfile(v.name);
@@ -350,8 +351,8 @@ export const Home = () => {
           <input
             type="checkbox"
             checked={enableAcrylic}
-            onClick={() => {
-              setEnableAcrylic(!enableAcrylic);
+            onChange={(event) => {
+              setEnableAcrylic(event.currentTarget.checked);
             }}
           />
 

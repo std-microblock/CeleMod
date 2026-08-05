@@ -3,6 +3,9 @@
 
 .everest {
     padding: 40px;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
 
     img {
         margin-bottom: 30px;
@@ -10,7 +13,7 @@
 
     .line {
         display: flex; flex-wrap: wrap;
-        vertical-align: middle;
+        align-items: center;
 
         &>* {
             width: max-content;
@@ -61,14 +64,16 @@
     }
 
     .channels {
-        display: flex; flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.3%;
+        height: calc(100% - 150px);
 
         .channel {
-            width: 33%;
-            margin-right: 0.3%;
+            min-width: 0;
 
             .list {
-                height: calc(100vh - 300px);
+                height: calc(100% - 50px);
                 overflow-y: scroll;
 
                 .item {
@@ -132,7 +137,7 @@
     .installing {
         width: 100%;
         display: flex; flex-direction: column;
-        vertical-align: middle;
+        align-items: center;
         justify-content: center;
 
         .wrapperin {

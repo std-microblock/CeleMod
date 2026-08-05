@@ -1,0 +1,18 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "CeleMod",
+        "width": 800,
+        "height": 640,
+        "minWidth": 800,
+        "minHeight": 600,
+        "decorations": false,
+        "transparent": true,
+        "resizable": true,
+        "dragDropEnabled": true
+      }
+    ]
+  }
+}

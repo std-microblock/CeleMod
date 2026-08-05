@@ -55,6 +55,78 @@ fn send_event(channel: &Channel<IpcEvent>, args: Vec<IpcEvent>) {
     let _ = channel.send(IpcEvent::Array(args));
 }
 
+#[cfg(target_os = "macos")]
+fn apply_macos_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
+    use window_vibrancy::{NSVisualEffectMaterial, NSVisualEffectState, apply_vibrancy};
+
+    apply_vibrancy(
+        window,
+        NSVisualEffectMaterial::Titlebar,
+        Some(NSVisualEffectState::FollowsWindowActiveState),
+        None,
+    )
+    .map_err(|error| format!("failed to apply macOS vibrancy: {error}"))
+}
+
+#[cfg(target_os = "windows")]
+fn apply_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
+    use window_vibrancy::{apply_acrylic, apply_mica};
+
+    apply_mica(window, Some(true)).or_else(|mica_error| {
+        apply_acrylic(window, Some((5, 5, 5, 153))).map_err(|acrylic_error| {
+            format!(
+                "failed to apply Windows Mica ({mica_error}); acrylic fallback also failed: {acrylic_error}"
+            )
+        })
+    })
+}
+
+#[cfg(target_os = "windows")]
+fn clear_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
+    use window_vibrancy::{clear_acrylic, clear_mica};
+
+    let mica_result = clear_mica(window);
+    let acrylic_result = clear_acrylic(window);
+    if mica_result.is_ok() || acrylic_result.is_ok() {
+        Ok(())
+    } else {
+        Err(format!(
+            "failed to clear Windows Mica ({}); acrylic cleanup also failed: {}",
+            mica_result.unwrap_err(),
+            acrylic_result.unwrap_err()
+        ))
+    }
+}
+
+#[tauri::command]
+fn set_window_vibrancy(window: tauri::WebviewWindow, enabled: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        if enabled {
+            apply_macos_vibrancy(&window)
+        } else {
+            window_vibrancy::clear_vibrancy(&window)
+                .map(|_| ())
+                .map_err(|error| format!("failed to clear macOS vibrancy: {error}"))
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if enabled {
+            apply_windows_vibrancy(&window)
+        } else {
+            clear_windows_vibrancy(&window)
+        }
+    }
+
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let _ = (window, enabled);
+        Ok(())
+    }
+}
+
 fn compare_version(a: &str, b: &str) -> i32 {
     let a_parts: Vec<&str> = a.split('.').collect();
     let b_parts: Vec<&str> = b.split('.').collect();
@@ -1726,6 +1798,22 @@ pub fn run() {
 
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
     tauri::Builder::default()
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+
+                let window = app.get_webview_window("main").ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        "main webview window was not created",
+                    )
+                })?;
+                apply_macos_vibrancy(&window).map_err(std::io::Error::other)?;
+            }
+
+            Ok(())
+        })
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -1765,6 +1853,7 @@ pub fn run() {
             is_using_cache,
             get_database_path,
             set_mod_options_order,
+            set_window_vibrancy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running CeleMod");

@@ -1,162 +1,277 @@
 @use "sass:color";
 @use "./styles/theme" as *;
 
-html {
+:root {
   color: $fg;
-  // background: #00000000;
-  padding: 0 10px;
+  color-scheme: dark;
 }
 
-a {
-  color: color.adjust($primary, $lightness: 10%);
-  text-decoration: none;
-  margin: 0 4px;
-  display: inline-block;
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
 
-  &:hover {
-    color: color.adjust($primary, $lightness: -10%);
-  }
+html {
+  background: #050505;
+}
+
+html[window-blurbehind] {
+  background: transparent;
+}
+
+body {
+  color: $fg;
+  background: transparent;
+}
+
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.window-titlebar {
+  display: flex;
+  flex: 0 0 30px;
+  align-items: center;
+  min-height: 30px;
+  user-select: none;
 }
 
 .window-caption {
+  flex: 1;
+  align-self: stretch;
+  padding: 5px 0;
+  color: $fg;
   font-size: 14px;
   font-weight: 400;
-  color: $fg;
-  padding: 5px 0;
-  margin-bottom: 5px;
   opacity: 0.8;
-  user-select: none;
+}
+
+.celemod-version {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  margin: 0 auto 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.caption-version {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 10px;
+}
+
+.caption-hash {
+  margin-bottom: -4px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 9px;
 }
 
 .win-ctrl {
   position: fixed;
   top: 0;
   right: 0;
-
-  button:not(:hover):not(:active) {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  button {
-    padding: 0;
-    width: 40px;
-    height: 30px;
-    border-radius: 0;
-
-    display: inline-block;
-    display: flex;
-    vertical-align: middle;
-    justify-content: center;
-
-    & > * {
-      // display: flex; flex-direction: column;
-    }
-  }
+  z-index: 20;
+  display: flex;
 }
 
-// html,
-// body {
-//     overflow: hidden;
-// }
+.win-ctrl button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 30px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
 
-// loader
-.loader {
-  width: 100vw;
+.win-ctrl button:not(:hover):not(:active) {
   background: transparent;
-  padding: 10px;
+  box-shadow: none;
 }
 
-.loader .bar {
-  height: 4px;
-  border-radius: 5px;
-  position: relative;
-  width: 0%;
-  background-color: #55aaff;
-  animation: progress 2s infinite;
+.win-ctrl svg {
+  width: 13px;
+  height: 13px;
 }
 
-@keyframes progress {
-  0% {
-    width: 0vw;
-    margin-left: 0vw;
-  }
+.win-ctrl .close:hover {
+  background: #c42b1c;
+}
 
-  50% {
-    margin-left: 15vw;
-    width: 25vw;
-  }
+.app-shell {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
 
-  100% {
-    width: 0vw;
-    margin-left: 100vw;
-  }
+html[data-platform="macos"] .app-shell {
+  padding-top: 32px;
 }
 
 .sidebar {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   width: 50px;
-  height: 90vh;
-  float: left;
+  min-height: 0;
   margin-right: 15px;
+}
 
-  .navBtn {
-    border-radius: 7px;
-    font-size: 15px;
-    margin-bottom: 10px;
-    transition: background 0.3s ease-in-out;
-    cursor: pointer;
+.sidebar .navBtn {
+  display: flex;
+  flex: 0 0 43px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 43px;
+  min-height: 0;
+  margin: 0 0 10px;
+  padding: 7px 0 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-size: 15px;
+  letter-spacing: normal;
+  text-transform: none;
+  transition: background 0.3s ease-in-out;
+}
 
-    width: 50px;
-    height: 43px;
-    display: inline-block;
-    vertical-align: center;
-    justify-content: center;
-    display: flex; flex-direction: column;
-    border: 1px solid transparent;
-    padding-top: 7px;
+.sidebar .navBtn.selected {
+  border-color: $bg2;
+  background: $bg1;
+  box-shadow: 0 2px 10px $bg1;
+}
 
-    &.selected {
-      box-shadow: 0 2px 10px $bg1;
-      border: 1px solid $bg2;
-      background: $bg1;
-    }
+.sidebar .navBtn:not(.selected):hover {
+  background: $bg2;
+}
 
-    &:not(.selected):hover {
-      background: $bg2;
-    }
+.sidebar .navBtn:active {
+  background: $bg3;
+}
 
-    &:active {
-      background: $bg3;
-    }
+.sidebar .navBtn .icon {
+  width: 1em;
+  height: 1em;
+}
 
-    .title {
-      font-size: 10px;
-      margin-top: 3px;
-      opacity: 0.6;
-    }
-  }
+.sidebar .title {
+  display: block;
+  width: 50px;
+  margin-top: 3px;
+  overflow: hidden;
+  color: inherit;
+  font-size: 10px;
+  line-height: normal;
+  opacity: 0.6;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.downloadListBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  min-height: 0;
+  margin-top: auto;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  font-size: 20px;
+  opacity: 0.8;
+  box-sizing: border-box;
+  transition: background 0.1s, opacity 0.1s;
+}
+
+.downloadListBtn:hover {
+  background: $bg2;
+  box-shadow: 0 2px 10px $bg1;
+  opacity: 1;
+}
+
+.app-content,
+.page {
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.app-content {
+  overflow: hidden;
 }
 
 .page {
-  display: inline-block;
-  float: left;
+  overflow: auto;
   transition: opacity 0.3s ease-in-out, margin-left 0.3s ease-in-out;
+}
+
+.page[hidden] {
+  display: none;
+}
+
+.icon {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+}
+
+a {
+  display: inline-block;
+  margin: 0 4px;
+  color: color.adjust($primary, $lightness: 10%);
+  text-decoration: none;
+}
+
+a:hover {
+  color: color.adjust($primary, $lightness: -10%);
 }
 
 input[type="checkbox"] {
   appearance: none;
-  height: 15px;
   width: 15px;
+  height: 15px;
   border: 1px solid $bg3;
-  background: $bg1;
   border-radius: 3px;
+  background: $bg1;
   opacity: 0.7;
-  // transition: opacity .2s ease-in-out;
 }
 
 input[type="checkbox"]:checked {
-  background: #a77fdb;
+  background: $primary;
   box-shadow: inset 0 0 0 3px $bg1;
 }
 
@@ -168,149 +283,100 @@ input[type="checkbox"]:disabled {
   opacity: 0.5;
 }
 
-// mask
+select {
+  width: max-content;
+  padding: 4px 24px 4px 5px;
+  border: 0;
+  border-radius: 4px;
+  color: $fg;
+  background: $bg1;
+}
+
+select:hover {
+  background: $bg2;
+}
+
+select option {
+  color: $fg;
+  background: $bg1;
+}
+
 .blocking-mask {
   position: fixed;
-  top: 40px;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: #00000088;
-  z-index: 100;
+  inset: 30px 0 0;
+  z-index: 1200;
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 0;
   margin: 0;
+  padding: 0;
   overflow: hidden;
-  transition: opacity 0.2s ease-in-out;
+  color: white;
   text-align: center;
-  padding-top: calc(50vh - 70px);
+  background: #00000088;
+  transition: opacity 0.2s ease-in-out;
 }
 
-.downloadListBtn {
-  position: absolute;
-  left: 22px;
-  bottom: 0;
-  font-size: 20px;
-  bottom: 20px;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 5px;
-  background: transparent;
-  opacity: 0.8;
-  transition: background 0.1s, opacity 0.1s;
-
-  &:hover {
-    opacity: 1;
-    background: $bg2;
-    box-shadow: 0 2px 10px $bg1;
-  }
-}
-
-// no-everest page
 .no-everest {
   padding: 30px;
 }
 
 .popup-container {
-  z-index: 100;
-  // overflow: hidden;
   position: fixed;
-  display: block;
-  left: 10px;
-  top: 38px;
-  right: 15px;
-  width: calc(100vw - 25px);
-  height: calc(100vh - 48px);
+  inset: 38px 15px 10px 10px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
   border-radius: 10px;
   opacity: 0;
   transform: scale(1.3);
   transition: opacity 0.2s, transform 0.2s;
+}
+
+.popup-content {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid $bg2;
+  border-radius: 10px;
+  color: $fg;
+  text-align: center;
+  background: $bg1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.popup-content .title {
+  margin-bottom: 15px;
+  color: $fg;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.popup-content .content {
+  margin-bottom: 25px;
+  color: $fg1;
+  line-height: 1.5;
+}
+
+.popup-content .buttons {
+  display: flex;
   justify-content: center;
-  vertical-align: middle;
+  gap: 10px;
+}
+
+.popup-content .buttons button {
+  margin: 4px;
 }
 
 .loading-popup {
-  width: calc(100vw - 50px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  vertical-align: middle;
-  display: flex; flex-direction: column;
+  width: calc(100vw - 50px);
+  height: 90vh;
   overflow-x: hidden;
   overflow-y: auto;
-  height: 90vh;
-}
-
-.celemod-version {
-  position: fixed;
-  left: 80px;
-  top: 13px;
-  display: flex; flex-direction: column;
-  display: inline-block;
-  justify-content: center;
-  vertical-align: middle;
-  cursor: pointer;
-}
-
-.celemod-version .caption-version {
-  color: rgba(255, 255, 255, 0.582);
-  font-size: 10px;
-}
-
-.celemod-version .caption-hash {
-  color: rgba(255, 255, 255, 0.301);
-  font-size: 9px;
-  margin-bottom: -4px;
-}
-
-select {
-  width: max-content;
-  padding: 4px 24px 4px 5px;
-  border: none;
-  border-radius: 4px;
-  color: $fg;
-  background: $bg1;
-
-  &:hover {
-    background: $bg2;
-  }
-
-  option {
-    color: $fg;
-    background: $bg1;
-  }
-}
-
-
-.popup-content {
-  background: $bg1;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  text-align: center;
-  max-width: 400px;
-  margin: 0 auto;
-  border: 1px solid $bg2;
-
-  .title {
-    font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 15px;
-    color: $fg;
-  }
-
-  .content {
-    margin-bottom: 25px;
-    color: $fg1;
-    line-height: 1.5;
-  }
-
-  .buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    button {
-      margin: 4px;
-    }
-  }
 }
