@@ -11,8 +11,8 @@ pnpm dev
 
 Run the Rust application in debug mode after the Vite server starts. The debug
 loader connects to `http://localhost:1234`.
-JavaScript and stylesheet changes are applied in place without reloading the
-Sciter window.
+Stylesheet changes are applied in place. JavaScript and TypeScript changes
+reload the Sciter page.
 
 ## Build
 

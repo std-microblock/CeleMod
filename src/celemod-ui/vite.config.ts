@@ -37,13 +37,11 @@ const sciterPlugin = (): Plugin => {
 
       server.middlewares.use((request, response, next) => {
         const path = request.url?.split('?', 1)[0];
-        const content = path === '/__celemod_runtime.js'
-          ? bundles?.runtime
-          : path === '/__celemod_app.js'
-            ? bundles?.app
-            : path === '/__celemod_app.css'
-              ? bundles?.css
-              : undefined;
+        const content = path === '/__celemod_app.js'
+          ? bundles?.app
+          : path === '/__celemod_app.css'
+            ? bundles?.css
+            : undefined;
         if (content === undefined) return next();
 
         response.statusCode = 200;

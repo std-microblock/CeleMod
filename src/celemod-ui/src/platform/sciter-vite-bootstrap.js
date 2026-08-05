@@ -41,13 +41,8 @@ const style = document.createElement('style');
 style.id = 'celemod-dev-styles';
 document.head.appendChild(style);
 
-let runtime;
-let AppImplementation;
+let appLoaded = false;
 let applying = Promise.resolve();
-
-// Calling the current implementation through this stable component keeps the
-// root hook state alive when evalModule() provides a replacement module.
-const HotApp = () => AppImplementation({});
 
 const applyStyles = async (version) => {
   const css = await fetchText('/__celemod_app.css', version);
@@ -56,31 +51,29 @@ const applyStyles = async (version) => {
   style.state.disabled = false;
 };
 
-const applyApp = async (version, cssOnly = false) => {
+const applyInitialApp = async (version) => {
   await applyStyles(version);
-  if (cssOnly) {
-    console.log('[celemod:hmr] applied style update');
-    return;
-  }
-
-  if (!runtime) {
-    runtime = evalModule(
-      await fetchText('/__celemod_runtime.js', version)
-    );
-  }
-
-  const app = evalModule(await fetchText('/__celemod_app.js', version));
-  AppImplementation = app.default;
-  runtime.render(runtime.h(HotApp, null), document.querySelector('#root'));
-  console.log('[celemod:hmr] applied app update');
+  evalModule(await fetchText('/__celemod_app.js', version));
+  appLoaded = true;
+  console.log('[celemod:dev] loaded app bundle');
 };
 
-const queueUpdate = (version, cssOnly = false) => {
+const queueInitialLoad = (version) => {
   applying = applying
-    .then(() => applyApp(version, cssOnly))
+    .then(() => applyInitialApp(version))
     .then(clearError)
     .catch(showError);
 };
+
+const queueStyleUpdate = (version) => {
+  applying = applying
+    .then(() => applyStyles(version))
+    .then(() => console.log('[celemod:hmr] applied style update'))
+    .then(clearError)
+    .catch(showError);
+};
+
+const reload = () => setTimeout(() => Window.this.load(location.href));
 
 const connect = () => {
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -91,9 +84,11 @@ const connect = () => {
   socket.onmessage = ({ data }) => {
     const payload = JSON.parse(String(data));
     if (payload.type === 'connected') {
-      queueUpdate(payload.version);
+      if (appLoaded) reload();
+      else queueInitialLoad(payload.version);
     } else if (payload.type === 'update') {
-      queueUpdate(payload.version, payload.cssOnly);
+      if (payload.cssOnly) queueStyleUpdate(payload.version);
+      else reload();
     } else if (payload.type === 'error') {
       showError(payload.message);
     }
