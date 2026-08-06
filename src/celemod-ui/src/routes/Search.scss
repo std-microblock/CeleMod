@@ -115,6 +115,24 @@
             color: color.adjust(theme.$primary, $lightness: 16%);
             box-shadow: 0 0 0 3px color.change(theme.$primary, $alpha: 0.1);
         }
+
+        .filter-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            display: grid;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            place-items: center;
+            border: 2px solid theme.$bg;
+            border-radius: 999px;
+            box-sizing: border-box;
+            background: theme.$primary;
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+        }
     }
 
     .filter-popup {
@@ -122,8 +140,9 @@
         top: calc(100% + 8px);
         right: 0;
         z-index: 50;
-        width: 218px;
-        padding: 13px;
+        width: min(620px, calc(100vw - 118px));
+        max-height: min(720px, calc(100vh - 120px));
+        padding: 16px;
         border: 1px solid color.change(theme.$fg, $alpha: 0.1);
         border-radius: 12px;
         box-sizing: border-box;
@@ -132,13 +151,83 @@
         backdrop-filter: blur(18px);
         transform-origin: right top;
         animation: filter-popup-in 130ms ease-out;
+        overflow-y: auto;
+
+        .filter-popup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+
+            strong,
+            span {
+                display: block;
+            }
+
+            strong {
+                margin-bottom: 3px;
+                font-size: 13px;
+            }
+
+            span {
+                color: theme.$fg3;
+                font-size: 11px;
+            }
+        }
+
+        .source-switch {
+            display: flex;
+            flex: 0 0 auto;
+            padding: 3px;
+            border-radius: 9px;
+            background: color.change(theme.$bg, $alpha: 0.8);
+
+            button {
+                min-height: 28px;
+                padding: 0 13px;
+                border: 0;
+                border-radius: 7px;
+                background: transparent;
+                box-shadow: none;
+                color: theme.$fg3;
+                font-size: 11px;
+                letter-spacing: 0;
+
+                &.selected {
+                    background: theme.$bg3;
+                    color: theme.$fg;
+                }
+            }
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 11px 12px;
+
+            & + .filter-grid {
+                margin-top: 11px;
+            }
+        }
+
+        .cloud-filter-grid {
+            margin-bottom: 4px;
+        }
+
+        .filter-section-title {
+            margin: 16px 0 8px 2px;
+            color: theme.$fg3;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
 
         label {
             display: block;
-
-            + label {
-                margin-top: 12px;
-            }
 
             > span {
                 display: block;
@@ -150,7 +239,8 @@
             }
         }
 
-        select {
+        select,
+        input {
             width: 100%;
             height: 34px;
             min-height: 34px;
@@ -158,7 +248,76 @@
             border: 1px solid color.change(theme.$fg, $alpha: 0.08);
             border-radius: 8px;
             background-color: theme.$bg2;
+            color: theme.$fg;
             font-size: 12px;
+            outline: none;
+            box-sizing: border-box;
+
+            &:focus {
+                border-color: color.change(theme.$primary, $alpha: 0.65);
+                box-shadow: 0 0 0 3px color.change(theme.$primary, $alpha: 0.1);
+            }
+        }
+
+        input {
+            padding: 0 9px;
+        }
+
+        .filter-popup-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+
+            span {
+                color: theme.$fg3;
+                font-size: 10px;
+            }
+
+            button {
+                flex: 0 0 auto;
+                min-height: 28px;
+                padding: 0 12px;
+                border: 1px solid color.change(theme.$fg, $alpha: 0.1);
+                border-radius: 7px;
+                background: theme.$bg2;
+                box-shadow: none;
+                color: theme.$fg;
+                font-size: 10px;
+                letter-spacing: 0;
+            }
+        }
+    }
+}
+
+.search-source-bar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 24px;
+    margin: -4px 14px 4px;
+    gap: 8px;
+    color: theme.$fg3;
+    font-size: 10px;
+
+    .source-pill {
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: color.change(theme.$fg, $alpha: 0.08);
+        color: theme.$fg;
+        font-weight: 650;
+
+        &.local {
+            background: color.change(#4caf50, $alpha: 0.16);
+            color: #8cdb91;
+        }
+
+        &.cloud {
+            background: color.change(theme.$primary, $alpha: 0.16);
+            color: color.adjust(theme.$primary, $lightness: 20%);
         }
     }
 }
@@ -201,6 +360,14 @@
     .filter {
         .search-field {
             flex-basis: auto;
+        }
+    }
+
+    .filter .filter-popup {
+        width: calc(100vw - 100px);
+
+        .filter-grid {
+            grid-template-columns: 1fr;
         }
     }
 }
