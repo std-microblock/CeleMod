@@ -11,6 +11,9 @@
         "decorations": false,
         "transparent": true,
         "resizable": true,
+        "minimizable": true,
+        "maximizable": true,
+        "closable": true,
         "dragDropEnabled": true
       }
     ]

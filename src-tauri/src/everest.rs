@@ -295,9 +295,17 @@ fn install_everest_archive_with_steps(
                 std::fs::rename(&outpath, backpath)?;
             }
 
-            let mut outfile = std::fs::File::create(&outpath)?;
-            std::io::copy(&mut file, &mut outfile)?;
-            outfile.flush()?;
+            let mut outfile = std::fs::File::create(&outpath).with_context(|| {
+                format!(
+                    "Failed to replace {}. Close Celeste and any program using this file",
+                    outpath.display()
+                )
+            })?;
+            std::io::copy(&mut file, &mut outfile)
+                .with_context(|| format!("Failed to extract {}", outpath.display()))?;
+            outfile
+                .flush()
+                .with_context(|| format!("Failed to finish writing {}", outpath.display()))?;
         }
     }
 

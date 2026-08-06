@@ -14,6 +14,8 @@
     .line {
         display: flex; flex-wrap: wrap;
         align-items: center;
+        margin-bottom: 20px;
+        transform: translateY(-14px);
 
         &>* {
             width: max-content;
@@ -35,7 +37,7 @@
         .value {
             font-size: 20px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 0;
             margin-left: 10px;
             display: inline-block;
             color: color.mix(theme.$primary,
@@ -68,15 +70,33 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0.3%;
         height: calc(100% - 150px);
+        min-height: 0;
+        overflow: hidden;
+        transform: translateY(-5px);
 
         .channel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+
+            h2 {
+                flex: 0 0 auto;
+            }
 
             .list {
-                height: calc(100% - 50px);
-                overflow-y: scroll;
+                flex: 1 1 auto;
+                height: auto;
+                min-height: 0;
+                overflow-x: hidden;
+                overflow-y: auto;
+                box-sizing: border-box;
 
                 .item {
+                    min-width: 0;
+                    overflow: hidden;
                     margin-bottom: 5px;
                     padding-bottom: 5px;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.2);

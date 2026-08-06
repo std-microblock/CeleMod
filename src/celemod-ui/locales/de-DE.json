@@ -181,5 +181,9 @@
   "使用 CeleMod Profile": "CeleMod-Profil verwenden",
   "将文件保存为新 Profile": "Datei als neues Profil speichern",
   "注意，该功能不支持通配符等": "Platzhalter werden von dieser Funktion nicht unterstützt.",
-  "忽略": "Ignorieren"
+  "忽略": "Ignorieren",
+  "Inspecting package": "Installationspaket wird geprüft",
+  "Extract local Everest package": "Lokales Everest-Paket wird entpackt",
+  "Run MiniInstaller": "MiniInstaller wird ausgeführt",
+  "Celeste is currently running. Exit the game before installing packages.": "Celeste wird derzeit ausgeführt. Beende das Spiel vor der Installation."
 }

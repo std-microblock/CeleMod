@@ -236,5 +236,9 @@
   "(已禁用)": "(已禁用)",
   "将要删除：": "将要删除：",
   "以下 Mod 将不再被任何 Mod 引用，是否一并删除？": "以下 Mod 将不再被任何 Mod 引用，是否一并删除？",
-  "确认删除": "确认删除"
+  "确认删除": "确认删除",
+  "Inspecting package": "Verificando pacote",
+  "Extract local Everest package": "Extraindo pacote local do Everest",
+  "Run MiniInstaller": "Executando o MiniInstaller",
+  "Celeste is currently running. Exit the game before installing packages.": "O Celeste está em execução. Feche o jogo antes de instalar."
 }

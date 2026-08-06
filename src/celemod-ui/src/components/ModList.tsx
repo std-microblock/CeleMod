@@ -379,7 +379,6 @@ export const ModList = (props: {
       const listElement = refList.current;
       let reachedOnce = false;
       let scrollLocked = false;
-      listElement.scrollTop = 40;
       const onWheel = (e: WheelEvent) => {
         e.preventDefault();
         e.stopPropagation();

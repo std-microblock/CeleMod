@@ -58,6 +58,20 @@ const consumeDropEvent = (event: any) => {
   event.stopPropagation?.();
 };
 
+const getDisplayFileName = (path: string) => {
+  const parts = path.split(/[\\/]/);
+  return parts[parts.length - 1] || path;
+};
+
+const splitProgressDetail = (detail: string) => {
+  const match = detail.match(/^\[(\d+)\/(\d+)\]\s*(.*)$/);
+  if (!match) return { step: '', description: detail };
+  return {
+    step: `${match[1]} / ${match[2]}`,
+    description: match[3],
+  };
+};
+
 const LocalInstallPopup = ({
   paths,
   gamePath,
@@ -98,6 +112,10 @@ const LocalInstallPopup = ({
   }, []);
 
   const successCount = results?.filter((result) => result.success).length ?? 0;
+  const current = progress?.current ?? 1;
+  const total = progress?.total ?? paths.length;
+  const progressValue = progress?.progress ?? 0;
+  const detail = splitProgressDetail(progress?.detail ?? '');
 
   return (
     <div className="popup-content local-install-popup">
@@ -109,7 +127,7 @@ const LocalInstallPopup = ({
               <Icon name="i-cross" />
               <span>{_i18n.t('安装失败')}</span>
             </div>
-            <div className="fatal-error">{fatalError}</div>
+            <div className="fatal-error">{_i18n.t(fatalError)}</div>
           </Fragment>
         ) : results ? (
           <Fragment>
@@ -145,18 +163,28 @@ const LocalInstallPopup = ({
         ) : (
           <div className="local-install-progress">
             <ProgressIndicator
-              {...((progress?.progress ?? 0) > 0
-                ? { value: progress?.progress ?? 0, max: 100 }
+              size={80}
+              lineWidth={5}
+              {...(progressValue > 0
+                ? { value: progressValue, max: 100 }
                 : { infinite: true })}
             />
-            <div className="progress-title">
-              {_i18n.t('正在安装 {current}/{total}', {
-                current: progress?.current ?? 1,
-                total: progress?.total ?? paths.length,
-              })}
+            <div className="progress-heading">
+              <span className="progress-title">{_i18n.t('正在安装')}</span>
+              {total > 1 ? <span className="progress-count">{current} / {total}</span> : null}
             </div>
-            <div className="progress-file">{progress?.file ?? paths[0]}</div>
-            {progress?.detail ? <div className="progress-detail">{progress.detail}</div> : null}
+            <div className="progress-file" title={progress?.file ?? paths[0]}>
+              {progress?.file ?? getDisplayFileName(paths[0])}
+            </div>
+            {detail.description ? (
+              <div className="progress-detail" title={progress?.detail}>
+                {detail.step ? <span className="progress-step">{detail.step}</span> : null}
+                <span className="progress-description">{_i18n.t(detail.description)}</span>
+                {progressValue > 0 ? (
+                  <span className="progress-percent">{Math.round(progressValue)}%</span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         )}
       </div>

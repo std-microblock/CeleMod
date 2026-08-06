@@ -8,6 +8,11 @@
 
     .modList {
 
+        > .title + .opers button {
+            padding-right: 10px;
+            padding-left: 10px;
+        }
+
         .title {
 
             html[lang="pt-BR"] &,
@@ -54,12 +59,22 @@
         .options {
             width: 100%;
             margin-top: 5px;
-            display: inline-block;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px 10px;
 
             &>* {
-                display: inline-block;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
                 width: max-content;
-                margin-right: 10px;
+                margin: 0;
+                line-height: 20px;
+            }
+
+            input[type="checkbox"] {
+                margin: 0;
             }
         }
 
@@ -73,7 +88,7 @@
             margin-top: 8px;
             content-visibility: auto;
             overflow-y: scroll;
-            height: calc(100% - 105px);
+            height: calc(100% - 150px);
 
             .ma-badge {
                 display: inline-block;
@@ -166,6 +181,8 @@
 
             button {
                 border-radius: 100px;
+                flex: 0 0 auto;
+                white-space: nowrap;
             }
 
 

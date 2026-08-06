@@ -101,7 +101,7 @@ export default function App() {
       </nav>
       <main className="app-content">
         {Object.entries(pages).map(([name, Page]) => (
-          <section className="page" key={name} hidden={name !== page}>
+          <section className={`page page-${name}`} key={name} hidden={name !== page}>
             {name === page && <Page />}
           </section>
         ))}

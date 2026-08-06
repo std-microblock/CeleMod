@@ -1,5 +1,4 @@
-import { Fragment, useRef } from 'react';
-import { useEffect } from "react";
+import { useEffect, useRef } from 'react';
 
 export const ProgressIndicator = ({
     infinite, value, max, size = 100, lineWidth = 5
@@ -19,11 +18,18 @@ export const ProgressIndicator = ({
     const refData = useRef<[number, number]>([0, 0]);
     const refFrame = useRef(0);
     useEffect(() => {
-        // @ts-ignore
         const canvas = refCanvas.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        const pixelRatio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(size * pixelRatio);
+        canvas.height = Math.round(size * pixelRatio);
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        ctx.lineCap = 'round';
 
         let cancelAnimation = false;
         const paint = () => {
@@ -66,7 +72,18 @@ export const ProgressIndicator = ({
         return () => {
             cancelAnimation = true;
         }
-    }, [value, max, infinite]);
+    }, [value, max, infinite, size, lineWidth]);
 
-    return <canvas ref={refCanvas} width={size} height={size}></canvas>
+    return (
+        <canvas
+            ref={refCanvas}
+            className="progress-indicator"
+            style={{
+                display: 'block',
+                flex: `0 0 ${size}px`,
+                width: size,
+                height: size,
+            }}
+        />
+    );
 }

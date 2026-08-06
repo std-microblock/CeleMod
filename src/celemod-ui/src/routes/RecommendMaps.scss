@@ -12,25 +12,25 @@
     overflow-y: scroll;
     // white-space: nowrap;
     // height: 100vh;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
-    width: 100%;
-    height: calc(100% - 110px);
+    width: 800px;
+    height: calc(100vh - 140px);
   }
   .collab {
     border-radius: 10px;
     overflow: hidden;
     background-size: 370px 208px;
-    margin: 0;
-    display: block;
+    background-repeat: no-repeat;
+    background-position: top left;
+    margin: 12px 6px;
+    display: inline-block;
+    vertical-align: top;
 
     height: 400px;
 
     html:not([lang="zh-CN"]) & {
         height: 490px;
     }
-    width: 100%;
+    width: 330px;
     background-color: theme.$bg1;
 
     border: 1px solid theme.$bg2;
@@ -40,13 +40,14 @@
     &::before {
       content: "";
       position: absolute;
-      width: calc(100% + 20px);
+      width: 100%;
       left: 0;
       right: 0;
       height: 100px;
-      background: linear-gradient(90deg, transparent, theme.$bg1);
+      background: linear-gradient(to bottom, transparent, theme.$bg1);
       top: 108px;
-      z-index: -1;
+      z-index: 0;
+      pointer-events: none;
     }
 
     .intro {
@@ -54,6 +55,7 @@
       padding: 0 10px;
       padding-top: 160px;
       position: relative;
+      z-index: 1;
       .name {
         font-size: 30px;
         font-weight: 700;
@@ -85,7 +87,7 @@
       padding: 10px;
       display: flex; flex-wrap: wrap;
       justify-content: flex-end;
-      z-index: 999;
+      z-index: 2;
     }
   }
 }

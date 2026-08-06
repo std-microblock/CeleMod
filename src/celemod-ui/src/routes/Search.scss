@@ -3,15 +3,17 @@
 
 
 .filter {
-    width: calc(100% - 20px);
+    width: calc(100vw - 112px);
     select {
         appearance: auto;
     }
 
     .searchinput {
         font-size: 15px;
+        min-height: 30px;
         padding: 4px 8px;
         border: none;
+        box-sizing: border-box;
         background: theme.$bg1;
         color: theme.$fg;
         margin-right: 10px;
@@ -28,10 +30,19 @@
         margin-right: 6px;
     }
 
+    select:nth-of-type(1) {
+        width: 85px;
+    }
+
+    select:nth-of-type(2) {
+        width: 110px;
+    }
+
     button {
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 30px;
         margin-left: -2px;
         margin-right: 7px;
     }

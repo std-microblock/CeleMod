@@ -28,6 +28,7 @@ const parameterNames: Record<string, string[]> = {
   install_local_packages: ['gamePath', 'packagePaths', 'autoDisableNewMods', 'onEvent'],
   celemod_version: [],
   celemod_hash: [],
+  enable_window_controls: [],
   do_self_update: ['url', 'onEvent'],
   start_game_directly: ['path', 'origin'],
   verify_celeste_install: ['path'],

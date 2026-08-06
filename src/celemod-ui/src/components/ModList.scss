@@ -43,7 +43,7 @@
     overflow: hidden;
 
     .info {
-        top: 130px;
+        top: 132px;
         left: 0px;
         bottom: 0;
         position: absolute;
@@ -58,7 +58,7 @@
         // backdrop-filter: blur(10px);
 
         .name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             width: 95%;
             white-space: nowrap;
@@ -103,7 +103,7 @@
         }
 
         button {
-            display: flex;
+            display: inline-flex;
             align-items: center;
         }
     }
@@ -137,15 +137,16 @@
 .mod-list {
     // position: relative;
     // bottom: 10px;
-    width: 100%;
-    height: calc(100% - 45px);
+    width: calc(100vw - 80px);
+    height: calc(100vh - 100px);
     // width: 730px;
+    overflow-x: hidden;
     overflow-y: auto;
     content-visibility: auto;
     transition: .2s opacity;
 
     .padding {
-        height: 40px;
+        height: 0;
         width: 100%;
         display: inline-block;
     }
@@ -153,6 +154,12 @@
     &>* {
         margin-left: 15px;
         display: inline-block;
+    }
+
+    > .padding {
+        display: block;
+        width: 100%;
+        margin-left: 0;
     }
 }
 

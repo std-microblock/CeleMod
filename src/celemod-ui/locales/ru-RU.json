@@ -254,5 +254,9 @@
   "(已禁用)": "(已禁用)",
   "将要删除：": "将要删除：",
   "以下 Mod 将不再被任何 Mod 引用，是否一并删除？": "以下 Mod 将不再被任何 Mod 引用，是否一并删除？",
-  "确认删除": "确认删除"
+  "确认删除": "确认删除",
+  "Inspecting package": "Проверка пакета",
+  "Extract local Everest package": "Распаковка локального пакета Everest",
+  "Run MiniInstaller": "Запуск MiniInstaller",
+  "Celeste is currently running. Exit the game before installing packages.": "Celeste запущена. Закройте игру перед установкой."
 }

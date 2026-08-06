@@ -46,42 +46,92 @@
 }
 
 .local-install-popup {
-  width: 480px;
-  max-width: calc(100vw - 100px);
-
   .content {
-    margin-bottom: 12px;
+    min-width: 0;
+    margin-bottom: 0;
   }
 }
 
 .local-install-progress {
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 18px 0 12px;
+  min-width: 0;
+  padding: 8px 0 4px;
+
+  .progress-indicator {
+    margin-bottom: 18px;
+  }
+
+  .progress-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
 
   .progress-title {
     color: $fg;
     font-size: 16px;
-    margin-top: 15px;
+    font-weight: 500;
+  }
+
+  .progress-count {
+    color: $fg1;
+    font-size: 11px;
+    opacity: 0.65;
   }
 
   .progress-file,
   .progress-detail {
-    max-width: 430px;
-    overflow-x: hidden;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 400px;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .progress-file {
     color: $fg;
-    margin-top: 10px;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 700;
   }
 
   .progress-detail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
     color: $fg1;
-    font-size: 11px;
-    margin-top: 5px;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+
+  .progress-step {
+    flex: 0 0 auto;
+    color: $fg2;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+
+    &::after {
+      margin-left: 7px;
+      content: "·";
+    }
+  }
+
+  .progress-description {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .progress-percent {
+    flex: 0 0 auto;
+    color: $fg2;
+    font-variant-numeric: tabular-nums;
   }
 }
 

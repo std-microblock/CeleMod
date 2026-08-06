@@ -18,6 +18,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-http = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-system-symbols = "0.3"
+tauri-plugin-window-controls = "0.1"
 game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 lazy_static = "1"
 anyhow = "1"
@@ -29,9 +31,10 @@ ureq = { version = "2", features = ["json", "gzip", "tls"] }
 strip_bom = "1"
 open = "5"
 dirs = "6"
+sysinfo = "0.28.4"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["wincon", "consoleapi", "winuser"] }
+winapi = { version = "0.3", features = ["wincon", "consoleapi", "libloaderapi", "winuser"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 window-vibrancy = "0.8"

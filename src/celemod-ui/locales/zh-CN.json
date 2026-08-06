@@ -264,5 +264,9 @@
   "无法安装": "无法安装",
   "请先选择 Celeste 游戏路径，再拖入安装包。": "请先选择 Celeste 游戏路径，再拖入安装包。",
   "松开以安装": "松开以安装",
-  "支持 Mod 与 Everest 的 zip 安装包": "支持 Mod 与 Everest 的 zip 安装包"
+  "支持 Mod 与 Everest 的 zip 安装包": "支持 Mod 与 Everest 的 zip 安装包",
+  "Inspecting package": "正在检查安装包",
+  "Extract local Everest package": "正在解压本地 Everest 安装包",
+  "Run MiniInstaller": "正在运行 MiniInstaller",
+  "Celeste is currently running. Exit the game before installing packages.": "Celeste 正在运行，请先退出游戏再安装。"
 }

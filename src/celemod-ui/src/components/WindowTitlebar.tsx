@@ -1,16 +1,38 @@
-import { type ComponentType, useEffect, useState } from 'react';
-import { FiMinus, FiSquare, FiX } from 'react-icons/fi';
+import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { callRemote } from '../tauri/commands';
 import { detectDesktopPlatform } from '../tauri/window';
 
 export function WindowTitlebar() {
+  const titlebarRef = useRef<HTMLElement>(null);
   const [version, setVersion] = useState('');
   const [hash, setHash] = useState('');
   const platform = detectDesktopPlatform();
 
   useEffect(() => {
     if (platform !== 'windows') return;
+
+    let disposed = false;
+    const attachControls = () => {
+      if (disposed) return true;
+      const controls = document.getElementById('tbo-controls');
+      const titlebar = titlebarRef.current;
+      if (!controls || !titlebar) return false;
+      if (controls.parentElement !== titlebar) titlebar.appendChild(controls);
+      return true;
+    };
+
+    void callRemote('enable_window_controls')
+      .then(() => {
+        if (attachControls()) return;
+        const observer = new MutationObserver(() => {
+          if (attachControls()) observer.disconnect();
+        });
+        observer.observe(document.body, { childList: true });
+        window.setTimeout(() => observer.disconnect(), 3000);
+      })
+      .catch(console.error);
+
     void Promise.all([
       callRemote<string>('celemod_version'),
       callRemote<string>('celemod_hash'),
@@ -18,33 +40,42 @@ export function WindowTitlebar() {
       setVersion(nextVersion);
       setHash(nextHash.slice(0, 6));
     }).catch(console.error);
+    return () => {
+      disposed = true;
+    };
   }, [platform]);
 
   if (platform !== 'windows') return null;
-  const appWindow = getCurrentWindow();
-  const MinusIcon = FiMinus as unknown as ComponentType;
-  const MaximizeIcon = FiSquare as unknown as ComponentType;
-  const CloseIcon = FiX as unknown as ComponentType;
+
+  const startDragging = (event: MouseEvent<HTMLElement>) => {
+    if (event.button !== 0 || (event.target as HTMLElement).closest('button')) return;
+    event.preventDefault();
+    void getCurrentWindow().startDragging();
+  };
 
   return (
-    <header className="window-titlebar">
+    <header
+      ref={titlebarRef}
+      className="window-titlebar"
+      data-tauri-drag-region
+      onMouseDown={startDragging}
+    >
       <div className="window-caption" data-tauri-drag-region>CeleMod</div>
       <button
         className="celemod-version"
-        title="点击检查更新 / Check Update"
+        title="左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console"
         onClick={(event) => {
           if (event.shiftKey) void callRemote('show_log_window');
           else void window._checkUpdate?.();
+        }}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          void callRemote('show_log_window');
         }}
       >
         <span className="caption-hash">{hash}</span>
         <span className="caption-version">{version}</span>
       </button>
-      <div className="win-ctrl">
-        <button aria-label="Minimize" onClick={() => void appWindow.minimize()}><MinusIcon /></button>
-        <button aria-label="Maximize" onClick={() => void appWindow.toggleMaximize()}><MaximizeIcon /></button>
-        <button className="close" aria-label="Close" onClick={() => void appWindow.close()}><CloseIcon /></button>
-      </div>
     </header>
   );
 }

@@ -20,12 +20,15 @@ html {
 }
 
 html[window-blurbehind] {
-  background: transparent;
+  // Keep the acrylic visible while preventing bright desktop content from
+  // washing out the UI. The legacy app also kept a dark tint over the blur.
+  background: rgba(5, 5, 5, 0.28);
 }
 
 body {
   color: $fg;
   background: transparent;
+  font-size: 14px;
 }
 
 .app-frame {
@@ -33,22 +36,28 @@ body {
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 0 10px;
+  padding: 0 16px;
   box-sizing: border-box;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
 }
 
 .window-titlebar {
   display: flex;
-  flex: 0 0 30px;
+  flex: 0 0 45px;
   align-items: center;
-  min-height: 30px;
+  min-height: 45px;
   user-select: none;
 }
 
 .window-caption {
-  flex: 1;
-  align-self: stretch;
-  padding: 5px 0;
+  flex: 0 0 auto;
+  padding: 0;
   color: $fg;
   font-size: 14px;
   font-weight: 400;
@@ -61,7 +70,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   min-height: 0;
-  margin: 0 auto 0 8px;
+  margin: 0 0 0 8px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -82,39 +91,15 @@ body {
   font-size: 9px;
 }
 
-.win-ctrl {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-}
-
-.win-ctrl button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 30px;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-}
-
-.win-ctrl button:not(:hover):not(:active) {
-  background: transparent;
-  box-shadow: none;
-}
-
-.win-ctrl svg {
-  width: 13px;
-  height: 13px;
-}
-
-.win-ctrl .close:hover {
-  background: #c42b1c;
+#tbo-controls .tbo-btn {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
 }
 
 .app-shell {
@@ -140,7 +125,7 @@ html[data-platform="macos"] .app-shell {
 
 .sidebar .navBtn {
   display: flex;
-  flex: 0 0 43px;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -154,7 +139,7 @@ html[data-platform="macos"] .app-shell {
   background: transparent;
   box-shadow: none;
   cursor: pointer;
-  box-sizing: border-box;
+  box-sizing: content-box;
   font-size: 15px;
   letter-spacing: normal;
   text-transform: none;
@@ -220,11 +205,17 @@ html[data-platform="macos"] .app-shell {
   opacity: 1;
 }
 
-.app-content,
-.page {
+.app-content {
   min-width: 0;
   min-height: 0;
   width: 100%;
+  height: 100%;
+}
+
+.page {
+  min-width: 0;
+  min-height: 0;
+  width: calc(100vw - 150px);
   height: 100%;
 }
 
@@ -235,6 +226,20 @@ html[data-platform="macos"] .app-shell {
 .page {
   overflow: auto;
   transition: opacity 0.3s ease-in-out, margin-left 0.3s ease-in-out;
+}
+
+.page-Search,
+.page-RecommendMaps {
+  width: 100%;
+  overflow: hidden;
+}
+
+.page-Everest {
+  overflow: hidden;
+}
+
+.page-Manage {
+  overflow: hidden;
 }
 
 .page[hidden] {
@@ -262,17 +267,37 @@ a:hover {
 
 input[type="checkbox"] {
   appearance: none;
+  display: inline-block;
+  flex: 0 0 auto;
   width: 15px;
   height: 15px;
+  margin: 0 4px 0 0;
   border: 1px solid $bg3;
   border-radius: 3px;
+  box-sizing: border-box;
   background: $bg1;
   opacity: 0.7;
+  vertical-align: middle;
 }
 
 input[type="checkbox"]:checked {
-  background: $primary;
-  box-shadow: inset 0 0 0 3px $bg1;
+  background-color: $bg1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23d1d1d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 8px;
+  box-shadow: none;
+}
+
+.icon-i-asterisk {
+  transform: scale(0.55);
+  transform-origin: center;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 input[type="checkbox"]:hover {
@@ -285,9 +310,12 @@ input[type="checkbox"]:disabled {
 
 select {
   width: max-content;
-  padding: 4px 24px 4px 5px;
+  height: 30px;
+  min-height: 30px;
+  padding: 4px 26px 4px 8px;
   border: 0;
   border-radius: 4px;
+  box-sizing: border-box;
   color: $fg;
   background: $bg1;
 }

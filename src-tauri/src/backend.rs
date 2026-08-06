@@ -69,13 +69,86 @@ fn apply_macos_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
-fn apply_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
-    use window_vibrancy::{apply_acrylic, apply_mica};
+fn set_legacy_windows_acrylic(window: &tauri::WebviewWindow, enabled: bool) -> Result<(), String> {
+    use std::ffi::c_void;
+    use winapi::{
+        shared::{minwindef::BOOL, windef::HWND},
+        um::libloaderapi::{GetModuleHandleA, GetProcAddress},
+    };
 
-    apply_mica(window, Some(true)).or_else(|mica_error| {
-        apply_acrylic(window, Some((5, 5, 5, 153))).map_err(|acrylic_error| {
+    #[repr(C)]
+    struct AccentPolicy {
+        state: i32,
+        flags: i32,
+        gradient_color: u32,
+        animation_id: i32,
+    }
+
+    #[repr(C)]
+    struct WindowCompositionAttributeData {
+        attribute: i32,
+        data: *mut c_void,
+        size: usize,
+    }
+
+    type SetWindowCompositionAttribute =
+        unsafe extern "system" fn(HWND, *mut WindowCompositionAttributeData) -> BOOL;
+
+    const WCA_ACCENT_POLICY: i32 = 19;
+    const ACCENT_DISABLED: i32 = 0;
+    const ACCENT_ENABLE_ACRYLIC_BLUR_BEHIND: i32 = 4;
+
+    let hwnd = window
+        .hwnd()
+        .map_err(|error| format!("failed to get the Windows window handle: {error}"))?
+        .0 as HWND;
+
+    unsafe {
+        let user32 = GetModuleHandleA(c"user32.dll".as_ptr());
+        if user32.is_null() {
+            return Err("failed to load user32.dll".into());
+        }
+
+        let proc = GetProcAddress(user32, c"SetWindowCompositionAttribute".as_ptr());
+        if proc.is_null() {
+            return Err("SetWindowCompositionAttribute is unavailable".into());
+        }
+
+        let set_window_composition_attribute: SetWindowCompositionAttribute =
+            std::mem::transmute(proc);
+        let mut policy = AccentPolicy {
+            state: if enabled {
+                ACCENT_ENABLE_ACRYLIC_BLUR_BEHIND
+            } else {
+                ACCENT_DISABLED
+            },
+            flags: 0,
+            // The alpha byte is the persistent dark mask used by the legacy UI.
+            gradient_color: if enabled { 0x9905_0505 } else { 0 },
+            animation_id: 0,
+        };
+        let mut data = WindowCompositionAttributeData {
+            attribute: WCA_ACCENT_POLICY,
+            data: (&mut policy as *mut AccentPolicy).cast(),
+            size: std::mem::size_of::<AccentPolicy>(),
+        };
+
+        if set_window_composition_attribute(hwnd, &mut data) == 0 {
+            return Err("SetWindowCompositionAttribute failed".into());
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn apply_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
+    use window_vibrancy::apply_mica;
+
+    set_legacy_windows_acrylic(window, true).or_else(|acrylic_error| {
+        apply_mica(window, Some(true)).map_err(|mica_error| {
             format!(
-                "failed to apply Windows Mica ({mica_error}); acrylic fallback also failed: {acrylic_error}"
+                "failed to apply Windows acrylic ({acrylic_error}); Mica fallback also failed: {mica_error}"
             )
         })
     })
@@ -85,13 +158,15 @@ fn apply_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
 fn clear_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
     use window_vibrancy::{clear_acrylic, clear_mica};
 
+    let legacy_acrylic_result = set_legacy_windows_acrylic(window, false);
     let mica_result = clear_mica(window);
     let acrylic_result = clear_acrylic(window);
-    if mica_result.is_ok() || acrylic_result.is_ok() {
+    if legacy_acrylic_result.is_ok() || mica_result.is_ok() || acrylic_result.is_ok() {
         Ok(())
     } else {
         Err(format!(
-            "failed to clear Windows Mica ({}); acrylic cleanup also failed: {}",
+            "failed to clear legacy Windows acrylic ({}); Mica cleanup failed ({}); modern acrylic cleanup also failed: {}",
+            legacy_acrylic_result.unwrap_err(),
             mica_result.unwrap_err(),
             acrylic_result.unwrap_err()
         ))
@@ -747,6 +822,50 @@ struct LocalPackageInstallProgress {
     progress: f32,
 }
 
+fn is_celeste_running(game_path: &Path) -> bool {
+    use sysinfo::{ProcessExt, System, SystemExt};
+
+    fn comparable_path(path: &Path) -> String {
+        let value = path.to_string_lossy().replace('/', "\\");
+        #[cfg(target_os = "windows")]
+        let value = value.strip_prefix(r"\\?\").unwrap_or(&value).to_lowercase();
+        value.trim_end_matches('\\').to_string()
+    }
+
+    let game_directory = comparable_path(game_path);
+    let mut system = System::new();
+    system.refresh_processes();
+
+    system.processes().values().any(|process| {
+        let process_name = process.name().to_ascii_lowercase();
+        if process_name != "celeste" && process_name != "celeste.exe" {
+            return false;
+        }
+
+        let executable = process.exe();
+        if executable.as_os_str().is_empty() {
+            return false;
+        }
+
+        let executable_directory = executable.parent().map(comparable_path).unwrap_or_default();
+        if executable_directory == game_directory {
+            return true;
+        }
+
+        #[cfg(target_os = "macos")]
+        if game_path.file_name().and_then(|name| name.to_str()) == Some("Resources") {
+            let macos_directory = game_path
+                .parent()
+                .map(|contents| contents.join("MacOS"))
+                .map(|path| comparable_path(&path))
+                .unwrap_or_default();
+            return executable_directory == macos_directory;
+        }
+
+        false
+    })
+}
+
 fn classify_local_package(path: &Path) -> anyhow::Result<LocalPackageKind> {
     if !path.is_file() {
         bail!("Package is not a file");
@@ -1086,16 +1205,60 @@ fn celemod_hash() -> String {
 }
 
 #[tauri::command]
+fn enable_window_controls(window: tauri::WebviewWindow) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use tauri_plugin_window_controls::WindowControlsExt;
+
+        window
+            .set_title_bar_height(45)
+            .map_err(|error| error.to_string())?;
+        window
+            .set_title_bar_overlay(true)
+            .map_err(|error| error.to_string())?;
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    let _ = window;
+
+    Ok(())
+}
+
+#[tauri::command]
 fn is_using_cache() -> bool {
     everest::is_using_cache()
 }
 
 #[tauri::command]
 fn show_log_window() {
-    #[cfg(all(windows, not(debug_assertions)))]
+    #[cfg(windows)]
     unsafe {
-        use winapi::um::winuser::{SW_SHOW, ShowWindow};
-        ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_SHOW);
+        use winapi::um::winuser::{IsWindowVisible, SW_HIDE, SW_SHOW, ShowWindow};
+
+        let console = winapi::um::wincon::GetConsoleWindow();
+        if console.is_null() {
+            return;
+        }
+        let command = if IsWindowVisible(console) == 0 {
+            SW_SHOW
+        } else {
+            SW_HIDE
+        };
+        ShowWindow(console, command);
+    }
+}
+
+#[cfg(all(windows, not(debug_assertions)))]
+fn initialize_windows_console() {
+    unsafe {
+        use winapi::um::{
+            consoleapi::AllocConsole,
+            winuser::{SW_HIDE, ShowWindow},
+        };
+
+        if AllocConsole() != 0 {
+            ShowWindow(winapi::um::wincon::GetConsoleWindow(), SW_HIDE);
+        }
     }
 }
 
@@ -1456,6 +1619,18 @@ fn install_local_packages(
             );
             return;
         }
+        if !is_test_mode() && is_celeste_running(normalized_game_path) {
+            send_event(
+                &on_event,
+                vec![
+                    serde_json::json!("failed"),
+                    serde_json::json!(
+                        "Celeste is currently running. Exit the game before installing packages."
+                    ),
+                ],
+            );
+            return;
+        }
         let total = paths.len();
         let mut results = Vec::with_capacity(total);
         let mut installed_mods = Vec::new();
@@ -1780,6 +1955,9 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(all(windows, not(debug_assertions)))]
+    initialize_windows_console();
+
     let args = std::env::args().collect::<Vec<_>>();
     if args.iter().any(|arg| arg == "--test-mode") {
         TEST_MODE.store(true, Ordering::Relaxed);
@@ -1798,12 +1976,12 @@ pub fn run() {
 
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(target_os = "macos")]
             {
                 use tauri::Manager;
 
-                let window = app.get_webview_window("main").ok_or_else(|| {
+                let window = _app.get_webview_window("main").ok_or_else(|| {
                     std::io::Error::new(
                         std::io::ErrorKind::NotFound,
                         "main webview window was not created",
@@ -1814,6 +1992,8 @@ pub fn run() {
 
             Ok(())
         })
+        .plugin(tauri_plugin_system_symbols::init())
+        .plugin(tauri_plugin_window_controls::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -1842,6 +2022,7 @@ pub fn run() {
             install_local_packages,
             celemod_version,
             celemod_hash,
+            enable_window_controls,
             do_self_update,
             start_game_directly,
             verify_celeste_install,

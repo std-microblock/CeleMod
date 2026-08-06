@@ -9,11 +9,11 @@
     height: calc(100% - 110px);
 
     .part {
-        width: calc(50% - 5px);
+        width: calc(50% - 10px);
 
         h2 {
             position: relative;
-            top: -33px;
+            top: -4px;
         }
         h2 button {
             position: absolute;
@@ -31,7 +31,7 @@
             width: 100%;
             overflow-y: scroll;
             content-visibility: auto;
-            margin: 0 5px;
+            margin: -8px 5px 0;
 
             .rmod {
                 display: flex; flex-wrap: wrap;
