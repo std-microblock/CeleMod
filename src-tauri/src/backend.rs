@@ -1578,6 +1578,21 @@ fn is_using_cache() -> bool {
 }
 
 #[tauri::command]
+fn configure_mod_cache(ttl_seconds: u64) {
+    everest::set_mod_cache_ttl(ttl_seconds);
+}
+
+#[tauri::command]
+fn get_mod_catalog(force_refresh: bool) -> Result<String, String> {
+    everest::get_mod_catalog_json(force_refresh).map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
+fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
+    everest::get_mod_catalog_status().map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
 fn show_log_window() {
     #[cfg(windows)]
     unsafe {
@@ -2331,6 +2346,9 @@ pub fn run() {
             get_current_blacklist_content,
             import_blacklist_file_as_profile,
             is_using_cache,
+            configure_mod_cache,
+            get_mod_catalog,
+            get_mod_cache_status,
             get_database_path,
             set_mod_options_order,
             set_window_vibrancy,

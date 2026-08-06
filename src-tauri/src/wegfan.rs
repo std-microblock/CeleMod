@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Mod {
     pub id: String,
@@ -13,7 +13,7 @@ pub struct Mod {
     pub submission_file: SubmissionFile,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubmissionFile {
     pub id: String,
@@ -28,7 +28,7 @@ pub struct SubmissionFile {
     pub submission: Submission,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Submission {
     pub id: String,

@@ -39,6 +39,9 @@ const parameterNames: Record<string, string[]> = {
   get_current_blacklist_content: ['gamePath'],
   import_blacklist_file_as_profile: ['gamePath', 'alwaysOnMods'],
   is_using_cache: [],
+  configure_mod_cache: ['ttlSeconds'],
+  get_mod_catalog: ['forceRefresh'],
+  get_mod_cache_status: [],
   get_database_path: [],
   set_mod_options_order: ['gamePath', 'profileName', 'orderJson'],
 };

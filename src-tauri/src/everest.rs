@@ -9,10 +9,14 @@ use std::{
     io::{BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::{Arc, atomic::AtomicBool},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, AtomicU64, Ordering},
+    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModInfoCached {
     pub name: String,
@@ -23,61 +27,84 @@ pub struct ModInfoCached {
 }
 
 static USING_CACHE: AtomicBool = AtomicBool::new(false);
+static MOD_CACHE_TTL_SECONDS: AtomicU64 = AtomicU64::new(24 * 60 * 60);
 
 pub fn is_using_cache() -> bool {
-    USING_CACHE.load(std::sync::atomic::Ordering::Relaxed)
+    USING_CACHE.load(Ordering::Relaxed)
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModCacheStatus {
+    pub source: String,
+    pub updated_at: u64,
+    pub count: usize,
+    pub path: String,
+}
+
+#[derive(Clone)]
+struct ModCatalogState {
+    raw: String,
+    compact: Arc<HashMap<String, ModInfoCached>>,
+    status: ModCacheStatus,
 }
 
 lazy_static! {
-    static ref MOD_INFO_CACHED: Arc<HashMap<String, ModInfoCached>> = {
-        let mods = match get_mod_online_wegfan() {
-            Ok(fetched) => {
-                save_mod_cache(&fetched);
-                USING_CACHE.store(false, std::sync::atomic::Ordering::Relaxed);
-                fetched
-            }
-            Err(e) => {
-                eprintln!("Failed to fetch mod list: {}", e);
-                if let Some(cached) = load_mod_cache() {
-                    println!("Using cached mod list");
-                    USING_CACHE.store(true, std::sync::atomic::Ordering::Relaxed);
-                    cached
-                } else {
-                    eprintln!("No cache available");
-                    USING_CACHE.store(false, std::sync::atomic::Ordering::Relaxed);
-                    vec![]
-                }
-            }
-        };
-        let mods = mods.into_iter().map(|v| (v.name.clone(), v)).collect();
-        Arc::new(mods)
-    };
+    static ref MOD_CATALOG_STATE: Mutex<Option<ModCatalogState>> = Mutex::new(None);
 }
 
-fn load_mod_cache() -> Option<Vec<ModInfoCached>> {
+fn legacy_mod_cache_path() -> Option<PathBuf> {
+    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_cache.json"))
+}
+
+fn raw_mod_cache_path() -> Option<PathBuf> {
+    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_list_v2.json"))
+}
+
+fn load_legacy_mod_cache() -> Option<Vec<ModInfoCached>> {
     let cache_path = mod_cache_path()?;
     let data = std::fs::read_to_string(cache_path).ok()?;
     serde_json::from_str(&data).ok()
 }
 
-fn save_mod_cache(mods: &[ModInfoCached]) {
-    let Some(cache_path) = mod_cache_path() else {
-        return;
-    };
-    if let Some(parent) = cache_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    if let Ok(data) = serde_json::to_string(mods) {
-        let _ = std::fs::write(cache_path, data);
-    }
+fn mod_cache_path() -> Option<PathBuf> {
+    legacy_mod_cache_path()
 }
 
-fn mod_cache_path() -> Option<std::path::PathBuf> {
-    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_cache.json"))
+fn timestamp_millis(time: SystemTime) -> u64 {
+    time.duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .try_into()
+        .unwrap_or(u64::MAX)
 }
 
-pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
-    let mut response: serde_json::Value = get("https://celeste.weg.fan/api/v2/mod/list")
+fn parse_raw_catalog(raw: &str) -> anyhow::Result<Vec<wegfan::Mod>> {
+    let mut response: serde_json::Value = serde_json::from_str(raw)?;
+    Ok(serde_json::from_value(response["data"].take())?)
+}
+
+fn compact_catalog(mods: &[wegfan::Mod]) -> HashMap<String, ModInfoCached> {
+    mods.iter()
+        .map(|item| {
+            let compact = ModInfoCached {
+                game_banana_file_id: item.submission_file.game_banana_id.unwrap_or(-1),
+                game_banana_id: item
+                    .submission_file
+                    .submission
+                    .game_banana_id
+                    .unwrap_or(-1),
+                download_url: item.submission_file.url.clone(),
+                name: item.name.clone(),
+                version: item.version.clone(),
+            };
+            (compact.name.clone(), compact)
+        })
+        .collect()
+}
+
+fn fetch_raw_catalog() -> anyhow::Result<String> {
+    Ok(get("https://celeste.weg.fan/api/v2/mod/list")
         .set(
             "User-Agent",
             &format!("CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]),
@@ -85,23 +112,129 @@ pub fn get_mod_online_wegfan() -> anyhow::Result<Vec<ModInfoCached>> {
         .timeout(std::time::Duration::from_secs(20))
         .set("Accept-Encoding", "gzip, deflate, br")
         .call()?
-        .into_json()?;
-    let mods: Vec<wegfan::Mod> = serde_json::from_value(response["data"].take())?;
-    mods.into_iter()
-        .map(|v| -> anyhow::Result<ModInfoCached> {
-            Ok(ModInfoCached {
-                game_banana_file_id: v.submission_file.game_banana_id.unwrap_or(-1),
-                game_banana_id: v.submission_file.submission.game_banana_id.unwrap_or(-1),
-                download_url: v.submission_file.url,
-                name: v.name,
-                version: v.version,
-            })
-        })
-        .collect()
+        .into_string()?)
+}
+
+fn read_raw_cache() -> Option<(String, SystemTime)> {
+    let path = raw_mod_cache_path()?;
+    let modified = std::fs::metadata(&path).ok()?.modified().ok()?;
+    let raw = std::fs::read_to_string(path).ok()?;
+    Some((raw, modified))
+}
+
+fn save_raw_cache(raw: &str) {
+    let Some(path) = raw_mod_cache_path() else {
+        return;
+    };
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if let Err(error) = std::fs::write(&path, raw) {
+        eprintln!("Failed to save raw Mod catalog cache: {error}");
+    }
+}
+
+fn catalog_state_from_raw(raw: String, source: &str, updated_at: SystemTime) -> anyhow::Result<ModCatalogState> {
+    let mods = Arc::new(parse_raw_catalog(&raw)?);
+    let compact = Arc::new(compact_catalog(&mods));
+    Ok(ModCatalogState {
+        status: ModCacheStatus {
+            source: source.to_string(),
+            updated_at: timestamp_millis(updated_at),
+            count: mods.len(),
+            path: raw_mod_cache_path()
+                .map(|path| path.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+        },
+        raw,
+        compact,
+    })
+}
+
+fn cache_is_fresh(modified: SystemTime) -> bool {
+    let ttl = MOD_CACHE_TTL_SECONDS.load(Ordering::Relaxed);
+    ttl > 0 && modified.elapsed().unwrap_or(Duration::MAX) <= Duration::from_secs(ttl)
+}
+
+fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
+    if !force_refresh {
+        if let Some(current) = MOD_CATALOG_STATE.lock().unwrap().as_ref() {
+            let updated_at = UNIX_EPOCH + Duration::from_millis(current.status.updated_at);
+            if cache_is_fresh(updated_at) {
+                return Ok(current.clone());
+            }
+        }
+
+        if let Some((raw, modified)) = read_raw_cache()
+            && cache_is_fresh(modified)
+        {
+            USING_CACHE.store(true, Ordering::Relaxed);
+            return catalog_state_from_raw(raw, "cache", modified);
+        }
+    }
+
+    match fetch_raw_catalog().and_then(|raw| {
+        let state = catalog_state_from_raw(raw.clone(), "network", SystemTime::now())?;
+        save_raw_cache(&raw);
+        Ok(state)
+    }) {
+        Ok(state) => {
+            USING_CACHE.store(false, Ordering::Relaxed);
+            Ok(state)
+        }
+        Err(network_error) => {
+            eprintln!("Failed to fetch Mod catalog: {network_error:#}");
+            if let Some((raw, modified)) = read_raw_cache() {
+                USING_CACHE.store(true, Ordering::Relaxed);
+                return catalog_state_from_raw(raw, "stale-cache", modified);
+            }
+            if let Some(legacy) = load_legacy_mod_cache() {
+                USING_CACHE.store(true, Ordering::Relaxed);
+                let compact: Arc<HashMap<String, ModInfoCached>> = Arc::new(
+                    legacy
+                        .into_iter()
+                        .map(|item| (item.name.clone(), item))
+                        .collect(),
+                );
+                return Ok(ModCatalogState {
+                    raw: r#"{"data":[],"code":200,"message":"legacy cache"}"#.to_string(),
+                    status: ModCacheStatus {
+                        source: "legacy-cache".to_string(),
+                        updated_at: 0,
+                        count: compact.len(),
+                        path: legacy_mod_cache_path()
+                            .map(|path| path.to_string_lossy().into_owned())
+                            .unwrap_or_default(),
+                    },
+                    compact,
+                });
+            }
+            USING_CACHE.store(false, Ordering::Relaxed);
+            Err(network_error)
+        }
+    }
+}
+
+fn catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
+    let state = load_catalog(force_refresh)?;
+    *MOD_CATALOG_STATE.lock().unwrap() = Some(state.clone());
+    Ok(state)
+}
+
+pub fn set_mod_cache_ttl(seconds: u64) {
+    MOD_CACHE_TTL_SECONDS.store(seconds, Ordering::Relaxed);
+}
+
+pub fn get_mod_catalog_json(force_refresh: bool) -> anyhow::Result<String> {
+    Ok(catalog(force_refresh)?.raw)
+}
+
+pub fn get_mod_catalog_status() -> anyhow::Result<ModCacheStatus> {
+    Ok(catalog(false)?.status)
 }
 
 pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>>> {
-    Ok(Arc::clone(&MOD_INFO_CACHED))
+    Ok(catalog(false)?.compact)
 }
 
 static MAGIC_STR: &str = "EverestBuild";
