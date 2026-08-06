@@ -203,6 +203,8 @@ interface ManageActions {
   alwaysOnMods: string[];
   comments: Record<string, string>;
   setComment: (name: string, comment: string) => void;
+  isPinned: (name: string) => boolean;
+  togglePinned: (name: string) => void;
   checkOptional: boolean;
   fullTree: boolean;
   showDetailed: boolean;
@@ -247,7 +249,10 @@ const ManageTreeNode = ({
   const nodes = useManageStore((state) => state.nodes);
   const expanded = useManageStore((state) => Boolean(state.expanded[name]));
   const setExpanded = useManageStore((state) => state.setExpanded);
+  const openMenuName = useManageStore((state) => state.openMenuName);
+  const setOpenMenuName = useManageStore((state) => state.setOpenMenuName);
   const [editingComment, setEditingComment] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   if (!node || excludedDependencyNames.has(name)) return null;
   const visibleDependencies = node.dependencies.filter((dependency) => (
     !excludedDependencyNames.has(dependency.name) && (actions.checkOptional || !dependency.optional)
@@ -258,6 +263,16 @@ const ManageTreeNode = ({
   const isAlwaysOn = actions.alwaysOnMods.includes(name);
   const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
+  const menuOpen = openMenuName === name;
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpenMenuName(null);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [menuOpen, setOpenMenuName]);
 
   return (
     <div className="manage-tree-node">
@@ -278,7 +293,6 @@ const ManageTreeNode = ({
               onContextMenu={(event) => { event.preventDefault(); actions.toggleAlwaysOn(name); }}
               title={_i18n.t('点击切换；右键设为始终开启')}
             >
-              <span />
               {isAlwaysOn ? _i18n.t('始终开启') : node.enabled ? _i18n.t('已启用') : _i18n.t('已禁用')}
             </button>
             {editingComment ? (
@@ -318,9 +332,15 @@ const ManageTreeNode = ({
             {actions.showDetailed && <span className="tree-file-detail">{formatSize(node.size)} · {node.file}</span>}
           </div>
         </div>
-        <div className="tree-row-actions">
-          <button onClick={() => actions.showDetails(name)} title={_i18n.t('查看 Mod 详情')}><Icon name="opts-h" /></button>
-          <button className="danger" onClick={() => actions.deleteNode(name)} title={_i18n.t('删除 Mod')}><Icon name="delete" /></button>
+        <div className="tree-row-actions" ref={menuRef}>
+          <button className={menuOpen ? 'active' : ''} onClick={() => setOpenMenuName(menuOpen ? null : name)} title={_i18n.t('更多操作')}><Icon name="opts-h" /></button>
+          {menuOpen && (
+            <div className="mod-row-menu">
+              <button onClick={() => { setOpenMenuName(null); actions.showDetails(name); }}><Icon name="opts-h" />{_i18n.t('查看详情')}</button>
+              <button onClick={() => { actions.togglePinned(name); setOpenMenuName(null); }}><Icon name="flag" />{actions.isPinned(name) ? _i18n.t('取消在 Mod 设置内置顶') : _i18n.t('在 Mod 设置内置顶')}</button>
+              <button className="danger" onClick={() => { setOpenMenuName(null); actions.deleteNode(name); }}><Icon name="delete" />{_i18n.t('删除 Mod')}</button>
+            </div>
+          )}
         </div>
       </div>
       {expanded && !cycle && (!optional || actions.fullTree) && (
@@ -331,80 +351,6 @@ const ManageTreeNode = ({
             ) : (
               <MissingDependencyRow key={`${name}-${dependency.name}`} dependency={dependency} depth={depth + 1} />
             )
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const ModOptionsOrderPanel = ({
-  gamePath,
-  profileName,
-  files,
-  order,
-  onChange,
-}: {
-  gamePath: string;
-  profileName: string;
-  files: string[];
-  order: string[];
-  onChange: (order: string[]) => void;
-}) => {
-  const open = useManageStore((state) => state.orderPanelOpen);
-  const setOpen = useManageStore((state) => state.setOrderPanelOpen);
-  const [dragging, setDragging] = useState<string | null>(null);
-  const normalized = useMemo(() => [
-    ...order.filter((file) => files.includes(file)),
-    ...files.filter((file) => !order.includes(file)).sort((a, b) => a.localeCompare(b)),
-  ], [files, order]);
-
-  const apply = (next: string[]) => {
-    onChange(next);
-    void callRemote('set_mod_options_order', gamePath, profileName, JSON.stringify(next));
-  };
-
-  return (
-    <div className="order-panel">
-      <button className="side-panel-heading" onClick={() => setOpen(!open)}>
-        <span><Icon name={open ? 'i-down' : 'i-right'} /> {_i18n.t('Mod Options 顺序')}</span>
-        <small>{normalized.length}</small>
-      </button>
-      {open && (
-        <div className="order-list">
-          <p>{_i18n.t('拖拽项目调整游戏内 Mod Options 的显示顺序。')}</p>
-          {normalized.map((file, index) => (
-            <div
-              key={file}
-              className={`order-item ${dragging === file ? 'dragging' : ''}`}
-              draggable
-              onDragStart={(event) => {
-                setDragging(file);
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', file);
-              }}
-              onDragEnd={() => setDragging(null)}
-              onDragOver={(event) => {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                const source = event.dataTransfer.getData('text/plain') || dragging;
-                if (!source || source === file) return;
-                const next = [...normalized];
-                const sourceIndex = next.indexOf(source);
-                if (sourceIndex < 0) return;
-                next.splice(sourceIndex, 1);
-                next.splice(index, 0, source);
-                apply(next);
-                setDragging(null);
-              }}
-            >
-              <span className="drag-handle">⠿</span>
-              <span className="order-index">{index + 1}</span>
-              <span className="order-name" title={file}>{file}</span>
-            </div>
           ))}
         </div>
       )}
@@ -535,9 +481,11 @@ export const Manage = () => {
     const request = Date.now();
     lastApplyRequest = request;
     window.setTimeout(() => {
-      if (lastApplyRequest === request && currentProfileName) global.blacklist.switchProfile(currentProfileName);
+      if (lastApplyRequest === request && currentProfileName) {
+        void callRemote('apply_blacklist_profile', gamePath, currentProfileName, JSON.stringify(alwaysOnMods));
+      }
     }, 350);
-  }, [currentProfileName, global.blacklist]);
+  }, [alwaysOnMods, currentProfileName, gamePath]);
 
   const batchSwitch = useCallback((names: string[], enabled: boolean) => {
     if (!currentProfile || names.length === 0) return;
@@ -560,10 +508,12 @@ export const Manage = () => {
         .map((name) => ({ name, file: nodes[name].file }));
       nextMods = [...nextMods, ...additions];
     }
-    setCurrentProfile({ ...currentProfile, mods: nextMods });
+    const nextProfile = { ...currentProfile, mods: nextMods };
+    setCurrentProfile(nextProfile);
+    setProfilesCallback((items) => items.map((profile) => profile.name === currentProfile.name ? nextProfile : profile));
     setNodesEnabled(effectiveNames, enabled);
     applyProfileSoon();
-  }, [alwaysOnMods, applyProfileSoon, currentProfile, currentProfileName, gamePath, nodes]);
+  }, [alwaysOnMods, applyProfileSoon, currentProfile, currentProfileName, gamePath, nodes, setCurrentProfile, setProfilesCallback, setNodesEnabled]);
 
   const switchNodes = useCallback((input: string | string[], enabled: boolean, recursive = true) => {
     const names = Array.isArray(input) ? input : [input];
@@ -723,10 +673,22 @@ export const Manage = () => {
     alwaysOnMods,
     comments,
     setComment(name, comment) { setComments({ ...comments, [name]: comment }); },
+    isPinned(name) {
+      return currentProfile?.mod_options_order?.[0] === nodes[name]?.file;
+    },
+    togglePinned(name) {
+      if (!currentProfile || !nodes[name]) return;
+      const pinned = currentProfile.mod_options_order?.[0] === nodes[name].file;
+      const order = pinned ? [] : [nodes[name].file];
+      const nextProfile = { ...currentProfile, mod_options_order: order };
+      setCurrentProfile(nextProfile);
+      setProfilesCallback((items) => items.map((profile) => profile.name === currentProfile.name ? nextProfile : profile));
+      void callRemote('set_mod_options_order', gamePath, currentProfileName, JSON.stringify(order));
+    },
     checkOptional,
     fullTree,
     showDetailed,
-  }), [alwaysOnMods, checkOptional, comments, deleteNode, downloadMissing, fullByName, fullTree, nodes, setAlwaysOnMods, setComments, showDetailed, showUpdate, switchNodes, updateNames, updateNode, updateStates]);
+  }), [alwaysOnMods, checkOptional, comments, currentProfile, currentProfileName, deleteNode, downloadMissing, fullByName, fullTree, gamePath, nodes, setAlwaysOnMods, setComments, setCurrentProfile, setProfilesCallback, showDetailed, showUpdate, switchNodes, updateNames, updateNode, updateStates]);
 
   const activeFilterCount = filters.types.length
     + Number(filters.enabled !== 'all')
@@ -769,8 +731,8 @@ export const Manage = () => {
                     <label><input type="checkbox" checked={filters.showHiddenTypes} onChange={(event) => setShowHiddenTypes(event.target.checked)} />{_i18n.t('显示设置中隐藏的类型')}</label>
                   </div>
                   <div className="filter-type-title">{_i18n.t('类型')}</div>
-                  <div className="filter-type-chips">
-                    {MOD_TYPE_OPTIONS.map((type) => <button key={type} className={filters.types.includes(type) ? 'selected' : ''} onClick={() => toggleType(type)}>{type}</button>)}
+                  <div className="filter-type-list">
+                    {MOD_TYPE_OPTIONS.map((type) => <label key={type}><input type="checkbox" checked={filters.types.includes(type)} onChange={() => toggleType(type)} /><span>{type}</span></label>)}
                   </div>
                 </div>
               )}
@@ -833,7 +795,6 @@ export const Manage = () => {
             <div className="profile-list">
               {profiles.map((profile) => (
                 <button key={profile.name} className={profile.name === currentProfileName ? 'selected' : ''} onClick={() => global.blacklist.switchProfile(profile.name)}>
-                  <span className="profile-indicator" />
                   <span className="profile-name">{profile.name}</span>
                   <small>{installedMods.length - profile.mods.length}</small>
                   {profile.name !== 'Default' && <span className="profile-delete" onClick={(event) => {
@@ -857,20 +818,6 @@ export const Manage = () => {
               }}><Icon name="i-tick" /></button>
             </div>
           </div>
-          {currentProfile && (
-            <ModOptionsOrderPanel
-              gamePath={gamePath}
-              profileName={currentProfileName}
-              files={installedMods.map((mod) => mod.file)}
-              order={currentProfile.mod_options_order ?? []}
-              onChange={(order) => {
-                setCurrentProfile({ ...currentProfile, mod_options_order: order });
-                setProfilesCallback((items) => items.map((profile) => profile.name === currentProfile.name
-                  ? { ...profile, mod_options_order: order }
-                  : profile));
-              }}
-            />
-          )}
         </aside>
       </ManageActionsContext.Provider>
     </div>

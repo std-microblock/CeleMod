@@ -58,7 +58,7 @@ interface ManageTreeState {
   filters: ManageFilters;
   filterOpen: boolean;
   actionMenuOpen: boolean;
-  orderPanelOpen: boolean;
+  openMenuName: string | null;
   hydrate: (input: HydrateInput) => void;
   setExpanded: (name: string, expanded: boolean) => void;
   collapseAll: () => void;
@@ -72,7 +72,7 @@ interface ManageTreeState {
   resetFilters: () => void;
   setFilterOpen: (value: boolean) => void;
   setActionMenuOpen: (value: boolean) => void;
-  setOrderPanelOpen: (value: boolean) => void;
+  setOpenMenuName: (value: string | null) => void;
   setNodesEnabled: (names: string[], enabled: boolean) => void;
 }
 
@@ -93,7 +93,7 @@ export const useManageStore = create<ManageTreeState>()(
       filters: defaultFilters,
       filterOpen: false,
       actionMenuOpen: false,
-      orderPanelOpen: true,
+      openMenuName: null,
       hydrate({ installedMods, disabledNames, catalogByName }) {
         set((state) => {
           const disabled = new Set(disabledNames);
@@ -158,7 +158,7 @@ export const useManageStore = create<ManageTreeState>()(
       resetFilters() { set((state) => { state.filters = defaultFilters; }); },
       setFilterOpen(value) { set((state) => { state.filterOpen = value; }); },
       setActionMenuOpen(value) { set((state) => { state.actionMenuOpen = value; }); },
-      setOrderPanelOpen(value) { set((state) => { state.orderPanelOpen = value; }); },
+      setOpenMenuName(value) { set((state) => { state.openMenuName = value; }); },
       setNodesEnabled(names, enabled) {
         set((state) => {
           for (const name of names) {
@@ -173,7 +173,6 @@ export const useManageStore = create<ManageTreeState>()(
       partialize: (state) => ({
         expanded: state.expanded,
         filters: state.filters,
-        orderPanelOpen: state.orderPanelOpen,
       }),
     },
   ),

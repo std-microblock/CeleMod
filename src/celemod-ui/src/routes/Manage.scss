@@ -3,7 +3,7 @@
 
 .manage-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 230px;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -25,14 +25,14 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px 10px 4px;
+  gap: 6px;
+  padding: 5px 8px 6px 2px;
   border-bottom: 1px solid color.change(theme.$fg, $alpha: .07);
 
   .manage-title-block {
     flex: 0 0 auto;
-    min-width: 105px;
-    h1 { margin: 0; font-size: 18px; line-height: 1.15; }
+    min-width: 96px;
+    h1 { margin: 0; font-size: 15px; line-height: 1.15; }
     span { display: block; margin-top: 3px; color: theme.$fg3; font-size: 9px; }
   }
 }
@@ -47,16 +47,16 @@
   > .icon { position: absolute; left: 11px; z-index: 1; color: theme.$fg3; pointer-events: none; }
   input {
     width: 100%;
-    height: 34px;
+    height: 30px;
     padding: 0 34px 0 32px;
     border: 1px solid color.change(theme.$fg, $alpha: .08);
-    border-radius: 9px;
+    border-radius: 6px;
     box-sizing: border-box;
     background: color.change(theme.$bg1, $alpha: .82);
     color: theme.$fg;
     outline: none;
     font-size: 11px;
-    &:focus { border-color: color.change(theme.$primary, $alpha: .6); box-shadow: 0 0 0 3px color.change(theme.$primary, $alpha: .1); }
+    &:focus { border-color: color.change(theme.$primary, $alpha: .6); }
   }
   button {
     position: absolute;
@@ -81,17 +81,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  min-height: 34px;
+  height: 30px;
+  min-height: 30px;
   border: 1px solid color.change(theme.$fg, $alpha: .08) !important;
-  border-radius: 9px !important;
+  border-radius: 6px !important;
   background: color.change(theme.$bg1, $alpha: .82) !important;
   box-shadow: none !important;
   letter-spacing: 0 !important;
   &.active, &:hover { border-color: color.change(theme.$primary, $alpha: .45) !important; background: theme.$bg2 !important; }
 }
 
-.toolbar-icon-button { position: relative; width: 36px; min-width: 36px; padding: 0 !important; }
+.toolbar-icon-button { position: relative; width: 32px; min-width: 32px; padding: 0 !important; }
 .toolbar-action-button { gap: 6px; padding: 0 11px !important; font-size: 10px !important; }
 .toolbar-count {
   position: absolute;
@@ -117,16 +117,16 @@
   right: 0;
   z-index: 80;
   border: 1px solid color.change(theme.$fg, $alpha: .1);
-  border-radius: 12px;
+  border-radius: 8px;
   background: color.change(theme.$bg1, $alpha: .96);
   box-shadow: 0 18px 44px rgba(0, 0, 0, .44);
   backdrop-filter: blur(18px);
 }
 
 .manage-filter-popup {
-  width: 360px;
+  width: 286px;
   max-height: calc(100vh - 130px);
-  padding: 14px;
+  padding: 10px;
   overflow-y: auto;
 
   .popup-heading {
@@ -145,7 +145,7 @@
     gap: 10px;
     margin-top: 9px;
     span { color: theme.$fg3; font-size: 10px; }
-    select { height: 32px; border: 1px solid color.change(theme.$fg, $alpha: .08); border-radius: 7px; background: theme.$bg2; color: theme.$fg; font-size: 10px; }
+    select { height: 28px; border: 1px solid color.change(theme.$fg, $alpha: .08); border-radius: 5px; background: theme.$bg2; color: theme.$fg; font-size: 9px; }
   }
 
   .filter-checks {
@@ -157,20 +157,9 @@
     label { display: flex; align-items: center; font-size: 10px; }
   }
 
-  .filter-type-title { margin: 14px 0 8px; color: theme.$fg3; font-size: 9px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
-  .filter-type-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-  .filter-type-chips button {
-    min-height: 25px;
-    padding: 0 9px;
-    border: 1px solid color.change(theme.$fg, $alpha: .08);
-    border-radius: 99px;
-    background: theme.$bg2;
-    box-shadow: none;
-    color: theme.$fg3;
-    font-size: 8px;
-    letter-spacing: 0;
-    &.selected { border-color: color.change(theme.$primary, $alpha: .5); background: color.change(theme.$primary, $alpha: .15); color: color.adjust(theme.$primary, $lightness: 22%); }
-  }
+  .filter-type-title { margin: 11px 0 6px; color: theme.$fg3; font-size: 9px; font-weight: 650; }
+  .filter-type-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 8px; }
+  .filter-type-list label { display: flex; align-items: center; min-width: 0; min-height: 23px; font-size: 8px; cursor: pointer; input { margin-right: 4px; } span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 }
 
 .manage-action-menu {
@@ -222,29 +211,30 @@
 .manage-tree-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 8px 10px 50px 2px;
+  padding: 2px 8px 40px 0;
   overflow-y: auto;
   content-visibility: auto;
 }
 
 .manage-tree-row {
-  --indent: calc(var(--tree-depth, 0) * 20px);
+  --indent: calc(var(--tree-depth, 0) * 16px);
   position: relative;
   display: grid;
-  grid-template-columns: calc(var(--indent) + 28px) minmax(0, 1fr) auto;
-  min-height: 48px;
-  margin: 2px 0;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  transition: background 120ms ease, border-color 120ms ease;
+  grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
+  min-height: 31px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: .045);
+  border-radius: 0;
+  transition: background 100ms ease;
 
-  &:hover { border-color: color.change(theme.$fg, $alpha: .07); background: color.change(theme.$bg2, $alpha: .58); }
+  &:hover { background: color.change(theme.$bg2, $alpha: .36); }
   &.disabled { opacity: .76; }
-  &.missing { grid-template-columns: calc(var(--indent) + 28px) minmax(0, 1fr); min-height: 38px; color: theme.$fg3; }
+  &.missing { grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr); min-height: 28px; color: theme.$fg3; }
 
   .tree-connector {
     position: absolute;
-    left: calc(var(--indent) + 12px);
+    left: calc(var(--indent) + 10px);
     top: -4px;
     bottom: 50%;
     width: 12px;
@@ -260,54 +250,52 @@
   align-self: center;
   justify-self: end;
   display: grid;
-  width: 25px;
-  height: 25px;
+  width: 21px;
+  height: 21px;
   min-height: 0;
   padding: 0;
   place-items: center;
   border: 0;
-  border-radius: 6px;
-  background: color.change(theme.$bg, $alpha: .82);
+  border-radius: 3px;
+  background: transparent;
   box-shadow: none;
   color: theme.$fg3;
   &.leaf { background: transparent; opacity: .35; cursor: default; }
   &:not(.leaf):hover { background: theme.$bg3; color: theme.$fg; }
 }
 
-.tree-row-main { min-width: 0; padding: 7px 8px; }
+.tree-row-main { min-width: 0; padding: 3px 5px; }
 .tree-primary-line,
 .tree-secondary-line { display: flex; align-items: center; min-width: 0; flex-wrap: wrap; }
-.tree-primary-line { min-height: 22px; gap: 5px; }
-.tree-secondary-line { min-height: 18px; gap: 3px; }
+.tree-primary-line { min-height: 18px; gap: 4px; }
+.tree-secondary-line { min-height: 12px; gap: 3px; }
 
 .state-switch {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 0 7px 0 5px;
-  gap: 5px;
+  min-height: 18px;
+  padding: 0 4px;
   border: 1px solid color.change(theme.$fg, $alpha: .08);
-  border-radius: 99px;
-  background: theme.$bg2;
+  border-radius: 3px;
+  background: transparent;
   box-shadow: none;
   color: theme.$fg3;
   font-size: 8px;
   letter-spacing: 0;
-  span { width: 6px; height: 6px; border-radius: 50%; background: #69707c; }
-  &.enabled { border-color: color.change(#4caf50, $alpha: .3); background: color.change(#4caf50, $alpha: .1); color: #8cdb91; span { background: #61c568; } }
-  &.always { border-color: color.change(#2196f3, $alpha: .35); background: color.change(#2196f3, $alpha: .12); color: #8ac9ff; span { background: #4aa8f4; } }
+  &.enabled { border-color: color.change(#4caf50, $alpha: .28); color: #8cdb91; }
+  &.always { border-color: color.change(#2196f3, $alpha: .32); color: #8ac9ff; }
 }
 
 .tree-name {
   min-width: 0;
-  min-height: 22px;
+  min-height: 18px;
   padding: 0 2px;
   overflow: hidden;
   border: 0;
   background: transparent;
   box-shadow: none;
   color: theme.$fg;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 650;
   letter-spacing: 0;
   text-align: left;
@@ -315,52 +303,67 @@
   white-space: nowrap;
 }
 .tree-version { color: theme.$fg3; font-size: 8px; white-space: nowrap; }
-.tree-comment { max-width: 190px; overflow: hidden; color: color.change(theme.$fg, $alpha: .52); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.tree-comment { max-width: 190px; overflow: hidden; color: color.change(theme.$fg, $alpha: .52); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .tree-comment-input { height: 23px; max-width: 220px; padding: 0 7px; border: 1px solid color.change(theme.$primary, $alpha: .5); border-radius: 6px; background: theme.$bg; color: theme.$fg; font-size: 10px; outline: none; }
 .tree-file-detail { max-width: 420px; margin-left: 3px; overflow: hidden; color: color.change(theme.$fg, $alpha: .32); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
 .manage-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 16px;
-  padding: 0 6px;
-  border-radius: 99px;
-  background: color.change(theme.$fg, $alpha: .07);
+  min-height: 13px;
+  padding: 0 3px;
+  border-radius: 2px;
+  background: transparent;
   color: theme.$fg3;
   font-size: 7px;
   font-weight: 650;
   white-space: nowrap;
   &.clickable { cursor: pointer; }
-  &.tone-success { background: color.change(#4caf50, $alpha: .13); color: #8cdb91; }
-  &.tone-warning { background: color.change(#ff9800, $alpha: .14); color: #ffc66d; }
-  &.tone-danger { background: color.change(#ef5350, $alpha: .14); color: #ff9997; }
-  &.tone-info { background: color.change(#2196f3, $alpha: .13); color: #82c4fa; }
-  &.tone-accent { background: color.change(#ab47bc, $alpha: .15); color: #dda2e7; }
+  &.tone-success { color: #8cdb91; }
+  &.tone-warning { color: #ffc66d; }
+  &.tone-danger { color: #ff9997; }
+  &.tone-info { color: #82c4fa; }
+  &.tone-accent { color: #dda2e7; }
 }
 
 .tree-row-actions {
   display: flex;
   align-items: center;
-  align-self: stretch;
-  padding-right: 7px;
-  opacity: 0;
+  position: relative;
+  align-self: center;
+  padding-right: 3px;
+  opacity: .35;
   transition: opacity 120ms ease;
   .manage-tree-row:hover & { opacity: 1; }
-  button {
+  > button {
     display: grid;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     min-height: 0;
     padding: 0;
     place-items: center;
     border: 0;
-    border-radius: 6px;
+    border-radius: 4px;
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
     &:hover { background: theme.$bg3; color: theme.$fg; }
-    &.danger:hover { background: color.change(#ef5350, $alpha: .13); color: #ff8d8a; }
+    &.active, &:hover { background: theme.$bg2; color: theme.$fg; }
   }
+}
+
+.mod-row-menu {
+  position: absolute;
+  top: 26px;
+  right: 3px;
+  z-index: 60;
+  width: 190px;
+  padding: 4px;
+  border: 1px solid color.change(theme.$fg, $alpha: .1);
+  border-radius: 6px;
+  background: theme.$bg1;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .38);
+  button { display: flex; align-items: center; width: 100%; min-height: 28px; padding: 0 8px; gap: 7px; border: 0; border-radius: 4px; background: transparent; box-shadow: none; color: theme.$fg; font-size: 9px; letter-spacing: 0; text-align: left; &:hover { background: theme.$bg2; } &.danger { color: #ff9290; } }
 }
 
 .manage-empty {
@@ -380,7 +383,7 @@
 .manage-side {
   min-width: 0;
   min-height: 0;
-  padding: 7px 10px 40px;
+  padding: 4px 7px 40px;
   overflow-y: auto;
   background: color.change(theme.$bg, $alpha: .24);
 }
@@ -398,9 +401,8 @@
   box-shadow: none;
   color: theme.$fg3;
   font-size: 9px;
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  font-weight: 650;
+  letter-spacing: 0;
   box-sizing: border-box;
   small { padding: 2px 6px; border-radius: 99px; background: theme.$bg2; font-size: 8px; }
 }
@@ -411,25 +413,23 @@
   button {
     position: relative;
     display: grid;
-    grid-template-columns: 10px minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     width: 100%;
-    min-height: 36px;
-    padding: 0 8px;
+    min-height: 29px;
+    padding: 0 5px;
     gap: 6px;
     border: 1px solid transparent;
-    border-radius: 8px;
-    background: color.change(theme.$bg1, $alpha: .56);
+    border-radius: 3px;
+    background: transparent;
     box-shadow: none;
     color: theme.$fg3;
     font-size: 10px;
     letter-spacing: 0;
     text-align: left;
-    &.selected { border-color: color.change(theme.$primary, $alpha: .42); background: color.change(theme.$primary, $alpha: .1); color: theme.$fg; }
+    &.selected { border-color: color.change(theme.$primary, $alpha: .35); background: color.change(theme.$primary, $alpha: .06); color: theme.$fg; }
     &:hover { background: theme.$bg2; }
   }
-  .profile-indicator { width: 6px; height: 6px; border-radius: 50%; background: #606772; }
-  button.selected .profile-indicator { background: theme.$primary; box-shadow: 0 0 0 3px color.change(theme.$primary, $alpha: .15); }
   .profile-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button small { color: theme.$fg3; font-size: 8px; }
   .profile-delete { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 5px; opacity: 0; }
@@ -446,30 +446,6 @@
   button { display: grid; min-height: 32px; padding: 0; place-items: center; border-radius: 8px; }
 }
 
-.order-panel { margin-top: 16px; padding-top: 8px; border-top: 1px solid color.change(theme.$fg, $alpha: .08); }
-.side-panel-heading { cursor: pointer; span { display: flex; align-items: center; gap: 5px; } }
-.order-list {
-  p { margin: 3px 4px 9px; color: theme.$fg3; font-size: 8px; line-height: 1.45; }
-}
-.order-item {
-  display: grid;
-  grid-template-columns: 18px 20px minmax(0, 1fr);
-  align-items: center;
-  min-height: 31px;
-  margin: 3px 0;
-  padding: 0 7px 0 4px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: color.change(theme.$bg1, $alpha: .58);
-  color: theme.$fg3;
-  cursor: grab;
-  transition: opacity 100ms ease, border-color 100ms ease;
-  &:hover { border-color: color.change(theme.$fg, $alpha: .08); background: theme.$bg2; }
-  &.dragging { opacity: .34; }
-  .drag-handle { font-size: 12px; opacity: .5; }
-  .order-index { font-size: 8px; opacity: .42; }
-  .order-name { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-}
 
 .manage-detail-popup {
   position: relative;
@@ -481,7 +457,7 @@
   .detail-close { position: absolute; top: 12px; right: 12px; display: grid; width: 30px; height: 30px; min-height: 0; padding: 0; place-items: center; border: 0; border-radius: 7px; background: theme.$bg2; box-shadow: none; color: theme.$fg3; }
   .detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-right: 38px; h2 { margin: 4px 0; font-size: 22px; } p { margin: 0; color: theme.$fg3; font-size: 10px; } > button { display: grid; width: 34px; height: 34px; min-height: 0; padding: 0; place-items: center; }
   }
-  .detail-kicker { color: color.adjust(theme.$primary, $lightness: 18%); font-size: 9px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+  .detail-kicker { color: color.adjust(theme.$primary, $lightness: 18%); font-size: 9px; font-weight: 650; }
   .detail-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 18px 0; div { padding: 10px; border-radius: 9px; background: theme.$bg1; span, strong { display: block; } span { color: theme.$fg3; font-size: 8px; } strong { margin-top: 4px; overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; } } }
   .detail-images { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; img { height: 150px; border-radius: 9px; } }
   .detail-loading { display: grid; min-height: 100px; place-items: center; }
@@ -508,6 +484,6 @@
 .issue-list { display: grid; gap: 7px; max-height: 220px; overflow-y: auto; div { display: grid; gap: 3px; padding: 8px; border-radius: 7px; background: theme.$bg1; b { font-size: 9px; } span { color: theme.$fg3; font-size: 8px; word-break: break-all; } } }
 
 @media (max-width: 900px) {
-  .manage-page { grid-template-columns: minmax(0, 1fr) 220px; }
+  .manage-page { grid-template-columns: minmax(0, 1fr) 210px; }
   .manage-detail-popup .detail-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
