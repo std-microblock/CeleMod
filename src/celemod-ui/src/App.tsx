@@ -9,7 +9,6 @@ import { EventTarget } from './utils';
 import { RecommendMods } from './routes/RecommendMods';
 import { useAppStore, useCurrentLang, useGamePath, useInitializeAppStore } from './states';
 import { createModManageContext } from './context/modManage';
-import { createDownloadContext } from './context/download';
 import { DownloadListMenu } from './components/DownloadList';
 import { useEverestCtx as createEverestContext } from './context/everest';
 import { Everest } from './routes/Everest';
@@ -28,7 +27,6 @@ const pages = {
 type Services = {
   bus: EventTarget;
   modManage: ReturnType<typeof createModManageContext>;
-  download: ReturnType<typeof createDownloadContext>;
   everest: ReturnType<typeof createEverestContext>;
   pageController: { setPage(name: string): void };
   theme: ReturnType<typeof createThemeContext>;
@@ -53,14 +51,13 @@ export default function App() {
   const { currentLang } = useCurrentLang();
 
   const modManage = createModManageContext();
-  const download = createDownloadContext();
   const everest = createEverestContext();
   const blacklist = createBlacklistContext();
   const theme = createThemeContext();
   const bus = useMemo(() => new EventTarget(), []);
 
   currentServices = {
-    bus, modManage, download, everest, blacklist, theme,
+    bus, modManage, everest, blacklist, theme,
     pageController: { setPage },
   };
 

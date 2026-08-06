@@ -9,6 +9,7 @@ import { _functionalMods, _skinMods } from '../resources/RecommendModData';
 import { useRef } from 'react';
 import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
+import { useDownloadStore } from '../stores/download';
 
 const modNameFromUrl = (url: string) => {
   return decodeURIComponent(url.split('/mods/').pop() || '');
@@ -35,6 +36,7 @@ const RMod = ({
     installed ? _i18n.t('已安装') : _i18n.t('下载')
   );
   const ctx = useGlobalContext();
+  const downloadMod = useDownloadStore((store) => store.downloadMod);
 
   const startDownload = () => {
     if (state !== _i18n.t('下载')) return;
@@ -43,7 +45,7 @@ const RMod = ({
     callRemote('get_mod_update', name, (data) => {
       if (!!data) {
         const [gbFileId, version] = JSON.parse(data);
-        ctx.download.downloadMod(name, parseInt(gbFileId) === -1 ? download_url : gbFileId, {
+        downloadMod(name, parseInt(gbFileId) === -1 ? download_url : gbFileId, {
           autoDisableNewMods,
           onProgress(task, progress) {
             setState(

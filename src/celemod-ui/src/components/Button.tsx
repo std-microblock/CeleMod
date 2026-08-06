@@ -1,11 +1,17 @@
-import "./Button.scss"
+import type { ButtonHTMLAttributes } from 'react';
+import './Button.scss';
 
 export type ButtonType = "primary" | "critical" | "success" | "warning" | "info" | "default";
 
-export const Button = (props: { children: any, large?: boolean, onClick?: any, type?: ButtonType }) => {
+type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> & {
+    large?: boolean;
+    type?: ButtonType;
+};
+
+export const Button = ({ children, large, type, className = '', ...props }: ButtonProps) => {
     return (
-        <button onClick={props.onClick} className={`${props.large && 'large'} ${props.type?.toString()}`}>
-            {props.children}
+        <button {...props} className={`${large ? 'large' : ''} ${type ?? ''} ${className}`.trim()}>
+            {children}
         </button>
     );
-}
+};

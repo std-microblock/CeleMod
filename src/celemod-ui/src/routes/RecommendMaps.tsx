@@ -18,6 +18,7 @@ import { memo } from 'react';
 import { useAutoDisableNewMods, useInstalledMods } from 'src/states';
 import { useState } from 'react';
 import { useGlobalContext } from 'src/App';
+import { useDownloadStore } from 'src/stores/download';
 
 export const RecommendMaps = () => {
   const noEverest = enforceEverest();
@@ -26,6 +27,7 @@ export const RecommendMaps = () => {
   const { installedMods } = useInstalledMods();
   const [autoDisableNewMods] = useAutoDisableNewMods();
   const ctx = useGlobalContext();
+  const downloadMod = useDownloadStore((state) => state.downloadMod);
   const InstallButton = ({ name, url }) => {
     const installed = installedMods.some((mod) => mod.name === name);
     const [state, setState] = useState(
@@ -38,7 +40,7 @@ export const RecommendMaps = () => {
       callRemote('get_mod_update', name, (data) => {
         if (!!data) {
           const [gbFileId, version] = JSON.parse(data);
-          ctx.download.downloadMod(
+          downloadMod(
             name,
             parseInt(gbFileId) === -1 ? url : gbFileId,
             {

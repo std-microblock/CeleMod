@@ -258,5 +258,12 @@
   "Inspecting package": "Проверка пакета",
   "Extract local Everest package": "Распаковка локального пакета Everest",
   "Run MiniInstaller": "Запуск MiniInstaller",
-  "Celeste is currently running. Exit the game before installing packages.": "Celeste запущена. Закройте игру перед установкой."
+  "Celeste is currently running. Exit the game before installing packages.": "Celeste запущена. Закройте игру перед установкой.",
+  "筛选": "Фильтр",
+  "类型": "Тип",
+  "排序": "Сортировка",
+  "列表模式": "Список",
+  "网格模式": "Сетка",
+  "发布": "Опубликовано",
+  "更新": "Обновлено"
 }

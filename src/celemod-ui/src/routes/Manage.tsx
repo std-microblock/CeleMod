@@ -28,6 +28,7 @@ import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
+import { useDownloadStore } from '../stores/download';
 import { createPopup, PopupContext } from '../components/Popup';
 import { ProgressIndicator } from '../components/Progress';
 
@@ -151,7 +152,7 @@ const ModBadge = ({
 };
 
 const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
-  const { download } = useGlobalContext();
+  const downloadMod = useDownloadStore((state) => state.downloadMod);
   const ctx = useContext(modListContext);
   const [state, setState] = useState(_i18n.t('缺失'));
   const [gbFileID, setGBFileID] = useState<string | null>(null);
@@ -176,7 +177,7 @@ const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
           gbFileID !== null
             ? async () => {
               setState(_i18n.t('下载中'));
-              download.downloadMod(name, gbFileID, {
+              downloadMod(name, gbFileID, {
                 autoDisableNewMods: ctx?.autoDisableNewMods || false,
                 onProgress: (task, progress) => {
                   setState(`${progress}% (${task.subtasks.length})`);
@@ -225,7 +226,7 @@ const ModLocal = ({
   duplicateFiles,
   renderPath = [],
 }: ModInfo & { optional?: boolean; renderPath?: string[] }) => {
-  const { download } = useGlobalContext();
+  const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -371,7 +372,7 @@ const ModLocal = ({
           bg="#ff9800"
           color="white"
           onClick={() => {
-            download.downloadMod(
+            downloadMod(
               file.slice(0, -'.zip'.length),
               updateState[0],
               {
@@ -1209,7 +1210,7 @@ export const Manage = () => {
     ]
   );
 
-  const { download } = useGlobalContext();
+  const downloadMod = useDownloadStore((state) => state.downloadMod);
 
   const startFullModCheck = () => {
     if (fullCheckRunning) return;
@@ -1504,7 +1505,7 @@ export const Manage = () => {
                     hasUpdateMods.map((v) => v.name)
                   );
                   for (const mod of hasUpdateMods) {
-                    download.downloadMod(
+                    downloadMod(
                       mod.name,
                       mod.gb_file === '-1' ? mod.url : mod.gb_file,
                       {
@@ -1551,7 +1552,7 @@ export const Manage = () => {
                         return;
                       }
                       const [gbFileId] = JSON.parse(data);
-                      download.downloadMod(dep.name, gbFileId, {
+                      downloadMod(dep.name, gbFileId, {
                         autoDisableNewMods: manageCtx.autoDisableNewMods,
                         onFinished: () => {
                           remaining.delete(dep.name);

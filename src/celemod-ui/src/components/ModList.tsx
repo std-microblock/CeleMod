@@ -1,20 +1,15 @@
 import _i18n from 'src/i18n';
-import { Fragment } from 'react';
+import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import './ModList.scss';
-import { Mod as GBMod, getModFileId } from '../api/xmao';
-import { useContext, useEffect, useRef, useState } from 'react';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { GameSelector } from './GameSelector';
 import { Awaitable, callRemote, displayDate, horizontalScrollMouseWheelHandler } from '../utils';
-
-import { FixedSizeGrid, FixedSizeList } from 'react-window';
-import InfiniteLoader from 'react-window-infinite-loader';
-import { memo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Content } from '../api/wegfan';
-import { Download } from '../context/download';
 import { useAutoDisableNewMods } from '../states';
 import { useGlobalContext } from '../App';
+import { useDownloadStore } from '../stores/download';
 import { PopupContext, createPopup } from './Popup';
 import { ProgressIndicator } from './Progress';
 import { sanitizeDescriptionHtml } from '../sanitizeDescriptionHtml';
@@ -28,13 +23,51 @@ const processLargeNum = (num: number) => {
   return (num / 1000000000).toFixed(1) + 'b';
 };
 
-const BackgroundEle = memo(({ preview }: { preview: string }) => (
-  <div className="bg">
-    <img src={preview + '?w=340'} alt="" srcSet="" />
-  </div>
+const formatShortDate = (dateValue: string | Date) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return '--';
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  return `${date.getFullYear().toString().slice(-2)}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}`;
+};
+
+const getCategoryLabel = (category: string) => {
+  const categoryI18nMap: Record<string, string> = {
+    Map: '地图',
+    Maps: '地图',
+    Assets: '资源',
+    Effects: '特效',
+    Dialog: '对话',
+    'Other/Misc': '其他',
+    Helpers: '辅助',
+    'Lönn Plugin': '辅助',
+    Skins: '皮肤',
+    Mechanics: '机制',
+    UI: 'UI',
+  };
+
+  return categoryI18nMap[category]
+    ? _i18n.t(categoryI18nMap[category])
+    : category;
+};
+
+const BackgroundEle = memo(({ preview, name }: { preview: string; name: string }) => (
+  <Fragment>
+    <div className="mod-media">
+      <img src={preview + '?w=560'} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+      <div className="mod-media-shade" />
+      <span className="sr-only">{name}</span>
+    </div>
+    <div className="mod-info-backdrop" aria-hidden="true">
+      <img src={preview + '?w=560'} alt="" loading="lazy" decoding="async" />
+    </div>
+  </Fragment>
 ));
 
-const GUTTER_SIZE = 10;
+const CARD_HEIGHT = 236;
+const LIST_CARD_HEIGHT = 64;
+const CARD_MIN_WIDTH = 300;
+const GRID_GAP = 16;
+const GRID_PADDING = 14;
 
 export interface ModDetailInfo {
   // HTML compatible
@@ -58,10 +91,21 @@ export interface FileToDownload {
 
 export interface ModInfo {
   name: string;
+  downloadKey?: string;
   downloadUrl: (() => Awaitable<string | FileToDownload[]>);
   previewUrl: string;
   author: string;
   other: string;
+  category?: string;
+  stats?: {
+    likes: number;
+    views: number;
+    downloads: number;
+  };
+  dates?: {
+    published: Date;
+    updated: Date;
+  };
   detail?: () => Promise<ModDetailInfo>;
 }
 export const Mod = memo(
@@ -72,39 +116,71 @@ export const Mod = memo(
     modFolder: string;
     isInstalled: boolean;
   }) => {
-    const { download, modManage } = useGlobalContext();
+    const { modManage } = useGlobalContext();
+    const downloadMod = useDownloadStore((state) => state.downloadMod);
     const [autoDisableNewMods] = useAutoDisableNewMods();
     const { mod } = props;
     const preview = mod.previewUrl;
-
-    const [downloadTask, setDownloadTask] = useState<Download.TaskInfo | null>(
-      null
+    const downloadOwnerId = mod.downloadKey ?? mod.name;
+    const downloadTask = useDownloadStore((state) => (
+      Object.values(state.tasks).find((task) => task.ownerId === downloadOwnerId)
+      ?? state.tasks[mod.name]
+    ));
+    const downloadActive = downloadTask?.state === 'pending' && !downloadTask.canceled;
+    const downloadProgress = Math.max(
+      0,
+      Math.min(100, Number(downloadTask?.progress ?? 0))
     );
 
     return (
       <div
         onClick={props.onClick}
-        className={`mod ${props.expanded && 'expanded'}`}
+        className={`mod ${props.expanded ? 'expanded' : ''}`}
         key={mod.name}
       >
+        <BackgroundEle preview={preview} name={mod.name} />
+
+        <div className="mod-badges">
+          {props.isInstalled && (
+            <span className="mod-installed-badge">
+              <Icon name="i-tick" />
+              {_i18n.t('已安装')}
+            </span>
+          )}
+          {mod.category && <span className="mod-category-badge">{mod.category}</span>}
+        </div>
+
         <div className="operations">
           <Button
-            onClick={async () => {
-              if (downloadTask) return;
+            title={downloadActive
+              ? `${Math.round(downloadProgress)}%`
+              : props.isInstalled ? _i18n.t('已安装') : _i18n.t('下载')}
+            aria-label={downloadActive
+              ? `${Math.round(downloadProgress)}%`
+              : props.isInstalled ? _i18n.t('已安装') : _i18n.t('下载')}
+            onClick={async (event) => {
+              event.stopPropagation();
+              if (props.isInstalled) return;
 
               const down = (name: string, fileid: string) => {
-                setDownloadTask(
-                  download.downloadMod(name, fileid, {
-                    autoDisableNewMods,
-                    onProgress: (task) => setDownloadTask({ ...task }),
-                    onFailed: (task) => setDownloadTask({ ...task }),
-                    onFinished: (task) => {
-                      setDownloadTask({ ...task });
-                      modManage.reloadMods();
-                    },
-                  })
-                );
+                downloadMod(name, fileid, {
+                  autoDisableNewMods,
+                  ownerId: downloadOwnerId,
+                  onFinished: () => modManage.reloadMods(),
+                });
               };
+
+              if (downloadTask) {
+                if (downloadTask.state === 'failed' && downloadTask.source) {
+                  downloadMod(downloadTask.name, downloadTask.source, {
+                    force: true,
+                    autoDisableNewMods,
+                    ownerId: downloadOwnerId,
+                    onFinished: () => modManage.reloadMods(),
+                  });
+                }
+                return;
+              }
 
               let ctx: any;
               createPopup(() => {
@@ -202,11 +278,16 @@ export const Mod = memo(
             {props.isInstalled ? (
               <Icon name="i-tick" />
             ) : downloadTask ? (
-              downloadTask.state === 'pending' ? (
-                `${downloadTask.progress}% (${downloadTask.subtasks.filter((v) => v.state !== 'Finished')
-                  .length
-                })`
-              ) : downloadTask.state === 'failed' ? (
+              downloadActive ? (
+                <span
+                  className="download-progress"
+                  style={{
+                    '--download-progress': `${downloadProgress}%`,
+                  } as CSSProperties}
+                >
+                  <span>{downloadTask.subtasks.length}</span>
+                </span>
+              ) : downloadTask.state === 'failed' || downloadTask.canceled ? (
                 <Icon name="i-cross" />
               ) : (
                 <Icon name="i-tick" />
@@ -218,7 +299,10 @@ export const Mod = memo(
 
           {props.mod.detail && (
             <Button
-              onClick={async () => {
+              title={_i18n.t('更多')}
+              aria-label={_i18n.t('更多')}
+              onClick={async (event) => {
+                event.stopPropagation();
                 createPopup(
                   () => {
                     const [data, setData] = useState<ModDetailInfo | null>(
@@ -340,145 +424,115 @@ export const Mod = memo(
         </div>
 
         <div className="info">
-          <div className="name">{mod.name}</div>
-          <div className="author">{mod.author}</div>
-          <div className="other">{mod.other}</div>
+          <div className="name" title={mod.name}>{mod.name}</div>
+          <div className="author" title={mod.author}>{mod.author}</div>
+          {mod.stats ? (
+            <div className="mod-stats">
+              <span><Icon name="heart" />{processLargeNum(mod.stats.likes)}</span>
+              <span><Icon name="eye" />{processLargeNum(mod.stats.views)}</span>
+              <span><Icon name="download" />{processLargeNum(mod.stats.downloads)}</span>
+              {mod.dates && (
+                <Fragment>
+                  <span className="mod-date-stat" title={_i18n.t('发布')}>
+                    <Icon name="calendar" />
+                    <time>{formatShortDate(mod.dates.published)}</time>
+                  </span>
+                  <span className="mod-date-stat" title={_i18n.t('更新')}>
+                    <Icon name="clock" />
+                    <time>{formatShortDate(mod.dates.updated)}</time>
+                  </span>
+                </Fragment>
+              )}
+            </div>
+          ) : (
+            <div className="other">{mod.other}</div>
+          )}
         </div>
-
-        <BackgroundEle preview={preview} />
       </div>
     );
   }
 );
 export const ModList = (props: {
   mods: Content[];
-  onLoadMore?: any;
+  onLoadMore?: () => Promise<void> | void;
   haveMore?: boolean;
   modFolder: string;
   loading?: boolean;
-  allowUpScroll: boolean;
+  viewMode?: 'grid' | 'list';
 }) => {
-  const [loading, setLoading] = useState(true);
-
   const [installedModIDs, setInstalledModIDs] = useState<string[] | null>(null);
+  const [listWidth, setListWidth] = useState(0);
+  const [scrollbarWidth, setScrollbarWidth] = useState(0);
+  const refList = useRef<HTMLDivElement>(null);
+  const loadMoreLocked = useRef(false);
 
   useEffect(() => {
     callRemote('get_installed_mod_ids', props.modFolder, (ids: string) => {
-      setInstalledModIDs(ids.split('\n'));
+      setInstalledModIDs(ids.split('\n').filter(Boolean));
     });
   }, [props.modFolder]);
 
   useEffect(() => {
-    setLoading(props.loading ?? false);
-  }, [props.loading]);
+    const element = refList.current;
+    if (!element) return;
 
-  const refList: any = useRef(null);
+    const updateWidth = () => {
+      setListWidth(element.clientWidth);
+      setScrollbarWidth(element.offsetWidth - element.clientWidth);
+    };
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const viewMode = props.viewMode ?? 'grid';
+  const gridRightPadding = Math.max(0, GRID_PADDING - scrollbarWidth);
+  const columnCount = useMemo(() => {
+    if (viewMode === 'list') return 1;
+    const available = Math.max(0, listWidth - GRID_PADDING * 2);
+    return Math.max(
+      1,
+      Math.floor((available + GRID_GAP) / (CARD_MIN_WIDTH + GRID_GAP))
+    );
+  }, [listWidth, viewMode]);
+
+  const rowCount = Math.ceil(props.mods.length / columnCount);
+  const rowHeight = viewMode === 'list' ? LIST_CARD_HEIGHT : CARD_HEIGHT;
+  const rowGap = viewMode === 'list' ? 0 : GRID_GAP;
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => refList.current,
+    estimateSize: () => rowHeight + rowGap,
+    overscan: 2,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (installedModIDs !== null && refList.current) {
-      const listElement = refList.current;
-      let reachedOnce = false;
-      let scrollLocked = false;
-      const onWheel = (e: WheelEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const lastRow = virtualRows.at(-1);
+    if (
+      !lastRow ||
+      !props.haveMore ||
+      props.loading ||
+      loadMoreLocked.current ||
+      lastRow.index < rowCount - 2
+    ) return;
 
-        const scrollTo = (v: any) => {
-          refList.current.scrollTo(v);
-        };
+    loadMoreLocked.current = true;
+    Promise.resolve(props.onLoadMore?.()).finally(() => {
+      loadMoreLocked.current = false;
+    });
+  }, [props.haveMore, props.loading, props.onLoadMore, rowCount, virtualRows]);
 
-        const target = refList.current.scrollTop + e.deltaY * 1.6;
-        // console.log(target)
-        const topPaddingDownTop = 40;
-        const list = document.querySelector('.mod-list') as any;
-        const bottomPaddingUpTop =
-          list.scrollTop +
-          list.lastElementChild.offsetTop -
-          list.offsetHeight -
-          80;
-        if (scrollLocked) return;
-        if (target < 40) {
-          if (!props.allowUpScroll) {
-            scrollTo({
-              top: 40,
-              behavior: 'smooth',
-            });
-            return;
-          }
-          // reach top padding
-          if (reachedOnce) {
-            scrollTo({
-              top: target,
-              behavior: 'smooth',
-            });
+  const firstModId = props.mods[0]?.id;
+  useEffect(() => {
+    rowVirtualizer.scrollToOffset(0);
+  }, [firstModId]);
 
-            if (target < 0) {
-              scrollLocked = true;
-              setTimeout(() => {
-                props.onLoadMore?.('up').then(() => {
-                  scrollLocked = false;
-                });
-              }, 300);
-              scrollTo({
-                top: target,
-                behavior: 'smooth',
-              });
-            }
-          } else {
-            scrollTo({
-              top: topPaddingDownTop,
-              behavior: 'smooth',
-            });
-
-            if (props.haveMore)
-              reachedOnce = true;
-          }
-        } else if (
-          target >
-          refList.current.scrollHeight - refList.current.offsetHeight - 40
-        ) {
-          // reach bottom padding
-          if (reachedOnce) {
-            if (target > refList.current.offsetHeight) {
-              if (!scrollLocked) {
-                scrollLocked = true;
-                setTimeout(() => {
-                  props.onLoadMore?.('down').then(() => {
-                    scrollLocked = false;
-                  });
-                }, 300);
-                scrollTo({
-                  top: target,
-                  behavior: 'smooth',
-                });
-              }
-            } else {
-              scrollTo({
-                top: target,
-                behavior: 'smooth',
-              });
-            }
-          } else {
-            console.log('To', bottomPaddingUpTop);
-            scrollTo({
-              top: bottomPaddingUpTop,
-              behavior: 'smooth',
-            });
-            if (props.haveMore)
-              reachedOnce = true;
-          }
-        } else {
-          scrollTo({
-            top: target,
-            behavior: 'smooth',
-          });
-          reachedOnce = false;
-        }
-      };
-      listElement.addEventListener('wheel', onWheel, { passive: false });
-      return () => listElement.removeEventListener('wheel', onWheel);
-    }
-  }, [installedModIDs, props.onLoadMore, props.haveMore, props.allowUpScroll]);
+  useEffect(() => {
+    rowVirtualizer.measure();
+    rowVirtualizer.scrollToOffset(0);
+  }, [rowGap, rowHeight, viewMode]);
 
   const formatSize = (size: number) => {
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -486,122 +540,111 @@ export const ModList = (props: {
     return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
 
-  if (installedModIDs === null)
-    return (
-      <div
-        className="loader"
-        style={{
-          position: 'fixed',
-          bottom: 200,
-          height: 24,
-          left: 200,
-          right: 200,
-        }}
-      >
-        <div className="bar"></div>
-      </div>
-    );
+  const createModInfo = useCallback((mod2: Content) => {
+    const mod = {
+      name: mod2.name,
+      downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
+      downloadUrl: () => {
+        const dedup = new Set();
+        if (!mod2.gameBananaId) return mod2.files[0]?.url ? mod2.files[0].url : [];
+        return Promise.resolve(
+          mod2.files
+            .filter((v) => {
+              if (v.mods.length === 0) return false;
+              if (dedup.has(v.mods[0].id)) return false;
+              dedup.add(v.mods[0].id);
+              return true;
+            })
+            .map(
+              (v) =>
+                ({
+                  id: v.gameBananaId.toString(),
+                  name: `${v.description.includes(v.mods[0].version)
+                    ? ''
+                    : v.mods[0].version + '-'
+                    }${v.description}-${v.mods[0].name}`,
+                  size: formatSize(v.size),
+                  url: v.url,
+                } as FileToDownload)
+            )
+        );
+      },
+      previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
+      author: mod2.submitter,
+      isInstalled: installedModIDs?.includes(mod2.gameBananaId?.toString()) ?? false,
+      other: `${mod2.likes} · ${processLargeNum(mod2.views)} · ${processLargeNum(mod2.downloads)}`,
+      category: getCategoryLabel(mod2.categoryName),
+      stats: {
+        likes: mod2.likes,
+        views: mod2.views,
+        downloads: mod2.downloads,
+      },
+      dates: {
+        published: mod2.createTime,
+        updated: mod2.latestUpdateAddedTime ?? mod2.updateTime,
+      },
+      detail: () =>
+        Promise.resolve({
+          description: mod2.description,
+          authors: mod2.credits
+            .map((v) => v.authors.map((v) => v.name))
+            .flat(),
+          images: mod2.screenshots.map((v) => v.url),
+          files: mod2.files.map((v) => ({
+            name: v.description,
+            downloadUrl: v.url,
+          })),
+          lastUpdate: mod2.latestUpdateAddedTime,
+          externalUrl: mod2.pageUrl,
+        }),
+    };
+    return mod;
+  }, [installedModIDs]);
 
   return (
-    <div>
+    <div className={`mod-list-shell view-${viewMode}`}>
       <div className="mod-list" ref={refList}>
-        {<div className="padding"></div>}
-        {props.mods.map((mod2, index) => {
-          const mod = {
-              name: mod2.name,
-              downloadUrl: () => {
-                const dedup = new Set();
-                if (!mod2.gameBananaId) return mod2.files[0].url
-                return Promise.resolve(
-                  mod2.files
-                    .filter((v) => {
-                      if (v.mods.length === 0) return false;
-                      if (dedup.has(v.mods[0].id)) return false;
-                      dedup.add(v.mods[0].id);
-                      return true;
-                    })
-                    .map(
-                      (v) =>
-                      ({
-                        id: v.gameBananaId.toString(),
-                        name: `${v.description.includes(v.mods[0].version)
-                          ? ''
-                          : v.mods[0].version + '-'
-                          }${v.description}-${v.mods[0].name}`,
-                        size: formatSize(v.size),
-                        url: v.url,
-                      } as FileToDownload)
-                    )
-                );
-              },
-              previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
-              author: mod2.submitter,
-              isInstalled: installedModIDs.includes(
-                mod2.gameBananaId?.toString()
-              ),
-              other: `${mod2.likes} 🥰 · ${processLargeNum(
-                mod2.views
-              )} 👀 · ${processLargeNum(mod2.downloads)} 💾`,
-              detail: () =>
-                Promise.resolve({
-                  description: mod2.description,
-                  authors: mod2.credits
-                    .map((v) => v.authors.map((v) => v.name))
-                    .flat(),
-                  images: mod2.screenshots.map((v) => v.url),
-                  files: mod2.files.map((v) => ({
-                    name: v.description,
-                    downloadUrl: v.url,
-                  })),
-                  lastUpdate: mod2.latestUpdateAddedTime,
-                  externalUrl: mod2.pageUrl,
-                }),
-            };
-          const isVisible = true;
+        <div
+          className="mod-virtual-canvas"
+          style={{ height: rowVirtualizer.getTotalSize() + GRID_PADDING * 2 }}
+        >
+          {installedModIDs !== null && virtualRows.map((virtualRow) => {
+            const startIndex = virtualRow.index * columnCount;
+            const rowMods = props.mods.slice(startIndex, startIndex + columnCount);
 
-          return (
-            <div
-              key={`${mod2.gameBananaId ?? 'mod'}-${mod2.name}`}
-              style={{
-                margin: GUTTER_SIZE,
-                boxSizing: 'border-box',
-              }}
-            >
+            return (
               <div
+                className="mod-grid-row"
+                key={virtualRow.key}
                 style={{
-                  width: 330,
-                  height: 220,
+                  height: rowHeight,
+                  gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                  paddingRight: gridRightPadding,
+                  transform: `translateY(${virtualRow.start + GRID_PADDING}px)`,
                 }}
               >
-                {isVisible && (
-                  <Mod
-                    mod={mod}
-                    modFolder={props.modFolder}
-                    isInstalled={mod.isInstalled}
-                  />
-                )}
+                {rowMods.map((mod2) => {
+                  const mod = createModInfo(mod2);
+                  return (
+                    <Mod
+                      key={`${mod2.gameBananaId ?? mod2.id}-${mod2.name}`}
+                      mod={mod}
+                      modFolder={props.modFolder}
+                      isInstalled={mod.isInstalled}
+                    />
+                  );
+                })}
               </div>
-            </div>
-          ) as any;
-        })}
-        <div className="padding"></div>
+            );
+          })}
+        </div>
       </div>
 
-      {loading && (
-        <div
-          className="loader"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            height: 24,
-            zIndex: 999,
-          }}
-        >
-          <div className="bar"></div>
+      {(props.loading || installedModIDs === null) && (
+        <div className="mod-list-loading" aria-label={_i18n.t('加载中')}>
+          <ProgressIndicator infinite size={26} lineWidth={3} />
         </div>
       )}
-
-      {<div className="padding"></div>}
     </div>
   );
 };

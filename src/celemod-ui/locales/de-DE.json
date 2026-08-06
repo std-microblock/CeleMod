@@ -185,5 +185,12 @@
   "Inspecting package": "Installationspaket wird geprüft",
   "Extract local Everest package": "Lokales Everest-Paket wird entpackt",
   "Run MiniInstaller": "MiniInstaller wird ausgeführt",
-  "Celeste is currently running. Exit the game before installing packages.": "Celeste wird derzeit ausgeführt. Beende das Spiel vor der Installation."
+  "Celeste is currently running. Exit the game before installing packages.": "Celeste wird derzeit ausgeführt. Beende das Spiel vor der Installation.",
+  "筛选": "Filter",
+  "类型": "Typ",
+  "排序": "Sortierung",
+  "列表模式": "Listenansicht",
+  "网格模式": "Rasteransicht",
+  "发布": "Veröffentlicht",
+  "更新": "Aktualisiert"
 }

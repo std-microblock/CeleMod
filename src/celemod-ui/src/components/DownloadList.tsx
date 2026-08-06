@@ -1,10 +1,8 @@
 import _i18n from 'src/i18n';
 import './DownloadList.scss';
-import { useGlobalContext } from '../App';
-import { useEffect } from 'react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Icon } from './Icon';
-import { Download } from '../context/download';
+import { Download, useDownloadStore } from '../stores/download';
 
 const formatBytes = (bytes: number) => {
   if (!bytes) return '0 B';
@@ -23,23 +21,25 @@ const formatSpeed = (bytesPerSec: number) => {
   return `${formatBytes(bytesPerSec)}/s`;
 };
 
-const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) => {
+const Task = ({ task }: { task: Download.TaskInfo }) => {
+  const cancelDownload = useDownloadStore((state) => state.cancelDownload);
+  const downloadMod = useDownloadStore((state) => state.downloadMod);
   const all = task.subtasks.length;
   const finished = task.subtasks.filter((v) => v.state === 'Finished').length;
 
   const [expanded, setExpanded] = useState(false);
 
   const activeSubtask = task.subtasks.find((v) => v.state === 'Downloading');
-  const action = task.state === 'pending'
+  const action = task.state === 'pending' && !task.canceled
     ? {
       icon: 'i-cross',
-      onClick: () => download.cancelDownload(task.name),
+      onClick: () => cancelDownload(task.name),
       title: _i18n.t('取消'),
     }
-    : (task.state === 'failed' || task.canceled) && task.source
+    : task.state === 'failed' && task.source
       ? {
         icon: 'replay',
-        onClick: () => download.downloadMod(task.name, task.source, { force: true }),
+        onClick: () => downloadMod(task.name, task.source!, { force: true }),
         title: _i18n.t('重试'),
       }
       : null;
@@ -108,16 +108,7 @@ const Task = ({ task, download }: { task: Download.TaskInfo; download: any }) =>
 };
 
 export const DownloadListMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { download } = useGlobalContext();
-  const [downloadTasks, setDownloadTasks] = useState(
-    download.downloadTasks.current
-  );
-
-  useEffect(() => {
-    download.eventBus.on('taskListChanged', () => {
-      setDownloadTasks({ ...download.downloadTasks.current });
-    });
-  }, []);
+  const downloadTasks = useDownloadStore((state) => state.tasks);
 
   if (!open) return null;
   return (
@@ -129,7 +120,7 @@ export const DownloadListMenu = ({ open, onClose }: { open: boolean; onClose: ()
         {Object.values(downloadTasks)
           .filter((v) => v.state !== 'finished' || v.canceled)
           .map((task) => (
-            <Task key={task.name} task={task} download={download} />
+            <Task key={task.name} task={task} />
           ))}
       </div>
     </menu>

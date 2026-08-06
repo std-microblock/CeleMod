@@ -1,14 +1,11 @@
 import _i18n from 'src/i18n';
-import { Fragment, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ModList } from '../components/ModList';
-import { getMods, Mod, SearchModResp } from '../api/xmao';
-import { currentMirror, initSearchSort, useCurrentEverestVersion, useGamePath, useMirror, useSearchSort } from '../states';
+import { currentMirror, initSearchSort, useGamePath, useSearchSort } from '../states';
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
-import { useRef } from 'react';
 import { Content, searchSubmission } from '../api/wegfan';
-import { useGlobalContext } from '../App';
 import { enforceEverest } from '../components/EnforceEverestPage';
 
 const categoryIdMap = {
@@ -29,19 +26,42 @@ export const Search = () => {
 
   const [mods, setMods] = useState<Content[]>([]);
   const [type, setType] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>('');
   const [search, setSearch] = useState<string>('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPath] = useGamePath();
   const [loading, setLoading] = useState(true);
-  const loadingLock = useRef(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const requestId = useRef(0);
+  const filterMenuRef = useRef<HTMLDivElement>(null);
   initSearchSort();
   const [sort, setSort] = useSearchSort();
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const fetchModPage = async (page: number) => {
-    console.log('fetching', page);
-    setLoading(true);
-    const res = await searchSubmission({
+  useEffect(() => {
+    if (!filterOpen) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!filterMenuRef.current?.contains(event.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFilterOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [filterOpen]);
+
+  const fetchModPage = useCallback((page: number) => searchSubmission({
       page,
       // @ts-ignore
       categoryId: categoryIdMap[type],
@@ -50,158 +70,170 @@ export const Search = () => {
       // section: 'Mod',
       size: 25,
       includeExclusiveSubmissions: currentMirror() === 'wegfan'
-    });
-    console.log('finished, size:', res.content.length);
-    setLoading(false);
-    return res;
-  };
+    }), [search, sort, type]);
 
   useEffect(() => {
+    const currentRequest = ++requestId.current;
     setMods([]);
     setCurrentPage(1);
-    fetchModPage(1).then(v=>{
-      setMods(v.content);
-      setHasMore(v.hasNextPage);
-    });
-  }, [type, search, sort]);
+    setHasMore(true);
+    setLoadFailed(false);
+    setLoading(true);
 
-  useEffect(() => {
-    loadingLock.current = false;
-  }, [mods]);
+    fetchModPage(1)
+      .then((data) => {
+        if (currentRequest !== requestId.current) return;
+        setMods(data.content);
+        setHasMore(data.hasNextPage);
+      })
+      .catch((error) => {
+        if (currentRequest !== requestId.current) return;
+        console.error(error);
+        setLoadFailed(true);
+        setHasMore(false);
+      })
+      .finally(() => {
+        if (currentRequest === requestId.current) setLoading(false);
+      });
+  }, [fetchModPage, refreshKey]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+
+    const nextPage = currentPage + 1;
+    setLoading(true);
+    setLoadFailed(false);
+    try {
+      const data = await fetchModPage(nextPage);
+      setMods((current) => {
+        const existingIds = new Set(current.map((mod) => mod.id));
+        return [...current, ...data.content.filter((mod) => !existingIds.has(mod.id))];
+      });
+      setCurrentPage(nextPage);
+      setHasMore(data.hasNextPage);
+    } catch (error) {
+      console.error(error);
+      setLoadFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, fetchModPage, hasMore, loading]);
 
   if (noEverest) return noEverest;
 
   return (
-    <Fragment>
-      <div className="filter">
+    <div className="search-page">
+      <form
+        className="filter"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setFilterOpen(false);
+          setSearch(searchInput.trim());
+        }}
+      >
+        <div className="search-field">
+          <Icon name="search" />
         <input
           type="text"
           className="searchinput"
-          onKeyUp={(e) => {
-            if (e.keyCode === 257) {
-              setSearch((e.target! as any).value);
-            }
-          }}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            aria-label={_i18n.t('搜索')}
         />
+        </div>
         <Button
-          onClick={() => {
-            setSearch((document.querySelector('.searchinput') as any).value);
-          }}
+          className="search-submit"
+          aria-label={_i18n.t('搜索')}
         >
           <Icon name="search" />
         </Button>
-        <select
-          value={type}
-          onChange={(e) => setType((e.target! as any).value)}
+        <Button
+          className="view-toggle"
+          aria-label={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
+          title={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
+          onClick={(event) => {
+            event.preventDefault();
+            setViewMode((mode) => mode === 'grid' ? 'list' : 'grid');
+          }}
         >
-          <option value="">{_i18n.t('全部')}</option>
-          <option value="Maps">{_i18n.t('地图')}</option>
-          <option value="Assets">{_i18n.t('资源')}</option>
-          <option value="Effects">{_i18n.t('特效')}</option>
-          <option value="UI">UI</option>
-          <option value="Dialog">{_i18n.t('对话')}</option>
-          <option value="Other/Misc">{_i18n.t('其他')}</option>
-          <option value="Helpers">{_i18n.t('辅助')}</option>
-          <option value="Skins">{_i18n.t('皮肤')}</option>
-          <option value="Mechanics">{_i18n.t('机制')}</option>
-          {/* <option value="Twitch Integration">Twitch整合</option> */}
-        </select>
-        <select
-          value={sort}
-          onChange={(e) => setSort((e.target! as any).value)}
-        >
-          <option value="new">{_i18n.t('最近发布')}</option>
-          <option value="updateAdded">{_i18n.t('最近添加')}</option>
-          <option value="updated">{_i18n.t('最近更新')}</option>
-          <option value="views">{_i18n.t('最多浏览')}</option>
-          <option value="likes">{_i18n.t('最多点赞')}</option>
-        </select>
-      </div>
+          <Icon name={viewMode === 'grid' ? 'list' : 'grid'} />
+        </Button>
+        <div className="filter-menu-wrap" ref={filterMenuRef}>
+          <Button
+            className={`filter-toggle ${filterOpen ? 'active' : ''}`}
+            aria-label={_i18n.t('筛选')}
+            aria-expanded={filterOpen}
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              event.preventDefault();
+              setFilterOpen((open) => !open);
+            }}
+          >
+            <Icon name="filter" />
+          </Button>
+
+          {filterOpen && (
+            <div className="filter-popup" role="dialog" aria-label={_i18n.t('筛选')}>
+              <label>
+                <span>{_i18n.t('类型')}</span>
+                <select
+                  value={type}
+                  onChange={(event) => setType(event.target.value)}
+                >
+                  <option value="">{_i18n.t('全部')}</option>
+                  <option value="Maps">{_i18n.t('地图')}</option>
+                  <option value="Assets">{_i18n.t('资源')}</option>
+                  <option value="Effects">{_i18n.t('特效')}</option>
+                  <option value="UI">UI</option>
+                  <option value="Dialog">{_i18n.t('对话')}</option>
+                  <option value="Other/Misc">{_i18n.t('其他')}</option>
+                  <option value="Helpers">{_i18n.t('辅助')}</option>
+                  <option value="Skins">{_i18n.t('皮肤')}</option>
+                  <option value="Mechanics">{_i18n.t('机制')}</option>
+                </select>
+              </label>
+
+              <label>
+                <span>{_i18n.t('排序')}</span>
+                <select
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value as typeof sort)}
+                >
+                  <option value="new">{_i18n.t('最近发布')}</option>
+                  <option value="updateAdded">{_i18n.t('最近添加')}</option>
+                  <option value="updated">{_i18n.t('最近更新')}</option>
+                  <option value="views">{_i18n.t('最多浏览')}</option>
+                  <option value="likes">{_i18n.t('最多点赞')}</option>
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
+      </form>
 
       {mods.length > 0 ? (
-        mods[0] ? (
           <ModList
-            allowUpScroll={currentPage > 1}
             loading={loading}
             mods={mods}
             haveMore={hasMore}
-            onLoadMore={
-              (type: string) =>
-                new Promise((rs) => {
-                  console.log('load more', type);
-                  const forceScroll = async (top: number) => {
-                    const list = document.querySelector('.mod-list')!;
-                    while (list.scrollTop !== top) {
-                      list.scrollTo({
-                        top: top,
-                        behavior: 'instant',
-                      });
-                      await new Promise((rs) => setTimeout(rs, 10));
-                    }
-                  };
-
-                  const fadeIn = () => {
-                    const list = document.querySelector('.mod-list')!;
-                    // @ts-ignore
-                    list.style.opacity = '1';
-                  };
-
-                  const fadeOut = () => {
-                    const list = document.querySelector('.mod-list')!;
-                    // @ts-ignore
-                    list.style.opacity = '0';
-                  };
-
-                  if (type === 'up') {
-                    if (currentPage === 1) return;
-                    if (loadingLock.current) return;
-                    loadingLock.current = true;
-                    fadeOut();
-                    setCurrentPage((v) => {
-                      fetchModPage(v - 1).then((data) => {
-                        const newMods = data.content;
-                        setHasMore(data.hasNextPage);
-                        if (newMods.length === 0) return;
-                        setMods(newMods);
-                        rs(void 0);
-                        const list = document.querySelector('.mod-list')! as any;
-                        const bottomPaddingUpTop =
-                          list.scrollTop +
-                          list.lastElementChild.offsetTop -
-                          list.offsetHeight -
-                          80;
-                        forceScroll(bottomPaddingUpTop).then(fadeIn);
-                      });
-                      return v - 1;
-                    });
-                  } else {
-                    if (loadingLock.current) return;
-                    loadingLock.current = true;
-                    fadeOut();
-                    setCurrentPage((v) => {
-                      fetchModPage(v + 1).then((data) => {
-                        const newMods = data.content;
-                        setHasMore(data.hasNextPage);
-                        if (newMods.length === 0) return;
-                        setMods(newMods);
-                        rs(void 0);
-                        forceScroll(40).then(fadeIn);
-                      });
-                      return v + 1;
-                    });
-                  }
-                })
-            }
+            onLoadMore={loadMore}
             modFolder={selectedPath + '/Mods'}
+            viewMode={viewMode}
           />
-        ) : (
-          <div className="empty">{_i18n.t('加载失败，请重试')}</div>
-        )
+      ) : loadFailed ? (
+        <div className="empty search-empty-state">
+          <Icon name="fail" />
+          <span>{_i18n.t('加载失败，请重试')}</span>
+          <Button onClick={() => setRefreshKey((value) => value + 1)}>{_i18n.t('重试')}</Button>
+        </div>
       ) : loading ? (
-        <div className="empty"></div>
+        <div className="empty search-empty-state"></div>
       ) : (
-        <div className="empty">{_i18n.t('无内容')}</div>
+        <div className="empty search-empty-state">
+          <Icon name="search" />
+          <span>{_i18n.t('无内容')}</span>
+        </div>
       )}
-    </Fragment>
+    </div>
   );
 };

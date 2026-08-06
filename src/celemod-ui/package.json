@@ -12,6 +12,7 @@
     "translate": "di18n sync"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.14.9",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.3.2",
     "@tauri-apps/plugin-http": "^2.5.2",
@@ -19,8 +20,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.7.0",
-    "react-window": "^1.8.9",
-    "react-window-infinite-loader": "^1.0.9",
     "zustand": "^5.0.7"
   },
   "devDependencies": {
@@ -28,8 +27,6 @@
     "@types/node": "^22.10.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/react-window": "^1.8.5",
-    "@types/react-window-infinite-loader": "^1.0.6",
     "@types/ws": "^8.18.1",
     "di18n-cli": "^0.1.29",
     "sass": "^1.83.0",
