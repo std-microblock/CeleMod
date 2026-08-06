@@ -71,13 +71,31 @@ interface AppState {
   setDownloadMenuOpen: (value: boolean) => void;
 }
 
+const AUTO_DISABLE_NEW_MODS_STORAGE_KEY = 'celemod-auto-disable-new-mods';
+
+const loadAutoDisableNewMods = () => {
+  try {
+    return localStorage.getItem(AUTO_DISABLE_NEW_MODS_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const saveAutoDisableNewMods = (value: boolean) => {
+  try {
+    localStorage.setItem(AUTO_DISABLE_NEW_MODS_STORAGE_KEY, String(value));
+  } catch (error) {
+    console.error('Failed to persist auto-disable preference', error);
+  }
+};
+
 const setters = {
   setCurrentProfileName: 'currentProfileName', setProfiles: 'profiles',
   setCurrentProfile: 'currentProfile', setInstalledMods: 'installedMods',
   setCurrentEverestVersion: 'currentEverestVersion', setCurrentLang: 'currentLang',
   setMirror: 'mirror', setGamePath: 'gamePath', setUseMultiThread: 'useMultiThread',
   setAlwaysOnMods: 'alwaysOnMods', setSearchSort: 'searchSort',
-  setAutoDisableNewMods: 'autoDisableNewMods', setCheckOptionalDep: 'checkOptionalDep',
+  setCheckOptionalDep: 'checkOptionalDep',
   setExcludeDependents: 'excludeDependents', setFullTree: 'fullTree',
   setShowUpdate: 'showUpdate', setShowDetailed: 'showDetailed',
   setModComments: 'modComments', setEnableAcrylic: 'enableAcrylic',
@@ -96,10 +114,16 @@ export const useAppStore = create<AppState>()(
         currentProfileName: '', profiles: [], currentProfile: null, installedMods: [],
         currentEverestVersion: '', currentLang: '', mirror: 'wegfan', gamePath: '',
         useMultiThread: false, alwaysOnMods: [], searchSort: 'likes',
-        autoDisableNewMods: false, checkOptionalDep: false, excludeDependents: true,
+        autoDisableNewMods: loadAutoDisableNewMods(), checkOptionalDep: false, excludeDependents: true,
         fullTree: false, showUpdate: true, showDetailed: false, modComments: {},
         enableAcrylic: true, lastUseMap: {}, page: 'Home', downloadMenuOpen: false,
         ...actions,
+        setAutoDisableNewMods: (value) => {
+          set((state) => {
+            state.autoDisableNewMods = value;
+          });
+          saveAutoDisableNewMods(value);
+        },
         setProfilesCallback: (setter) => set((state) => {
           state.profiles = setter(state.profiles);
         }),
