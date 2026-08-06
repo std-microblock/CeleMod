@@ -48,13 +48,7 @@ const numberValue = (value: string) => value === '' ? null : Number(value);
 
 export const Search = () => {
   const noEverest = enforceEverest();
-  const [mode, setMode] = useState<'cloud' | 'local'>(() => {
-    try {
-      return localStorage.getItem('celemod-search-mode') === 'local' ? 'local' : 'cloud';
-    } catch {
-      return 'cloud';
-    }
-  });
+  const [mode, setMode] = useState<'cloud' | 'local'>('cloud');
   const [cloudMods, setCloudMods] = useState<Content[]>([]);
   const [catalogMods, setCatalogMods] = useState<CatalogMod[]>([]);
   const [cloudType, setCloudType] = useState('');
@@ -75,14 +69,6 @@ export const Search = () => {
   const [sort, setSort] = useSearchSort();
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('celemod-search-mode', mode);
-    } catch (error) {
-      console.error(error);
-    }
-  }, [mode]);
 
   useEffect(() => {
     if (!filterOpen) return;
@@ -235,17 +221,19 @@ export const Search = () => {
         <Button className="search-submit" aria-label={_i18n.t('搜索')}>
           <Icon name="search" />
         </Button>
-        <Button
-          className="view-toggle"
-          aria-label={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
-          title={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
-          onClick={(event) => {
-            event.preventDefault();
-            setViewMode((value) => value === 'grid' ? 'list' : 'grid');
-          }}
-        >
-          <Icon name={viewMode === 'grid' ? 'list' : 'grid'} />
-        </Button>
+        {mode === 'cloud' && (
+          <Button
+            className="view-toggle"
+            aria-label={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
+            title={_i18n.t(viewMode === 'grid' ? '列表模式' : '网格模式')}
+            onClick={(event) => {
+              event.preventDefault();
+              setViewMode((value) => value === 'grid' ? 'list' : 'grid');
+            }}
+          >
+            <Icon name={viewMode === 'grid' ? 'list' : 'grid'} />
+          </Button>
+        )}
         <div className="filter-menu-wrap" ref={filterMenuRef}>
           <Button
             className={`filter-toggle ${filterOpen ? 'active' : ''}`}
@@ -447,7 +435,7 @@ export const Search = () => {
           haveMore={mode === 'local' ? localHasMore : hasMore}
           onLoadMore={loadMore}
           modFolder={selectedPath + '/Mods'}
-          viewMode={viewMode}
+          viewMode={mode === 'local' ? 'list' : viewMode}
         />
       ) : loadFailed ? (
         <div className="empty search-empty-state">
