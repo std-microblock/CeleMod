@@ -1846,12 +1846,8 @@ fn get_mod_latest_info(on_event: Channel<IpcEvent>) {
 }
 
 #[tauri::command]
-fn rm_mod(mods_folder_path: String, mod_name: String) {
-    std::thread::spawn(move || {
-        if let Err(error) = rm_mod_sync(&mods_folder_path, &mod_name) {
-            eprintln!("Failed to remove Mod: {error:#}");
-        }
-    });
+fn rm_mod(mods_folder_path: String, mod_name: String) -> Result<(), String> {
+    rm_mod_sync(&mods_folder_path, &mod_name).map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]

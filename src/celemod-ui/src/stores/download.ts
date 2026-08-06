@@ -112,10 +112,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       url = `https://gamebanana.com/dl/${gbFileIdOrUrl}`;
     }
 
-    if (appState.installedMods.some((mod) => mod.name === name)) {
-      if (force) {
-        void callRemote('rm_mod', `${appState.gamePath}/Mods/`, name);
-      } else {
+    const replacingInstalledMod = appState.installedMods.some((mod) => mod.name === name);
+    if (replacingInstalledMod && !force) {
         const task: Download.TaskInfo = {
           name,
           subtasks: [],
@@ -131,7 +129,6 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         set((state) => ({ tasks: replaceTask(state.tasks, task) }));
         onFailed?.(task, task.error!);
         return task;
-      }
     }
 
     if (existingTask && !force) return existingTask;
@@ -139,7 +136,16 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     const attemptId = nextAttemptId++;
     const task: Download.TaskInfo = {
       name,
-      subtasks: [],
+      subtasks: [{
+        name,
+        progress: 0,
+        from: url,
+        to: `${appState.gamePath}/Mods/${name}.zip`,
+        state: 'Waiting',
+        downloadedBytes: 0,
+        totalBytes: 0,
+        speedBytesPerSec: 0,
+      }],
       source: gbFileIdOrUrl,
       ownerId: ownerId ?? existingTask?.ownerId,
       mod: { name },
@@ -150,13 +156,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     };
     set((state) => ({ tasks: replaceTask(state.tasks, task) }));
 
-    void callRemote(
-      'download_mod',
-      name,
-      url,
-      `${appState.gamePath}/Mods/`,
-      JSON.stringify(downloadTypeDefaults),
-      (_subtasks: string, state: 'pending' | 'failed' | 'finished') => {
+    const onDownloadEvent = (_subtasks: string, state: 'pending' | 'failed' | 'finished') => {
         const currentTask = get().tasks[name];
         if (!currentTask || currentTask.attemptId !== attemptId) return;
 
@@ -199,10 +199,30 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         if (state === 'finished') onFinished?.(nextTask);
         else if (state === 'failed') onFailed?.(nextTask, error || 'Download failed');
         else onProgress?.(nextTask, progress);
-      },
-      false,
-      appState.useMultiThread,
-    );
+      };
+
+    void (async () => {
+      if (replacingInstalledMod) {
+        await callRemote('rm_mod', `${appState.gamePath}/Mods/`, name);
+      }
+      await callRemote(
+        'download_mod',
+        name,
+        url,
+        `${appState.gamePath}/Mods/`,
+        JSON.stringify(downloadTypeDefaults),
+        onDownloadEvent,
+        false,
+        appState.useMultiThread,
+      );
+    })().catch((error) => {
+      const currentTask = get().tasks[name];
+      if (!currentTask || currentTask.attemptId !== attemptId) return;
+      const message = String(error);
+      const failedTask = { ...currentTask, state: 'failed' as const, error: message };
+      set((store) => ({ tasks: replaceTask(store.tasks, failedTask) }));
+      onFailed?.(failedTask, message);
+    });
 
     return task;
   },
