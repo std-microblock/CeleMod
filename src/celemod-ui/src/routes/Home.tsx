@@ -12,6 +12,7 @@ import {
   useGamePath,
   useInstalledMods,
   useMirror,
+  useUseMultiThread,
   useAppStore,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
@@ -182,7 +183,8 @@ export const Home = () => {
   };
 
   const { installedMods } = useInstalledMods();
-  const [, setMirror] = useMirror();
+  const [mirror, setMirror] = useMirror();
+  const [useMultiThread] = useUseMultiThread();
 
   return (
     <div className="home home-page">
@@ -210,10 +212,8 @@ export const Home = () => {
 
       <section className="home-section home-game-section">
         <div className="home-section-heading">
-          <div>
-            <h2>{_i18n.t('游戏')}</h2>
-            <p>{_i18n.t('选择游戏目录并直接启动')}</p>
-          </div>
+          <Icon name="save" />
+          <h2>{_i18n.t('选择游戏路径')}</h2>
         </div>
         {gamePath ? (
           <GameSelector
@@ -250,13 +250,24 @@ export const Home = () => {
         )}
       </section>
 
+      <section className="home-section home-download-section">
+        <div className="home-section-heading">
+          <Icon name="download" />
+          <h2>{_i18n.t('下载设置')}</h2>
+          <button className="home-settings-link" onClick={() => globalCtx.pageController.setPage('Settings')}>
+            {_i18n.t('详细设置')}
+          </button>
+        </div>
+        <div className="home-download-summary">
+          <label><input type="checkbox" checked={mirror === 'wegfan'} readOnly />{_i18n.t('使用中国镜像 (@WEGFan)')}</label>
+          <label><input type="checkbox" checked={useMultiThread} readOnly />{_i18n.t('使用多线程下载')}</label>
+        </div>
+      </section>
+
       <section className="home-section home-profiles-section">
         <div className="home-section-heading">
-          <div>
-            <h2>{_i18n.t('Profile 选择')}</h2>
-            <p>{_i18n.t('选择一套 Mod 配置，或直接使用它启动游戏')}</p>
-          </div>
-          <span>{profiles.length}</span>
+          <Icon name="file" />
+          <h2>{_i18n.t('Profile 选择')}</h2>
         </div>
         <div className="profiles">
         {profiles.map((v) => (

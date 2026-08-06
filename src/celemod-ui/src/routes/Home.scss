@@ -2,40 +2,43 @@
 @use "../styles/theme" as theme;
 
 .home-page {
-  width: min(940px, 100%);
+  width: min(760px, 100%);
   margin: 0 auto;
   padding: 12px 18px 48px;
   box-sizing: border-box;
 }
 
 .home-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 10px 4px 22px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: .08);
+  padding: 30px 4px 52px;
 }
 
 .home-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
 
-  img { width: 58px; height: 58px; object-fit: contain; }
-  h1 { margin: 0; font-size: 27px; line-height: 1; }
-  p { margin: 7px 0 0; color: theme.$fg3; font-size: 11px; }
+  img { width: 94px; height: 94px; object-fit: contain; image-rendering: pixelated; }
+  h1 { margin: 0; font-size: 38px; line-height: 1; }
+  p { width: 340px; margin: 10px 0 0; color: theme.$fg3; font-size: 18px; line-height: 1.45; }
 }
 
 .home-language {
+  position: absolute;
+  top: 4px;
+  right: 4px;
   display: flex;
   align-items: center;
   gap: 8px;
   color: theme.$fg3;
 
   select {
-    height: 32px;
-    min-width: 145px;
+    height: 28px;
+    min-width: 132px;
     padding: 0 8px;
     border: 1px solid color.change(theme.$fg, $alpha: .1);
     border-radius: 7px;
@@ -46,24 +49,41 @@
   }
 }
 
-.home-section { padding: 22px 4px 0; }
+.home-section { margin-bottom: 19px; padding: 0 4px; }
 
 .home-section-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 11px;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  gap: 7px;
 
-  h2 { margin: 0; font-size: 15px; }
-  p { margin: 4px 0 0; color: theme.$fg3; font-size: 9px; }
-  > span { padding: 2px 7px; border-radius: 99px; background: theme.$bg2; color: theme.$fg3; font-size: 9px; }
+  h2 { margin: 0; font-size: 13px; font-weight: 550; }
+  .icon { color: theme.$fg; }
 }
 
 .home-game-section .gameSelector {
-  padding: 12px;
-  border: 1px solid color.change(theme.$fg, $alpha: .08);
-  border-radius: 9px;
-  background: color.change(theme.$bg1, $alpha: .55);
+  padding-left: 8px;
+}
+
+.home-settings-link {
+  min-height: 22px;
+  margin-left: auto;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: theme.$fg3;
+  font-size: 8px;
+  letter-spacing: 0;
+}
+
+.home-download-summary {
+  display: grid;
+  gap: 3px;
+  padding-left: 12px;
+  label { display: flex; align-items: center; font-size: 11px; }
+  input { pointer-events: none; }
 }
 
 .home-game-missing {
@@ -81,40 +101,50 @@
 }
 
 .home-profiles-section .profiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-left: 8px;
 }
 
 .home-profiles-section .profile {
+  position: relative;
   display: flex;
   align-items: center;
   min-width: 0;
-  min-height: 52px;
-  padding: 7px 8px 7px 12px;
+  width: 128px;
+  height: 92px;
+  padding: 10px 10px 8px 13px;
   gap: 10px;
   border: 1px solid color.change(theme.$fg, $alpha: .07);
-  border-radius: 8px;
-  background: color.change(theme.$bg1, $alpha: .48);
+  border-radius: 10px;
+  background: color.change(theme.$bg1, $alpha: .36);
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 
   &:hover { background: theme.$bg2; }
   &.selected { border-color: color.change(theme.$primary, $alpha: .52); background: color.change(theme.$primary, $alpha: .08); }
 
-  .profile-main { flex: 1 1 auto; min-width: 0; }
-  .name { overflow: hidden; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
-  .profile-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 5px; color: theme.$fg3; font-size: 8px; }
+  .profile-main { align-self: flex-start; flex: 1 1 auto; min-width: 0; }
+  .name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-meta { display: grid; gap: 4px; margin-top: 9px; color: theme.$fg3; font-size: 8px; }
 
   button {
     display: inline-flex;
     flex: 0 0 auto;
+    position: absolute;
+    right: 9px;
+    bottom: 7px;
     align-items: center;
-    min-height: 29px;
-    padding: 0 9px;
-    gap: 5px;
-    border-radius: 7px;
-    font-size: 9px;
+    min-height: 18px;
+    padding: 0;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: theme.$fg3;
+    font-size: 8px;
+    letter-spacing: 0;
   }
 }
 
@@ -139,6 +169,7 @@
 }
 
 @media (max-width: 720px) {
-  .home-header { align-items: flex-start; flex-direction: column; }
-  .home-profiles-section .profiles { grid-template-columns: 1fr; }
+  .home-brand p { width: auto; font-size: 14px; }
+  .home-brand img { width: 72px; height: 72px; }
+  .home-brand h1 { font-size: 31px; }
 }
