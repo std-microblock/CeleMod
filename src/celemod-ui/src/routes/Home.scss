@@ -66,26 +66,6 @@
   padding-left: 8px;
 }
 
-.home-settings-link {
-  min-height: 22px;
-  margin-left: auto;
-  padding: 0 6px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: theme.$fg3;
-  font-size: 8px;
-  letter-spacing: 0;
-}
-
-.home-download-summary {
-  display: grid;
-  gap: 3px;
-  padding-left: 12px;
-  label { display: flex; align-items: center; font-size: 11px; }
-  input { pointer-events: none; }
-}
-
 .home-game-missing {
   display: flex;
   align-items: center;
@@ -113,8 +93,8 @@
   align-items: center;
   min-width: 0;
   width: 128px;
-  height: 92px;
-  padding: 10px 10px 8px 13px;
+  min-height: 58px;
+  padding: 12px 13px;
   gap: 10px;
   border: 1px solid color.change(theme.$fg, $alpha: .07);
   border-radius: 10px;
@@ -125,27 +105,9 @@
   &:hover { background: theme.$bg2; }
   &.selected { border-color: color.change(theme.$primary, $alpha: .52); background: color.change(theme.$primary, $alpha: .08); }
 
-  .profile-main { align-self: flex-start; flex: 1 1 auto; min-width: 0; }
+  .profile-main { flex: 1 1 auto; min-width: 0; }
   .name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-  .profile-meta { display: grid; gap: 4px; margin-top: 9px; color: theme.$fg3; font-size: 8px; }
-
-  button {
-    display: inline-flex;
-    flex: 0 0 auto;
-    position: absolute;
-    right: 9px;
-    bottom: 7px;
-    align-items: center;
-    min-height: 18px;
-    padding: 0;
-    gap: 4px;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    color: theme.$fg3;
-    font-size: 8px;
-    letter-spacing: 0;
-  }
+  .profile-meta { margin-top: 7px; color: theme.$fg3; font-size: 8px; }
 }
 
 .blacklist-sync-popup {

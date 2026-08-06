@@ -31,7 +31,18 @@ ureq = { version = "2", features = ["json", "gzip", "tls"] }
 strip_bom = "1"
 open = "5"
 dirs = "6"
+hostname = "0.4"
 sysinfo = "0.28.4"
+aes = "0.8"
+base64 = "0.22"
+cbc = "0.1"
+pbkdf2 = "0.12"
+rand = "0.8"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+sha2 = "0.10"
+url = "2"
+webpki-roots = "1"
+whoami = "1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["wincon", "consoleapi", "libloaderapi", "winuser"] }

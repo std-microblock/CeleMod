@@ -12,12 +12,8 @@ import {
   useGamePath,
   useInstalledMods,
   useMirror,
-  useUseMultiThread,
-  useAppStore,
 } from '../states';
-import { ModBlacklistProfile } from '../ipc/blacklist';
 import { useEffect } from 'react';
-import { Button } from '../components/Button';
 import './Home.scss';
 import { createPopup, PopupContext } from '../components/Popup';
 import { useGlobalContext } from 'src/App';
@@ -32,9 +28,6 @@ export const Home = () => {
       .catch(console.error);
   }, [gamePath]);
   const globalCtx = useGlobalContext();
-
-  const lastUseMap = useAppStore((state) => state.lastUseMap);
-  const setLastUseMap = useAppStore((state) => state.setLastUseMap);
 
   const {
     profiles,
@@ -160,31 +153,8 @@ export const Home = () => {
     void checkSync().catch(console.error);
   }, [currentProfile, gamePath, alwaysOnMods, currentProfileName]);
 
-  const formatTime = (time: number) => {
-    if (time === 0) return _i18n.t('未知');
-    const now = Date.now();
-    const diff = now - time;
-    if (diff < 1000 * 60) return _i18n.t('刚刚');
-    if (diff < 1000 * 60 * 60)
-      return _i18n.t('{slot0}分钟前', { slot0: Math.floor(diff / 1000 / 60) });
-    if (diff < 1000 * 60 * 60 * 24)
-      return _i18n.t('{slot0}小时前', {
-        slot0: Math.floor(diff / 1000 / 60 / 60),
-      });
-    if (diff < 1000 * 60 * 60 * 24 * 30)
-      return _i18n.t('{slot0}天前', {
-        slot0: Math.floor(diff / 1000 / 60 / 60 / 24),
-      });
-    if (diff < 1000 * 60 * 60 * 24 * 30 * 12)
-      return _i18n.t('{slot0}月前', {
-        slot0: Math.floor(diff / 1000 / 60 / 60 / 24 / 30),
-      });
-    return _i18n.t('很久以前');
-  };
-
   const { installedMods } = useInstalledMods();
-  const [mirror, setMirror] = useMirror();
-  const [useMultiThread] = useUseMultiThread();
+  const [, setMirror] = useMirror();
 
   return (
     <div className="home home-page">
@@ -228,7 +198,6 @@ export const Home = () => {
               } else setGamePath(value);
             }}
             launchGame={(v) => {
-              setLastUseMap({ ...lastUseMap, [currentProfileName]: Date.now() });
               mask.setMaskEnabled(true);
               mask.setMaskText(_i18n.t('正在启动'));
               callRemote(
@@ -250,20 +219,6 @@ export const Home = () => {
         )}
       </section>
 
-      <section className="home-section home-download-section">
-        <div className="home-section-heading">
-          <Icon name="download" />
-          <h2>{_i18n.t('下载设置')}</h2>
-          <button className="home-settings-link" onClick={() => globalCtx.pageController.setPage('Settings')}>
-            {_i18n.t('详细设置')}
-          </button>
-        </div>
-        <div className="home-download-summary">
-          <label><input type="checkbox" checked={mirror === 'wegfan'} readOnly />{_i18n.t('使用中国镜像 (@WEGFan)')}</label>
-          <label><input type="checkbox" checked={useMultiThread} readOnly />{_i18n.t('使用多线程下载')}</label>
-        </div>
-      </section>
-
       <section className="home-section home-profiles-section">
         <div className="home-section-heading">
           <Icon name="file" />
@@ -282,36 +237,8 @@ export const Home = () => {
               <div className="name">{v.name}</div>
               <div className="profile-meta">
                 <span>{_i18n.t('启用 {count} 个 Mod', { count: installedMods.length - v.mods.length })}</span>
-                <span>{_i18n.t('上次启动')} {formatTime(lastUseMap[v.name] || 0)}</span>
               </div>
             </div>
-
-            <Button
-              onClick={
-                // @ts-ignore
-                (e) => {
-                  e.stopPropagation();
-                  globalCtx.blacklist.switchProfile(v.name);
-                  setLastUseMap({ ...lastUseMap, [v.name]: Date.now() });
-                  mask.setMaskEnabled(true);
-                  mask.setMaskText(_i18n.t('正在启动'));
-                  setTimeout(() => {
-                    callRemote(
-                      'start_game_directly',
-                      gamePath || gamePaths[0],
-                      false
-                    );
-                  }, 300);
-
-                  setTimeout(() => {
-                    mask.setMaskEnabled(false);
-                  }, 20000);
-                }
-              }
-            >
-              <Icon name="replay" />
-              {_i18n.t('启动')}
-            </Button>
           </div>
         ))}
         </div>

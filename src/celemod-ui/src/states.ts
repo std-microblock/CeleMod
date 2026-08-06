@@ -61,7 +61,6 @@ interface AppState {
   modCacheTtlHours: number;
   modComments: Record<string, string>;
   enableAcrylic: boolean;
-  lastUseMap: Record<string, number>;
   page: string;
   downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
@@ -91,7 +90,6 @@ interface AppState {
   setModCacheTtlHours: (value: number) => void;
   setModComments: (value: Record<string, string>) => void;
   setEnableAcrylic: (value: boolean) => void;
-  setLastUseMap: (value: Record<string, number>) => void;
   setPage: (value: string) => void;
   setDownloadMenuOpen: (value: boolean) => void;
 }
@@ -128,7 +126,7 @@ const setters = {
   setDeleteOrphansByDefault: 'deleteOrphansByDefault',
   setHiddenModTypes: 'hiddenModTypes', setModCacheTtlHours: 'modCacheTtlHours',
   setModComments: 'modComments', setEnableAcrylic: 'enableAcrylic',
-  setLastUseMap: 'lastUseMap', setPage: 'page', setDownloadMenuOpen: 'downloadMenuOpen',
+  setPage: 'page', setDownloadMenuOpen: 'downloadMenuOpen',
 } as const;
 
 export const useAppStore = create<AppState>()(
@@ -150,7 +148,7 @@ export const useAppStore = create<AppState>()(
         fullTree: false, showUpdate: true, showDetailed: false, modComments: {},
         autoToggleDependencies: true, autoToggleOptionalDependencies: false,
         deleteOrphansByDefault: true, hiddenModTypes: [], modCacheTtlHours: 24,
-        enableAcrylic: true, lastUseMap: {}, page: 'Home', downloadMenuOpen: false,
+        enableAcrylic: true, page: 'Home', downloadMenuOpen: false,
         ...actions,
         setAutoDisableNewMods: (value) => {
           set((state) => {
@@ -184,13 +182,13 @@ export const useAppStore = create<AppState>()(
         autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
         checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
         autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
-        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang, lastUseMap,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang,
       }) => ({
         mirror, gamePath, useMultiThread, alwaysOnMods, searchSort,
         autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
         checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
         autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
-        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang, lastUseMap,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang,
       }),
     },
   ),

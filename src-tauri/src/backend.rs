@@ -1,22 +1,32 @@
 use serde::{Deserialize, Serialize};
 
+use aes::Aes256;
 use anyhow::{Context, bail};
+use base64::{Engine as _, engine::general_purpose};
+use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
 use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
+use pbkdf2::pbkdf2_hmac;
+use rand::RngCore;
+use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
+use sha2::Sha256;
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    io::Read,
+    io::{Read, Write},
+    net::{TcpListener, TcpStream, ToSocketAddrs},
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
+    time::{Duration, Instant},
 };
 use ureq::DownloadCallbackInfo;
 
 static TEST_MODE: AtomicBool = AtomicBool::new(false);
+static MIAONET_OAUTH_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 fn is_test_mode() -> bool {
     TEST_MODE.load(Ordering::Relaxed)
@@ -51,6 +61,702 @@ mod wegfan;
 use tauri::ipc::Channel;
 
 type IpcEvent = serde_json::Value;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MiaoNetLocalState {
+    installed: bool,
+    authenticated: bool,
+    last_name: Option<String>,
+}
+
+fn miaonet_settings_directories(game_path: &Path) -> Vec<PathBuf> {
+    let mut directories = Vec::new();
+    if let Some(override_path) = std::env::var_os("EVEREST_SAVEPATH") {
+        directories.push(PathBuf::from(override_path).join("Saves"));
+    }
+
+    #[cfg(target_os = "windows")]
+    directories.push(game_path.join("Saves"));
+
+    #[cfg(target_os = "macos")]
+    if let Some(home) = dirs::home_dir() {
+        directories.push(
+            home.join("Library")
+                .join("Application Support")
+                .join("Celeste")
+                .join("Saves"),
+        );
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        if let Some(xdg_data_home) = std::env::var_os("XDG_DATA_HOME") {
+            directories.push(PathBuf::from(xdg_data_home).join("Celeste").join("Saves"));
+        }
+        if let Some(home) = dirs::home_dir() {
+            directories.push(
+                home.join(".local")
+                    .join("share")
+                    .join("Celeste")
+                    .join("Saves"),
+            );
+        }
+    }
+
+    directories
+}
+
+fn yaml_string_property(value: &serde_yaml::Value, name: &str) -> Option<String> {
+    let serde_yaml::Value::Mapping(mapping) = value else {
+        return None;
+    };
+    mapping.iter().find_map(|(key, value)| {
+        let key = key.as_str()?;
+        if !key.eq_ignore_ascii_case(name) {
+            return None;
+        }
+        value.as_str().map(str::to_owned)
+    })
+}
+
+fn read_miaonet_auth_state(game_path: &Path) -> (bool, Option<String>) {
+    for directory in miaonet_settings_directories(game_path) {
+        let path = directory.join("modsettings-MiaoNet.celeste");
+        let Ok(content) = fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(settings) = serde_yaml::from_str::<serde_yaml::Value>(&content) else {
+            continue;
+        };
+        let authenticated = yaml_string_property(&settings, "TokenDataEncrypted")
+            .is_some_and(|token| !token.trim().is_empty());
+        let last_name =
+            yaml_string_property(&settings, "LastName").filter(|name| !name.trim().is_empty());
+        return (authenticated, last_name);
+    }
+    (false, None)
+}
+
+#[tauri::command]
+fn logout_miaonet(game_path: String) -> Result<(), String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    let game_path = Path::new(&game_path);
+    if is_celeste_running(game_path) {
+        return Err("请先退出 Celeste，再清除 MiaoNet 登录信息。".to_string());
+    }
+
+    for directory in miaonet_settings_directories(game_path) {
+        let path = directory.join("modsettings-MiaoNet.celeste");
+        if !path.is_file() {
+            continue;
+        }
+
+        let content =
+            fs::read_to_string(&path).map_err(|error| format!("读取 MiaoNet 设置失败：{error}"))?;
+        let mut settings = serde_yaml::from_str::<serde_yaml::Value>(&content)
+            .map_err(|error| format!("解析 MiaoNet 设置失败：{error}"))?;
+        let serde_yaml::Value::Mapping(mapping) = &mut settings else {
+            return Err("MiaoNet 设置文件格式不正确。".to_string());
+        };
+
+        let keys_to_remove = mapping
+            .keys()
+            .filter(|key| {
+                key.as_str().is_some_and(|key| {
+                    key.eq_ignore_ascii_case("TokenDataEncrypted")
+                        || key.eq_ignore_ascii_case("LastName")
+                })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        for key in keys_to_remove {
+            mapping.remove(&key);
+        }
+
+        let serialized = serde_yaml::to_string(&settings)
+            .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
+        fs::write(&path, serialized).map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))?;
+        return Ok(());
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn get_miaonet_local_state(game_path: String) -> MiaoNetLocalState {
+    let game_path = normalize_game_path_impl(&game_path);
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"))
+        .into_iter()
+        .any(|item| item.name == "MiaoNet");
+    let (authenticated, last_name) = read_miaonet_auth_state(Path::new(&game_path));
+    MiaoNetLocalState {
+        installed,
+        authenticated,
+        last_name,
+    }
+}
+
+fn installed_miaonet_protocol_version(game_path: &Path) -> Result<[u16; 3], String> {
+    let installed = get_installed_mods_sync(game_path.join("Mods").to_string_lossy().into_owned())
+        .into_iter()
+        .find(|item| item.name == "MiaoNet")
+        .ok_or_else(|| "当前游戏目录中没有安装 MiaoNet+。".to_string())?;
+    let stable_version = installed
+        .version
+        .split(['-', '+'])
+        .next()
+        .unwrap_or(&installed.version);
+    let mut components = stable_version.split('.');
+    let mut version = [0u16; 3];
+    for component in &mut version {
+        *component = components
+            .next()
+            .ok_or_else(|| format!("无法识别 MiaoNet+ 版本：{}", installed.version))?
+            .parse::<u16>()
+            .map_err(|_| format!("无法识别 MiaoNet+ 版本：{}", installed.version))?;
+    }
+    Ok(version)
+}
+
+const MIAONET_OAUTH_CALLBACK: &str = "http://localhost:21472/auth";
+const MIAONET_OAUTH_CLIENT_ID: &str = "bN8BOz8IjLk981LFLckBq3XzA6fsDC0d";
+const MIAONET_SERVER_HOST: &str = "main.server.celemiao.com";
+const MIAONET_SERVER_PORT: u16 = 21473;
+const MIAONET_HANDSHAKE_HEAD: [u8; 16] = [
+    6, 3, 0, 1, 4, b'M', b'i', b'a', b'o', b'N', b'e', b't', b'+', 2, 0, 2,
+];
+
+struct MiaoNetOauthGuard;
+
+impl Drop for MiaoNetOauthGuard {
+    fn drop(&mut self) {
+        MIAONET_OAUTH_ACTIVE.store(false, Ordering::Release);
+    }
+}
+
+fn miaonet_oauth_event(channel: &Channel<IpcEvent>, state: &str, detail: Option<&str>) {
+    let mut args = vec![serde_json::json!(state)];
+    if let Some(detail) = detail {
+        args.push(serde_json::json!(detail));
+    }
+    send_event(channel, args);
+}
+
+fn make_miaonet_oauth_url(state: &str) -> Result<String, String> {
+    let mut url = url::Url::parse("https://bbs.celemiao.com/oauth/authorize")
+        .map_err(|error| format!("无法创建授权地址：{error}"))?;
+    url.query_pairs_mut()
+        .append_pair("client_id", MIAONET_OAUTH_CLIENT_ID)
+        .append_pair("response_type", "code")
+        .append_pair("redirect_uri", MIAONET_OAUTH_CALLBACK)
+        .append_pair("scope", "celeste.read")
+        .append_pair("state", state);
+    Ok(url.into())
+}
+
+fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .map_err(|error| format!("设置回调读取超时失败：{error}"))?;
+    let mut request = Vec::with_capacity(2048);
+    let mut buffer = [0u8; 1024];
+    while request.len() < 16 * 1024 {
+        let count = stream
+            .read(&mut buffer)
+            .map_err(|error| format!("读取浏览器回调失败：{error}"))?;
+        if count == 0 {
+            break;
+        }
+        request.extend_from_slice(&buffer[..count]);
+        if request.windows(4).any(|window| window == b"\r\n\r\n") {
+            break;
+        }
+    }
+    String::from_utf8(request).map_err(|_| "浏览器回调不是有效的 HTTP 请求。".to_string())
+}
+
+fn write_http_page(stream: &mut TcpStream, status: &str, title: &str, message: &str) {
+    let body = format!(
+        "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{margin:0;background:#101114;color:#eee;font:16px system-ui,-apple-system,sans-serif;display:grid;min-height:100vh;place-items:center}}main{{max-width:520px;padding:40px;text-align:center}}h1{{font-size:24px;margin:0 0 12px}}p{{color:#aeb2ba;line-height:1.7;margin:0}}</style></head><body><main><h1>{title}</h1><p>{message}</p></main></body></html>"
+    );
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    let _ = stream.write_all(response.as_bytes());
+    let _ = stream.flush();
+}
+
+fn parse_miaonet_callback_target(request: &str) -> Result<&str, String> {
+    let request_line = request
+        .lines()
+        .next()
+        .ok_or_else(|| "浏览器回调缺少请求行。".to_string())?;
+    let mut parts = request_line.split_whitespace();
+    if parts.next() != Some("GET") {
+        return Err("浏览器回调使用了不支持的请求方式。".to_string());
+    }
+    parts
+        .next()
+        .ok_or_else(|| "浏览器回调缺少请求地址。".to_string())
+}
+
+fn take_u8(data: &[u8], offset: &mut usize) -> Result<u8, String> {
+    let value = *data
+        .get(*offset)
+        .ok_or_else(|| "MiaoNet 返回了不完整的认证数据。".to_string())?;
+    *offset += 1;
+    Ok(value)
+}
+
+fn take_u16(data: &[u8], offset: &mut usize) -> Result<u16, String> {
+    let bytes = data
+        .get(*offset..*offset + 2)
+        .ok_or_else(|| "MiaoNet 返回了不完整的认证数据。".to_string())?;
+    *offset += 2;
+    Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
+}
+
+fn take_bytes<'a>(data: &'a [u8], offset: &mut usize, length: usize) -> Result<&'a [u8], String> {
+    let bytes = data
+        .get(*offset..*offset + length)
+        .ok_or_else(|| "MiaoNet 返回了不完整的认证数据。".to_string())?;
+    *offset += length;
+    Ok(bytes)
+}
+
+fn parse_miaonet_handshake_ack(payload: &[u8]) -> Result<Vec<u8>, String> {
+    let mut offset = 0;
+    let result_type = take_u8(payload, &mut offset)?;
+    let authentication_data = if take_u8(payload, &mut offset)? != 0 {
+        let length = take_u16(payload, &mut offset)? as usize;
+        Some(take_bytes(payload, &mut offset, length)?.to_vec())
+    } else {
+        None
+    };
+    let denied_reason = if take_u8(payload, &mut offset)? != 0 {
+        let length = take_u16(payload, &mut offset)? as usize;
+        Some(String::from_utf8_lossy(take_bytes(payload, &mut offset, length)?).into_owned())
+    } else {
+        None
+    };
+
+    if result_type != 0 {
+        let fallback = match result_type {
+            1 => "该账号当前无法使用 MiaoNet。",
+            2 => "登录授权已过期，请重新授权。",
+            3 => "授权码无效或已被使用，请重新授权。",
+            _ => "MiaoNet 服务器认证失败，请稍后重试。",
+        };
+        return Err(denied_reason.unwrap_or_else(|| fallback.to_string()));
+    }
+
+    authentication_data
+        .filter(|data| !data.is_empty())
+        .ok_or_else(|| "MiaoNet 服务器没有返回可保存的登录信息。".to_string())
+}
+
+fn read_miaonet_initial_username(
+    stream: &mut StreamOwned<ClientConnection, TcpStream>,
+) -> Option<String> {
+    stream
+        .get_ref()
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .ok()?;
+    let mut head = [0u8; 4];
+    stream.read_exact(&mut head).ok()?;
+    let payload_length = u16::from_le_bytes([head[0], head[1]]) as usize;
+    let packet_type = u16::from_le_bytes([head[2], head[3]]);
+    if packet_type != 1 || payload_length < 14 || payload_length > u16::MAX as usize {
+        return None;
+    }
+    let mut payload = vec![0u8; payload_length];
+    stream.read_exact(&mut payload).ok()?;
+    let mut offset = 12;
+    let name_length = take_u16(&payload, &mut offset).ok()? as usize;
+    let name = String::from_utf8(
+        take_bytes(&payload, &mut offset, name_length)
+            .ok()?
+            .to_vec(),
+    )
+    .ok()?;
+    (!name.trim().is_empty()).then_some(name)
+}
+
+fn connect_miaonet_server() -> Result<TcpStream, String> {
+    let addresses = (MIAONET_SERVER_HOST, MIAONET_SERVER_PORT)
+        .to_socket_addrs()
+        .map_err(|error| format!("解析 MiaoNet 服务器地址失败：{error}"))?;
+    let mut last_error = None;
+    for address in addresses {
+        match TcpStream::connect_timeout(&address, Duration::from_secs(10)) {
+            Ok(stream) => return Ok(stream),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(format!(
+        "无法连接 MiaoNet 服务器：{}",
+        last_error
+            .map(|error| error.to_string())
+            .unwrap_or_else(|| "没有可用的服务器地址".to_string())
+    ))
+}
+
+fn exchange_miaonet_oauth_code(
+    code: &str,
+    protocol_version: [u16; 3],
+) -> Result<(Vec<u8>, Option<String>), String> {
+    let code_bytes = code.as_bytes();
+    let code_length = u16::try_from(code_bytes.len()).map_err(|_| "授权码过长。".to_string())?;
+
+    let tcp = connect_miaonet_server()?;
+    tcp.set_read_timeout(Some(Duration::from_secs(12)))
+        .map_err(|error| format!("设置 MiaoNet 读取超时失败：{error}"))?;
+    tcp.set_write_timeout(Some(Duration::from_secs(12)))
+        .map_err(|error| format!("设置 MiaoNet 写入超时失败：{error}"))?;
+    let mut roots = RootCertStore::empty();
+    roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+    let config = ClientConfig::builder()
+        .with_root_certificates(roots)
+        .with_no_client_auth();
+    let server_name = MIAONET_SERVER_HOST
+        .try_into()
+        .map_err(|_| "MiaoNet 服务器名称无效。".to_string())?;
+    let connection = ClientConnection::new(Arc::new(config), server_name)
+        .map_err(|error| format!("创建 MiaoNet TLS 连接失败：{error}"))?;
+    let mut stream = StreamOwned::new(connection, tcp);
+
+    stream
+        .write_all(&MIAONET_HANDSHAKE_HEAD)
+        .map_err(|error| format!("发送 MiaoNet 连接标识失败：{error}"))?;
+    let version_bytes = [
+        protocol_version[0].to_le_bytes()[0],
+        protocol_version[0].to_le_bytes()[1],
+        protocol_version[1].to_le_bytes()[0],
+        protocol_version[1].to_le_bytes()[1],
+        protocol_version[2].to_le_bytes()[0],
+        protocol_version[2].to_le_bytes()[1],
+    ];
+    stream
+        .write_all(&version_bytes)
+        .map_err(|error| format!("发送 MiaoNet 协议版本失败：{error}"))?;
+    let mut version_result = [0u8; 1];
+    stream
+        .read_exact(&mut version_result)
+        .map_err(|error| format!("读取 MiaoNet 协议版本结果失败：{error}"))?;
+    if version_result[0] == 0 {
+        let mut server_version = [0u8; 6];
+        stream
+            .read_exact(&mut server_version)
+            .map_err(|error| format!("读取 MiaoNet 服务器版本失败：{error}"))?;
+        return Err(format!(
+            "MiaoNet 协议版本不匹配，服务器需要 {}.{}.{}。",
+            u16::from_le_bytes([server_version[0], server_version[1]]),
+            u16::from_le_bytes([server_version[2], server_version[3]]),
+            u16::from_le_bytes([server_version[4], server_version[5]])
+        ));
+    }
+
+    let mut payload = Vec::with_capacity(code_bytes.len() + 6);
+    payload.push(0); // 简体中文
+    payload.push(1); // OAuth 授权码
+    payload.extend_from_slice(&code_length.to_le_bytes());
+    payload.extend_from_slice(code_bytes);
+    payload.extend_from_slice(&0u16.to_le_bytes()); // 不声明额外网络 Mod
+    let payload_length =
+        u16::try_from(payload.len()).map_err(|_| "MiaoNet 握手数据过长。".to_string())?;
+    stream
+        .write_all(&payload_length.to_le_bytes())
+        .and_then(|_| stream.write_all(&payload))
+        .map_err(|error| format!("发送 MiaoNet 登录信息失败：{error}"))?;
+
+    let mut ack_length_bytes = [0u8; 2];
+    stream
+        .read_exact(&mut ack_length_bytes)
+        .map_err(|error| format!("读取 MiaoNet 认证结果失败：{error}"))?;
+    let ack_length = u16::from_le_bytes(ack_length_bytes) as usize;
+    let mut ack = vec![0u8; ack_length];
+    stream
+        .read_exact(&mut ack)
+        .map_err(|error| format!("读取 MiaoNet 认证数据失败：{error}"))?;
+    let authentication_data = parse_miaonet_handshake_ack(&ack)?;
+    let username = read_miaonet_initial_username(&mut stream);
+    Ok((authentication_data, username))
+}
+
+fn encrypt_miaonet_token(authentication_data: &[u8]) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    let user_name = std::env::var("USERNAME").unwrap_or_else(|_| whoami::username());
+    #[cfg(not(target_os = "windows"))]
+    let user_name = whoami::username();
+
+    #[cfg(target_os = "windows")]
+    let machine_name = match std::env::var("COMPUTERNAME") {
+        Ok(name) => Ok(name),
+        Err(_) => hostname::get()
+            .map(|name| name.to_string_lossy().into_owned())
+            .map_err(|error| error.to_string()),
+    };
+    #[cfg(not(target_os = "windows"))]
+    let machine_name = hostname::get()
+        .map(|name| name.to_string_lossy().into_owned())
+        .map_err(|error| error.to_string());
+    let machine_name = machine_name.map_err(|error| format!("读取计算机名称失败：{error}"))?;
+    let environment = format!("{user_name}@{machine_name}");
+    let mut key_and_iv = [0u8; 48];
+    pbkdf2_hmac::<Sha256>(
+        environment.as_bytes(),
+        b"MiaoNet.TokenDataSalt",
+        12,
+        &mut key_and_iv,
+    );
+    let (key, iv) = key_and_iv.split_at(32);
+    let mut buffer = vec![0u8; authentication_data.len() + 16];
+    buffer[..authentication_data.len()].copy_from_slice(authentication_data);
+    let encrypted = cbc::Encryptor::<Aes256>::new_from_slices(key, iv)
+        .map_err(|_| "创建 MiaoNet 登录信息加密器失败。".to_string())?
+        .encrypt_padded_mut::<Pkcs7>(&mut buffer, authentication_data.len())
+        .map_err(|_| "加密 MiaoNet 登录信息失败。".to_string())?;
+    Ok(general_purpose::STANDARD.encode(encrypted))
+}
+
+fn remove_yaml_property(mapping: &mut serde_yaml::Mapping, name: &str) {
+    let keys = mapping
+        .keys()
+        .filter(|key| {
+            key.as_str()
+                .is_some_and(|key| key.eq_ignore_ascii_case(name))
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    for key in keys {
+        mapping.remove(&key);
+    }
+}
+
+fn save_miaonet_login(
+    game_path: &Path,
+    authentication_data: &[u8],
+    username: Option<&str>,
+) -> Result<(), String> {
+    let directories = miaonet_settings_directories(game_path);
+    let settings_path = directories
+        .iter()
+        .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
+        .find(|path| path.is_file())
+        .or_else(|| {
+            directories
+                .first()
+                .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
+        })
+        .ok_or_else(|| "找不到 Celeste 的设置目录。".to_string())?;
+    let parent = settings_path
+        .parent()
+        .ok_or_else(|| "MiaoNet 设置路径无效。".to_string())?;
+    fs::create_dir_all(parent).map_err(|error| format!("创建 Celeste 设置目录失败：{error}"))?;
+
+    let mut settings = if settings_path.is_file() {
+        let content = fs::read_to_string(&settings_path)
+            .map_err(|error| format!("读取 MiaoNet 设置失败：{error}"))?;
+        if content.trim().is_empty() {
+            serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+        } else {
+            serde_yaml::from_str::<serde_yaml::Value>(&content)
+                .map_err(|error| format!("解析 MiaoNet 设置失败：{error}"))?
+        }
+    } else {
+        serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
+    };
+    let serde_yaml::Value::Mapping(mapping) = &mut settings else {
+        return Err("MiaoNet 设置文件格式不正确。".to_string());
+    };
+
+    remove_yaml_property(mapping, "TokenDataEncrypted");
+    remove_yaml_property(mapping, "LastName");
+    mapping.insert(
+        serde_yaml::Value::String("TokenDataEncrypted".to_string()),
+        serde_yaml::Value::String(encrypt_miaonet_token(authentication_data)?),
+    );
+    if let Some(username) = username.filter(|name| !name.trim().is_empty()) {
+        mapping.insert(
+            serde_yaml::Value::String("LastName".to_string()),
+            serde_yaml::Value::String(username.to_string()),
+        );
+    }
+
+    let serialized = serde_yaml::to_string(&settings)
+        .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
+    fs::write(&settings_path, serialized).map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))
+}
+
+fn run_miaonet_oauth_listener(
+    listener: TcpListener,
+    expected_state: &str,
+    game_path: &Path,
+    protocol_version: [u16; 3],
+    on_event: &Channel<IpcEvent>,
+) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(120);
+    while Instant::now() < deadline {
+        let (mut stream, _) = match listener.accept() {
+            Ok(connection) => connection,
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                std::thread::sleep(Duration::from_millis(80));
+                continue;
+            }
+            Err(error) => return Err(format!("接收浏览器授权回调失败：{error}")),
+        };
+
+        let request = match read_http_request(&mut stream) {
+            Ok(request) => request,
+            Err(error) => {
+                write_http_page(&mut stream, "400 Bad Request", "授权请求无效", &error);
+                continue;
+            }
+        };
+        let target = match parse_miaonet_callback_target(&request) {
+            Ok(target) => target,
+            Err(error) => {
+                write_http_page(&mut stream, "400 Bad Request", "授权请求无效", &error);
+                continue;
+            }
+        };
+        let callback_url = match url::Url::parse(&format!("http://localhost{target}")) {
+            Ok(url) => url,
+            Err(_) => {
+                write_http_page(
+                    &mut stream,
+                    "400 Bad Request",
+                    "授权请求无效",
+                    "回调地址格式不正确。",
+                );
+                continue;
+            }
+        };
+        if callback_url.path() != "/auth" {
+            write_http_page(
+                &mut stream,
+                "404 Not Found",
+                "页面不存在",
+                "请返回 CeleMod 重新开始授权。",
+            );
+            continue;
+        }
+        let parameters = callback_url.query_pairs().collect::<HashMap<_, _>>();
+        if parameters.get("state").map(|state| state.as_ref()) != Some(expected_state) {
+            write_http_page(
+                &mut stream,
+                "400 Bad Request",
+                "授权请求已失效",
+                "请返回 CeleMod 重新开始授权。",
+            );
+            continue;
+        }
+        if let Some(error) = parameters.get("error") {
+            let detail = parameters
+                .get("error_description")
+                .map(|value| value.as_ref())
+                .unwrap_or(error.as_ref());
+            write_http_page(
+                &mut stream,
+                "400 Bad Request",
+                "未完成授权",
+                "你可以关闭此页面并返回 CeleMod 重试。",
+            );
+            return Err(format!("论坛未完成授权：{detail}"));
+        }
+        let Some(code) = parameters.get("code") else {
+            write_http_page(
+                &mut stream,
+                "400 Bad Request",
+                "授权请求无效",
+                "论坛没有返回授权码，请返回 CeleMod 重试。",
+            );
+            continue;
+        };
+
+        write_http_page(
+            &mut stream,
+            "200 OK",
+            "MiaoNet+ 授权已收到",
+            "CeleMod 正在验证并保存登录信息。你现在可以关闭此页面并返回 CeleMod。",
+        );
+        drop(stream);
+        miaonet_oauth_event(on_event, "exchanging_code", None);
+        let result = exchange_miaonet_oauth_code(code.as_ref(), protocol_version).and_then(
+            |(authentication_data, username)| {
+                miaonet_oauth_event(on_event, "saving_token", None);
+                save_miaonet_login(game_path, &authentication_data, username.as_deref())
+            },
+        );
+        match result {
+            Ok(()) => {
+                miaonet_oauth_event(on_event, "complete", None);
+                return Ok(());
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Err("等待浏览器授权超时，请重新开始。".to_string())
+}
+
+#[tauri::command]
+fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
+    let game_path = PathBuf::from(normalize_game_path_impl(&game_path));
+    if is_celeste_running(&game_path) {
+        return Err("请先退出 Celeste，避免游戏覆盖新的登录信息。".to_string());
+    }
+    let protocol_version = installed_miaonet_protocol_version(&game_path)?;
+    if MIAONET_OAUTH_ACTIVE
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        return Err("已有一个 MiaoNet 授权流程正在进行。".to_string());
+    }
+
+    let listener = match TcpListener::bind(("127.0.0.1", 21472)) {
+        Ok(listener) => listener,
+        Err(error) => {
+            MIAONET_OAUTH_ACTIVE.store(false, Ordering::Release);
+            return Err(format!("无法启动本地授权回调（端口 21472）：{error}"));
+        }
+    };
+    if let Err(error) = listener.set_nonblocking(true) {
+        MIAONET_OAUTH_ACTIVE.store(false, Ordering::Release);
+        return Err(format!("无法配置本地授权回调：{error}"));
+    }
+
+    let mut random = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut random);
+    let state = general_purpose::URL_SAFE_NO_PAD.encode(random);
+    let authorization_url = match make_miaonet_oauth_url(&state) {
+        Ok(url) => url,
+        Err(error) => {
+            MIAONET_OAUTH_ACTIVE.store(false, Ordering::Release);
+            return Err(error);
+        }
+    };
+
+    std::thread::spawn(move || {
+        let _guard = MiaoNetOauthGuard;
+        miaonet_oauth_event(&on_event, "waiting_browser", None);
+        if let Err(error) = open::that(&authorization_url) {
+            miaonet_oauth_event(
+                &on_event,
+                "failed",
+                Some(&format!("无法打开系统浏览器：{error}")),
+            );
+            return;
+        }
+        if let Err(error) =
+            run_miaonet_oauth_listener(listener, &state, &game_path, protocol_version, &on_event)
+        {
+            miaonet_oauth_event(&on_event, "failed", Some(&error));
+        }
+    });
+    Ok(())
+}
 
 fn send_event(channel: &Channel<IpcEvent>, args: Vec<IpcEvent>) {
     let _ = channel.send(IpcEvent::Array(args));
@@ -2364,6 +3070,9 @@ pub fn run() {
             get_database_path,
             set_mod_options_order,
             set_window_vibrancy,
+            get_miaonet_local_state,
+            logout_miaonet,
+            start_miaonet_oauth,
         ])
         .run(tauri::generate_context!())
         .expect("error while running CeleMod");
