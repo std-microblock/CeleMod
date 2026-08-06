@@ -1,28 +1,23 @@
 import _i18n from 'src/i18n';
-import { createContext } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import './Manage.scss';
 import {
-  BackendDep,
-  BackendModInfo,
-  initAutoDisableNewMods,
-  initCheckOptionalDep,
-  initExcludeDependents,
-  initFullTree,
-  initShowDetailed,
-  initShowUpdate,
+  MOD_TYPE_OPTIONS,
   useAlwaysOnMods,
-  useAutoDisableNewMods,
-  useCheckOptionalDep,
+  useAppStore,
   useCurrentBlacklistProfile,
-  useExcludeDependents,
-  useFullTree,
   useGamePath,
   useInstalledMods,
   useModComments,
-  useShowDetailed,
-  useShowUpdate,
 } from '../states';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { callRemote, compareVersion } from '../utils';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
@@ -31,430 +26,311 @@ import { enforceEverest } from '../components/EnforceEverestPage';
 import { useDownloadStore } from '../stores/download';
 import { createPopup, PopupContext } from '../components/Popup';
 import { ProgressIndicator } from '../components/Progress';
+import {
+  CatalogMod,
+  loadModCatalog,
+} from '../api/modCatalog';
+import { Content, searchSubmission } from '../api/wegfan';
+import { sanitizeDescriptionHtml } from '../sanitizeDescriptionHtml';
+import {
+  ManageCatalogMeta,
+  ManageNode,
+  alternativesCovering,
+  collectSwitchNames,
+  excludedDependencyNames,
+  getDependencyHealth,
+  selectVisibleRootNames,
+  useManageStore,
+} from '../stores/manage';
 
-type DepState = 'resolved' | 'missing' | 'not-enabled' | 'mismatched-version';
-
-interface DepResolveResult {
-  status: DepState;
-  message: string;
-}
-
-interface ModInfo {
+type LatestModInfo = {
   name: string;
-  id: string;
-  enabled: boolean;
-  dependencies: ModDepInfo[];
-  dependedBy: ModInfo[];
   version: string;
-  _deps: BackendDep[]; // raw deps
-  resolveDependencies: () => DepResolveResult;
-  file: string;
-  size: number;
-  duplicateCount: number;
-  duplicateFiles: string[];
-}
+  gbFile: string;
+  current: string;
+  url: string;
+};
 
-interface MissingModDepInfo {
-  name: string;
-  id: string;
-  optional: boolean;
-  version: string;
-  _missing: true;
-}
-
-interface FullModCheckIssue {
-  file: string;
-  error: string;
-}
-
-interface FullModCheckProgress {
+type FullModCheckProgress = {
   current: number;
   total: number;
   file: string;
   done: boolean;
-  issues: FullModCheckIssue[];
-}
-
-type ModInfoProbablyMissing = ModInfo | MissingModDepInfo;
-
-type ModDepInfo = ModInfoProbablyMissing & {
-  optional: boolean;
+  issues: { file: string; error: string }[];
 };
 
-// Mods that can stand in for one another: if any one in the list is enabled,
-// a dependency on any *other* member is treated as satisfied. Special-case for
-// the multiplayer clients — CelesteNet.Client and its CN fork MiaoNet.
-// (MiaoNet's installed name is literally "MiaoNet"; see main.rs
-// get_installed_miaonet.)
-const CELESTENET_ALT_LIST = ['CelesteNet.Client', 'MiaoNet', 'Miao.CelesteNet.Client'];
-// Returns the (raw) names of all enabled alternatives covering `name` (excludes
-// `name` itself). Empty if `name` isn't in the list or no alternative is on.
-const altCovering = (name: string, modMap: Map<string, ModInfo>): string[] => {
-  if (!CELESTENET_ALT_LIST.includes(name)) return [];
-  return CELESTENET_ALT_LIST.filter((alt) => alt !== name && modMap.get(alt)?.enabled);
+const formatSize = (size: number) => {
+  if (!Number.isFinite(size) || size <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const index = Math.min(units.length - 1, Math.floor(Math.log(size) / Math.log(1024)));
+  return `${(size / (1024 ** index)).toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
 };
 
-const modListContext = createContext<{
-  switchMod: (id: string, enabled: boolean, recursive?: boolean) => void;
-  switchProfile: (name: string) => void;
-  removeProfile: (name: string) => void;
-  deleteMod: (name: string) => void;
-  modFolder: string;
-  gamePath: string;
-  currentProfileName: string;
-  reloadMods: () => void;
-  fullTree: boolean;
-  showUpdate: boolean;
-  showDetailed: boolean;
-  alwaysOnMods: string[];
-  switchAlwaysOn: (name: string, enabled: boolean) => void;
-  isCoveredByAlt: (name: string) => string[];
-  autoDisableNewMods: boolean;
-  hasUpdateMods: {
-    name: string;
-    version: string;
-    gb_file: string;
-  }[];
-  modComments: { [name: string]: string };
-  setModComment: (name: string, comment: string) => void;
-} | null>({} as any);
-
-const ModBadge = ({
+const Badge = ({
   children,
-  bg,
-  color,
-  onClick,
+  tone = 'neutral',
   title,
+  onClick,
   onContextMenu,
 }: {
-  children: any;
-  color: string;
-  bg: string;
-  onClick?: () => void;
-  onContextMenu?: (e: React.MouseEvent<HTMLSpanElement>) => void;
+  children: React.ReactNode;
+  tone?: 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'accent';
   title?: string;
-}) => {
-  return (
-    <span
-      className="ma-badge"
-      onClick={onClick}
-      onContextMenu={onContextMenu}
-      style={{
-        background: bg,
-        color: color,
-        cursor: onClick ? 'pointer' : 'default',
-      }}
-      title={title}
-    >
-      {children}
-    </span>
-  );
+  onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
+}) => (
+  <span
+    className={`manage-badge tone-${tone} ${onClick ? 'clickable' : ''}`}
+    title={title}
+    onClick={(event) => { event.stopPropagation(); onClick?.(); }}
+    onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); onContextMenu?.(event); }}
+  >{children}</span>
+);
+
+const catalogMaps = (mods: CatalogMod[]) => {
+  const metaByName: Record<string, ManageCatalogMeta> = {};
+  const fullByName = new Map<string, CatalogMod>();
+  for (const mod of mods) {
+    const key = mod.name.trim().toLocaleLowerCase();
+    const submission = mod.submissionFile.submission;
+    const current = fullByName.get(key);
+    if (!current || Date.parse(mod.updateTime) > Date.parse(current.updateTime)) fullByName.set(key, mod);
+    metaByName[key] = {
+      category: submission.categoryName,
+      subCategory: submission.subCategoryName,
+      submitter: submission.submitter,
+      submissionName: submission.name,
+      pageUrl: submission.pageUrl,
+      downloads: mod.submissionFile.downloads,
+      catalogSize: mod.submissionFile.size,
+      updatedAt: submission.updateTime,
+      gameBananaId: submission.gameBananaId,
+    };
+  }
+  return { metaByName, fullByName };
 };
 
-const ModMissing = ({ name, version, optional }: MissingModDepInfo) => {
-  const downloadMod = useDownloadStore((state) => state.downloadMod);
-  const ctx = useContext(modListContext);
-  const [state, setState] = useState(_i18n.t('缺失'));
-  const [gbFileID, setGBFileID] = useState<string | null>(null);
-  useEffect(() => {
-    callRemote('get_mod_update', name, (data: string) => {
-      if (!!data) {
-        const [gbFileId, version] = JSON.parse(data);
-        setGBFileID(gbFileId);
-        if (optional) setState(_i18n.t('点击下载'));
-        else setState(_i18n.t('缺失·点击下载'));
+const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
+  createPopup(() => {
+    const popup = useContext(PopupContext);
+    const [cloud, setCloud] = useState<Content | null>(null);
+    const [cloudDone, setCloudDone] = useState(false);
+    const descriptionRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const submission = catalogMod?.submissionFile.submission;
+      if (!submission) {
+        setCloudDone(true);
+        return;
       }
-    });
-  }, [name]);
+      searchSubmission({ search: submission.name, size: 12 })
+        .then((result) => {
+          setCloud(result.content.find((item) => item.gameBananaId === submission.gameBananaId) ?? null);
+        })
+        .catch(console.error)
+        .finally(() => setCloudDone(true));
+    }, []);
 
+    useEffect(() => {
+      if (!descriptionRef.current || !cloud) return;
+      descriptionRef.current.innerHTML = '';
+      descriptionRef.current.appendChild(sanitizeDescriptionHtml(cloud.description || ''));
+      for (const link of Array.from(descriptionRef.current.querySelectorAll('a'))) {
+        const url = link.getAttribute('href');
+        if (!url) continue;
+        link.setAttribute('href', '#');
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          void callRemote('open_url', url);
+        });
+      }
+    }, [cloud]);
+
+    const meta = node.meta;
+    return (
+      <div className="manage-detail-popup">
+        <button className="detail-close" onClick={popup.hide}><Icon name="i-cross" /></button>
+        <div className="detail-heading">
+          <div>
+            <span className="detail-kicker">{meta?.category || _i18n.t('本地 Mod')}</span>
+            <h2>{meta?.submissionName || node.name}</h2>
+            <p>{node.name} · {node.version}</p>
+          </div>
+          {meta?.pageUrl && (
+            <button onClick={() => callRemote('open_url', meta.pageUrl!)} title={_i18n.t('打开原页面')}>
+              <Icon name="external" />
+            </button>
+          )}
+        </div>
+        <div className="detail-stats">
+          <div><span>{_i18n.t('作者')}</span><strong>{meta?.submitter || '--'}</strong></div>
+          <div><span>{_i18n.t('类型')}</span><strong>{meta?.subCategory || meta?.category || '--'}</strong></div>
+          <div><span>{_i18n.t('下载次数')}</span><strong>{meta?.downloads?.toLocaleString() || '--'}</strong></div>
+          <div><span>{_i18n.t('文件大小')}</span><strong>{formatSize(meta?.catalogSize || node.size)}</strong></div>
+        </div>
+        {cloud?.screenshots?.length ? (
+          <div className="detail-images">
+            {cloud.screenshots.map((image) => <img key={image.id} src={`${image.url}?h=180`} alt="" />)}
+          </div>
+        ) : null}
+        {!cloudDone ? (
+          <div className="detail-loading"><ProgressIndicator infinite size={28} /></div>
+        ) : cloud ? (
+          <div className="detail-description" ref={descriptionRef} />
+        ) : (
+          <div className="detail-description detail-local-only">
+            {_i18n.t('本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。')}
+          </div>
+        )}
+        <div className="detail-files">
+          <strong>{_i18n.t('本地文件')}</strong>
+          <span>{node.file} · {formatSize(node.size)}</span>
+        </div>
+      </div>
+    );
+  }, { backgroundMask: '#111318' });
+};
+
+interface ManageActions {
+  switchNodes: (names: string | string[], enabled: boolean, recursive?: boolean) => void;
+  deleteNode: (name: string) => void;
+  updateNode: (name: string) => Promise<boolean>;
+  downloadMissing: (name: string) => void;
+  showDetails: (name: string) => void;
+  toggleAlwaysOn: (name: string) => void;
+  updateNames: Set<string>;
+  updateStates: Record<string, string>;
+  alwaysOnMods: string[];
+  comments: Record<string, string>;
+  setComment: (name: string, comment: string) => void;
+  checkOptional: boolean;
+  fullTree: boolean;
+  showDetailed: boolean;
+}
+
+const ManageActionsContext = createContext<ManageActions | null>(null);
+
+const MissingDependencyRow = ({ dependency, depth }: { dependency: { name: string; version: string; optional: boolean }; depth: number }) => {
+  const actions = useContext(ManageActionsContext)!;
+  const [state, setState] = useState(dependency.optional ? _i18n.t('可选依赖 · 下载') : _i18n.t('缺失 · 下载'));
   return (
-    <div className="m-mod missing">
-      <Icon name="warn" />
-      <ModBadge
-        bg={optional ? '#3ca3f4' : '#ef4647'}
-        color="white"
-        onClick={
-          gbFileID !== null
-            ? async () => {
-              setState(_i18n.t('下载中'));
-              downloadMod(name, gbFileID, {
-                autoDisableNewMods: ctx?.autoDisableNewMods || false,
-                onProgress: (task, progress) => {
-                  setState(`${progress}% (${task.subtasks.length})`);
-                },
-                onFinished: () => {
-                  setState(_i18n.t('下载完成'));
-                  ctx?.reloadMods();
-                },
-                onFailed: () => {
-                  setState(_i18n.t('下载失败'));
-                },
-              });
-            }
-            : undefined
-        }
-      >
-        {state}
-      </ModBadge>
-      {optional && (
-        <ModBadge bg="#ff9800" color="white">
-          {_i18n.t('可选依赖')}
-        </ModBadge>
-      )}
-
-      <span>
-        {name} <span className="modVersion">{version}</span>{' '}
-      </span>
+    <div className="manage-tree-row missing" style={{ '--tree-depth': depth } as React.CSSProperties}>
+      <span className="tree-connector" />
+      <span className="tree-expander leaf"><Icon name="warn" /></span>
+      <div className="tree-row-main">
+        <div className="tree-primary-line">
+          <Badge tone={dependency.optional ? 'warning' : 'danger'} onClick={() => {
+            setState(_i18n.t('下载中…'));
+            actions.downloadMissing(dependency.name);
+          }}>{state}</Badge>
+          <strong>{dependency.name}</strong>
+          <span className="tree-version">≥ {dependency.version}</span>
+        </div>
+      </div>
     </div>
   );
 };
 
-const excludeList = ['Everest', 'Celeste', 'EverestCore'];
-
-const ModLocal = ({
+const ManageTreeNode = ({
   name,
-  id,
-  enabled,
-  dependencies,
-  resolveDependencies,
-  dependedBy,
-  version,
+  depth = 0,
+  path = [],
   optional = false,
-  file,
-  size,
-  duplicateCount,
-  duplicateFiles,
-  renderPath = [],
-}: ModInfo & { optional?: boolean; renderPath?: string[] }) => {
-  const downloadMod = useDownloadStore((state) => state.downloadMod);
-  const [expanded, setExpanded] = useState(false);
-  const [hovered, setHovered] = useState(false);
-
-  const ctx = useContext(modListContext);
-  const hasCycle = renderPath.includes(name);
-
-  const hasDeps = useMemo(
-    () => dependencies.some((v) => !excludeList.includes(v.name)),
-    [dependencies]
-  );
-
-  const dependedByFiltered = useMemo(
-    () => dependedBy.filter((v) => v.enabled),
-    [dependedBy]
-  );
-
-  const depState = useMemo(resolveDependencies, [
-    dependencies,
-    enabled,
-    resolveDependencies,
-  ]);
-
-  const [updateState, setUpdateState] = useState<[string, string] | null>(null);
-  const [updateString, setUpdateString] = useState('');
-  useEffect(() => {
-    const update = ctx?.hasUpdateMods.find((v) => v.name === name);
-    if (update) {
-      setUpdateState([update.gb_file, update.version]);
-      setUpdateString(
-        _i18n.t('点击更新 · {newversion}', {
-          newversion: update.version,
-        })
-      );
-    } else {
-      setUpdateState(null);
-    }
-  }, [name, ctx.hasUpdateMods]);
-
-  const isAlwaysOn = ctx?.alwaysOnMods.includes(name);
-  const coveredByAlt = ctx?.isCoveredByAlt?.(name) ?? [];
-
+}: {
+  name: string;
+  depth?: number;
+  path?: string[];
+  optional?: boolean;
+}) => {
+  const actions = useContext(ManageActionsContext)!;
+  const node = useManageStore((state) => state.nodes[name]);
+  const nodes = useManageStore((state) => state.nodes);
+  const expanded = useManageStore((state) => Boolean(state.expanded[name]));
+  const setExpanded = useManageStore((state) => state.setExpanded);
   const [editingComment, setEditingComment] = useState(false);
-  const refCommentInput = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (editingComment) {
-      refCommentInput.current?.focus();
-    }
-  }, [editingComment]);
+  if (!node || excludedDependencyNames.has(name)) return null;
+  const visibleDependencies = node.dependencies.filter((dependency) => (
+    !excludedDependencyNames.has(dependency.name) && (actions.checkOptional || !dependency.optional)
+  ));
+  const hasDependencies = visibleDependencies.length > 0;
+  const cycle = path.includes(name);
+  const health = getDependencyHealth(name, nodes, actions.checkOptional);
+  const isAlwaysOn = actions.alwaysOnMods.includes(name);
+  const covered = alternativesCovering(name, nodes);
+  const hasUpdate = actions.updateNames.has(name);
 
   return (
-    <div
-      className={`m-mod ${enabled && 'enabled'}`}
-      key={id}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <span
-        className={`expandBtn ${expanded && 'expanded'} ${hasDeps && 'clickable'
-          }`}
-        onClick={() => setExpanded(!expanded)}
-      >
-        {hasDeps && (!optional || ctx?.fullTree) ? (
-          expanded ? (
-            <Icon name="i-down" />
-          ) : (
-            <Icon name="i-right" />
-          )
-        ) : (
-          <Icon name="i-asterisk" />
-        )}
-      </span>
-      <ModBadge
-        bg={isAlwaysOn ? '#087EBF' : enabled ? '#4caf50' : '#2c313c'}
-        color="white"
-        onClick={() => {
-          ctx?.switchMod(name, !enabled);
-        }}
-        onContextMenu={(e) => {
-          ctx?.switchAlwaysOn(name, !isAlwaysOn);
-        }}
-      >
-        {isAlwaysOn
-          ? _i18n.t('始终开启')
-          : enabled
-            ? _i18n.t('已启用')
-            : _i18n.t('已禁用')}
-      </ModBadge>
-
-      {enabled &&
-        (depState.status === 'missing' ? (
-          <ModBadge bg="#ef4647" color="white" title={depState.message}>
-            {_i18n.t('依赖·缺失')}
-          </ModBadge>
-        ) : depState.status === 'not-enabled' ? (
-          <ModBadge bg="#ff9800" color="white" title={depState.message}>
-            {_i18n.t('依赖·未启用')}
-          </ModBadge>
-        ) : depState.status === 'mismatched-version' ? (
-          <ModBadge bg="#ff9800" color="white" title={depState.message}>
-            {_i18n.t('依赖·版本不匹配')}
-          </ModBadge>
-        ) : null)}
-
-      {hasCycle && (
-        <ModBadge bg="#9c27b0" color="white">
-          {_i18n.t('循环依赖')}
-        </ModBadge>
-      )}
-
-      {optional && (
-        <ModBadge bg="#ff9800" color="white">
-          {_i18n.t('可选依赖')}
-        </ModBadge>
-      )}
-
-      {dependedByFiltered.length > 0 && (
-        <ModBadge
-          bg="#2196f3"
-          color="white"
-          title={_i18n.t('启用的，依赖此 Mod 的 Mod: {slot0}', {
-            slot0: dependedByFiltered.map((v) => v.name).join(', '),
-          })}
+    <div className="manage-tree-node">
+      <div className={`manage-tree-row ${node.enabled ? 'enabled' : 'disabled'}`} style={{ '--tree-depth': depth } as React.CSSProperties}>
+        <span className="tree-connector" />
+        <button
+          className={`tree-expander ${hasDependencies ? '' : 'leaf'}`}
+          onClick={() => hasDependencies && setExpanded(name, !expanded)}
+          title={hasDependencies ? _i18n.t(expanded ? '收起依赖' : '展开依赖') : ''}
         >
-          {dependedByFiltered.length}
-        </ModBadge>
-      )}
-
-      {duplicateCount > 1 && (
-        <ModBadge
-          bg="#DB3D73"
-          color="white"
-          title={duplicateFiles.map((v) => v.split('/').pop()).join(' | ')}
-        >
-          {_i18n.t('重复 Mod ·')}
-
-          {duplicateCount}
-          {_i18n.t('次')}
-        </ModBadge>
-      )}
-
-      {ctx?.showUpdate && updateState && (
-        <ModBadge
-          bg="#ff9800"
-          color="white"
-          onClick={() => {
-            downloadMod(
-              file.slice(0, -'.zip'.length),
-              updateState[0],
-              {
-                onProgress: (task, progress) => {
-                  setUpdateString(`${progress}% (${task.subtasks.length})`);
-                },
-                onFinished: () => {
-                  setUpdateString(_i18n.t('下载完成'));
-                  ctx?.reloadMods();
-                },
-                onFailed: (task) => {
-                  console.log(task);
-                  setUpdateString(_i18n.t('下载失败'));
-                },
-                force: true,
-              }
-            );
-          }}
-        >
-          {updateString}
-        </ModBadge>
-      )}
-
-      {coveredByAlt.length > 0 && (
-        <ModBadge
-          bg="#0d47a1"
-          color="white"
-          title={_i18n.t('{alt} 已开启，可替代本 Mod', {
-            alt: coveredByAlt.join(', '),
-          })}
-        >
-          {_i18n.t('{alt} 已开启', {
-            alt: coveredByAlt.join(', '),
-          })}
-        </ModBadge>
-      )}
-
-      <span
-        className="modName"
-        onClick={() => setEditingComment(true)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          callRemote('open_url', ctx?.modFolder || '');
-        }}
-      >{name}</span>
-      {!editingComment && ctx?.modComments[name] && (
-        <span className="modComment" onClick={() => {
-          setEditingComment(true);
-        }}>{ctx?.modComments[name]}</span>
-      )}
-      {
-        editingComment && (
-          <input type="text" value={ctx?.modComments[name] ?? ''} ref={refCommentInput} className="modCommentInput"
-            onInput={(e) => ctx?.setModComment(name, (e.target as any).value)}
-            onKeyUp={(e) => {
-              if (e.keyCode === 257 || e.keyCode === 256) { // enter or esc
-                setEditingComment(false);
-              }
-            }}
-            onBlur={() => setEditingComment(false)} />
-        )
-      }
-
-      <span className="modVersion">{version}</span>
-      {ctx?.showDetailed && (
-        <span className="modDetails">
-          [{formatSize(size)} · {file}]
-        </span>
-      )}
-      {hovered && (
-        <span
-          className="delete-btn"
-          onClick={() => ctx?.deleteMod(name)}
-          title={_i18n.t('删除 Mod')}
-        >
-          <Icon name="delete" />
-        </span>
-      )}
-      {(!optional || ctx?.fullTree) && expanded && !hasCycle && (
-        <div className={`childTree ${expanded && 'expanded'}`}>
-          {dependencies.map((v) => (
-            <Mod key={v.name} {...v} renderPath={[...renderPath, name]} />
+          <Icon name={hasDependencies ? (expanded ? 'i-down' : 'i-right') : 'i-asterisk'} />
+        </button>
+        <div className="tree-row-main">
+          <div className="tree-primary-line">
+            <button
+              className={`state-switch ${isAlwaysOn ? 'always' : node.enabled ? 'enabled' : ''}`}
+              onClick={() => actions.switchNodes(name, !node.enabled)}
+              onContextMenu={(event) => { event.preventDefault(); actions.toggleAlwaysOn(name); }}
+              title={_i18n.t('点击切换；右键设为始终开启')}
+            >
+              <span />
+              {isAlwaysOn ? _i18n.t('始终开启') : node.enabled ? _i18n.t('已启用') : _i18n.t('已禁用')}
+            </button>
+            {editingComment ? (
+              <input
+                autoFocus
+                className="tree-comment-input"
+                value={actions.comments[name] ?? ''}
+                onChange={(event) => actions.setComment(name, event.target.value)}
+                onBlur={() => setEditingComment(false)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === 'Escape') setEditingComment(false);
+                }}
+              />
+            ) : (
+              <button className="tree-name" onClick={() => setEditingComment(true)} title={_i18n.t('点击编辑备注')}>
+                {name}
+              </button>
+            )}
+            <span className="tree-version">{node.version}</span>
+            {actions.comments[name] && !editingComment && <span className="tree-comment">{actions.comments[name]}</span>}
+          </div>
+          <div className="tree-secondary-line">
+            {node.meta?.category && <Badge tone="neutral">{node.meta.category}</Badge>}
+            {optional && <Badge tone="warning">{_i18n.t('可选依赖')}</Badge>}
+            {health.status === 'missing' && <Badge tone="danger" title={health.messages.join('\n')}>{_i18n.t('依赖缺失')}</Badge>}
+            {health.status === 'disabled' && <Badge tone="warning" title={health.messages.join('\n')}>{_i18n.t('依赖未启用')}</Badge>}
+            {health.status === 'version' && <Badge tone="warning" title={health.messages.join('\n')}>{_i18n.t('版本不匹配')}</Badge>}
+            {cycle && <Badge tone="accent">{_i18n.t('循环依赖')}</Badge>}
+            {covered.length > 0 && <Badge tone="info" title={covered.join(', ')}>{_i18n.t('已被替代')}</Badge>}
+            {node.dependedBy.filter((dependent) => nodes[dependent]?.enabled).length > 0 && (
+              <Badge tone="info" title={node.dependedBy.join(', ')}>
+                {_i18n.t('{count} 个启用项依赖', { count: node.dependedBy.filter((dependent) => nodes[dependent]?.enabled).length })}
+              </Badge>
+            )}
+            {node.duplicateFiles.length > 1 && <Badge tone="danger" title={node.duplicateFiles.join('\n')}>{_i18n.t('重复')} × {node.duplicateFiles.length}</Badge>}
+            {hasUpdate && <Badge tone="warning" onClick={() => actions.updateNode(name)}>{actions.updateStates[name] || _i18n.t('可更新')}</Badge>}
+            {actions.showDetailed && <span className="tree-file-detail">{formatSize(node.size)} · {node.file}</span>}
+          </div>
+        </div>
+        <div className="tree-row-actions">
+          <button onClick={() => actions.showDetails(name)} title={_i18n.t('查看 Mod 详情')}><Icon name="opts-h" /></button>
+          <button className="danger" onClick={() => actions.deleteNode(name)} title={_i18n.t('删除 Mod')}><Icon name="delete" /></button>
+        </div>
+      </div>
+      {expanded && !cycle && (!optional || actions.fullTree) && (
+        <div className="tree-children">
+          {visibleDependencies.map((dependency) => (
+            nodes[dependency.name] ? (
+              <ManageTreeNode key={`${name}-${dependency.name}`} name={dependency.name} depth={depth + 1} path={[...path, name]} optional={dependency.optional} />
+            ) : (
+              <MissingDependencyRow key={`${name}-${dependency.name}`} dependency={dependency} depth={depth + 1} />
+            )
           ))}
         </div>
       )}
@@ -462,127 +338,72 @@ const ModLocal = ({
   );
 };
 
-const Mod = (props: ModDepInfo & { renderPath?: string[] }) => {
-  if (excludeList.includes(props.name)) {
-    return null;
-  }
-  if ('_missing' in props) {
-    return <ModMissing {...props} />;
-  }
-  return <ModLocal {...props} />;
-};
-
-const Profile = ({ name, current }: { name: string; current: boolean }) => {
-  const ctx = useContext(modListContext);
-
-  return (
-    <div
-      className={`profile ${current && 'current'}`}
-      onClick={() => {
-        ctx?.switchProfile(name);
-      }}
-    >
-      <span>{name}</span>
-      <span className="opers">
-        {name !== 'Default' && (
-          <span
-            className="delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              ctx?.removeProfile(name);
-            }}
-          >
-            <Icon name="delete" />
-          </span>
-        )}
-      </span>
-    </div>
-  );
-};
-
-const formatSize = (size: number) => {
-  const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-};
-
-let lastApplyReq = -1;
-
 const ModOptionsOrderPanel = ({
   gamePath,
-  currentProfileName,
-  currentProfile,
-  installedMods,
-  onOrderChange,
+  profileName,
+  files,
+  order,
+  onChange,
 }: {
   gamePath: string;
-  currentProfileName: string;
-  currentProfile: import('../ipc/blacklist').ModBlacklistProfile | null;
-  installedMods: import('../states').BackendModInfo[];
-  onOrderChange: (order: string[]) => void;
+  profileName: string;
+  files: string[];
+  order: string[];
+  onChange: (order: string[]) => void;
 }) => {
-  const [expanded, setExpanded] = useState(false);
+  const open = useManageStore((state) => state.orderPanelOpen);
+  const setOpen = useManageStore((state) => state.setOrderPanelOpen);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const normalized = useMemo(() => [
+    ...order.filter((file) => files.includes(file)),
+    ...files.filter((file) => !order.includes(file)).sort((a, b) => a.localeCompare(b)),
+  ], [files, order]);
 
-  const order: string[] = currentProfile?.mod_options_order ?? [];
-
-  const allFiles = useMemo(() => {
-    const files = installedMods.map((m) => m.file);
-    const inOrder = order.filter((f) => files.includes(f));
-    const rest = files
-      .filter((f) => !order.includes(f))
-      .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    return [...inOrder, ...rest];
-  }, [installedMods, order]);
-
-  const applyOrder = (newOrder: string[]) => {
-    onOrderChange(newOrder);
-    callRemote('set_mod_options_order', gamePath, currentProfileName, JSON.stringify(newOrder));
+  const apply = (next: string[]) => {
+    onChange(next);
+    void callRemote('set_mod_options_order', gamePath, profileName, JSON.stringify(next));
   };
-
-  const move = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= allFiles.length) return;
-    const next = [...allFiles];
-    [next[index], next[target]] = [next[target], next[index]];
-    applyOrder(next);
-  };
-
-  const moveToTop = (index: number) => {
-    if (index === 0) return;
-    const next = [...allFiles];
-    const [item] = next.splice(index, 1);
-    next.unshift(item);
-    applyOrder(next);
-  };
-
-  if (!currentProfile) return null;
 
   return (
-    <div className="mod-options-order">
-      <div className="moo-header" onClick={() => setExpanded((v) => !v)}>
-        <Icon name={expanded ? 'i-down' : 'i-right'} />
-        <span>{_i18n.t('Mod Options 顺序')}</span>
-      </div>
-      {expanded && (
-        <div className="moo-list">
-          {allFiles.map((file, i) => (
-            <div className="moo-item" key={file}>
-              <span className="moo-name" title={file}>{file}</span>
-              <span className="moo-btns">
-                <button
-                  className={i === 0 ? 'disabled' : ''}
-                  onClick={() => moveToTop(i)}
-                  title={_i18n.t('置顶')}
-                >⤒</button>
-                <button
-                  className={i === 0 ? 'disabled' : ''}
-                  onClick={() => move(i, -1)}
-                >↑</button>
-                <button
-                  className={i === allFiles.length - 1 ? 'disabled' : ''}
-                  onClick={() => move(i, 1)}
-                >↓</button>
-              </span>
+    <div className="order-panel">
+      <button className="side-panel-heading" onClick={() => setOpen(!open)}>
+        <span><Icon name={open ? 'i-down' : 'i-right'} /> {_i18n.t('Mod Options 顺序')}</span>
+        <small>{normalized.length}</small>
+      </button>
+      {open && (
+        <div className="order-list">
+          <p>{_i18n.t('拖拽项目调整游戏内 Mod Options 的显示顺序。')}</p>
+          {normalized.map((file, index) => (
+            <div
+              key={file}
+              className={`order-item ${dragging === file ? 'dragging' : ''}`}
+              draggable
+              onDragStart={(event) => {
+                setDragging(file);
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', file);
+              }}
+              onDragEnd={() => setDragging(null)}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const source = event.dataTransfer.getData('text/plain') || dragging;
+                if (!source || source === file) return;
+                const next = [...normalized];
+                const sourceIndex = next.indexOf(source);
+                if (sourceIndex < 0) return;
+                next.splice(sourceIndex, 1);
+                next.splice(index, 0, source);
+                apply(next);
+                setDragging(null);
+              }}
+            >
+              <span className="drag-handle">⠿</span>
+              <span className="order-index">{index + 1}</span>
+              <span className="order-name" title={file}>{file}</span>
             </div>
           ))}
         </div>
@@ -591,1051 +412,467 @@ const ModOptionsOrderPanel = ({
   );
 };
 
+let lastApplyRequest = 0;
+
 export const Manage = () => {
   const noEverest = enforceEverest();
-  if (noEverest) return noEverest;
-  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
-  const [autoDisableNewMods, setAutoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
-  const modPath = gamePath + '/Mods';
-
+  const modPath = `${gamePath}/Mods`;
+  const global = useGlobalContext();
+  const { installedMods, setInstalledMods } = useInstalledMods();
   const {
     profiles,
+    setProfiles,
     setProfilesCallback,
     currentProfileName,
     setCurrentProfileName,
     currentProfile,
     setCurrentProfile,
   } = useCurrentBlacklistProfile();
-
-  const { installedMods, setInstalledMods } = useInstalledMods();
-
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // Load persisted preference toggles from storage (each init* hook mounts
-  // the useEffect in createPersistedState that reads storage.root[key]).
-  initAutoDisableNewMods();
-  initExcludeDependents();
-  initCheckOptionalDep();
-  initFullTree();
-  initShowUpdate();
-  initShowDetailed();
-  const [excludeDependents, setExcludeDependents] = useExcludeDependents();
-  const [checkOptionalDep, setCheckOptionalDep] = useCheckOptionalDep();
-  const [fullTree, setFullTree] = useFullTree();
-  const [showUpdate, setShowUpdate] = useShowUpdate();
-  const [showDetailed, setShowDetailed] = useShowDetailed();
-  const [fullCheckRunning, setFullCheckRunning] = useState(false);
-
-  const installedModMap = useMemo(() => {
-    const modMap = new Map<string, ModInfo>();
-    const backendModMap = new Map<string, BackendModInfo>();
-    for (const mod of installedMods) {
-      backendModMap.set(mod.name, mod);
-    }
-
-    for (const mod of installedMods) {
-      const modInfo: ModInfo = {
-        name: mod.name,
-        id: mod.game_banana_id.toString(),
-        enabled: currentProfile?.mods.every((v) => v.name !== mod.name) ?? true,
-        version: mod.version,
-        dependencies: [],
-        dependedBy: [],
-        file: mod.file,
-        size: mod.size,
-        _deps: mod.deps,
-        resolveDependencies: () => {
-          const resolveModDependencies = (
-            current: BackendModInfo,
-            visiting = new Set<string>()
-          ) => {
-            if (visiting.has(current.name)) {
-              return { status: 'resolved', message: '' } as DepResolveResult;
-            }
-
-            visiting.add(current.name);
-
-            let status = 'resolved';
-            let message = '';
-
-            const mergeSM = (
-              s: {
-                status: DepState;
-                message: string;
-              },
-              name: string
-            ) => {
-              if (s.status === 'resolved') return;
-              if (status === 'resolved') {
-                status = s.status;
-              }
-              message += ` | ${name}(${s.status}):${s.message}`;
-            };
-
-            for (const dep of current.deps) {
-              if (
-                excludeList.includes(dep.name) ||
-                (dep.optional && !checkOptionalDep)
-              ) {
-                continue;
-              }
-
-              if (!modMap.has(dep.name)) {
-                if (altCovering(dep.name, modMap).length === 0) {
-                  mergeSM({ status: 'missing', message: '' }, dep.name);
-                }
-                continue;
-              }
-
-              const installedDep = modMap.get(dep.name)!;
-              if (compareVersion(installedDep.version, dep.version) < 0) {
-                mergeSM(
-                  {
-                    status: 'mismatched-version',
-                    message: `${current.name} requires ${installedDep.name} >= ${dep.version} but got ${installedDep.version}`,
-                  },
-                  dep.name
-                );
-              }
-
-              if (!installedDep.enabled && altCovering(dep.name, modMap).length === 0) {
-                mergeSM(
-                  {
-                    status: 'not-enabled',
-                    message: `${current.name} requires ${installedDep.name} to be enabled`,
-                  },
-                  dep.name
-                );
-              }
-
-              const depBackend = backendModMap.get(dep.name);
-              if (depBackend) {
-                const depRes = resolveModDependencies(depBackend, visiting);
-                mergeSM(depRes, dep.name);
-              }
-            }
-
-            visiting.delete(current.name);
-
-            return { status, message } as DepResolveResult;
-          };
-
-          return resolveModDependencies(mod);
-        },
-        duplicateCount: 1,
-        duplicateFiles: [mod.file],
-      };
-      if (modMap.has(mod.name)) {
-        modMap.get(mod.name)!.duplicateCount =
-          modMap.get(mod.name)!.duplicateCount + 1;
-        modMap.get(mod.name)!.duplicateFiles.push(mod.file);
-      } else {
-        modMap.set(mod.name, modInfo);
-      }
-    }
-
-    for (const modInfo of modMap.values()) {
-      for (const dep of modInfo._deps) {
-        if (!modMap.has(dep.name)) {
-          modInfo.dependencies.push({
-            name: dep.name,
-            id: dep.name,
-            version: dep.version,
-            _missing: true,
-            optional: dep.optional,
-          });
-        } else {
-          const depInfo = modMap.get(dep.name)!;
-          modInfo.dependencies.push({
-            ...depInfo,
-            optional: dep.optional,
-          });
-          if (!dep.optional) depInfo.dependedBy.push(modInfo);
-        }
-      }
-    }
-
-    return modMap;
-  }, [installedMods, currentProfile, profiles, checkOptionalDep]);
-
-  const [latestModInfos, setLatestModInfos] = useState<
-    [
-      string,
-      string,
-      string,
-      string // name, version, gbfileid, url
-    ][]
-  >([]);
-
-  useEffect(() => {
-    callRemote('get_mod_latest_info', (v) => {
-      setLatestModInfos(JSON.parse(v));
-    });
-  }, []);
-
-  const hasUpdateMods: {
-    name: string;
-    version: string;
-    gb_file: string;
-    current: string;
-    url: string;
-  }[] = useMemo(() => {
-    const mods = [];
-    for (const mod of installedMods) {
-      const latest = latestModInfos.find((v) => v[0] === mod.name);
-      if (latest && compareVersion(latest[1], mod.version) > 0) {
-        mods.push({
-          name: mod.name,
-          version: latest[1],
-          gb_file: latest[2],
-          current: mod.version,
-          url: latest[3],
-        });
-      }
-    }
-
-    // console.log('hasUpdateMods', JSON.stringify(mods, null, 4));
-
-    return mods;
-  }, [latestModInfos, installedModMap]);
-
-  const [hasUpdateBtnState, setHasUpdateBtnState] = useState(
-    _i18n.t('更新全部')
-  );
-
-  const modsTreeRef = useRef(null);
-  const [filter, setFilter] = useState('');
-
-  const checkFilter = (filter: string, mod: ModInfoProbablyMissing) => {
-    if (filter.includes('||'))
-      return filter.split('||').some((f) => checkFilter(f, mod));
-
-    const isSpecialFilter = (v) =>
-      v.startsWith(':') || v.startsWith('!') || v.startsWith('-');
-    const args = filter.split(' ');
-    const name = mod.name.toLowerCase();
-    const nameFilter = args
-      .filter((v) => !isSpecialFilter(v))
-      .join(' ')
-      .toLowerCase()
-      .trim();
-
-    // console.log(name, nameFilter);
-    if (!name.includes(nameFilter)) return false;
-
-    const checkSpecialFilter = (arg: string) => {
-      arg = arg.toLowerCase();
-
-      if (arg.startsWith(':') || arg.startsWith('-')) arg = arg.slice(1);
-
-      if (!('_missing' in mod)) {
-        if (arg.startsWith('enable')) {
-          return mod.enabled || alwaysOnMods.includes(mod.name);
-        } else if (arg.startsWith('disable')) {
-          return !checkSpecialFilter('enable');
-        }
-
-        if (arg.startsWith('hasdep') || arg.startsWith('havedep')) {
-          return mod.dependencies.length > 0;
-        }
-
-        if (
-          arg.startsWith('update') ||
-          arg.startsWith('hasupdate') ||
-          arg.startsWith('haveupdate') ||
-          arg.startsWith('outdate')
-        ) {
-          return hasUpdateMods.some((v) => v.name === mod.name);
-        }
-      }
-
-      if (arg.startsWith('!')) {
-        return !checkSpecialFilter(arg.slice(1));
-      }
-    };
-    for (const arg of args.filter(isSpecialFilter)) {
-      if (!checkSpecialFilter(arg)) return false;
-    }
-
-    return true;
-  };
-
-  const installedModsTree = useMemo(() => {
-    const modTree = new Map<string, ModInfoProbablyMissing>();
-
-    for (const mod of installedModMap.values()) {
-      modTree.set(mod.name, mod);
-    }
-
-    // Track the current DFS stack so dependency cycles terminate. Optional
-    // dependencies commonly form cycles (e.g. two mods that mutually enhance
-    // each other); without this guard, enabling "检查可选依赖" makes dfsRemove
-    // recurse forever and overflow the stack. Same idiom as renderPath
-    // cycle detection above and the `visited` sets used by other traversals.
-    const dfsPath = new Set<string>();
-    const dfsRemove = (mod: ModInfoProbablyMissing, isRoot = false) => {
-      if (dfsPath.has(mod.name)) return;
-      if (filter && checkFilter(filter, mod)) return;
-      if (!isRoot) {
-        modTree.delete(mod.name);
-      }
-      if ('_missing' in mod) {
-        return;
-      }
-
-      dfsPath.add(mod.name);
-      for (const dep of mod.dependencies) {
-        if ((dep as any)._missing || (dep.optional && !checkOptionalDep)) {
-          continue;
-        }
-
-        dfsRemove(dep);
-      }
-      dfsPath.delete(mod.name);
-    };
-
-    if (excludeDependents)
-      for (const mod of installedModMap.values()) {
-        dfsRemove(mod, true);
-      }
-
-    if (filter) {
-      for (const mod of modTree.values()) {
-        if (!checkFilter(filter, mod)) {
-          modTree.delete(mod.name);
-        }
-      }
-    }
-
-    return [...modTree.values()].sort((a, b) =>
-      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-    );
-  }, [installedModMap, excludeDependents, filter, checkOptionalDep]);
-
-  useEffect(() => {
-    // @ts-ignore
-    modsTreeRef.current?.scrollTo(0, 0);
-  }, [excludeDependents]);
-  const globalCtx = useGlobalContext();
-  const [modComments, setModComments] = useModComments()
-  const manageCtx = useMemo(
-    () => ({
-      hasUpdateMods,
-      switchAlwaysOn: (name: string, enabled: boolean) => {
-        if (enabled) setAlwaysOnMods([...alwaysOnMods, name]);
-        else setAlwaysOnMods(alwaysOnMods.filter((v) => v !== name));
-      },
-      isCoveredByAlt: (name: string) => altCovering(name, installedModMap),
-      alwaysOnMods,
-      autoDisableNewMods,
-      modComments, setModComment(name: string, comment: string) {
-        setModComments({
-          ...modComments,
-          [name]: comment
-        });
-      },
-      batchSwitchMod: (names: string[], enabled: boolean) => {
-        if (!enabled) names = names.filter((v) => !alwaysOnMods.includes(v));
-        if (!currentProfile) return;
-        const files: string[] = [];
-        let nextMods = currentProfile.mods;
-        for (const mod of names) {
-          const backendMod = installedMods.find((v) => v.name === mod);
-          if (backendMod) {
-            files.push(backendMod.file);
-            if (!enabled && !nextMods.some((item) => item.name === backendMod.name)) {
-              nextMods = [...nextMods, {
-                name: backendMod.name,
-                file: backendMod.file,
-              }];
-            }
-          }
-        }
-
-        callRemote(
-          'switch_mod_blacklist_profile',
-          gamePath,
-          currentProfileName,
-          JSON.stringify(names),
-          JSON.stringify(files),
-          enabled
-        );
-
-        if (enabled) nextMods = nextMods.filter((v) => !names.includes(v.name));
-
-        setCurrentProfile({ ...currentProfile, mods: nextMods });
-        setHasUnsavedChanges(true);
-
-        lastApplyReq = Date.now();
-        let thisReq = lastApplyReq;
-        setTimeout(() => {
-          if (lastApplyReq === thisReq) {
-            globalCtx.blacklist.switchProfile(manageCtx.currentProfileName);
-            setHasUnsavedChanges(false);
-          }
-        }, 600);
-      },
-      switchMod: (
-        names: string | string[],
-        enabled: boolean,
-        recursive = true
-      ) => {
-        if (!currentProfile) {
-          createPopup(() => {
-            const { hide } = useContext(PopupContext);
-            return (
-              <div className="popup-content">
-                <div className="title">{_i18n.t('未选择 Profile')}</div>
-                <div className="content">{_i18n.t('请先选择一个 Profile 后再启用/禁用 Mod')}</div>
-                <div className="buttons">
-                  <button onClick={hide}>{_i18n.t('确定')}</button>
-                </div>
-              </div>
-            );
-          });
-          return;
-        }
-
-        const switchList: string[] = [];
-        const excludeFromAutoEnableList = [
-          'CelesteNet.Client',
-          'MiaoNet',
-          'Miao.CelesteNet.Client',
-        ];
-
-        const visited = new Set<string>();
-
-        const addToSwitchList = (name: string) => {
-          if (visited.has(name)) return;
-          visited.add(name);
-
-          const mod = installedModMap.get(name);
-          if (mod) {
-            mod.enabled = enabled;
-            switchList.push(name);
-          } else {
-            return;
-          }
-
-          if (recursive) {
-            if (enabled) {
-              const deps = mod?.dependencies
-                .filter((v) => checkOptionalDep || !v.optional)
-
-              // console.log('also enable', deps?.map(v => v.name).join(','), 'for', name);
-
-              for (const dep of deps ?? []) {
-                if (!('_missing' in dep)) {
-                  if (excludeFromAutoEnableList.includes(dep.name)) continue;
-                  addToSwitchList(dep.name);
-                }
-              }
-            } else {
-              const orphanDeps = mod?.dependencies.filter(
-                (v) =>
-                  !('_missing' in v) &&
-                  !v.dependedBy.some((v) => v.enabled && v.name !== name)
-              ).filter((v) =>
-                checkOptionalDep || !v.optional
-              )
-
-              for (const dep of orphanDeps ?? []) {
-                addToSwitchList(dep.name);
-              }
-            }
-          }
-        };
-
-        if (typeof names === 'string') {
-          names = [names];
-        }
-        for (const name of names) {
-          addToSwitchList(name);
-        }
-
-        manageCtx.batchSwitchMod(switchList, enabled);
-
-        setHasUnsavedChanges(true);
-      },
-      switchProfile: (name: string) => {
-        if (hasUnsavedChanges) return;
-        globalCtx.blacklist.switchProfile(name);
-        setHasUnsavedChanges(false);
-      },
-      removeProfile: (name: string) => {
-        callRemote('remove_mod_blacklist_profile', gamePath, name);
-        setProfilesCallback((profiles) =>
-          profiles.filter((v) => v.name !== name)
-        );
-        if (currentProfileName === name) {
-          setCurrentProfileName(profiles[0].name);
-        }
-      },
-      createProfile: (name: string) => {
-        callRemote('new_mod_blacklist_profile', gamePath, name);
-        setProfilesCallback((profiles) => profiles.concat({
-          name,
-          mods: [],
-          mod_options_order: [],
-        }));
-        setCurrentProfileName(name);
-      },
-      deleteMod: (name: string) => {
-        const modToDelete = installedModMap.get(name);
-        if (!modToDelete) return;
-
-        // Find mods that depend on this mod
-        const dependentMods = modToDelete.dependedBy;
-
-        // Find orphaned mods (mods that will have no references after deletion)
-        const orphanedMods: ModInfo[] = [];
-        const visited = new Set<string>();
-
-        const checkOrphans = (mod: ModInfo) => {
-          if (visited.has(mod.name)) return;
-          visited.add(mod.name);
-
-          for (const dep of mod.dependencies) {
-            if ('_missing' in dep) continue;
-            const depInfo = installedModMap.get(dep.name);
-            if (!depInfo) continue;
-
-            // Check if this dependency will be orphaned after deletion
-            const remainingDependents = depInfo.dependedBy.filter(
-              m => m.name !== name && !orphanedMods.includes(m)
-            );
-
-            if (remainingDependents.length === 0 && !orphanedMods.includes(depInfo)) {
-              orphanedMods.push(depInfo);
-              checkOrphans(depInfo);
-            }
-          }
-        };
-        checkOrphans(modToDelete);
-
-        createPopup(() => {
-          const { hide } = useContext(PopupContext);
-          const [selectedOrphans, setSelectedOrphans] = useState<string[]>(orphanedMods.map(m => m.name));
-
-          const handleDelete = () => {
-            const modsToDelete = [name, ...selectedOrphans];
-            callRemote('delete_mods', gamePath, JSON.stringify(modsToDelete), () => {
-              manageCtx.reloadMods();
-              hide();
-            });
-          };
-
-          return (
-            <div className="delete-mod-popup">
-              <div className="title">{_i18n.t('删除 Mod 确认')}</div>
-
-              {dependentMods.length > 0 && (
-                <div className="warning-section">
-                  <div className="warning-title">{_i18n.t('⚠️ 警告：以下 Mod 依赖此 Mod')}</div>
-                  <div className="dependent-mods">
-                    {dependentMods.map(mod => (
-                      <div key={mod.name} className="dependent-mod">
-                        {mod.name} {mod.version} {mod.enabled ? '' : _i18n.t('(已禁用)')}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="delete-target">
-                {_i18n.t('将要删除：')} <strong>{name} {modToDelete.version}</strong>
-              </div>
-
-              {orphanedMods.length > 0 && (
-                <div className="orphan-section">
-                  <div className="orphan-title">{_i18n.t('以下 Mod 将不再被任何 Mod 引用，是否一并删除？')}</div>
-                  <div className="orphan-list">
-                    {orphanedMods.map(mod => (
-                      <label key={mod.name} className="orphan-item">
-                        <input
-                          type="checkbox"
-                          checked={selectedOrphans.includes(mod.name)}
-                          onChange={(e) => {
-                            const target = e.target as HTMLInputElement;
-                            if (target.checked) {
-                              setSelectedOrphans([...selectedOrphans, mod.name]);
-                            } else {
-                              setSelectedOrphans(selectedOrphans.filter(n => n !== mod.name));
-                            }
-                          }}
-                        />
-                        <span>{mod.name} {mod.version}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="buttons">
-                <button onClick={hide}>{_i18n.t('取消')}</button>
-                <button className="delete-confirm" onClick={handleDelete}>
-                  {_i18n.t('确认删除')}
-                </button>
-              </div>
-            </div>
-          );
-        });
-      },
-      gamePath,
-      modFolder: modPath,
-      currentProfile,
-      currentProfileName,
-      reloadMods() {
-        callRemote('get_installed_mods', modPath, (data: string) => {
-          setInstalledMods(JSON.parse(data));
-          if (currentProfileName) {
-            globalCtx.blacklist.switchProfile(currentProfileName);
-          }
-        });
-      },
-      fullTree,
-      showUpdate,
-      showDetailed,
-    }),
-    [
-      currentProfile,
-      installedMods,
-      installedModMap,
-      gamePath,
-      modPath,
-      fullTree,
-      showUpdate,
-      showDetailed,
-      alwaysOnMods,
-      modComments,
-      checkOptionalDep
-    ]
-  );
-
+  const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
+  const [comments, setComments] = useModComments();
   const downloadMod = useDownloadStore((state) => state.downloadMod);
+  const [catalog, setCatalog] = useState<CatalogMod[]>([]);
+  const [latestRaw, setLatestRaw] = useState<[string, string, string, string][]>([]);
+  const [updateStates, setUpdateStates] = useState<Record<string, string>>({});
+  const [fullCheckRunning, setFullCheckRunning] = useState(false);
+  const [fixingDependencies, setFixingDependencies] = useState(false);
+  const [profileNameInput, setProfileNameInput] = useState('');
+  const filterWrapRef = useRef<HTMLDivElement>(null);
+  const actionsWrapRef = useRef<HTMLDivElement>(null);
 
-  const startFullModCheck = () => {
-    if (fullCheckRunning) return;
-    setFullCheckRunning(true);
+  const nodes = useManageStore((state) => state.nodes);
+  const filters = useManageStore((state) => state.filters);
+  const hydrate = useManageStore((state) => state.hydrate);
+  const setNodesEnabled = useManageStore((state) => state.setNodesEnabled);
+  const filterOpen = useManageStore((state) => state.filterOpen);
+  const setFilterOpen = useManageStore((state) => state.setFilterOpen);
+  const actionMenuOpen = useManageStore((state) => state.actionMenuOpen);
+  const setActionMenuOpen = useManageStore((state) => state.setActionMenuOpen);
+  const setQuery = useManageStore((state) => state.setQuery);
+  const setEnabledFilter = useManageStore((state) => state.setEnabledFilter);
+  const setHealthFilter = useManageStore((state) => state.setHealthFilter);
+  const toggleType = useManageStore((state) => state.toggleType);
+  const setUpdateOnly = useManageStore((state) => state.setUpdateOnly);
+  const setShowHiddenTypes = useManageStore((state) => state.setShowHiddenTypes);
+  const resetFilters = useManageStore((state) => state.resetFilters);
+  const collapseAll = useManageStore((state) => state.collapseAll);
+  const expandAll = useManageStore((state) => state.expandAll);
 
-    createPopup(() => {
-      const { hide } = useContext(PopupContext);
-      const [progress, setProgress] = useState<FullModCheckProgress>({
-        current: 0,
-        total: 0,
-        file: '',
-        done: false,
-        issues: [],
+  const rootOnly = useAppStore((state) => state.excludeDependents);
+  const checkOptional = useAppStore((state) => state.checkOptionalDep);
+  const fullTree = useAppStore((state) => state.fullTree);
+  const showUpdate = useAppStore((state) => state.showUpdate);
+  const showDetailed = useAppStore((state) => state.showDetailed);
+  const autoToggleDependencies = useAppStore((state) => state.autoToggleDependencies);
+  const autoToggleOptionalDependencies = useAppStore((state) => state.autoToggleOptionalDependencies);
+  const deleteOrphansByDefault = useAppStore((state) => state.deleteOrphansByDefault);
+  const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
+  const cacheTtl = useAppStore((state) => state.modCacheTtlHours);
+
+  const { metaByName, fullByName } = useMemo(() => catalogMaps(catalog), [catalog]);
+
+  useEffect(() => {
+    if (!gamePath) return;
+    void callRemote<string>('get_current_profile', gamePath).then(setCurrentProfileName).catch(console.error);
+    callRemote('get_blacklist_profiles', gamePath, (data: string) => setProfiles(JSON.parse(data)));
+  }, [gamePath]);
+
+  useEffect(() => {
+    setCurrentProfile(profiles.find((profile) => profile.name === currentProfileName) ?? profiles[0] ?? null);
+  }, [currentProfileName, profiles]);
+
+  useEffect(() => {
+    loadModCatalog(cacheTtl).then(setCatalog).catch(console.error);
+    callRemote('get_mod_latest_info', (data: string) => setLatestRaw(JSON.parse(data)));
+  }, [cacheTtl]);
+
+  useEffect(() => {
+    hydrate({
+      installedMods,
+      disabledNames: currentProfile?.mods.map((mod) => mod.name) ?? [],
+      catalogByName: metaByName,
+    });
+  }, [installedMods, currentProfile, metaByName]);
+
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (filterOpen && !filterWrapRef.current?.contains(event.target as Node)) setFilterOpen(false);
+      if (actionMenuOpen && !actionsWrapRef.current?.contains(event.target as Node)) setActionMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [actionMenuOpen, filterOpen]);
+
+  const updates = useMemo<LatestModInfo[]>(() => installedMods.flatMap((mod) => {
+    const latest = latestRaw.find((item) => item[0] === mod.name);
+    if (!latest || compareVersion(latest[1], mod.version) <= 0) return [];
+    return [{ name: mod.name, version: latest[1], gbFile: latest[2], current: mod.version, url: latest[3] }];
+  }), [installedMods, latestRaw]);
+  const updateNames = useMemo(() => new Set(updates.map((update) => update.name)), [updates]);
+
+  const visibleRoots = useMemo(() => selectVisibleRootNames({
+    nodes,
+    filters,
+    rootOnly,
+    includeOptional: checkOptional,
+    hiddenTypes: hiddenModTypes,
+    updateNames,
+  }), [nodes, filters, rootOnly, checkOptional, hiddenModTypes, updateNames]);
+
+  const missingDependencies = useMemo(() => {
+    const missing = new Map<string, string>();
+    for (const node of Object.values(nodes)) {
+      for (const dependency of node.dependencies) {
+        if (excludedDependencyNames.has(dependency.name) || (dependency.optional && !checkOptional)) continue;
+        if (!nodes[dependency.name]) missing.set(dependency.name, dependency.version);
+      }
+    }
+    return [...missing.entries()].map(([name, version]) => ({ name, version }));
+  }, [nodes, checkOptional]);
+
+  const applyProfileSoon = useCallback(() => {
+    const request = Date.now();
+    lastApplyRequest = request;
+    window.setTimeout(() => {
+      if (lastApplyRequest === request && currentProfileName) global.blacklist.switchProfile(currentProfileName);
+    }, 350);
+  }, [currentProfileName, global.blacklist]);
+
+  const batchSwitch = useCallback((names: string[], enabled: boolean) => {
+    if (!currentProfile || names.length === 0) return;
+    const effectiveNames = enabled ? names : names.filter((name) => !alwaysOnMods.includes(name));
+    const files = effectiveNames.map((name) => nodes[name]?.file).filter(Boolean) as string[];
+    if (effectiveNames.length === 0) return;
+    void callRemote(
+      'switch_mod_blacklist_profile',
+      gamePath,
+      currentProfileName,
+      JSON.stringify(effectiveNames),
+      JSON.stringify(files),
+      enabled,
+    );
+    let nextMods = currentProfile.mods;
+    if (enabled) nextMods = nextMods.filter((item) => !effectiveNames.includes(item.name));
+    else {
+      const additions = effectiveNames
+        .filter((name) => !nextMods.some((item) => item.name === name))
+        .map((name) => ({ name, file: nodes[name].file }));
+      nextMods = [...nextMods, ...additions];
+    }
+    setCurrentProfile({ ...currentProfile, mods: nextMods });
+    setNodesEnabled(effectiveNames, enabled);
+    applyProfileSoon();
+  }, [alwaysOnMods, applyProfileSoon, currentProfile, currentProfileName, gamePath, nodes]);
+
+  const switchNodes = useCallback((input: string | string[], enabled: boolean, recursive = true) => {
+    const names = Array.isArray(input) ? input : [input];
+    batchSwitch(collectSwitchNames({
+      names,
+      enabled,
+      nodes,
+      includeDependencies: recursive && autoToggleDependencies,
+      includeOptional: autoToggleOptionalDependencies,
+    }), enabled);
+  }, [autoToggleDependencies, autoToggleOptionalDependencies, batchSwitch, nodes]);
+
+  const reloadMods = useCallback(() => {
+    callRemote('get_installed_mods', modPath, (data: string) => setInstalledMods(JSON.parse(data)));
+  }, [modPath]);
+
+  const downloadMissing = useCallback((name: string) => {
+    callRemote('get_mod_update', name, (data: string) => {
+      if (!data) return;
+      const [fileId] = JSON.parse(data);
+      downloadMod(name, fileId, { onFinished: reloadMods });
+    });
+  }, [downloadMod, reloadMods]);
+
+  const updateNode = useCallback((name: string): Promise<boolean> => {
+    const update = updates.find((item) => item.name === name);
+    if (!update || updateStates[name]) return Promise.resolve(false);
+    setUpdateStates((state) => ({ ...state, [name]: _i18n.t('更新中…') }));
+    return new Promise((resolve) => {
+      downloadMod(name, update.gbFile === '-1' ? update.url : update.gbFile, {
+        force: true,
+        onProgress: (_task, progress) => setUpdateStates((state) => ({ ...state, [name]: `${progress.toFixed(0)}%` })),
+        onFinished: () => {
+          setUpdateStates((state) => ({ ...state, [name]: _i18n.t('已更新') }));
+          reloadMods();
+          resolve(true);
+        },
+        onFailed: () => {
+          setUpdateStates((state) => ({ ...state, [name]: _i18n.t('更新失败') }));
+          resolve(false);
+        },
       });
-      const [deleteState, setDeleteState] = useState<'idle' | 'deleting' | 'done' | 'failed'>('idle');
+    });
+  }, [downloadMod, reloadMods, updateStates, updates]);
 
-      useEffect(() => {
-        callRemote('check_all_mod_contents', modPath, (data: string) => {
-          const next = JSON.parse(data) as FullModCheckProgress;
-          setProgress(next);
-          if (next.done) {
-            setFullCheckRunning(false);
-          }
-        });
-      }, []);
-
-      const progressValue = progress.total === 0 ? 0 : progress.current;
-      const issueCount = progress.issues.length;
-      const deleteBrokenMods = () => {
-        if (deleteState === 'deleting' || issueCount === 0) return;
-        setDeleteState('deleting');
-        callRemote(
-          'delete_mod_files',
-          modPath,
-          JSON.stringify(progress.issues.map((issue) => issue.file)),
-          () => {
-            setDeleteState('done');
-            manageCtx.reloadMods();
-          }
-        );
-      };
-
+  const deleteNode = useCallback((name: string) => {
+    const node = nodes[name];
+    if (!node) return;
+    const orphaned: string[] = [];
+    const visited = new Set<string>();
+    const visit = (nodeName: string) => {
+      if (visited.has(nodeName)) return;
+      visited.add(nodeName);
+      for (const dependency of nodes[nodeName]?.dependencies ?? []) {
+        const dependencyNode = nodes[dependency.name];
+        if (!dependencyNode) continue;
+        const remaining = dependencyNode.dependedBy.filter((dependent) => dependent !== name && !orphaned.includes(dependent));
+        if (remaining.length === 0 && !orphaned.includes(dependency.name)) {
+          orphaned.push(dependency.name);
+          visit(dependency.name);
+        }
+      }
+    };
+    visit(name);
+    createPopup(() => {
+      const popup = useContext(PopupContext);
+      const [selected, setSelected] = useState<string[]>(deleteOrphansByDefault ? orphaned : []);
       return (
-        <div className="popup-content full-mod-check-popup">
-          <div className="title">{_i18n.t('检查全部 Mod 是否正常')}</div>
-          {!progress.done ? (
-            <div className="content full-mod-check-content">
-              <div className="progress-wrap">
-                <ProgressIndicator
-                  value={progressValue}
-                  max={progress.total || 1}
-                  size={80}
-                  lineWidth={6}
-                />
-              </div>
-              <p>{_i18n.t('正在检查 Mod 实际内容，这可能需要一些时间。')}</p>
-              <p>
-                {_i18n.t('进度：{current}/{total}', {
-                  current: progress.current,
-                  total: progress.total,
-                })}
-              </p>
-              {progress.file && (
-                <p>
-                  {_i18n.t('当前文件：{file}', { file: progress.file })}
-                </p>
-              )}
+        <div className="delete-mod-popup">
+          <div className="title">{_i18n.t('删除 Mod')}</div>
+          <div className="delete-target"><strong>{name}</strong><span>{node.version} · {node.file}</span></div>
+          {node.dependedBy.length > 0 && (
+            <div className="warning-section">
+              <strong>{_i18n.t('以下 Mod 依赖此项目')}</strong>
+              <span>{node.dependedBy.join(', ')}</span>
             </div>
-          ) : (
-            <div className="content full-mod-check-content">
-              <p>
-                {issueCount === 0
-                  ? _i18n.t('检查完成，未发现损坏的 Mod 压缩包。')
-                  : _i18n.t('检查完成，发现 {count} 个损坏或无法完整读取的 Mod 压缩包。', {
-                    count: issueCount,
-                  })}
-              </p>
-              {issueCount > 0 && (
-                <div className="issues">
-                  {progress.issues.map((issue) => (
-                    <div className="issue-item" key={issue.file}>
-                      <div className="issue-file">{issue.file}</div>
-                      <div className="issue-error">{issue.error}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {deleteState === 'done' && (
-                <p>{_i18n.t('已删除损坏的 Mod 压缩包。')}</p>
-              )}
+          )}
+          {orphaned.length > 0 && (
+            <div className="orphan-section">
+              <strong>{_i18n.t('同时删除不再被依赖的 Mod')}</strong>
+              <div className="orphan-list">
+                {orphaned.map((orphan) => (
+                  <label key={orphan}>
+                    <input type="checkbox" checked={selected.includes(orphan)} onChange={(event) => setSelected(event.target.checked
+                      ? [...selected, orphan]
+                      : selected.filter((value) => value !== orphan))} />
+                    <span>{orphan}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           )}
           <div className="buttons">
-            {progress.done && issueCount > 0 && deleteState !== 'done' && (
-              <button onClick={deleteBrokenMods}>
-                {deleteState === 'deleting'
-                  ? _i18n.t('删除中...')
-                  : _i18n.t('删除这些损坏 Mod')}
-              </button>
-            )}
-            <button
-              onClick={() => {
-                if (!progress.done) return;
-                hide();
-              }}
-            >
-              {progress.done ? _i18n.t('确定') : _i18n.t('检查中...')}
-            </button>
+            <button onClick={popup.hide}>{_i18n.t('取消')}</button>
+            <button className="delete-confirm" onClick={() => {
+              callRemote('delete_mods', gamePath, JSON.stringify([name, ...selected]), () => {
+                reloadMods();
+                popup.hide();
+              });
+            }}>{_i18n.t('确认删除')}</button>
+          </div>
+        </div>
+      );
+    });
+  }, [deleteOrphansByDefault, gamePath, nodes, reloadMods]);
+
+  const startFullCheck = () => {
+    if (fullCheckRunning) return;
+    setFullCheckRunning(true);
+    createPopup(() => {
+      const popup = useContext(PopupContext);
+      const [progress, setProgress] = useState<FullModCheckProgress>({ current: 0, total: 0, file: '', done: false, issues: [] });
+      useEffect(() => {
+        callRemote('check_all_mod_contents', modPath, (data: string) => {
+          const next = JSON.parse(data);
+          setProgress(next);
+          if (next.done) setFullCheckRunning(false);
+        });
+      }, []);
+      return (
+        <div className="full-mod-check-popup">
+          <div className="title">{_i18n.t('检查 Mod 压缩包')}</div>
+          {!progress.done ? (
+            <div className="check-progress"><ProgressIndicator value={progress.current} max={progress.total || 1} size={76} /><span>{progress.current}/{progress.total}</span><small>{progress.file}</small></div>
+          ) : progress.issues.length === 0 ? (
+            <div className="check-result success"><Icon name="i-tick" /><span>{_i18n.t('全部 Mod 压缩包均可正常读取')}</span></div>
+          ) : (
+            <div className="check-result"><strong>{_i18n.t('发现 {count} 个问题', { count: progress.issues.length })}</strong>
+              <div className="issue-list">{progress.issues.map((issue) => <div key={issue.file}><b>{issue.file}</b><span>{issue.error}</span></div>)}</div>
+            </div>
+          )}
+          <div className="buttons">
+            {progress.done && progress.issues.length > 0 && <button onClick={() => callRemote('delete_mod_files', modPath, JSON.stringify(progress.issues.map((issue) => issue.file)), () => { reloadMods(); popup.hide(); })}>{_i18n.t('删除损坏文件')}</button>}
+            <button disabled={!progress.done} onClick={popup.hide}>{progress.done ? _i18n.t('完成') : _i18n.t('检查中…')}</button>
           </div>
         </div>
       );
     }, { cancelable: false });
   };
 
-  // Collect all unique missing dependencies across all installed mods
-  const missingDeps = useMemo(() => {
-    const missing = new Map<string, string>(); // name -> version
-    for (const mod of installedModMap.values()) {
-      for (const dep of mod._deps) {
-        if (excludeList.includes(dep.name)) continue;
-        if (dep.optional && !checkOptionalDep) continue;
-        if (!installedModMap.has(dep.name)) {
-          if (!missing.has(dep.name)) {
-            missing.set(dep.name, dep.version);
-          }
-        }
-      }
-    }
-    return [...missing.entries()].map(([name, version]) => ({ name, version }));
-  }, [installedModMap]);
+  const actions = useMemo<ManageActions>(() => ({
+    switchNodes,
+    deleteNode,
+    updateNode,
+    downloadMissing,
+    showDetails(name) {
+      const node = nodes[name];
+      if (node) showModDetails(node, fullByName.get(name.trim().toLocaleLowerCase()));
+    },
+    toggleAlwaysOn(name) {
+      setAlwaysOnMods(alwaysOnMods.includes(name)
+        ? alwaysOnMods.filter((value) => value !== name)
+        : [...alwaysOnMods, name]);
+    },
+    updateNames: showUpdate ? updateNames : new Set<string>(),
+    updateStates,
+    alwaysOnMods,
+    comments,
+    setComment(name, comment) { setComments({ ...comments, [name]: comment }); },
+    checkOptional,
+    fullTree,
+    showDetailed,
+  }), [alwaysOnMods, checkOptional, comments, deleteNode, downloadMissing, fullByName, fullTree, nodes, setAlwaysOnMods, setComments, showDetailed, showUpdate, switchNodes, updateNames, updateNode, updateStates]);
 
-  const [fixDepsState, setFixDepsState] = useState<'idle' | 'downloading'>('idle');
+  const activeFilterCount = filters.types.length
+    + Number(filters.enabled !== 'all')
+    + Number(filters.health !== 'all')
+    + Number(filters.updateOnly)
+    + Number(filters.showHiddenTypes);
+
+  if (noEverest) return noEverest;
 
   return (
-    <div className="manage">
-      <modListContext.Provider value={manageCtx}>
-        <div className="modList">
-          <div className="title">
-            {_i18n.t('Mod 列表')}
+    <div className="manage-page">
+      <ManageActionsContext.Provider value={actions}>
+        <section className="manage-main">
+          <header className="manage-toolbar">
+            <div className="manage-title-block">
+              <h1>{_i18n.t('Mod 管理')}</h1>
+              <span>{_i18n.t('{visible} / {total} 个 Mod', { visible: visibleRoots.length, total: Object.keys(nodes).length })}</span>
+            </div>
+            <div className="manage-search">
+              <Icon name="search" />
+              <input value={filters.query} onChange={(event) => setQuery(event.target.value)} placeholder={_i18n.t('搜索名称、备注、作者或文件…')} />
+              {filters.query && <button onClick={() => setQuery('')}><Icon name="i-cross" /></button>}
+            </div>
+            <div className="toolbar-menu-wrap" ref={filterWrapRef}>
+              <Button className={`toolbar-icon-button ${filterOpen ? 'active' : ''}`} onClick={() => setFilterOpen(!filterOpen)}>
+                <Icon name="filter" />
+                {activeFilterCount > 0 && <span className="toolbar-count">{activeFilterCount}</span>}
+              </Button>
+              {filterOpen && (
+                <div className="manage-filter-popup">
+                  <div className="popup-heading"><strong>{_i18n.t('筛选已下载 Mod')}</strong><button onClick={resetFilters}>{_i18n.t('重置')}</button></div>
+                  <label><span>{_i18n.t('启用状态')}</span><select value={filters.enabled} onChange={(event) => setEnabledFilter(event.target.value as typeof filters.enabled)}>
+                    <option value="all">{_i18n.t('全部')}</option><option value="enabled">{_i18n.t('已启用')}</option><option value="disabled">{_i18n.t('已禁用')}</option>
+                  </select></label>
+                  <label><span>{_i18n.t('依赖状态')}</span><select value={filters.health} onChange={(event) => setHealthFilter(event.target.value as typeof filters.health)}>
+                    <option value="all">{_i18n.t('全部')}</option><option value="healthy">{_i18n.t('正常')}</option><option value="issues">{_i18n.t('有问题')}</option><option value="missing">{_i18n.t('缺失依赖')}</option>
+                  </select></label>
+                  <div className="filter-checks">
+                    <label><input type="checkbox" checked={filters.updateOnly} onChange={(event) => setUpdateOnly(event.target.checked)} />{_i18n.t('仅显示可更新')}</label>
+                    <label><input type="checkbox" checked={filters.showHiddenTypes} onChange={(event) => setShowHiddenTypes(event.target.checked)} />{_i18n.t('显示设置中隐藏的类型')}</label>
+                  </div>
+                  <div className="filter-type-title">{_i18n.t('类型')}</div>
+                  <div className="filter-type-chips">
+                    {MOD_TYPE_OPTIONS.map((type) => <button key={type} className={filters.types.includes(type) ? 'selected' : ''} onClick={() => toggleType(type)}>{type}</button>)}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Button className="toolbar-icon-button" onClick={() => global.pageController.setPage('Settings')} title={_i18n.t('管理设置')}><Icon name="settings" /></Button>
+            <div className="toolbar-menu-wrap" ref={actionsWrapRef}>
+              <Button className={`toolbar-action-button ${actionMenuOpen ? 'active' : ''}`} onClick={() => setActionMenuOpen(!actionMenuOpen)}>
+                {_i18n.t('操作')} <Icon name="i-down" />
+              </Button>
+              {actionMenuOpen && (
+                <div className="manage-action-menu">
+                  <button onClick={() => callRemote('open_url', modPath)}><Icon name="file" />{_i18n.t('打开 Mods 文件夹')}</button>
+                  <button onClick={() => batchSwitch(Object.keys(nodes), true)}><Icon name="i-tick" />{_i18n.t('启用全部')}</button>
+                  <button onClick={() => batchSwitch(Object.keys(nodes), false)}><Icon name="i-cross" />{_i18n.t('禁用全部')}</button>
+                  <button onClick={() => switchNodes(Object.values(nodes).filter((node) => node.enabled).map((node) => node.name), true)}><Icon name="replay" />{_i18n.t('启用全部依赖')}</button>
+                  <button onClick={expandAll}><Icon name="i-down" />{_i18n.t('展开全部')}</button>
+                  <button onClick={collapseAll}><Icon name="i-right" />{_i18n.t('收起全部')}</button>
+                  <button onClick={startFullCheck}><Icon name="warn" />{fullCheckRunning ? _i18n.t('检查中…') : _i18n.t('检查 Mod 压缩包')}</button>
+                </div>
+              )}
+            </div>
+          </header>
 
-            <input
-              placeholder={_i18n.t('筛选 Mod')}
-              className="filter-input"
-              type="text"
-              value={filter}
-              onChange={(e) => {
-                setFilter((e.target as any).value);
-              }}
-            />
-          </div>
-          <div className="opers">
-            <Button
-              onClick={() => {
-                callRemote('open_url', gamePath + '/Mods');
-              }}
-            >
-              {_i18n.t('打开 Mods 文件夹')}
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              onClick={() => {
-                manageCtx.switchMod(
-                  [...installedModsTree.values()]
-                    .filter((v) => {
-                      return ('_missing' in v) || v.enabled;
-                    })
-                    .map((v) => v.name),
-                  false
-                );
-                manageCtx.switchMod(
-                  alwaysOnMods, true, true
-                )
-              }}
-            >
-              {_i18n.t('禁用全部')}
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              onClick={() => {
-                manageCtx.batchSwitchMod(
-                  installedMods.map((v) => v.name),
-                  true
-                );
-              }}
-            >
-              {_i18n.t('启用全部')}
-            </Button>
-            &nbsp;&nbsp;
-            <Button
-              onClick={() => {
-                manageCtx.switchMod(
-                  [...installedModMap.values()]
-                    .filter((v) => v.enabled)
-                    .map((v) => v.name),
-                  true
-                );
-              }}
-            >
-              {_i18n.t('启用全部依赖')}
-            </Button>
-          </div>
-          <div className="options">
-            <label>
-              <input
-                type="checkbox"
-                checked={excludeDependents}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setExcludeDependents(e.target.checked);
-                }}
-              />
-              {_i18n.t('只显示不被依赖的Mod')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={checkOptionalDep}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setCheckOptionalDep(e.target.checked);
-                }}
-              />
-
-              {_i18n.t('检查可选依赖')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={fullTree}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setFullTree(e.target.checked);
-                }}
-              />
-
-              {_i18n.t('显示完整树')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showUpdate}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setShowUpdate(e.target.checked);
-                }}
-              />
-
-              {_i18n.t('显示更新')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={autoDisableNewMods}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setAutoDisableNewMods(e.target.checked);
-                }}
-              />
-
-              {_i18n.t('自动禁用新安装的Mod')}
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showDetailed}
-                onChange={(e) => {
-                  // @ts-ignore
-                  setShowDetailed(e.target.checked);
-                }}
-              />
-
-              {_i18n.t('显示详细信息')}
-            </label>
-          </div>
-          <div
-            className="opers"
-            style={{
-              marginTop: '5px',
-            }}
-          >
-            <button onClick={startFullModCheck} disabled={fullCheckRunning}>
-              {fullCheckRunning
-                ? _i18n.t('检查中...')
-                : _i18n.t('检查全部 Mod 是否正常')}
-            </button>
-            {showUpdate && hasUpdateMods.length !== 0 && (
-              <button
-                onClick={async () => {
-                  if (hasUpdateBtnState !== _i18n.t('更新全部')) return;
-                  setHasUpdateBtnState(_i18n.t('更新中'));
-                  let updateFailed = false;
-                  for (const mod of hasUpdateMods) {
-                    // Each root download resolves its dependency tree. Running roots in
-                    // parallel lets multiple trees download the same shared dependency
-                    // archive at once, so update them one by one instead.
-                    const succeeded = await new Promise<boolean>((resolve) => {
-                      downloadMod(
-                        mod.name,
-                        mod.gb_file === '-1' ? mod.url : mod.gb_file,
-                        {
-                          autoDisableNewMods: manageCtx.autoDisableNewMods,
-                          onProgress: (task, progress) => {
-                            console.log(task, progress);
-                          },
-                          onFinished: () => resolve(true),
-                          onFailed: () => {
-                            console.log('failed');
-                            resolve(false);
-                          },
-                          force: true,
-                        }
-                      );
-                    });
-                    updateFailed ||= !succeeded;
-                  }
-                  setHasUpdateBtnState(
-                    updateFailed
-                      ? _i18n.t('更新失败，请查看左下角')
-                      : _i18n.t('更新完成')
-                  );
-                  manageCtx.reloadMods();
-                }}
-              >
-                {hasUpdateBtnState}
-              </button>
-            )}&nbsp;
-            {missingDeps.length > 0 && (
-              <button
-                onClick={() => {
-                  if (fixDepsState === 'downloading') return;
-                  setFixDepsState('downloading');
-                  const remaining = new Set(missingDeps.map((d) => d.name));
-                  for (const dep of missingDeps) {
-                    callRemote('get_mod_update', dep.name, (data: string) => {
-                      if (!data) {
-                        remaining.delete(dep.name);
-                        if (remaining.size === 0) {
-                          setFixDepsState('idle');
-                          manageCtx.reloadMods();
-                        }
-                        return;
-                      }
-                      const [gbFileId] = JSON.parse(data);
-                      downloadMod(dep.name, gbFileId, {
-                        autoDisableNewMods: manageCtx.autoDisableNewMods,
-                        onFinished: () => {
-                          remaining.delete(dep.name);
-                          if (remaining.size === 0) {
-                            setFixDepsState('idle');
-                            manageCtx.reloadMods();
-                          }
-                        },
-                        onFailed: () => {
-                          remaining.delete(dep.name);
-                          if (remaining.size === 0) {
-                            setFixDepsState('idle');
-                          }
-                        },
+          {(updates.length > 0 || missingDependencies.length > 0) && (
+            <div className="manage-notice-bar">
+              {showUpdate && updates.length > 0 && (
+                <button onClick={async () => {
+                  for (const update of updates) await updateNode(update.name);
+                }}><Icon name="download" />{_i18n.t('更新全部 ({count})', { count: updates.length })}</button>
+              )}
+              {missingDependencies.length > 0 && (
+                <button disabled={fixingDependencies} onClick={() => {
+                  setFixingDependencies(true);
+                  let remaining = missingDependencies.length;
+                  for (const dependency of missingDependencies) {
+                    callRemote('get_mod_update', dependency.name, (data: string) => {
+                      if (!data) { if (--remaining === 0) setFixingDependencies(false); return; }
+                      const [fileId] = JSON.parse(data);
+                      downloadMod(dependency.name, fileId, {
+                        onFinished: () => { if (--remaining === 0) { setFixingDependencies(false); reloadMods(); } },
+                        onFailed: () => { if (--remaining === 0) setFixingDependencies(false); },
                       });
                     });
                   }
-                }}
-              >
-                {fixDepsState === 'downloading'
-                  ? _i18n.t('下载中')
-                  : _i18n.t('补全缺失依赖 ({count})', { count: missingDeps.length })}
-              </button>
+                }}><Icon name="warn" />{fixingDependencies ? _i18n.t('补全中…') : _i18n.t('补全缺失依赖 ({count})', { count: missingDependencies.length })}</button>
+              )}
+            </div>
+          )}
+
+          <div className="manage-tree-scroll">
+            {visibleRoots.length > 0 ? visibleRoots.map((name) => <ManageTreeNode key={name} name={name} />) : (
+              <div className="manage-empty"><Icon name="search" /><strong>{_i18n.t('没有符合筛选条件的 Mod')}</strong><button onClick={resetFilters}>{_i18n.t('清除筛选')}</button></div>
             )}
           </div>
-          <div className="list" ref={modsTreeRef}>
-            {installedModsTree.map((v) => (
-              <Mod key={v.name} {...(v as any)} />
-            ))}
+        </section>
 
-            <div className="padding"></div>
+        <aside className="manage-side">
+          <div className="side-section profile-section">
+            <div className="side-title"><span>{_i18n.t('Profile')}</span><small>{profiles.length}</small></div>
+            <div className="profile-list">
+              {profiles.map((profile) => (
+                <button key={profile.name} className={profile.name === currentProfileName ? 'selected' : ''} onClick={() => global.blacklist.switchProfile(profile.name)}>
+                  <span className="profile-indicator" />
+                  <span className="profile-name">{profile.name}</span>
+                  <small>{installedMods.length - profile.mods.length}</small>
+                  {profile.name !== 'Default' && <span className="profile-delete" onClick={(event) => {
+                    event.stopPropagation();
+                    void callRemote('remove_mod_blacklist_profile', gamePath, profile.name);
+                    setProfilesCallback((items) => items.filter((item) => item.name !== profile.name));
+                    if (profile.name === currentProfileName) global.blacklist.switchProfile(profiles[0]?.name ?? 'Default');
+                  }}><Icon name="delete" /></span>}
+                </button>
+              ))}
+            </div>
+            <div className="profile-create">
+              <input value={profileNameInput} maxLength={30} onChange={(event) => setProfileNameInput(event.target.value)} placeholder={_i18n.t('新 Profile 名称')} />
+              <button onClick={() => {
+                const name = profileNameInput.trim();
+                if (!name || profiles.some((profile) => profile.name === name)) return;
+                void callRemote('new_mod_blacklist_profile', gamePath, name);
+                setProfilesCallback((items) => [...items, { name, mods: [], mod_options_order: [] }]);
+                setProfileNameInput('');
+                global.blacklist.switchProfile(name);
+              }}><Icon name="i-tick" /></button>
+            </div>
           </div>
-        </div>
-        <div className="profiles">
-          <div className="title">{_i18n.t('Profile 列表')}</div>
-          {profiles.map((v) => (
-            <Profile key={v.name} {...v} current={v.name === currentProfileName} />
-          ))}
-
-          <div className="newProfile">
-            <input
-              type="text"
-              placeholder={_i18n.t('Profile 名')}
-              maxLength={30}
-            />
-
-            <Button
-              onClick={() => {
-                const name = document.querySelector('.newProfile input') as any;
-                if (
-                  name.value &&
-                  !profiles.some((v) => v.name === name.value)
-                ) {
-                  manageCtx.createProfile(name.value);
-                  name.value = '';
-                }
+          {currentProfile && (
+            <ModOptionsOrderPanel
+              gamePath={gamePath}
+              profileName={currentProfileName}
+              files={installedMods.map((mod) => mod.file)}
+              order={currentProfile.mod_options_order ?? []}
+              onChange={(order) => {
+                setCurrentProfile({ ...currentProfile, mod_options_order: order });
+                setProfilesCallback((items) => items.map((profile) => profile.name === currentProfile.name
+                  ? { ...profile, mod_options_order: order }
+                  : profile));
               }}
-            >
-              {_i18n.t('新建')}
-            </Button>
-          </div>
-
-          <ModOptionsOrderPanel
-            gamePath={gamePath}
-            currentProfileName={currentProfileName}
-            currentProfile={currentProfile}
-            installedMods={installedMods}
-            onOrderChange={(newOrder) => {
-              if (currentProfile) {
-                setCurrentProfile({
-                  ...currentProfile,
-                  mod_options_order: newOrder,
-                });
-              }
-            }}
-          />
-        </div>
-      </modListContext.Provider>
+            />
+          )}
+        </aside>
+      </ManageActionsContext.Provider>
     </div>
   );
 };
