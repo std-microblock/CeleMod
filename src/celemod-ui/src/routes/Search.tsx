@@ -1,7 +1,7 @@
 import _i18n from 'src/i18n';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ModList } from '../components/ModList';
-import { currentMirror, initSearchSort, useGamePath, useSearchSort } from '../states';
+import { currentMirror, initSearchSort, useAppStore, useGamePath, useSearchSort } from '../states';
 import './Search.scss';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
@@ -64,6 +64,7 @@ export const Search = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPath] = useGamePath();
+  const cacheTtlHours = useAppStore((state) => state.modCacheTtlHours);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -138,7 +139,7 @@ export const Search = () => {
     const currentRequest = ++requestId.current;
     setLoading(true);
     setLoadFailed(false);
-    loadModCatalog(24, refreshKey > 0)
+    loadModCatalog(cacheTtlHours, refreshKey > 0)
       .then((mods) => {
         if (currentRequest !== requestId.current) return;
         setCatalogMods(mods);
@@ -151,7 +152,7 @@ export const Search = () => {
       .finally(() => {
         if (currentRequest === requestId.current) setLoading(false);
       });
-  }, [mode, refreshKey]);
+  }, [cacheTtlHours, mode, refreshKey]);
 
   useEffect(() => {
     setLocalVisibleCount(50);
