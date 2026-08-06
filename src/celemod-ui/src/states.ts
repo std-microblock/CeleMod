@@ -127,11 +127,19 @@ export async function initializeAppStore() {
   initialized = true;
   const state = useAppStore.getState();
   try {
+    let gamePath = state.gamePath;
     if (state.gamePath) {
-      state.setGamePath(await callRemote<string>('normalize_game_path', state.gamePath));
+      gamePath = await callRemote<string>('normalize_game_path', state.gamePath);
+      state.setGamePath(gamePath);
     } else {
       const paths = (await callRemote<string>('get_celeste_dirs')).split('\n').filter(Boolean);
-      if (paths[0]) state.setGamePath(paths[0]);
+      if (paths[0]) {
+        gamePath = paths[0];
+        state.setGamePath(gamePath);
+      }
+    }
+    if (gamePath) {
+      await callRemote('cleanup_mod_download_temp_files', gamePath);
     }
   } catch (error) {
     console.error('Failed to initialize application state', error);

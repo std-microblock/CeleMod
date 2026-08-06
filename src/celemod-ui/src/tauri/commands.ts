@@ -5,6 +5,7 @@ type LegacyCallback = (...args: unknown[]) => void;
 const parameterNames: Record<string, string[]> = {
   download_mod: ['name', 'url', 'modsDir', 'autoDisableNewMods', 'onEvent', 'useCnProxy', 'multiThread'],
   cancel_download_mod: ['name'],
+  cleanup_mod_download_temp_files: ['gamePath'],
   get_celeste_dirs: [],
   get_installed_mod_ids: ['modsFolderPath', 'onEvent'],
   get_installed_mods: ['modsFolderPath', 'onEvent'],

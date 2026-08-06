@@ -63,7 +63,7 @@ const BackgroundEle = memo(({ preview, name }: { preview: string; name: string }
   </Fragment>
 ));
 
-const CARD_HEIGHT = 236;
+const CARD_HEIGHT = 242;
 const LIST_CARD_HEIGHT = 64;
 const CARD_MIN_WIDTH = 300;
 const GRID_GAP = 16;

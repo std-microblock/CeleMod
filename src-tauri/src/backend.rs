@@ -36,6 +36,7 @@ extern crate lazy_static;
 
 lazy_static::lazy_static! {
     static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
+    static ref DOWNLOAD_DESTINATION_LOCKS: Mutex<HashMap<String, Arc<Mutex<()>>>> = Mutex::new(HashMap::new());
 }
 
 #[path = "blacklist.rs"]
@@ -408,33 +409,76 @@ fn download_mod_archive_with_cancel(
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
-    let tmp_dir = std::env::temp_dir().join("CelemodTemp").join("mods");
-    std::fs::create_dir_all(&tmp_dir)?;
-
-    let file_name = Path::new(dest)
-        .file_name()
-        .context("Failed to resolve destination file name")?;
-    let tmp_dest = tmp_dir.join(file_name);
+    let destination = Path::new(dest);
+    let destination_lock = DOWNLOAD_DESTINATION_LOCKS
+        .lock()
+        .unwrap()
+        .entry(dest.to_string())
+        .or_insert_with(|| Arc::new(Mutex::new(())))
+        .clone();
+    let _destination_guard = loop {
+        match destination_lock.try_lock() {
+            Ok(guard) => break guard,
+            Err(std::sync::TryLockError::WouldBlock) => {
+                if cancel_flag.load(Ordering::Relaxed) {
+                    bail!("Download canceled");
+                }
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            Err(std::sync::TryLockError::Poisoned(error)) => break error.into_inner(),
+        }
+    };
+    let mut temporary_name = destination.as_os_str().to_os_string();
+    temporary_name.push(".celemod");
+    let temporary = PathBuf::from(temporary_name);
 
     let result: anyhow::Result<()> = try {
-        ureq::download_file_with_progress(
+        ureq::download_file_to_path_with_progress(
             url,
-            tmp_dest.to_string_lossy().as_ref(),
+            temporary.to_string_lossy().as_ref(),
             progress_callback,
             multi_thread,
             cancel_flag,
         )?;
 
-        if !is_valid_zip_archive(&tmp_dest) {
+        if !is_valid_zip_archive(&temporary) {
             bail!("Downloaded file is not a valid zip archive");
         }
 
-        std::fs::copy(&tmp_dest, dest)
-            .with_context(|| format!("Failed to move downloaded file to {}", dest))?;
+        if destination.exists() {
+            std::fs::remove_file(destination)
+                .with_context(|| format!("Failed to replace Mod archive at {dest}"))?;
+        }
+        std::fs::rename(&temporary, destination)
+            .with_context(|| format!("Failed to finish Mod archive at {dest}"))?;
     };
 
-    std::fs::remove_file(&tmp_dest).ok();
     result
+}
+
+fn cleanup_mod_download_temp_files_impl(mods_dir: &Path) -> anyhow::Result<usize> {
+    if !mods_dir.is_dir() {
+        return Ok(0);
+    }
+
+    let mut removed = 0;
+    for entry in fs::read_dir(mods_dir)? {
+        let entry = entry?;
+        if !entry.file_type()?.is_file() {
+            continue;
+        }
+        let file_name = entry.file_name().to_string_lossy().to_ascii_lowercase();
+        if !file_name.ends_with(".zip.celemod") {
+            continue;
+        }
+        fs::remove_file(entry.path())?;
+        removed += 1;
+    }
+    Ok(removed)
+}
+
+fn cleanup_game_mod_download_temp_files(game_path: &Path) -> anyhow::Result<usize> {
+    cleanup_mod_download_temp_files_impl(&normalize_game_path_buf(game_path).join("Mods"))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -784,6 +828,230 @@ struct DownloadInfo {
     speed_bytes_per_sec: f64,
 }
 
+enum DownloadWorkerMessage {
+    Progress {
+        index: usize,
+        progress: DownloadCallbackInfo,
+    },
+    Finished {
+        index: usize,
+        result: Result<Vec<(String, String)>, String>,
+    },
+}
+
+fn emit_download_tasks(tasks: &[DownloadInfo], on_event: &Channel<IpcEvent>, state: &'static str) {
+    let snapshot = serde_json::to_string(tasks).unwrap_or_else(|_| "[]".to_string());
+    send_event(
+        on_event,
+        vec![serde_json::json!(snapshot), serde_json::json!(state)],
+    );
+}
+
+fn enqueue_missing_dependencies(
+    tasks: &mut Vec<DownloadInfo>,
+    queued: &mut HashMap<String, usize>,
+    dependencies: Vec<(String, String)>,
+    installed: &[LocalMod],
+    mod_data: &HashMap<String, everest::ModInfoCached>,
+    mods_dir: &str,
+) -> usize {
+    let mut added = 0;
+    for (dependency, min_version) in dependencies {
+        // queued 记录 Waiting / Downloading / Finished / Failed 的整个任务队列，
+        // 任意父依赖重复发现同一个名字时都不会再次入队。
+        if queued.contains_key(&dependency)
+            || installed.iter().any(|item| {
+                item.name == dependency && compare_version(&item.version, &min_version) >= 0
+            })
+        {
+            continue;
+        }
+        let Some(data) = mod_data.get(&dependency) else {
+            eprintln!("Failed to resolve dependency {dependency} in Mod data");
+            continue;
+        };
+
+        let index = tasks.len();
+        queued.insert(dependency.clone(), index);
+        tasks.push(DownloadInfo {
+            name: dependency.clone(),
+            url: data.download_url.clone(),
+            dest: Path::new(mods_dir)
+                .join(format!("{}.zip", make_path_compatible_name(&dependency)))
+                .to_string_lossy()
+                .to_string(),
+            status: DownloadStatus::Waiting,
+            data: "0".to_string(),
+            downloaded_bytes: 0,
+            total_bytes: 0,
+            speed_bytes_per_sec: 0.0,
+        });
+        added += 1;
+    }
+    added
+}
+
+fn start_waiting_mod_downloads(
+    tasks: &mut [DownloadInfo],
+    started_or_finished: &mut HashSet<String>,
+    sender: &std::sync::mpsc::Sender<DownloadWorkerMessage>,
+    handles: &mut Vec<std::thread::JoinHandle<()>>,
+    multi_thread: bool,
+    cancel_flag: &Arc<AtomicBool>,
+) -> usize {
+    let waiting = tasks
+        .iter()
+        .enumerate()
+        .filter_map(|(index, task)| (task.status == DownloadStatus::Waiting).then_some(index))
+        .collect::<Vec<_>>();
+    let mut started = 0;
+
+    for index in waiting {
+        if cancel_flag.load(Ordering::Relaxed) {
+            break;
+        }
+
+        // 即使入队阶段已经去重，真正启动前仍再次检查，避免同一个名字出现两个
+        // Downloading / Finished 任务。
+        if started_or_finished.contains(&tasks[index].name) {
+            continue;
+        }
+        started_or_finished.insert(tasks[index].name.clone());
+        tasks[index].status = DownloadStatus::Downloading;
+        tasks[index].data = "0".to_string();
+
+        let sender = sender.clone();
+        let task_url = tasks[index].url.clone();
+        let task_dest = tasks[index].dest.clone();
+        let cancel_flag = Arc::clone(cancel_flag);
+        handles.push(std::thread::spawn(move || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let progress_sender = sender.clone();
+                download_and_install_mod(
+                    &task_url,
+                    &task_dest,
+                    &mut |progress| {
+                        let _ = progress_sender
+                            .send(DownloadWorkerMessage::Progress { index, progress });
+                    },
+                    multi_thread,
+                    &cancel_flag,
+                )
+                .map_err(|error| format!("{error:#}"))
+            }))
+            .unwrap_or_else(|_| Err("Download worker stopped unexpectedly".to_string()));
+            let _ = sender.send(DownloadWorkerMessage::Finished { index, result });
+        }));
+        started += 1;
+    }
+
+    started
+}
+
+/// 事件驱动的依赖队列：任意 Mod 一完成就立即解析 YAML、去重入队它的新依赖，
+/// 并马上启动所有 Waiting 项，不等待同一层的其他下载结束。
+fn download_mod_queue(
+    tasks: &mut Vec<DownloadInfo>,
+    installed: &[LocalMod],
+    mod_data: &HashMap<String, everest::ModInfoCached>,
+    mods_dir: &str,
+    on_event: &Channel<IpcEvent>,
+    multi_thread: bool,
+    cancel_flag: &Arc<AtomicBool>,
+) -> bool {
+    let mut queued = tasks
+        .iter()
+        .enumerate()
+        .map(|(index, task)| (task.name.clone(), index))
+        .collect::<HashMap<_, _>>();
+    let mut started_or_finished = HashSet::new();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let mut handles = Vec::new();
+    let mut failed = false;
+    let mut active = start_waiting_mod_downloads(
+        tasks,
+        &mut started_or_finished,
+        &sender,
+        &mut handles,
+        multi_thread,
+        cancel_flag,
+    );
+    emit_download_tasks(tasks, on_event, "pending");
+
+    while active > 0 {
+        let Ok(message) = receiver.recv() else {
+            failed = true;
+            break;
+        };
+        match message {
+            DownloadWorkerMessage::Progress { index, progress } => {
+                tasks[index].data = format!("{:.2}", progress.progress);
+                tasks[index].downloaded_bytes = progress.downloaded_bytes;
+                tasks[index].total_bytes = progress.total_bytes;
+                tasks[index].speed_bytes_per_sec = progress.speed_bytes_per_sec;
+                emit_download_tasks(tasks, on_event, "pending");
+            }
+            DownloadWorkerMessage::Finished { index, result } => {
+                active -= 1;
+                match result {
+                    Ok(task_dependencies) => {
+                        tasks[index].status = DownloadStatus::Finished;
+                        tasks[index].data = "100".to_string();
+                        tasks[index].speed_bytes_per_sec = 0.0;
+                        if !cancel_flag.load(Ordering::Relaxed) {
+                            enqueue_missing_dependencies(
+                                tasks,
+                                &mut queued,
+                                task_dependencies,
+                                installed,
+                                mod_data,
+                                mods_dir,
+                            );
+                        }
+                    }
+                    Err(error) => {
+                        tasks[index].status = DownloadStatus::Failed;
+                        tasks[index].data = error;
+                        tasks[index].speed_bytes_per_sec = 0.0;
+                        let _ = fs::remove_file(&tasks[index].dest);
+                        failed = true;
+                    }
+                }
+
+                // 新依赖一入队就立即启动；不等待其他 active 任务结束。
+                active += start_waiting_mod_downloads(
+                    tasks,
+                    &mut started_or_finished,
+                    &sender,
+                    &mut handles,
+                    multi_thread,
+                    cancel_flag,
+                );
+                emit_download_tasks(tasks, on_event, "pending");
+            }
+        }
+    }
+
+    drop(sender);
+    for handle in handles {
+        if handle.join().is_err() {
+            failed = true;
+        }
+    }
+
+    if cancel_flag.load(Ordering::Relaxed) {
+        for task in tasks
+            .iter_mut()
+            .filter(|task| task.status == DownloadStatus::Waiting)
+        {
+            task.status = DownloadStatus::Failed;
+            task.data = "Download canceled".to_string();
+        }
+    }
+
+    failed || cancel_flag.load(Ordering::Relaxed)
+}
+
 fn make_path_compatible_name(name: &str) -> String {
     name.replace([' ', ':', '/', '\\', '?', '*', '\"', '<', '>', '|'], "_")
 }
@@ -1075,6 +1343,80 @@ mod local_package_tests {
 
         fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn cleans_stale_mod_download_sidecars() {
+        let root = test_dir("download-cleanup");
+        let mods = root.join("Mods");
+        fs::create_dir_all(&mods).unwrap();
+        fs::write(mods.join("Example.zip.celemod"), b"partial").unwrap();
+        fs::write(mods.join("Keep.zip"), b"installed").unwrap();
+        fs::write(mods.join("Keep.celemod"), b"unrelated").unwrap();
+
+        assert_eq!(cleanup_mod_download_temp_files_impl(&mods).unwrap(), 1);
+        assert!(!mods.join("Example.zip.celemod").exists());
+        assert!(mods.join("Keep.zip").exists());
+        assert!(mods.join("Keep.celemod").exists());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn dependency_queue_deduplicates_all_task_states() {
+        let root = test_dir("dependency-queue");
+        let mut tasks = Vec::new();
+        let mut queued = HashMap::new();
+        let mod_data = HashMap::from([(
+            "SharedDependency".to_string(),
+            everest::ModInfoCached {
+                name: "SharedDependency".to_string(),
+                version: "1.0.0".to_string(),
+                game_banana_id: 1,
+                game_banana_file_id: 2,
+                download_url: "https://example.invalid/dependency.zip".to_string(),
+            },
+        )]);
+        let dependencies = vec![
+            ("SharedDependency".to_string(), "1.0.0".to_string()),
+            ("SharedDependency".to_string(), "1.0.0".to_string()),
+        ];
+
+        assert_eq!(
+            enqueue_missing_dependencies(
+                &mut tasks,
+                &mut queued,
+                dependencies.clone(),
+                &[],
+                &mod_data,
+                root.to_string_lossy().as_ref(),
+            ),
+            1
+        );
+        assert_eq!(tasks.len(), 1);
+
+        for status in [
+            DownloadStatus::Waiting,
+            DownloadStatus::Downloading,
+            DownloadStatus::Finished,
+            DownloadStatus::Failed,
+        ] {
+            tasks[0].status = status;
+            assert_eq!(
+                enqueue_missing_dependencies(
+                    &mut tasks,
+                    &mut queued,
+                    dependencies.clone(),
+                    &[],
+                    &mod_data,
+                    root.to_string_lossy().as_ref(),
+                ),
+                0
+            );
+            assert_eq!(tasks.len(), 1);
+        }
+
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[tauri::command]
@@ -1085,6 +1427,12 @@ fn cancel_download_mod(name: String) -> bool {
     } else {
         false
     }
+}
+
+#[tauri::command]
+fn cleanup_mod_download_temp_files(game_path: String) -> Result<usize, String> {
+    cleanup_game_mod_download_temp_files(Path::new(&game_path))
+        .map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
@@ -1769,86 +2117,16 @@ fn download_mod(
             total_bytes: 0,
             speed_bytes_per_sec: 0.0,
         }];
-        let mut queued = HashSet::from([name.clone()]);
-        let mut index = 0;
-        let mut failed = false;
-        while index < tasks.len() {
-            if cancel_flag.load(Ordering::Relaxed) {
-                tasks[index].status = DownloadStatus::Failed;
-                tasks[index].data = "Download canceled".to_string();
-                failed = true;
-                break;
-            }
-            tasks[index].status = DownloadStatus::Downloading;
-            let snapshot = serde_json::to_string(&tasks).unwrap_or_else(|_| "[]".to_string());
-            send_event(
-                &on_event,
-                vec![serde_json::json!(snapshot), serde_json::json!("pending")],
-            );
-            let task_url = tasks[index].url.clone();
-            let task_dest = tasks[index].dest.clone();
-            let result = download_and_install_mod(
-                &task_url,
-                &task_dest,
-                &mut |progress| {
-                    tasks[index].data = format!("{:.2}", progress.progress);
-                    tasks[index].downloaded_bytes = progress.downloaded_bytes;
-                    tasks[index].total_bytes = progress.total_bytes;
-                    tasks[index].speed_bytes_per_sec = progress.speed_bytes_per_sec;
-                    let snapshot =
-                        serde_json::to_string(&tasks).unwrap_or_else(|_| "[]".to_string());
-                    send_event(
-                        &on_event,
-                        vec![serde_json::json!(snapshot), serde_json::json!("pending")],
-                    );
-                },
-                multi_thread,
-                &cancel_flag,
-            );
-            match result {
-                Ok(dependencies) => {
-                    tasks[index].status = DownloadStatus::Finished;
-                    tasks[index].data = "100".to_string();
-                    tasks[index].speed_bytes_per_sec = 0.0;
-                    let installed = get_installed_mods_sync(mods_dir.clone());
-                    for (dependency, min_version) in dependencies {
-                        if queued.contains(&dependency)
-                            || installed.iter().any(|item| {
-                                item.name == dependency
-                                    && compare_version(&item.version, &min_version) >= 0
-                            })
-                        {
-                            continue;
-                        }
-                        if let Some(data) = mod_data.get(&dependency) {
-                            queued.insert(dependency.clone());
-                            tasks.push(DownloadInfo {
-                                name: dependency.clone(),
-                                url: data.download_url.clone(),
-                                dest: Path::new(&mods_dir)
-                                    .join(format!("{}.zip", make_path_compatible_name(&dependency)))
-                                    .to_string_lossy()
-                                    .to_string(),
-                                status: DownloadStatus::Waiting,
-                                data: "0".to_string(),
-                                downloaded_bytes: 0,
-                                total_bytes: 0,
-                                speed_bytes_per_sec: 0.0,
-                            });
-                        }
-                    }
-                }
-                Err(error) => {
-                    tasks[index].status = DownloadStatus::Failed;
-                    tasks[index].data = error.to_string();
-                    tasks[index].speed_bytes_per_sec = 0.0;
-                    let _ = fs::remove_file(&tasks[index].dest);
-                    failed = true;
-                    break;
-                }
-            }
-            index += 1;
-        }
+        let installed = get_installed_mods_sync(mods_dir.clone());
+        let failed = download_mod_queue(
+            &mut tasks,
+            &installed,
+            &mod_data,
+            &mods_dir,
+            &on_event,
+            multi_thread,
+            &cancel_flag,
+        );
         if !failed && auto_disable_new_mods {
             let game_path = Path::new(&mods_dir)
                 .parent()
@@ -1877,13 +2155,10 @@ fn download_mod(
                 }
             }
         }
-        let snapshot = serde_json::to_string(&tasks).unwrap_or_else(|_| "[]".to_string());
-        send_event(
+        emit_download_tasks(
+            &tasks,
             &on_event,
-            vec![
-                serde_json::json!(snapshot),
-                serde_json::json!(if failed { "failed" } else { "finished" }),
-            ],
+            if failed { "failed" } else { "finished" },
         );
         DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
     });
@@ -1975,6 +2250,29 @@ pub fn run() {
     }
 
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
+    let startup_game_paths = if is_test_mode() {
+        vec![get_test_game_path()]
+    } else {
+        get_celestes()
+            .iter()
+            .filter_map(|game| game.path.as_ref())
+            .map(|path| normalize_game_path_buf(path))
+            .collect()
+    };
+    for game_path in startup_game_paths {
+        match cleanup_game_mod_download_temp_files(&game_path) {
+            Ok(removed) if removed > 0 => {
+                println!("Removed {removed} stale Mod download temporary file(s)");
+            }
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!(
+                    "Failed to clean stale Mod downloads in {}: {error:#}",
+                    game_path.display()
+                );
+            }
+        }
+    }
     tauri::Builder::default()
         .setup(|_app| {
             #[cfg(target_os = "macos")]
@@ -1999,6 +2297,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             download_mod,
             cancel_download_mod,
+            cleanup_mod_download_temp_files,
             get_celeste_dirs,
             get_installed_mod_ids,
             get_installed_mods,
