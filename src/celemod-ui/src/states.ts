@@ -23,6 +23,17 @@ export interface BackendModInfo {
 
 type SearchSort = 'new' | 'updateAdded' | 'updated' | 'views' | 'likes';
 
+export const MOD_TYPE_OPTIONS = [
+  'Maps', 'Skins', 'Helpers', 'Other/Misc', 'Assets', 'UI', 'Mechanics',
+  'Dialog', 'Lönn Plugin', 'Effects', 'Ahorn Plugin', 'Twitch Integration',
+  'Mod Installer',
+] as const;
+
+export type ModTypeName = typeof MOD_TYPE_OPTIONS[number];
+
+const createDownloadTypeDefaults = (enabled: boolean): Record<string, boolean> =>
+  Object.fromEntries(MOD_TYPE_OPTIONS.map((type) => [type, enabled]));
+
 interface AppState {
   currentProfileName: string;
   profiles: ModBlacklistProfile[];
@@ -36,11 +47,18 @@ interface AppState {
   alwaysOnMods: string[];
   searchSort: SearchSort;
   autoDisableNewMods: boolean;
+  downloadDefaultEnabled: boolean;
+  downloadTypeDefaults: Record<string, boolean>;
   checkOptionalDep: boolean;
   excludeDependents: boolean;
   fullTree: boolean;
   showUpdate: boolean;
   showDetailed: boolean;
+  autoToggleDependencies: boolean;
+  autoToggleOptionalDependencies: boolean;
+  deleteOrphansByDefault: boolean;
+  hiddenModTypes: string[];
+  modCacheTtlHours: number;
   modComments: Record<string, string>;
   enableAcrylic: boolean;
   lastUseMap: Record<string, number>;
@@ -59,11 +77,18 @@ interface AppState {
   setAlwaysOnMods: (value: string[]) => void;
   setSearchSort: (value: SearchSort) => void;
   setAutoDisableNewMods: (value: boolean) => void;
+  setDownloadDefaultsAll: (enabled: boolean) => void;
+  setDownloadTypeDefault: (type: string, enabled: boolean) => void;
   setCheckOptionalDep: (value: boolean) => void;
   setExcludeDependents: (value: boolean) => void;
   setFullTree: (value: boolean) => void;
   setShowUpdate: (value: boolean) => void;
   setShowDetailed: (value: boolean) => void;
+  setAutoToggleDependencies: (value: boolean) => void;
+  setAutoToggleOptionalDependencies: (value: boolean) => void;
+  setDeleteOrphansByDefault: (value: boolean) => void;
+  setHiddenModTypes: (value: string[]) => void;
+  setModCacheTtlHours: (value: number) => void;
   setModComments: (value: Record<string, string>) => void;
   setEnableAcrylic: (value: boolean) => void;
   setLastUseMap: (value: Record<string, number>) => void;
@@ -98,6 +123,10 @@ const setters = {
   setCheckOptionalDep: 'checkOptionalDep',
   setExcludeDependents: 'excludeDependents', setFullTree: 'fullTree',
   setShowUpdate: 'showUpdate', setShowDetailed: 'showDetailed',
+  setAutoToggleDependencies: 'autoToggleDependencies',
+  setAutoToggleOptionalDependencies: 'autoToggleOptionalDependencies',
+  setDeleteOrphansByDefault: 'deleteOrphansByDefault',
+  setHiddenModTypes: 'hiddenModTypes', setModCacheTtlHours: 'modCacheTtlHours',
   setModComments: 'modComments', setEnableAcrylic: 'enableAcrylic',
   setLastUseMap: 'lastUseMap', setPage: 'page', setDownloadMenuOpen: 'downloadMenuOpen',
 } as const;
@@ -114,16 +143,34 @@ export const useAppStore = create<AppState>()(
         currentProfileName: '', profiles: [], currentProfile: null, installedMods: [],
         currentEverestVersion: '', currentLang: '', mirror: 'wegfan', gamePath: '',
         useMultiThread: false, alwaysOnMods: [], searchSort: 'likes',
-        autoDisableNewMods: loadAutoDisableNewMods(), checkOptionalDep: false, excludeDependents: true,
+        autoDisableNewMods: loadAutoDisableNewMods(),
+        downloadDefaultEnabled: !loadAutoDisableNewMods(),
+        downloadTypeDefaults: createDownloadTypeDefaults(!loadAutoDisableNewMods()),
+        checkOptionalDep: false, excludeDependents: true,
         fullTree: false, showUpdate: true, showDetailed: false, modComments: {},
+        autoToggleDependencies: true, autoToggleOptionalDependencies: false,
+        deleteOrphansByDefault: true, hiddenModTypes: [], modCacheTtlHours: 24,
         enableAcrylic: true, lastUseMap: {}, page: 'Home', downloadMenuOpen: false,
         ...actions,
         setAutoDisableNewMods: (value) => {
           set((state) => {
             state.autoDisableNewMods = value;
+            state.downloadDefaultEnabled = !value;
+            state.downloadTypeDefaults = createDownloadTypeDefaults(!value);
           });
           saveAutoDisableNewMods(value);
         },
+        setDownloadDefaultsAll: (enabled) => {
+          set((state) => {
+            state.autoDisableNewMods = !enabled;
+            state.downloadDefaultEnabled = enabled;
+            state.downloadTypeDefaults = createDownloadTypeDefaults(enabled);
+          });
+          saveAutoDisableNewMods(!enabled);
+        },
+        setDownloadTypeDefault: (type, enabled) => set((state) => {
+          state.downloadTypeDefaults[type] = enabled;
+        }),
         setProfilesCallback: (setter) => set((state) => {
           state.profiles = setter(state.profiles);
         }),
@@ -134,12 +181,16 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: ({
         mirror, gamePath, useMultiThread, alwaysOnMods, searchSort,
-        autoDisableNewMods, checkOptionalDep, excludeDependents, fullTree,
-        showUpdate, showDetailed, modComments, enableAcrylic, currentLang, lastUseMap,
+        autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
+        checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
+        autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang, lastUseMap,
       }) => ({
         mirror, gamePath, useMultiThread, alwaysOnMods, searchSort,
-        autoDisableNewMods, checkOptionalDep, excludeDependents, fullTree,
-        showUpdate, showDetailed, modComments, enableAcrylic, currentLang, lastUseMap,
+        autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
+        checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
+        autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, currentLang, lastUseMap,
       }),
     },
   ),
@@ -151,6 +202,7 @@ export async function initializeAppStore() {
   initialized = true;
   const state = useAppStore.getState();
   try {
+    await callRemote('configure_mod_cache', Math.max(0, state.modCacheTtlHours) * 60 * 60);
     let gamePath = state.gamePath;
     if (state.gamePath) {
       gamePath = await callRemote<string>('normalize_game_path', state.gamePath);

@@ -22,6 +22,7 @@ import {
   FaImage,
   FaListUl,
   FaMagnifyingGlass,
+  FaGear,
   FaPen,
   FaRotateRight,
   FaTableCellsLarge,
@@ -62,6 +63,7 @@ const icons: Record<string, IconType> = {
   'i-tick': FaCheck,
   fail: FaCircleExclamation,
   replay: FaRotateRight,
+  settings: FaGear,
 };
 
 export const Icon = ({ name }: { name: string }) => {

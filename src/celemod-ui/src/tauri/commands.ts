@@ -3,7 +3,7 @@ import { Channel, invoke } from '@tauri-apps/api/core';
 type LegacyCallback = (...args: unknown[]) => void;
 
 const parameterNames: Record<string, string[]> = {
-  download_mod: ['name', 'url', 'modsDir', 'autoDisableNewMods', 'onEvent', 'useCnProxy', 'multiThread'],
+  download_mod: ['name', 'url', 'modsDir', 'downloadTypeDefaults', 'onEvent', 'useCnProxy', 'multiThread'],
   cancel_download_mod: ['name'],
   cleanup_mod_download_temp_files: ['gamePath'],
   get_celeste_dirs: [],

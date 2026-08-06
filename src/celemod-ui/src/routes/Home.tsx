@@ -9,19 +9,15 @@ import strawberry from '../resources/Celemod.png';
 import {
   useAlwaysOnMods,
   useCurrentBlacklistProfile,
-  useCurrentLang,
   useGamePath,
   useInstalledMods,
-  useMirror,
   useAppStore,
-  useUseMultiThread,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
 import { useEffect } from 'react';
 import { Button } from '../components/Button';
 import './Home.scss';
 import { createPopup, PopupContext } from '../components/Popup';
-import { useEnableAcrylic } from 'src/context/theme';
 import { useGlobalContext } from 'src/App';
 
 export const Home = () => {
@@ -184,12 +180,6 @@ export const Home = () => {
     return _i18n.t('很久以前');
   };
 
-  const i18nCtx = useI18N();
-
-  const { enableAcrylic, setEnableAcrylic } = useEnableAcrylic();
-
-  const [downloadMirror, setDownloadMirror] = useMirror();
-  const [useMultiThread, setUseMultiThread] = useUseMultiThread();
   const { installedMods } = useInstalledMods();
 
   return (
@@ -252,38 +242,6 @@ export const Home = () => {
       )}
 
       <div className="config">
-        <Icon name="download" />
-        &nbsp;
-        <span>{_i18n.t('下载设置')}</span>
-      </div>
-
-      <div className="config-block">
-        <span>{_i18n.t('下载镜像')}</span>&nbsp;
-        <select
-          value={downloadMirror}
-          onChange={(e) => setDownloadMirror(e.currentTarget.value)}
-        >
-          <option value="0x0ade">0x0ade</option>
-          <option value="gamebanana">GameBanana</option>
-          <option value="wegfan">WEGFan</option>
-        </select>
-      </div>
-
-      <div className="config-block">
-        <label>
-          <input
-            type="checkbox"
-            checked={useMultiThread}
-            onChange={(v: any) => {
-              setUseMultiThread(v.target.checked);
-            }}
-          />
-
-          {_i18n.t('使用 ureq 多线程下载')}
-        </label>
-      </div>
-
-      <div className="config">
         <Icon name="file" />
         &nbsp;
         <span>{_i18n.t('Profile 选择')}</span>
@@ -340,46 +298,6 @@ export const Home = () => {
         ))}
       </div>
 
-      <div className="config theme">
-        <Icon name="edit" />
-        &nbsp;
-        <span>{_i18n.t('界面设置')}</span>
-      </div>
-
-      <div className="config-block">
-        <label>
-          <input
-            type="checkbox"
-            checked={enableAcrylic}
-            onChange={(event) => {
-              setEnableAcrylic(event.currentTarget.checked);
-            }}
-          />
-
-          <span>{_i18n.t('启用亚克力效果')}</span>
-        </label>
-
-        <div className="languageSelect">
-          <span>{_i18n.t('语言/Language')}</span>&nbsp;
-          <select
-            onChange={(e: any) => {
-              i18nCtx.setLang(e.target.value);
-              setDownloadMirror(
-                e.target.value === 'zh-CN' ? 'wegfan' : '0x0ade'
-              );
-            }}
-            value={i18nCtx.currentLang}
-          >
-            <option value="zh-CN">{_i18n.t('简体中文')}</option>
-            <option value="en-US">English</option>
-            <option value="ru-RU">русский</option>
-            <option value="pt-BR">Brazilian Portuguese</option>
-            {/*
-                <option value="de-DE">Deutsch</option>
-                <option value="fr-FR">Français</option> */}
-          </select>
-        </div>
-      </div>
     </div>
   );
 };

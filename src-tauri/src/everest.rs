@@ -46,6 +46,7 @@ pub struct ModCacheStatus {
 struct ModCatalogState {
     raw: String,
     compact: Arc<HashMap<String, ModInfoCached>>,
+    categories: Arc<HashMap<String, String>>,
     status: ModCacheStatus,
 }
 
@@ -103,6 +104,18 @@ fn compact_catalog(mods: &[wegfan::Mod]) -> HashMap<String, ModInfoCached> {
         .collect()
 }
 
+fn catalog_categories(mods: &[wegfan::Mod]) -> HashMap<String, String> {
+    mods.iter()
+        .filter_map(|item| {
+            item.submission_file
+                .submission
+                .category_name
+                .as_ref()
+                .map(|category| (item.name.clone(), category.clone()))
+        })
+        .collect()
+}
+
 fn fetch_raw_catalog() -> anyhow::Result<String> {
     Ok(get("https://celeste.weg.fan/api/v2/mod/list")
         .set(
@@ -137,6 +150,7 @@ fn save_raw_cache(raw: &str) {
 fn catalog_state_from_raw(raw: String, source: &str, updated_at: SystemTime) -> anyhow::Result<ModCatalogState> {
     let mods = Arc::new(parse_raw_catalog(&raw)?);
     let compact = Arc::new(compact_catalog(&mods));
+    let categories = Arc::new(catalog_categories(&mods));
     Ok(ModCatalogState {
         status: ModCacheStatus {
             source: source.to_string(),
@@ -148,6 +162,7 @@ fn catalog_state_from_raw(raw: String, source: &str, updated_at: SystemTime) -> 
         },
         raw,
         compact,
+        categories,
     })
 }
 
@@ -207,6 +222,7 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
                             .unwrap_or_default(),
                     },
                     compact,
+                    categories: Arc::new(HashMap::new()),
                 });
             }
             USING_CACHE.store(false, Ordering::Relaxed);
@@ -235,6 +251,10 @@ pub fn get_mod_catalog_status() -> anyhow::Result<ModCacheStatus> {
 
 pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>>> {
     Ok(catalog(false)?.compact)
+}
+
+pub fn get_mod_category(name: &str) -> Option<String> {
+    catalog(false).ok()?.categories.get(name).cloned()
 }
 
 static MAGIC_STR: &str = "EverestBuild";

@@ -2085,13 +2085,21 @@ fn download_mod(
     name: String,
     url: String,
     mods_dir: String,
-    auto_disable_new_mods: bool,
+    download_type_defaults: String,
     on_event: Channel<IpcEvent>,
     use_cn_proxy: bool,
     multi_thread: bool,
 ) {
     let _ = use_cn_proxy;
     std::thread::spawn(move || {
+        let download_type_defaults = serde_json::from_str::<HashMap<String, bool>>(
+            &download_type_defaults,
+        )
+        .unwrap_or_default();
+        let default_enabled = download_type_defaults
+            .get("__default")
+            .copied()
+            .unwrap_or(true);
         if let Err(error) = fs::create_dir_all(&mods_dir) {
             send_event(
                 &on_event,
@@ -2142,7 +2150,7 @@ fn download_mod(
             multi_thread,
             &cancel_flag,
         );
-        if !failed && auto_disable_new_mods {
+        if !failed {
             let game_path = Path::new(&mods_dir)
                 .parent()
                 .unwrap_or(Path::new(&mods_dir))
@@ -2152,6 +2160,12 @@ fn download_mod(
             let completed = tasks
                 .iter()
                 .filter(|task| task.status == DownloadStatus::Finished)
+                .filter(|task| {
+                    let enabled = everest::get_mod_category(&task.name)
+                        .and_then(|category| download_type_defaults.get(&category).copied())
+                        .unwrap_or(default_enabled);
+                    !enabled
+                })
                 .filter_map(|task| {
                     installed
                         .iter()
@@ -2159,14 +2173,16 @@ fn download_mod(
                         .map(|item| (&item.name, &item.file))
                 })
                 .collect::<Vec<_>>();
-            for profile in blacklist::get_mod_blacklist_profiles(&game_path) {
-                if let Err(error) = blacklist::switch_mod_blacklist_profile(
-                    &game_path,
-                    &profile.name,
-                    completed.clone(),
-                    false,
-                ) {
-                    eprintln!("Failed to auto-disable downloaded Mods: {error:#}");
+            if !completed.is_empty() {
+                for profile in blacklist::get_mod_blacklist_profiles(&game_path) {
+                    if let Err(error) = blacklist::switch_mod_blacklist_profile(
+                        &game_path,
+                        &profile.name,
+                        completed.clone(),
+                        false,
+                    ) {
+                        eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
+                    }
                 }
             }
         }

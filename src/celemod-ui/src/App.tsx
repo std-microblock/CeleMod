@@ -18,10 +18,12 @@ import { createBlacklistContext } from './context/blacklist';
 import { RecommendMaps } from './routes/RecommendMaps';
 import { DropInstaller } from './components/DropInstaller';
 import { WindowTitlebar } from './components/WindowTitlebar';
+import { Settings } from './routes/Settings';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
   Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods), RecommendMaps: memo(RecommendMaps),
+  Settings: memo(Settings),
 };
 
 type Services = {
@@ -92,6 +94,7 @@ export default function App() {
             <SidebarButton icon="image" name="RecommendMaps" title={_i18n.t('推荐地图')} />
           </Fragment>
         )}
+        <SidebarButton icon="settings" name="Settings" title={_i18n.t('设置')} />
         <button className="downloadListBtn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
           <Icon name="download" />
         </button>

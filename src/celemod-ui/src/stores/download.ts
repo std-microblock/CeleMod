@@ -86,13 +86,19 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
   downloadMod(name, gbFileIdOrUrl, options = {}) {
     const {
       force = false,
-      autoDisableNewMods = false,
+      autoDisableNewMods,
       ownerId,
       onProgress,
       onFinished,
       onFailed,
     } = options;
     const appState = useAppStore.getState();
+    const downloadTypeDefaults = {
+      ...appState.downloadTypeDefaults,
+      __default: autoDisableNewMods === undefined
+        ? appState.downloadDefaultEnabled
+        : !autoDisableNewMods,
+    };
     const existingTask = get().tasks[name];
 
     let url: string;
@@ -149,7 +155,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       name,
       url,
       `${appState.gamePath}/Mods/`,
-      autoDisableNewMods,
+      JSON.stringify(downloadTypeDefaults),
       (_subtasks: string, state: 'pending' | 'failed' | 'finished') => {
         const currentTask = get().tasks[name];
         if (!currentTask || currentTask.attemptId !== attemptId) return;
