@@ -1501,38 +1501,40 @@ export const Manage = () => {
             </button>
             {showUpdate && hasUpdateMods.length !== 0 && (
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (hasUpdateBtnState !== _i18n.t('更新全部')) return;
                   setHasUpdateBtnState(_i18n.t('更新中'));
-                  const updateUnfinishedSet = new Set(
-                    hasUpdateMods.map((v) => v.name)
-                  );
+                  let updateFailed = false;
                   for (const mod of hasUpdateMods) {
-                    downloadMod(
-                      mod.name,
-                      mod.gb_file === '-1' ? mod.url : mod.gb_file,
-                      {
-                        autoDisableNewMods: manageCtx.autoDisableNewMods,
-                        onProgress: (task, progress) => {
-                          console.log(task, progress);
-                        },
-                        onFinished: () => {
-                          updateUnfinishedSet.delete(mod.name);
-                          if (updateUnfinishedSet.size === 0) {
-                            setHasUpdateBtnState(_i18n.t('更新完成'));
-                            manageCtx.reloadMods();
-                          }
-                        },
-                        onFailed: () => {
-                          console.log('failed');
-                          setHasUpdateBtnState(
-                            _i18n.t('更新失败，请查看左下角')
-                          );
-                        },
-                        force: true,
-                      }
-                    );
+                    // Each root download resolves its dependency tree. Running roots in
+                    // parallel lets multiple trees download the same shared dependency
+                    // archive at once, so update them one by one instead.
+                    const succeeded = await new Promise<boolean>((resolve) => {
+                      downloadMod(
+                        mod.name,
+                        mod.gb_file === '-1' ? mod.url : mod.gb_file,
+                        {
+                          autoDisableNewMods: manageCtx.autoDisableNewMods,
+                          onProgress: (task, progress) => {
+                            console.log(task, progress);
+                          },
+                          onFinished: () => resolve(true),
+                          onFailed: () => {
+                            console.log('failed');
+                            resolve(false);
+                          },
+                          force: true,
+                        }
+                      );
+                    });
+                    updateFailed ||= !succeeded;
                   }
+                  setHasUpdateBtnState(
+                    updateFailed
+                      ? _i18n.t('更新失败，请查看左下角')
+                      : _i18n.t('更新完成')
+                  );
+                  manageCtx.reloadMods();
                 }}
               >
                 {hasUpdateBtnState}
