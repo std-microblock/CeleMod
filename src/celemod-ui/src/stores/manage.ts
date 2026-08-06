@@ -33,8 +33,15 @@ export interface ManageNode {
   size: number;
   dependencies: ManageDependency[];
   dependedBy: string[];
-  duplicateFiles: string[];
+  duplicateFiles: ManageModFile[];
   meta: ManageCatalogMeta | null;
+}
+
+export interface ManageModFile {
+  file: string;
+  version: string;
+  size: number;
+  modifiedAt: number;
 }
 
 interface ManageFilters {
@@ -100,8 +107,23 @@ export const useManageStore = create<ManageTreeState>()(
           const nodes: Record<string, ManageNode> = {};
           for (const mod of installedMods) {
             const current = nodes[mod.name];
+            const file = {
+              file: mod.file,
+              version: mod.version,
+              size: mod.size,
+              modifiedAt: mod.modified_at,
+            };
             if (current) {
-              current.duplicateFiles.push(mod.file);
+              current.duplicateFiles.push(file);
+              const versionOrder = compareVersion(mod.version, current.version);
+              const currentFile = current.duplicateFiles.find((item) => item.file === current.file);
+              if (versionOrder > 0 || (versionOrder === 0 && mod.modified_at > (currentFile?.modifiedAt ?? 0))) {
+                current.id = String(mod.game_banana_id);
+                current.version = mod.version;
+                current.file = mod.file;
+                current.size = mod.size;
+                current.dependencies = mod.deps.map((dependency) => ({ ...dependency }));
+              }
               continue;
             }
             nodes[mod.name] = {
@@ -113,7 +135,7 @@ export const useManageStore = create<ManageTreeState>()(
               size: mod.size,
               dependencies: mod.deps.map((dependency) => ({ ...dependency })),
               dependedBy: [],
-              duplicateFiles: [mod.file],
+              duplicateFiles: [file],
               meta: catalogByName[mod.name.trim().toLocaleLowerCase()] ?? null,
             };
           }
@@ -311,12 +333,10 @@ export const selectVisibleRootNames = ({
     }
     return true;
   };
-  const matching = Object.values(nodes).filter(matches);
-  const matchingNames = new Set(matching.map((node) => node.name));
-  return matching
+  return Object.values(nodes).filter(matches)
     .filter((node) => {
-      if (!rootOnly || query || filters.enabled !== 'all' || filters.health !== 'all' || filters.types.length > 0 || filters.updateOnly) return true;
-      return !node.dependedBy.some((dependent) => matchingNames.has(dependent));
+      if (!rootOnly || query) return true;
+      return !node.dependedBy.some((dependent) => Boolean(nodes[dependent]));
     })
     .map((node) => node.name)
     .sort((a, b) => a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()));

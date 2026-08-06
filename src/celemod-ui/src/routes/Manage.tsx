@@ -194,11 +194,13 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
 interface ManageActions {
   switchNodes: (names: string | string[], enabled: boolean, recursive?: boolean) => void;
   deleteNode: (name: string) => void;
+  showDuplicates: (name: string) => void;
   updateNode: (name: string) => Promise<boolean>;
   downloadMissing: (name: string) => void;
   showDetails: (name: string) => void;
   toggleAlwaysOn: (name: string) => void;
   updateNames: Set<string>;
+  updateVersions: Record<string, string>;
   updateStates: Record<string, string>;
   alwaysOnMods: string[];
   comments: Record<string, string>;
@@ -327,8 +329,16 @@ const ManageTreeNode = ({
                 {_i18n.t('{count} 个启用项依赖', { count: node.dependedBy.filter((dependent) => nodes[dependent]?.enabled).length })}
               </Badge>
             )}
-            {node.duplicateFiles.length > 1 && <Badge tone="danger" title={node.duplicateFiles.join('\n')}>{_i18n.t('重复')} × {node.duplicateFiles.length}</Badge>}
-            {hasUpdate && <Badge tone="warning" onClick={() => actions.updateNode(name)}>{actions.updateStates[name] || _i18n.t('可更新')}</Badge>}
+            {node.duplicateFiles.length > 1 && (
+              <Badge tone="danger" title={node.duplicateFiles.map((item) => item.file).join('\n')} onClick={() => actions.showDuplicates(name)}>
+                {_i18n.t('重复')} × {node.duplicateFiles.length}
+              </Badge>
+            )}
+            {hasUpdate && (
+              <Badge tone="warning" onClick={() => actions.updateNode(name)}>
+                {actions.updateStates[name] || _i18n.t('更新到 {version}', { version: actions.updateVersions[name] })}
+              </Badge>
+            )}
             {actions.showDetailed && <span className="tree-file-detail">{formatSize(node.size)} · {node.file}</span>}
           </div>
         </div>
@@ -406,8 +416,10 @@ export const Manage = () => {
   const expandAll = useManageStore((state) => state.expandAll);
 
   const rootOnly = useAppStore((state) => state.excludeDependents);
+  const setRootOnly = useAppStore((state) => state.setExcludeDependents);
   const checkOptional = useAppStore((state) => state.checkOptionalDep);
   const fullTree = useAppStore((state) => state.fullTree);
+  const setFullTree = useAppStore((state) => state.setFullTree);
   const showUpdate = useAppStore((state) => state.showUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
   const autoToggleDependencies = useAppStore((state) => state.autoToggleDependencies);
@@ -450,12 +462,13 @@ export const Manage = () => {
     return () => document.removeEventListener('pointerdown', close);
   }, [actionMenuOpen, filterOpen]);
 
-  const updates = useMemo<LatestModInfo[]>(() => installedMods.flatMap((mod) => {
-    const latest = latestRaw.find((item) => item[0] === mod.name);
-    if (!latest || compareVersion(latest[1], mod.version) <= 0) return [];
-    return [{ name: mod.name, version: latest[1], gbFile: latest[2], current: mod.version, url: latest[3] }];
-  }), [installedMods, latestRaw]);
+  const updates = useMemo<LatestModInfo[]>(() => Object.values(nodes).flatMap((node) => {
+    const latest = latestRaw.find((item) => item[0] === node.name);
+    if (!latest || compareVersion(latest[1], node.version) <= 0) return [];
+    return [{ name: node.name, version: latest[1], gbFile: latest[2], current: node.version, url: latest[3] }];
+  }), [nodes, latestRaw]);
   const updateNames = useMemo(() => new Set(updates.map((update) => update.name)), [updates]);
+  const updateVersions = useMemo(() => Object.fromEntries(updates.map((update) => [update.name, update.version])), [updates]);
 
   const visibleRoots = useMemo(() => selectVisibleRootNames({
     nodes,
@@ -609,7 +622,10 @@ export const Manage = () => {
           <div className="buttons">
             <button onClick={popup.hide}>{_i18n.t('取消')}</button>
             <button className="delete-confirm" onClick={() => {
-              callRemote('delete_mods', gamePath, JSON.stringify([name, ...selected]), () => {
+              const files = [name, ...selected].flatMap((selectedName) => (
+                nodes[selectedName]?.duplicateFiles.map((item) => item.file) ?? []
+              ));
+              callRemote('delete_mod_files', modPath, JSON.stringify(files), () => {
                 reloadMods();
                 popup.hide();
               });
@@ -618,7 +634,50 @@ export const Manage = () => {
         </div>
       );
     });
-  }, [deleteOrphansByDefault, gamePath, nodes, reloadMods]);
+  }, [deleteOrphansByDefault, modPath, nodes, reloadMods]);
+
+  const showDuplicates = useCallback((name: string) => {
+    const node = nodes[name];
+    if (!node || node.duplicateFiles.length < 2) return;
+    const files = [...node.duplicateFiles].sort((left, right) => {
+      const versionOrder = compareVersion(right.version, left.version);
+      return versionOrder || right.modifiedAt - left.modifiedAt;
+    });
+    const latestFile = node.file;
+    createPopup(() => {
+      const popup = useContext(PopupContext);
+      const [selected, setSelected] = useState<string[]>(files.filter((item) => item.file !== latestFile).map((item) => item.file));
+      return (
+        <div className="duplicate-mod-popup">
+          <div className="title">{_i18n.t('重复 Mod ·')} {name}</div>
+          <p>{_i18n.t('选择要删除的文件')}</p>
+          <div className="duplicate-file-list">
+            {files.map((item) => {
+              const latest = item.file === latestFile;
+              return (
+                <label key={item.file} className={latest ? 'latest' : ''}>
+                  <input type="checkbox" checked={selected.includes(item.file)} onChange={(event) => setSelected(event.target.checked
+                    ? [...selected, item.file]
+                    : selected.filter((value) => value !== item.file))} />
+                  <span><strong>{item.file}</strong><small>{item.version} · {formatSize(item.size)}</small></span>
+                  {latest && <em>{_i18n.t('最新版本')}</em>}
+                </label>
+              );
+            })}
+          </div>
+          <div className="buttons">
+            <button onClick={popup.hide}>{_i18n.t('取消')}</button>
+            <button className="delete-confirm" disabled={selected.length === 0} onClick={() => {
+              callRemote('delete_mod_files', modPath, JSON.stringify(selected), () => {
+                reloadMods();
+                popup.hide();
+              });
+            }}>{_i18n.t('删除选中')} ({selected.length})</button>
+          </div>
+        </div>
+      );
+    });
+  }, [modPath, nodes, reloadMods]);
 
   const startFullCheck = () => {
     if (fullCheckRunning) return;
@@ -657,6 +716,7 @@ export const Manage = () => {
   const actions = useMemo<ManageActions>(() => ({
     switchNodes,
     deleteNode,
+    showDuplicates,
     updateNode,
     downloadMissing,
     showDetails(name) {
@@ -669,6 +729,7 @@ export const Manage = () => {
         : [...alwaysOnMods, name]);
     },
     updateNames: showUpdate ? updateNames : new Set<string>(),
+    updateVersions,
     updateStates,
     alwaysOnMods,
     comments,
@@ -688,13 +749,20 @@ export const Manage = () => {
     checkOptional,
     fullTree,
     showDetailed,
-  }), [alwaysOnMods, checkOptional, comments, currentProfile, currentProfileName, deleteNode, downloadMissing, fullByName, fullTree, gamePath, nodes, setAlwaysOnMods, setComments, setCurrentProfile, setProfilesCallback, showDetailed, showUpdate, switchNodes, updateNames, updateNode, updateStates]);
+  }), [alwaysOnMods, checkOptional, comments, currentProfile, currentProfileName, deleteNode, downloadMissing, fullByName, fullTree, gamePath, nodes, setAlwaysOnMods, setComments, setCurrentProfile, setProfilesCallback, showDetailed, showDuplicates, showUpdate, switchNodes, updateNames, updateNode, updateStates, updateVersions]);
 
   const activeFilterCount = filters.types.length
     + Number(filters.enabled !== 'all')
     + Number(filters.health !== 'all')
     + Number(filters.updateOnly)
-    + Number(filters.showHiddenTypes);
+    + Number(filters.showHiddenTypes)
+    + Number(rootOnly)
+    + Number(fullTree);
+  const resetManageFilters = () => {
+    resetFilters();
+    setRootOnly(false);
+    setFullTree(false);
+  };
 
   if (noEverest) return noEverest;
 
@@ -719,7 +787,7 @@ export const Manage = () => {
               </Button>
               {filterOpen && (
                 <div className="manage-filter-popup">
-                  <div className="popup-heading"><strong>{_i18n.t('筛选已下载 Mod')}</strong><button onClick={resetFilters}>{_i18n.t('重置')}</button></div>
+                  <div className="popup-heading"><strong>{_i18n.t('筛选已下载 Mod')}</strong><button onClick={resetManageFilters}>{_i18n.t('重置')}</button></div>
                   <label><span>{_i18n.t('启用状态')}</span><select value={filters.enabled} onChange={(event) => setEnabledFilter(event.target.value as typeof filters.enabled)}>
                     <option value="all">{_i18n.t('全部')}</option><option value="enabled">{_i18n.t('已启用')}</option><option value="disabled">{_i18n.t('已禁用')}</option>
                   </select></label>
@@ -727,6 +795,8 @@ export const Manage = () => {
                     <option value="all">{_i18n.t('全部')}</option><option value="healthy">{_i18n.t('正常')}</option><option value="issues">{_i18n.t('有问题')}</option><option value="missing">{_i18n.t('缺失依赖')}</option>
                   </select></label>
                   <div className="filter-checks">
+                    <label><input type="checkbox" checked={rootOnly} onChange={(event) => setRootOnly(event.target.checked)} />{_i18n.t('只显示不被依赖的Mod')}</label>
+                    <label><input type="checkbox" checked={fullTree} onChange={(event) => setFullTree(event.target.checked)} />{_i18n.t('显示完整树')}</label>
                     <label><input type="checkbox" checked={filters.updateOnly} onChange={(event) => setUpdateOnly(event.target.checked)} />{_i18n.t('仅显示可更新')}</label>
                     <label><input type="checkbox" checked={filters.showHiddenTypes} onChange={(event) => setShowHiddenTypes(event.target.checked)} />{_i18n.t('显示设置中隐藏的类型')}</label>
                   </div>
@@ -784,7 +854,7 @@ export const Manage = () => {
 
           <div className="manage-tree-scroll">
             {visibleRoots.length > 0 ? visibleRoots.map((name) => <ManageTreeNode key={name} name={name} />) : (
-              <div className="manage-empty"><Icon name="search" /><strong>{_i18n.t('没有符合筛选条件的 Mod')}</strong><button onClick={resetFilters}>{_i18n.t('清除筛选')}</button></div>
+              <div className="manage-empty"><Icon name="search" /><strong>{_i18n.t('没有符合筛选条件的 Mod')}</strong><button onClick={resetManageFilters}>{_i18n.t('清除筛选')}</button></div>
             )}
           </div>
         </section>

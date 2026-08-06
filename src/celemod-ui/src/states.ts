@@ -19,6 +19,7 @@ export interface BackendModInfo {
   version: string;
   file: string;
   size: number;
+  modified_at: number;
 }
 
 type SearchSort = 'new' | 'updateAdded' | 'updated' | 'views' | 'likes';

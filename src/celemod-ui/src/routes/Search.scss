@@ -223,7 +223,6 @@
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.08em;
-            text-transform: uppercase;
         }
 
         label {
@@ -289,35 +288,6 @@
                 font-size: 10px;
                 letter-spacing: 0;
             }
-        }
-    }
-}
-
-.search-source-bar {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    min-height: 24px;
-    margin: -4px 14px 4px;
-    gap: 8px;
-    color: theme.$fg3;
-    font-size: 10px;
-
-    .source-pill {
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: color.change(theme.$fg, $alpha: 0.08);
-        color: theme.$fg;
-        font-weight: 650;
-
-        &.local {
-            background: color.change(#4caf50, $alpha: 0.16);
-            color: #8cdb91;
-        }
-
-        &.cloud {
-            background: color.change(theme.$primary, $alpha: 0.16);
-            color: color.adjust(theme.$primary, $lightness: 20%);
         }
     }
 }

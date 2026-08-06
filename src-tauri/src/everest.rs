@@ -54,22 +54,8 @@ lazy_static! {
     static ref MOD_CATALOG_STATE: Mutex<Option<ModCatalogState>> = Mutex::new(None);
 }
 
-fn legacy_mod_cache_path() -> Option<PathBuf> {
-    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_cache.json"))
-}
-
 fn raw_mod_cache_path() -> Option<PathBuf> {
-    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_list_v2.json"))
-}
-
-fn load_legacy_mod_cache() -> Option<Vec<ModInfoCached>> {
-    let cache_path = mod_cache_path()?;
-    let data = std::fs::read_to_string(cache_path).ok()?;
-    serde_json::from_str(&data).ok()
-}
-
-fn mod_cache_path() -> Option<PathBuf> {
-    legacy_mod_cache_path()
+    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_list.json"))
 }
 
 fn timestamp_millis(time: SystemTime) -> u64 {
@@ -202,28 +188,6 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
             if let Some((raw, modified)) = read_raw_cache() {
                 USING_CACHE.store(true, Ordering::Relaxed);
                 return catalog_state_from_raw(raw, "stale-cache", modified);
-            }
-            if let Some(legacy) = load_legacy_mod_cache() {
-                USING_CACHE.store(true, Ordering::Relaxed);
-                let compact: Arc<HashMap<String, ModInfoCached>> = Arc::new(
-                    legacy
-                        .into_iter()
-                        .map(|item| (item.name.clone(), item))
-                        .collect(),
-                );
-                return Ok(ModCatalogState {
-                    raw: r#"{"data":[],"code":200,"message":"legacy cache"}"#.to_string(),
-                    status: ModCacheStatus {
-                        source: "legacy-cache".to_string(),
-                        updated_at: 0,
-                        count: compact.len(),
-                        path: legacy_mod_cache_path()
-                            .map(|path| path.to_string_lossy().into_owned())
-                            .unwrap_or_default(),
-                    },
-                    compact,
-                    categories: Arc::new(HashMap::new()),
-                });
             }
             USING_CACHE.store(false, Ordering::Relaxed);
             Err(network_error)

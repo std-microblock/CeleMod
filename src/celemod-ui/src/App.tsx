@@ -15,14 +15,13 @@ import { Everest } from './routes/Everest';
 import { checkUpdate } from './components/SelfUpdate';
 import { createThemeContext } from './context/theme';
 import { createBlacklistContext } from './context/blacklist';
-import { RecommendMaps } from './routes/RecommendMaps';
 import { DropInstaller } from './components/DropInstaller';
 import { WindowTitlebar } from './components/WindowTitlebar';
 import { Settings } from './routes/Settings';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
-  Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods), RecommendMaps: memo(RecommendMaps),
+  Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods),
   Settings: memo(Settings),
 };
 
@@ -67,6 +66,10 @@ export default function App() {
     void checkUpdate().catch(console.error);
   }, []);
 
+  useEffect(() => {
+    if (page === 'RecommendMaps') setPage('RecommendMods');
+  }, [page, setPage]);
+
   const SidebarButton = ({ icon, name, title }: { icon: string; name: string; title: string }) => (
     <button className={`navBtn ${name === page ? 'selected' : ''}`} onClick={() => setPage(name)}>
       <Icon name={icon} />
@@ -91,7 +94,6 @@ export default function App() {
               <SidebarButton icon="web" name="Multiplayer" title={_i18n.t('联机相关')} />
             )}
             <SidebarButton icon="flag" name="RecommendMods" title={_i18n.t('推荐模组')} />
-            <SidebarButton icon="image" name="RecommendMaps" title={_i18n.t('推荐地图')} />
           </Fragment>
         )}
         <SidebarButton icon="settings" name="Settings" title={_i18n.t('设置')} />

@@ -274,9 +274,9 @@
   display: inline-flex;
   align-items: center;
   min-height: 18px;
-  padding: 0 4px;
+  padding: 0 6px;
   border: 1px solid color.change(theme.$fg, $alpha: .08);
-  border-radius: 3px;
+  border-radius: 10px;
   background: transparent;
   box-shadow: none;
   color: theme.$fg3;
@@ -417,10 +417,10 @@
     align-items: center;
     width: 100%;
     min-height: 29px;
-    padding: 0 5px;
+    padding: 0 10px;
     gap: 6px;
     border: 1px solid transparent;
-    border-radius: 3px;
+    border-radius: 10px;
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
@@ -467,12 +467,41 @@
 }
 
 .delete-mod-popup,
+.duplicate-mod-popup,
 .full-mod-check-popup {
   width: min(520px, 82vw);
   padding: 20px;
   text-align: left;
   .title { margin-bottom: 14px; font-size: 17px; font-weight: 750; }
   .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 17px; button { min-height: 32px; padding: 0 13px; } .delete-confirm { background: #d94c50; color: white; } }
+}
+.duplicate-mod-popup {
+  width: min(560px, 84vw);
+  p { margin: -5px 0 12px; color: theme.$fg3; font-size: 9px; }
+}
+.duplicate-file-list {
+  display: grid;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  label {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 46px;
+    padding: 7px 9px;
+    gap: 9px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: theme.$bg1;
+    cursor: pointer;
+    &.latest { border-color: color.change(#4caf50, $alpha: .24); }
+    span { display: grid; min-width: 0; gap: 3px; }
+    strong, small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    strong { font-size: 9px; }
+    small { color: theme.$fg3; font-size: 8px; }
+    em { color: #8cdb91; font-size: 8px; font-style: normal; white-space: nowrap; }
+  }
 }
 .delete-target { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 9px; background: color.change(#ff9800, $alpha: .1); span { color: theme.$fg3; font-size: 9px; } }
 .warning-section { display: grid; gap: 5px; margin-top: 10px; padding: 11px; border-radius: 9px; background: color.change(#ef5350, $alpha: .1); strong { color: #ff8d8a; font-size: 10px; } span { color: theme.$fg3; font-size: 9px; } }

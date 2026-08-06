@@ -258,9 +258,6 @@ export const Search = () => {
               <div className="filter-popup-header">
                 <div>
                   <strong>{_i18n.t('搜索来源')}</strong>
-                  <span>{mode === 'local'
-                    ? _i18n.t('使用本机缓存，筛选更完整')
-                    : _i18n.t('实时请求社区搜索接口')}</span>
                 </div>
                 <div className="source-switch">
                   <button
@@ -406,9 +403,6 @@ export const Search = () => {
                 </>
               )}
               <div className="filter-popup-footer">
-                <span>{mode === 'local'
-                  ? _i18n.t('缓存中共 {count} 条 Mod 记录', { count: catalogMods.length })
-                  : _i18n.t('云端筛选由社区接口提供')}</span>
                 <button type="button" onClick={() => {
                   setCloudType('');
                   setLocalFilters(defaultLocalFilters);
@@ -418,15 +412,6 @@ export const Search = () => {
           )}
         </div>
       </form>
-
-      <div className="search-source-bar">
-        <span className={`source-pill ${mode}`}>
-          {mode === 'local' ? _i18n.t('本地缓存') : _i18n.t('云端搜索')}
-        </span>
-        <span>{mode === 'local'
-          ? _i18n.t('找到 {count} 个项目', { count: localResults.length })
-          : _i18n.t('社区实时结果')}</span>
-      </div>
 
       {visibleMods.length > 0 ? (
         <ModList

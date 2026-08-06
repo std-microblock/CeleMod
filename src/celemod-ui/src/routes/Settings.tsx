@@ -55,10 +55,6 @@ export const Settings = () => {
   const setDownloadTypeDefault = useAppStore((state) => state.setDownloadTypeDefault);
   const checkOptionalDep = useAppStore((state) => state.checkOptionalDep);
   const setCheckOptionalDep = useAppStore((state) => state.setCheckOptionalDep);
-  const excludeDependents = useAppStore((state) => state.excludeDependents);
-  const setExcludeDependents = useAppStore((state) => state.setExcludeDependents);
-  const fullTree = useAppStore((state) => state.fullTree);
-  const setFullTree = useAppStore((state) => state.setFullTree);
   const showUpdate = useAppStore((state) => state.showUpdate);
   const setShowUpdate = useAppStore((state) => state.setShowUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
@@ -178,12 +174,6 @@ export const Settings = () => {
             <SettingToggle title={_i18n.t('在树中检查可选依赖')}
               description={_i18n.t('显示可选依赖的缺失、版本和循环关系')}
               checked={checkOptionalDep} onChange={setCheckOptionalDep} />
-            <SettingToggle title={_i18n.t('默认只显示根 Mod')}
-              description={_i18n.t('依赖项收进父 Mod 的树节点，减少重复')}
-              checked={excludeDependents} onChange={setExcludeDependents} />
-            <SettingToggle title={_i18n.t('显示完整依赖树')}
-              description={_i18n.t('展开可选依赖节点中的子树')}
-              checked={fullTree} onChange={setFullTree} />
             <SettingToggle title={_i18n.t('显示可用更新')}
               description={_i18n.t('在管理列表中检查并显示新版本')}
               checked={showUpdate} onChange={setShowUpdate} />

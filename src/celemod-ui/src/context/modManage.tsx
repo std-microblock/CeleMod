@@ -100,20 +100,6 @@ export const createModManageContext = () => {
                             .then(async (mods) => {
                                 popup.hide();
                                 ctx.checkInvalidZipMods();
-                                const is_using_cache = await callRemote<boolean>('is_using_cache');
-                                if (is_using_cache)
-                                    createPopup(() => {
-                                        const { hide } = useContext(PopupContext);
-                                        return (
-                                            <div className="popup-content">
-                                                <div className="title">{_i18n.t('离线模式')}</div>
-                                                <div className="content">{_i18n.t('正在使用缓存的 Mod 数据，可能已过期或不完整')}</div>
-                                                <div className="buttons">
-                                                    <button onClick={hide}>{_i18n.t('确定')}</button>
-                                                </div>
-                                            </div>
-                                        );
-                                    });
                             })
                             .catch((e) => {
                                 popup.hide();

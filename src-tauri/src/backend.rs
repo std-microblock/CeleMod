@@ -1102,7 +1102,11 @@ fn delete_mod_files_sync(mods_folder_path: &str, file_names: &[String]) -> anyho
             .context("Invalid mod file name")?;
         let path = Path::new(mods_folder_path).join(safe_name);
         if path.exists() {
-            fs::remove_file(path)?;
+            if path.is_dir() {
+                fs::remove_dir_all(path)?;
+            } else {
+                fs::remove_file(path)?;
+            }
         }
     }
     Ok(())
@@ -1201,6 +1205,7 @@ struct LocalMod {
     version: String,
     file: String,
     size: u64,
+    modified_at: u64,
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -1349,7 +1354,14 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 -1
             };
 
-            let size = entry.metadata().unwrap().len();
+            let metadata = entry.metadata().context("Failed to read Mod metadata")?;
+            let size = metadata.len();
+            let modified_at = metadata
+                .modified()
+                .ok()
+                .and_then(|value| value.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|value| value.as_millis() as u64)
+                .unwrap_or_default();
 
             mods.push(LocalMod {
                 name,
@@ -1358,6 +1370,7 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
                 deps,
                 file: entry.file_name().to_str().unwrap().to_string(),
                 size,
+                modified_at,
             });
         };
 
@@ -2064,6 +2077,26 @@ mod local_package_tests {
         assert!(mods.join("Keep.zip").exists());
         assert!(mods.join("Keep.celemod").exists());
 
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn deletes_mod_archives_and_directories() {
+        let root = test_dir("delete-mod-files");
+        let archive = root.join("Archive.zip");
+        let directory = root.join("DirectoryMod");
+        fs::write(&archive, b"archive").unwrap();
+        fs::create_dir_all(directory.join("nested")).unwrap();
+        fs::write(directory.join("nested").join("file.txt"), b"folder mod").unwrap();
+
+        delete_mod_files_sync(
+            root.to_str().unwrap(),
+            &["Archive.zip".to_string(), "DirectoryMod".to_string()],
+        )
+        .unwrap();
+
+        assert!(!archive.exists());
+        assert!(!directory.exists());
         fs::remove_dir_all(root).unwrap();
     }
 
