@@ -1,20 +1,49 @@
+@use "sass:color";
 @use "../styles/theme" as theme;
 
 .gameSelector {
-    width: 100%;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  box-sizing: border-box;
 
+  .game-path-field {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+
+    .icon { position: absolute; left: 10px; z-index: 1; color: theme.$fg3; pointer-events: none; }
     select {
-        appearance: auto;
-        margin: 10px 0;
-        width: 275px;
+      width: 100%;
+      height: 33px;
+      min-width: 0;
+      margin: 0;
+      padding: 0 9px 0 30px;
+      border: 1px solid color.change(theme.$fg, $alpha: .09);
+      border-radius: 7px;
+      background: theme.$bg;
+      color: theme.$fg;
+      font-size: 9px;
+      outline: none;
     }
+  }
 
-    .title {
-        display: flex;
-        align-items: center;
+  .game-actions { display: flex; flex: 0 0 auto; gap: 5px; }
+  button {
+    min-height: 33px;
+    padding: 0 10px;
+    border-radius: 7px;
+    box-shadow: none;
+    font-size: 9px;
+    white-space: nowrap;
+    &.primary { border-color: color.change(theme.$primary, $alpha: .45); background: color.change(theme.$primary, $alpha: .45); }
+  }
+}
 
-        .icon {
-            margin-top: 2px;
-        }
-    }
+@media (max-width: 760px) {
+  .gameSelector { align-items: stretch; flex-direction: column; }
+  .gameSelector .game-actions { width: 100%; button { flex: 1; } }
 }

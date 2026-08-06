@@ -450,5 +450,7 @@
   "补全中…": "补全中…",
   "没有符合筛选条件的 Mod": "没有符合筛选条件的 Mod",
   "清除筛选": "清除筛选",
-  "新 Profile 名称": "新 Profile 名称"
+  "新 Profile 名称": "新 Profile 名称",
+  "???? Mod ?????????????": "Choose a Mod configuration or launch the game with it",
+  "?? {count} ? Mod": "{count} Mods enabled"
 }

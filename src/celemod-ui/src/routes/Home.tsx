@@ -11,6 +11,7 @@ import {
   useCurrentBlacklistProfile,
   useGamePath,
   useInstalledMods,
+  useMirror,
   useAppStore,
 } from '../states';
 import { ModBlacklistProfile } from '../ipc/blacklist';
@@ -21,7 +22,7 @@ import { createPopup, PopupContext } from '../components/Popup';
 import { useGlobalContext } from 'src/App';
 
 export const Home = () => {
-  useI18N();
+  const i18n = useI18N();
   const [gamePath, setGamePath] = useGamePath();
   const [gamePaths, setGamePaths] = useState<string[]>([]);
   useEffect(() => {
@@ -181,22 +182,40 @@ export const Home = () => {
   };
 
   const { installedMods } = useInstalledMods();
+  const [, setMirror] = useMirror();
 
   return (
-    <div className="home">
-      <div className="info">
-        <span className="part">
-          <img src={strawberry} alt="" srcSet="" />
-        </span>
-        <span className="part">
-          <div className="title">CeleMod</div>
-          <div className="subtitle">An alternative mod manager for Celeste</div>
-        </span>
-      </div>
-      <br />
+    <div className="home home-page">
+      <header className="home-header">
+        <div className="home-brand">
+          <img src={strawberry} alt="" />
+          <div>
+            <h1>CeleMod</h1>
+            <p>An alternative mod manager for Celeste</p>
+          </div>
+        </div>
+        <label className="home-language">
+          <Icon name="web" />
+          <select value={i18n.currentLang} onChange={(event) => {
+            i18n.setLang(event.target.value);
+            setMirror(event.target.value === 'zh-CN' ? 'wegfan' : '0x0ade');
+          }}>
+            <option value="zh-CN">简体中文</option>
+            <option value="en-US">English</option>
+            <option value="ru-RU">русский</option>
+            <option value="pt-BR">Brazilian Portuguese</option>
+          </select>
+        </label>
+      </header>
 
-      {gamePath ? (
-        <div className="config">
+      <section className="home-section home-game-section">
+        <div className="home-section-heading">
+          <div>
+            <h2>{_i18n.t('游戏')}</h2>
+            <p>{_i18n.t('选择游戏目录并直接启动')}</p>
+          </div>
+        </div>
+        {gamePath ? (
           <GameSelector
             paths={gamePaths}
             onSelect={(e: InputEvent) => {
@@ -222,32 +241,24 @@ export const Home = () => {
               }, 20000);
             }}
           />
-        </div>
-      ) : (
-        <div className="config">
-          {_i18n.t(
-            '未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或'
-          )}
-          <span
-            onClick={() => {
-              selectGamePath(setGamePath);
-            }}
-            style={{
-              color: '#a77fdb',
-            }}
-          >
-            {_i18n.t('点此手动选择')}
-          </span>
-        </div>
-      )}
+        ) : (
+          <div className="home-game-missing">
+            <Icon name="warn" />
+            <span>{_i18n.t('未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或')}</span>
+            <button onClick={() => selectGamePath(setGamePath)}>{_i18n.t('点此手动选择')}</button>
+          </div>
+        )}
+      </section>
 
-      <div className="config">
-        <Icon name="file" />
-        &nbsp;
-        <span>{_i18n.t('Profile 选择')}</span>
-      </div>
-
-      <div className="config-block profiles">
+      <section className="home-section home-profiles-section">
+        <div className="home-section-heading">
+          <div>
+            <h2>{_i18n.t('Profile 选择')}</h2>
+            <p>{_i18n.t('选择一套 Mod 配置，或直接使用它启动游戏')}</p>
+          </div>
+          <span>{profiles.length}</span>
+        </div>
+        <div className="profiles">
         {profiles.map((v) => (
           <div
             key={v.name}
@@ -256,17 +267,12 @@ export const Home = () => {
               globalCtx.blacklist.switchProfile(v.name);
             }}
           >
-            <div className="name">{v.name}</div>
-            <div className="info">
-              <span className="tips">{_i18n.t('上次启动')}</span>
-              <span className="inf">{formatTime(lastUseMap[v.name] || 0)}</span>
-            </div>
-
-            <div className="info">
-              <span className="tips">{_i18n.t('启用的 Mod 数')}</span>
-              <span className="inf">
-                {installedMods.length - v.mods.length}
-              </span>
+            <div className="profile-main">
+              <div className="name">{v.name}</div>
+              <div className="profile-meta">
+                <span>{_i18n.t('启用 {count} 个 Mod', { count: installedMods.length - v.mods.length })}</span>
+                <span>{_i18n.t('上次启动')} {formatTime(lastUseMap[v.name] || 0)}</span>
+              </div>
             </div>
 
             <Button
@@ -292,12 +298,13 @@ export const Home = () => {
                 }
               }
             >
+              <Icon name="replay" />
               {_i18n.t('启动')}
             </Button>
           </div>
         ))}
-      </div>
-
+        </div>
+      </section>
     </div>
   );
 };

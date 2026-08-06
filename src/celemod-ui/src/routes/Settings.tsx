@@ -131,15 +131,15 @@ export const Settings = () => {
                   <small>{_i18n.t('应用到所有 Profile；依赖也会按各自类型处理')}</small>
                 </span>
                 <div className="segmented-setting">
-                  <button type="button" className={downloadMode === 'enabled' ? 'selected' : ''}
+                  <button type="button" className={!downloadAdvanced && downloadMode === 'enabled' ? 'selected' : ''}
                     onClick={() => { setDownloadDefaultsAll(true); setDownloadAdvanced(false); }}>
                     {_i18n.t('启用')}
                   </button>
-                  <button type="button" className={downloadMode === 'disabled' ? 'selected' : ''}
+                  <button type="button" className={!downloadAdvanced && downloadMode === 'disabled' ? 'selected' : ''}
                     onClick={() => { setDownloadDefaultsAll(false); setDownloadAdvanced(false); }}>
                     {_i18n.t('禁用')}
                   </button>
-                  <button type="button" className={downloadMode === 'advanced' || downloadAdvanced ? 'selected' : ''}
+                  <button type="button" className={downloadAdvanced || downloadMode === 'advanced' ? 'selected' : ''}
                     onClick={() => setDownloadAdvanced((value) => !value)}>
                     {_i18n.t('高级')}
                   </button>
