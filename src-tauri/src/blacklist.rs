@@ -52,7 +52,7 @@ pub fn apply_mod_blacklist_profile(
     always_on_mod: &[String],
 ) -> anyhow::Result<()> {
     validate_profile_name(profile_name)?;
-    let profile = get_mod_blacklist_profiles(game_path)
+    let mut profile = get_mod_blacklist_profiles(game_path)
         .into_iter()
         .find(|v| &v.name == profile_name)
         .context("Profile not found")?;
@@ -60,6 +60,23 @@ pub fn apply_mod_blacklist_profile(
     let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
 
     let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
+    let mut profile_changed = false;
+    for blacklisted_mod in &mut profile.mods {
+        let Some(installed_mod) = mods.iter().find(|item| item.name == blacklisted_mod.name) else {
+            continue;
+        };
+        if blacklisted_mod.file != installed_mod.file {
+            blacklisted_mod.file = installed_mod.file.clone();
+            profile_changed = true;
+        }
+    }
+
+    if profile_changed {
+        fs::write(
+            profile_path(game_path, profile_name)?,
+            serde_json::to_string_pretty(&profile)?,
+        )?;
+    }
 
     fs::write(
         blacklist,
@@ -73,7 +90,7 @@ pub fn apply_mod_blacklist_profile(
                     .mods
                     .iter()
                     .find(|m| m.name == v.name && !always_on_mod.contains(&v.name))
-                    .map(|mod_name| mod_name.file.clone())
+                    .map(|_| v.file.clone())
             })
             .collect::<Vec<String>>()
             .join("\n"),

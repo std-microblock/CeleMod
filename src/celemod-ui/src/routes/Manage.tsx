@@ -1189,6 +1189,9 @@ export const Manage = () => {
       reloadMods() {
         callRemote('get_installed_mods', modPath, (data: string) => {
           setInstalledMods(JSON.parse(data));
+          if (currentProfileName) {
+            globalCtx.blacklist.switchProfile(currentProfileName);
+          }
         });
       },
       fullTree,
