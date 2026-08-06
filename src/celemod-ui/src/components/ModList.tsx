@@ -546,7 +546,9 @@ export const ModList = (props: {
       downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
       downloadUrl: () => {
         const dedup = new Set();
-        if (!mod2.gameBananaId) return mod2.files[0]?.url ? mod2.files[0].url : [];
+        if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
+          return mod2.files[0]?.url ? mod2.files[0].url : [];
+        }
         return Promise.resolve(
           mod2.files
             .filter((v) => {
