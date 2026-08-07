@@ -4,7 +4,7 @@ module.exports = {
   output: ['src'],
   disableAutoTranslate: false,
   extractOnly: false,
-  translator: null,
+  translator: 'scripts/deepseek-translator.cjs',
   ignoreComponents: [],
   ignoreMethods: [],
   primaryLocale: 'zh-CN',

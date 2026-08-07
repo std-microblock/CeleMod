@@ -10,7 +10,7 @@ use game_scanner::prelude::Game;
 use pbkdf2::pbkdf2_hmac;
 use rand::RngCore;
 use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -51,6 +51,8 @@ lazy_static::lazy_static! {
 
 #[path = "blacklist.rs"]
 mod blacklist;
+#[path = "crash_analysis.rs"]
+mod crash_analysis;
 #[path = "everest.rs"]
 mod everest;
 #[path = "ureq.rs"]
@@ -1242,9 +1244,11 @@ fn parse_version(mod_version: &serde_yaml::Value) -> String {
     }
 }
 
-fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
+fn get_installed_mods_sync_with_catalog(
+    mods_folder_path: String,
+    mod_data: Arc<HashMap<String, everest::ModInfoCached>>,
+) -> Vec<LocalMod> {
     let mut mods = Vec::new();
-    let mod_data = get_mod_cached_new().unwrap();
 
     let Ok(entries) = fs::read_dir(mods_folder_path) else {
         return mods;
@@ -1379,6 +1383,18 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         }
     }
     mods
+}
+
+fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
+    let mod_data = get_mod_cached_new().unwrap_or_else(|error| {
+        eprintln!("Failed to load Mod catalog while scanning installed Mods: {error:#}");
+        Arc::new(HashMap::new())
+    });
+    get_installed_mods_sync_with_catalog(mods_folder_path, mod_data)
+}
+
+fn get_installed_mods_without_catalog_sync(mods_folder_path: String) -> Vec<LocalMod> {
+    get_installed_mods_sync_with_catalog(mods_folder_path, Arc::new(HashMap::new()))
 }
 
 fn download_and_install_mod(
@@ -1940,6 +1956,110 @@ fn install_local_mod(game_path: &Path, package_path: &Path) -> anyhow::Result<(S
     Ok((mod_name, destination_name))
 }
 
+fn replace_installed_mod_with_fix(
+    game_path: &Path,
+    package_path: &Path,
+    expected_mod_name: &str,
+    affected_versions: &[String],
+    fixed_version: &str,
+) -> anyhow::Result<String> {
+    let yaml = parse_mod_yaml(package_path)?;
+    let package_name = yaml[0]["Name"]
+        .as_str()
+        .context("Fix package everest.yaml is missing the Mod name")?;
+    let package_version = yaml[0]["Version"]
+        .as_str()
+        .context("Fix package everest.yaml is missing the Mod version")?;
+    if package_name != expected_mod_name {
+        bail!("Fix package contains {package_name}, expected {expected_mod_name}");
+    }
+    if package_version != fixed_version {
+        bail!("Fix package version is {package_version}, expected {fixed_version}");
+    }
+
+    let installed = get_installed_mods_without_catalog_sync(
+        game_path.join("Mods").to_string_lossy().into_owned(),
+    );
+    let local_mod = installed
+        .iter()
+        .find(|item| item.name.eq_ignore_ascii_case(expected_mod_name))
+        .context("The affected Mod is not installed")?;
+    if !affected_versions
+        .iter()
+        .any(|version| version == &local_mod.version)
+    {
+        bail!(
+            "Installed {expected_mod_name} version {} is not affected",
+            local_mod.version
+        );
+    }
+
+    let destination = game_path.join("Mods").join(&local_mod.file);
+    if !destination.is_file()
+        || !destination
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
+    {
+        bail!("Automatic repair currently supports zip-installed Mods only");
+    }
+    replace_local_mod_archive(package_path, &destination)?;
+    Ok(local_mod.file.clone())
+}
+
+fn download_and_install_crash_mod_fix_impl(
+    game_path: &Path,
+    mod_name: &str,
+    affected_versions: &[String],
+    fixed_version: &str,
+    url: &str,
+    sha256: &str,
+    progress_callback: &mut dyn FnMut(String, f32),
+) -> anyhow::Result<String> {
+    let cache_root = dirs::cache_dir()
+        .or_else(dirs::data_local_dir)
+        .context("Failed to find a cache directory")?
+        .join("CeleMod")
+        .join("mod-fixes");
+    fs::create_dir_all(&cache_root)?;
+    let download_path = cache_root.join(format!(
+        ".{}-{}.download.zip",
+        mod_name
+            .chars()
+            .filter(|character| character.is_ascii_alphanumeric())
+            .collect::<String>(),
+        std::process::id()
+    ));
+    fs::remove_file(&download_path).ok();
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    let result = (|| {
+        ureq::download_file_with_progress(
+            url,
+            download_path.to_string_lossy().as_ref(),
+            &mut |callback| progress_callback("download".to_string(), callback.progress),
+            false,
+            &cancel_flag,
+        )?;
+        progress_callback("verify".to_string(), 0.0);
+        verify_file_sha256(&download_path, sha256)?;
+        progress_callback("verify".to_string(), 100.0);
+        classify_local_package(&download_path)
+            .context("Downloaded fix is not a valid Mod package")?;
+        progress_callback("install".to_string(), 0.0);
+        let replaced = replace_installed_mod_with_fix(
+            game_path,
+            &download_path,
+            mod_name,
+            affected_versions,
+            fixed_version,
+        )?;
+        progress_callback("install".to_string(), 100.0);
+        Ok(replaced)
+    })();
+    fs::remove_file(download_path).ok();
+    result
+}
+
 fn disable_installed_local_mods(
     game_path: &String,
     installed_mods: &[(String, String)],
@@ -2028,6 +2148,44 @@ mod local_package_tests {
     }
 
     #[test]
+    fn replaces_affected_mod_archive_with_verified_fix_package() {
+        let root = test_dir("crash-mod-fix");
+        let game_path = root.join("game");
+        let mods_path = game_path.join("Mods");
+        fs::create_dir_all(&mods_path).unwrap();
+        let installed = mods_path.join("RushHelper.zip");
+        write_zip(
+            &installed,
+            &[(
+                "everest.yaml",
+                b"- Name: RushHelper\n  Version: 1.1.1\n  DLL: RushHelper.dll\n",
+            )],
+        );
+        let package = root.join("RushHelper-fix.zip");
+        write_zip(
+            &package,
+            &[(
+                "everest.yaml",
+                b"- Name: RushHelper\n  Version: 1.1.1+celemodfix.1\n  DLL: RushHelper.dll\n",
+            )],
+        );
+
+        let replaced = replace_installed_mod_with_fix(
+            &game_path,
+            &package,
+            "RushHelper",
+            &["1.1.1".to_string()],
+            "1.1.1+celemodfix.1",
+        )
+        .unwrap();
+        assert_eq!(replaced, "RushHelper.zip");
+        let yaml = parse_mod_yaml(&installed).unwrap();
+        assert_eq!(yaml[0]["Version"].as_str(), Some("1.1.1+celemodfix.1"));
+        assert!(!mods_path.join("RushHelper-fix.zip").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn identifies_platform_everest_archives() {
         #[cfg(target_os = "windows")]
         let installer = if std::env::consts::ARCH == "x86" {
@@ -2048,6 +2206,30 @@ mod local_package_tests {
             classify_local_package(&package).unwrap(),
             LocalPackageKind::Everest
         ));
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn extracts_loenn_archives_and_rejects_unsafe_paths() {
+        let root = test_dir("loenn-archive");
+        let package = root.join("loenn.zip");
+        let destination = root.join("install");
+        write_zip(&package, &[("L\u{00f6}nn.exe", b"executable")]);
+
+        extract_loenn_zip(&package, &destination, &mut |_| {}).unwrap();
+        assert_eq!(
+            fs::read(destination.join("L\u{00f6}nn.exe")).unwrap(),
+            b"executable"
+        );
+
+        let unsafe_package = root.join("unsafe.zip");
+        write_zip(&unsafe_package, &[("../outside.exe", b"unsafe")]);
+        assert!(
+            extract_loenn_zip(&unsafe_package, &destination, &mut |_| {}).is_err(),
+            "path traversal entries must be rejected"
+        );
+        assert!(!root.join("outside.exe").exists());
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -2188,7 +2370,11 @@ fn get_celeste_dirs() -> String {
         .join("\n")
 }
 
-fn start_game_directly_impl(path: String, origin: bool) -> anyhow::Result<()> {
+fn start_game_directly_with_loader_impl(
+    path: String,
+    origin: bool,
+    legacy_loader: bool,
+) -> anyhow::Result<()> {
     let path = normalize_game_path_impl(&path);
     let path = Path::new(&path);
 
@@ -2221,7 +2407,351 @@ fn start_game_directly_impl(path: String, origin: bool) -> anyhow::Result<()> {
     if origin && game_origin.exists() {
         command.arg("--vanilla");
     }
+    if legacy_loader {
+        // EverestUltra's accelerated loader can be disabled for one launch through
+        // these environment switches, without changing the user's normal setup.
+        command
+            .env("EVEREST_PARALLEL_LOAD", "0")
+            .env("EVEREST_ILHOOK_STARTUP_TRANSACTION", "0")
+            .env("EVEREST_LOADER_PGO_REORDER", "0");
+    }
     command.spawn()?;
+    Ok(())
+}
+
+fn start_game_directly_impl(path: String, origin: bool) -> anyhow::Result<()> {
+    start_game_directly_with_loader_impl(path, origin, false)
+}
+
+fn stop_celeste_for_restart(game_path: &Path) -> anyhow::Result<usize> {
+    use sysinfo::{ProcessExt, System, SystemExt};
+
+    fn comparable_path(path: &Path) -> String {
+        let value = path.to_string_lossy().replace('/', "\\");
+        #[cfg(target_os = "windows")]
+        let value = value.strip_prefix(r"\\?\").unwrap_or(&value).to_lowercase();
+        value.trim_end_matches('\\').to_string()
+    }
+
+    let game_directory = comparable_path(game_path);
+    let mut system = System::new();
+    system.refresh_processes();
+    let mut stopped = 0;
+    for process in system.processes().values() {
+        let process_name = process.name().to_ascii_lowercase();
+        if process_name != "celeste" && process_name != "celeste.exe" {
+            continue;
+        }
+        let executable = process.exe();
+        let executable_directory = executable.parent().map(comparable_path).unwrap_or_default();
+        let matches_game = executable_directory == game_directory || {
+            #[cfg(target_os = "macos")]
+            {
+                game_path.file_name().and_then(|name| name.to_str()) == Some("Resources")
+                    && game_path
+                        .parent()
+                        .map(|contents| comparable_path(&contents.join("MacOS")))
+                        .is_some_and(|directory| executable_directory == directory)
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                false
+            }
+        };
+        if matches_game && process.kill() {
+            stopped += 1;
+        }
+    }
+    if stopped > 0 {
+        std::thread::sleep(Duration::from_millis(450));
+    }
+    Ok(stopped)
+}
+
+fn restart_game_with_loader_impl(game_path: String, legacy_loader: bool) -> anyhow::Result<()> {
+    let game_path = normalize_game_path_impl(&game_path);
+    stop_celeste_for_restart(Path::new(&game_path))?;
+    start_game_directly_with_loader_impl(game_path, false, legacy_loader)
+}
+
+#[derive(Deserialize, Serialize)]
+struct LoennInstallMetadata {
+    version: String,
+    executable: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LoennState {
+    installed: bool,
+    version: Option<String>,
+    path: Option<String>,
+}
+
+fn loenn_root_dir() -> anyhow::Result<PathBuf> {
+    let data_dir = dirs::data_local_dir()
+        .or_else(dirs::data_dir)
+        .context("Failed to find the local application data directory")?;
+    Ok(data_dir.join("CeleMod").join("Loenn"))
+}
+
+fn loenn_install_dir() -> anyhow::Result<PathBuf> {
+    Ok(loenn_root_dir()?.join("current"))
+}
+
+fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
+    let path = Path::new(value);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| !matches!(component, std::path::Component::Normal(_)))
+    {
+        bail!("Invalid relative path: {value}");
+    }
+    Ok(path.to_path_buf())
+}
+
+fn read_loenn_metadata() -> anyhow::Result<LoennInstallMetadata> {
+    let metadata_path = loenn_install_dir()?.join("celemod-loenn.json");
+    let metadata = std::fs::read_to_string(&metadata_path)
+        .with_context(|| format!("Failed to read {}", metadata_path.display()))?;
+    serde_json::from_str(&metadata).context("Invalid Loenn installation metadata")
+}
+
+fn get_loenn_state_impl() -> LoennState {
+    let Ok(install_dir) = loenn_install_dir() else {
+        return LoennState {
+            installed: false,
+            version: None,
+            path: None,
+        };
+    };
+    let Ok(metadata) = read_loenn_metadata() else {
+        return LoennState {
+            installed: false,
+            version: None,
+            path: Some(install_dir.to_string_lossy().to_string()),
+        };
+    };
+    let executable = safe_relative_path(&metadata.executable)
+        .ok()
+        .map(|path| install_dir.join(path));
+    LoennState {
+        installed: executable.as_ref().is_some_and(|path| path.is_file()),
+        version: Some(metadata.version),
+        path: Some(install_dir.to_string_lossy().to_string()),
+    }
+}
+
+fn verify_file_sha256(path: &Path, expected: &str) -> anyhow::Result<()> {
+    if expected.trim().is_empty() {
+        return Ok(());
+    }
+    let mut file = std::fs::File::open(path)?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        hasher.update(&buffer[..count]);
+    }
+    let actual = format!("{:x}", hasher.finalize());
+    if !actual.eq_ignore_ascii_case(expected.trim()) {
+        bail!("SHA-256 mismatch: expected {expected}, got {actual}");
+    }
+    Ok(())
+}
+
+fn extract_loenn_zip(
+    archive_path: &Path,
+    destination: &Path,
+    on_progress: &mut dyn FnMut(f32),
+) -> anyhow::Result<()> {
+    let mut archive = zip::ZipArchive::new(std::fs::File::open(archive_path)?)?;
+    let count = archive.len().max(1);
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let relative_path = entry
+            .enclosed_name()
+            .context("Loenn package contains an unsafe path")?
+            .to_path_buf();
+        let output_path = destination.join(relative_path);
+        if entry.is_dir() {
+            std::fs::create_dir_all(&output_path)?;
+        } else {
+            if let Some(parent) = output_path.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            let mut output = std::fs::File::create(&output_path)?;
+            std::io::copy(&mut entry, &mut output)?;
+            output.flush()?;
+        }
+        on_progress(((index + 1) as f32 / count as f32) * 100.0);
+    }
+    Ok(())
+}
+
+fn install_loenn(
+    version: &str,
+    url: &str,
+    package_type: &str,
+    file_name: &str,
+    executable: &str,
+    sha256: &str,
+    progress_callback: &mut dyn FnMut(String, f32),
+) -> anyhow::Result<()> {
+    let root = loenn_root_dir()?;
+    std::fs::create_dir_all(&root)?;
+    let download_path = root.join("loenn.download");
+    let staging_dir = root.join("installing");
+    if download_path.exists() {
+        std::fs::remove_file(&download_path)?;
+    }
+    if staging_dir.exists() {
+        std::fs::remove_dir_all(&staging_dir)?;
+    }
+    std::fs::create_dir_all(&staging_dir)?;
+
+    let cancel_flag = Arc::new(AtomicBool::new(false));
+    ureq::download_file_with_progress(
+        url,
+        download_path.to_string_lossy().as_ref(),
+        &mut |callback| {
+            progress_callback("download".to_string(), callback.progress);
+        },
+        false,
+        &cancel_flag,
+    )?;
+    progress_callback("verify".to_string(), 0.0);
+    verify_file_sha256(&download_path, sha256)?;
+    progress_callback("verify".to_string(), 100.0);
+
+    match package_type {
+        "zip" => extract_loenn_zip(&download_path, &staging_dir, &mut |progress| {
+            progress_callback("extract".to_string(), progress);
+        })?,
+        "file" => {
+            let relative_file = safe_relative_path(file_name)?;
+            let destination = staging_dir.join(relative_file);
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::rename(&download_path, &destination)?;
+            progress_callback("extract".to_string(), 100.0);
+        }
+        value => bail!("Unsupported Loenn package type: {value}"),
+    }
+
+    let executable_relative = safe_relative_path(executable)?;
+    let staged_executable = staging_dir.join(&executable_relative);
+    if !staged_executable.is_file() {
+        bail!(
+            "Loenn executable was not found after extraction: {}",
+            staged_executable.display()
+        );
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = std::fs::metadata(&staged_executable)?.permissions();
+        permissions.set_mode(permissions.mode() | 0o755);
+        std::fs::set_permissions(&staged_executable, permissions)?;
+    }
+
+    let metadata = LoennInstallMetadata {
+        version: version.to_string(),
+        executable: executable.to_string(),
+    };
+    std::fs::write(
+        staging_dir.join("celemod-loenn.json"),
+        serde_json::to_vec_pretty(&metadata)?,
+    )?;
+
+    let install_dir = loenn_install_dir()?;
+    if install_dir.exists() {
+        std::fs::remove_dir_all(&install_dir)
+            .context("Failed to replace Loenn. Close Loenn and try again")?;
+    }
+    std::fs::rename(&staging_dir, &install_dir)?;
+    if download_path.exists() {
+        let _ = std::fs::remove_file(&download_path);
+    }
+    progress_callback("install".to_string(), 100.0);
+    Ok(())
+}
+
+#[tauri::command]
+fn runtime_platform() -> &'static str {
+    std::env::consts::OS
+}
+
+#[tauri::command]
+fn get_loenn_state() -> LoennState {
+    get_loenn_state_impl()
+}
+
+#[tauri::command]
+fn download_and_install_loenn(
+    version: String,
+    url: String,
+    package_type: String,
+    file_name: String,
+    executable: String,
+    sha256: String,
+    on_event: Channel<IpcEvent>,
+) {
+    std::thread::spawn(move || {
+        if is_test_mode() {
+            send_event(
+                &on_event,
+                vec![serde_json::json!("success"), serde_json::json!(100.0)],
+            );
+            return;
+        }
+        let result = install_loenn(
+            &version,
+            &url,
+            &package_type,
+            &file_name,
+            &executable,
+            &sha256,
+            &mut |state, progress| {
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!(state), serde_json::json!(progress)],
+                );
+            },
+        );
+        match result {
+            Ok(()) => send_event(
+                &on_event,
+                vec![serde_json::json!("success"), serde_json::json!(100.0)],
+            ),
+            Err(error) => send_event(
+                &on_event,
+                vec![
+                    serde_json::json!("failed"),
+                    serde_json::json!(format!("{error:#}")),
+                ],
+            ),
+        }
+    });
+}
+
+#[tauri::command]
+fn start_loenn() -> Result<(), String> {
+    let install_dir = loenn_install_dir().map_err(|error| format!("{error:#}"))?;
+    let metadata = read_loenn_metadata().map_err(|error| format!("{error:#}"))?;
+    let executable = install_dir
+        .join(safe_relative_path(&metadata.executable).map_err(|error| format!("{error:#}"))?);
+    let working_dir = executable.parent().unwrap_or(&install_dir);
+    std::process::Command::new(&executable)
+        .current_dir(working_dir)
+        .spawn()
+        .map_err(|error| format!("Failed to start {}: {error}", executable.display()))?;
     Ok(())
 }
 
@@ -2244,6 +2774,33 @@ fn start_game(path: String) -> Result<(), String> {
 #[tauri::command]
 fn start_game_directly(path: String, origin: bool) -> Result<(), String> {
     start_game_directly_impl(path, origin).map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
+async fn check_everest_crash(
+    game_path: String,
+) -> Result<Option<crash_analysis::CrashAnalysis>, String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    tauri::async_runtime::spawn_blocking(move || crash_analysis::analyze_latest_crash(&game_path))
+        .await
+        .map_err(|error| format!("Crash analysis worker failed: {error}"))?
+        .map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
+fn stop_game_for_restart(game_path: String) -> Result<usize, String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    stop_celeste_for_restart(Path::new(&game_path)).map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
+fn restart_game_with_loader(game_path: String, legacy_loader: bool) -> Result<(), String> {
+    restart_game_with_loader_impl(game_path, legacy_loader).map_err(|error| format!("{error:#}"))
+}
+
+#[tauri::command]
+fn reveal_crash_report(path: String) -> Result<(), String> {
+    crash_analysis::reveal_report(&path).map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
@@ -2553,8 +3110,13 @@ fn get_mod_update(name: String, on_event: Channel<IpcEvent>) {
         let data = get_mod_cached_new()
             .ok()
             .and_then(|mods| {
-                mods.get(&name)
-                    .map(|item| (item.game_banana_file_id.to_string(), item.version.clone()))
+                mods.get(&name).map(|item| {
+                    (
+                        item.game_banana_file_id.to_string(),
+                        item.version.clone(),
+                        item.download_url.clone(),
+                    )
+                })
             })
             .and_then(|value| serde_json::to_string(&value).ok())
             .unwrap_or_default();
@@ -2668,6 +3230,57 @@ fn download_and_install_everest(game_path: String, url: String, on_event: Channe
                 vec![
                     serde_json::json!("Failed"),
                     serde_json::json!(error.to_string()),
+                ],
+            ),
+        }
+    });
+}
+
+#[tauri::command]
+fn download_and_install_crash_mod_fix(
+    game_path: String,
+    mod_name: String,
+    affected_versions: String,
+    fixed_version: String,
+    url: String,
+    sha256: String,
+    on_event: Channel<IpcEvent>,
+) {
+    std::thread::spawn(move || {
+        if is_test_mode() {
+            send_event(
+                &on_event,
+                vec![serde_json::json!("Success"), serde_json::json!(100.0)],
+            );
+            return;
+        }
+        let game_path = normalize_game_path_impl(&game_path);
+        let affected_versions =
+            serde_json::from_str::<Vec<String>>(&affected_versions).unwrap_or_default();
+        let result = download_and_install_crash_mod_fix_impl(
+            Path::new(&game_path),
+            &mod_name,
+            &affected_versions,
+            &fixed_version,
+            &url,
+            &sha256,
+            &mut |state, progress| {
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!(state), serde_json::json!(progress)],
+                );
+            },
+        );
+        match result {
+            Ok(file) => send_event(
+                &on_event,
+                vec![serde_json::json!("Success"), serde_json::json!(file)],
+            ),
+            Err(error) => send_event(
+                &on_event,
+                vec![
+                    serde_json::json!("Failed"),
+                    serde_json::json!(format!("{error:#}")),
                 ],
             ),
         }
@@ -2827,10 +3440,9 @@ fn download_mod(
 ) {
     let _ = use_cn_proxy;
     std::thread::spawn(move || {
-        let download_type_defaults = serde_json::from_str::<HashMap<String, bool>>(
-            &download_type_defaults,
-        )
-        .unwrap_or_default();
+        let download_type_defaults =
+            serde_json::from_str::<HashMap<String, bool>>(&download_type_defaults)
+                .unwrap_or_default();
         let default_enabled = download_type_defaults
             .get("__default")
             .copied()
@@ -3015,6 +3627,10 @@ pub fn run() {
         return;
     }
 
+    if !crate::webview_runtime::ensure_available() {
+        return;
+    }
+
     println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
     let startup_game_paths = if is_test_mode() {
         vec![get_test_game_path()]
@@ -3071,6 +3687,10 @@ pub fn run() {
             check_all_mod_contents,
             get_installed_miaonet,
             start_game,
+            runtime_platform,
+            get_loenn_state,
+            download_and_install_loenn,
+            start_loenn,
             open_url,
             get_blacklist_profiles,
             apply_blacklist_profile,
@@ -3084,12 +3704,17 @@ pub fn run() {
             delete_mod_files,
             get_everest_version,
             download_and_install_everest,
+            download_and_install_crash_mod_fix,
             install_local_packages,
             celemod_version,
             celemod_hash,
             enable_window_controls,
             do_self_update,
             start_game_directly,
+            check_everest_crash,
+            stop_game_for_restart,
+            restart_game_with_loader,
+            reveal_crash_report,
             verify_celeste_install,
             normalize_game_path,
             get_mod_latest_info,

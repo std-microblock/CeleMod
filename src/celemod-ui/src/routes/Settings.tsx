@@ -1,5 +1,5 @@
+import _i18n, { useI18N } from 'src/i18n';
 import { useEffect, useMemo, useState } from 'react';
-import _i18n, { useI18N } from '../i18n';
 import { Icon } from '../components/Icon';
 import { useEnableAcrylic } from '../context/theme';
 import {
@@ -35,7 +35,11 @@ const SettingToggle = ({
       <strong>{title}</strong>
       <small>{description}</small>
     </span>
-    <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(event) => onChange(event.target.checked)}
+    />
   </label>
 );
 
@@ -49,29 +53,55 @@ export const Settings = () => {
   const [cacheBusy, setCacheBusy] = useState(false);
   const [cacheError, setCacheError] = useState('');
 
-  const downloadDefaultEnabled = useAppStore((state) => state.downloadDefaultEnabled);
-  const downloadTypeDefaults = useAppStore((state) => state.downloadTypeDefaults);
-  const setDownloadDefaultsAll = useAppStore((state) => state.setDownloadDefaultsAll);
-  const setDownloadTypeDefault = useAppStore((state) => state.setDownloadTypeDefault);
+  const downloadDefaultEnabled = useAppStore(
+    (state) => state.downloadDefaultEnabled
+  );
+  const downloadTypeDefaults = useAppStore(
+    (state) => state.downloadTypeDefaults
+  );
+  const setDownloadDefaultsAll = useAppStore(
+    (state) => state.setDownloadDefaultsAll
+  );
+  const setDownloadTypeDefault = useAppStore(
+    (state) => state.setDownloadTypeDefault
+  );
   const checkOptionalDep = useAppStore((state) => state.checkOptionalDep);
   const setCheckOptionalDep = useAppStore((state) => state.setCheckOptionalDep);
   const showUpdate = useAppStore((state) => state.showUpdate);
   const setShowUpdate = useAppStore((state) => state.setShowUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
   const setShowDetailed = useAppStore((state) => state.setShowDetailed);
-  const autoToggleDependencies = useAppStore((state) => state.autoToggleDependencies);
-  const setAutoToggleDependencies = useAppStore((state) => state.setAutoToggleDependencies);
-  const autoToggleOptionalDependencies = useAppStore((state) => state.autoToggleOptionalDependencies);
-  const setAutoToggleOptionalDependencies = useAppStore((state) => state.setAutoToggleOptionalDependencies);
-  const deleteOrphansByDefault = useAppStore((state) => state.deleteOrphansByDefault);
-  const setDeleteOrphansByDefault = useAppStore((state) => state.setDeleteOrphansByDefault);
+  const autoToggleDependencies = useAppStore(
+    (state) => state.autoToggleDependencies
+  );
+  const setAutoToggleDependencies = useAppStore(
+    (state) => state.setAutoToggleDependencies
+  );
+  const autoToggleOptionalDependencies = useAppStore(
+    (state) => state.autoToggleOptionalDependencies
+  );
+  const setAutoToggleOptionalDependencies = useAppStore(
+    (state) => state.setAutoToggleOptionalDependencies
+  );
+  const deleteOrphansByDefault = useAppStore(
+    (state) => state.deleteOrphansByDefault
+  );
+  const setDeleteOrphansByDefault = useAppStore(
+    (state) => state.setDeleteOrphansByDefault
+  );
   const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
   const setHiddenModTypes = useAppStore((state) => state.setHiddenModTypes);
   const modCacheTtlHours = useAppStore((state) => state.modCacheTtlHours);
   const setModCacheTtlHours = useAppStore((state) => state.setModCacheTtlHours);
+  const checkBlacklistSync = useAppStore((state) => state.checkBlacklistSync);
+  const setCheckBlacklistSync = useAppStore(
+    (state) => state.setCheckBlacklistSync
+  );
 
   const downloadMode = useMemo(() => {
-    const values = MOD_TYPE_OPTIONS.map((type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled);
+    const values = MOD_TYPE_OPTIONS.map(
+      (type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled
+    );
     if (values.every(Boolean)) return 'enabled';
     if (values.every((value) => !value)) return 'disabled';
     return 'advanced';
@@ -98,17 +128,25 @@ export const Settings = () => {
       <header className="settings-header">
         <div>
           <h1>{_i18n.t('设置')}</h1>
-          <p>{_i18n.t('下载、管理、缓存与界面行为集中在这里调整。')}</p>
         </div>
       </header>
 
       <div className="settings-columns">
         <section className="settings-section">
-          <div className="settings-section-title"><Icon name="download" /><span>{_i18n.t('下载')}</span></div>
+          <div className="settings-section-title">
+            <Icon name="download" />
+            <span>{_i18n.t('下载')}</span>
+          </div>
           <div className="settings-card">
             <div className="setting-select-row">
-              <span><strong>{_i18n.t('下载镜像')}</strong><small>{_i18n.t('选择 Mod 和 Everest 的下载来源')}</small></span>
-              <select value={mirror} onChange={(event) => setMirror(event.target.value)}>
+              <span>
+                <strong>{_i18n.t('下载镜像')}</strong>
+                <small>{_i18n.t('选择 Mod 和 Everest 的下载来源')}</small>
+              </span>
+              <select
+                value={mirror}
+                onChange={(event) => setMirror(event.target.value)}
+              >
                 <option value="0x0ade">0x0ade</option>
                 <option value="gamebanana">GameBanana</option>
                 <option value="wegfan">WEGFan</option>
@@ -120,23 +158,53 @@ export const Settings = () => {
               checked={useMultiThread}
               onChange={setUseMultiThread}
             />
+
             <div className="download-default-setting">
               <div className="download-default-head">
                 <span>
                   <strong>{_i18n.t('Mod 下载后默认行为')}</strong>
-                  <small>{_i18n.t('应用到所有 Profile；依赖也会按各自类型处理')}</small>
+                  <small>
+                    {_i18n.t('高级：勾选即为默认启用，不勾选即为默认禁用')}
+                  </small>
                 </span>
                 <div className="segmented-setting">
-                  <button type="button" className={!downloadAdvanced && downloadMode === 'enabled' ? 'selected' : ''}
-                    onClick={() => { setDownloadDefaultsAll(true); setDownloadAdvanced(false); }}>
+                  <button
+                    type="button"
+                    className={
+                      !downloadAdvanced && downloadMode === 'enabled'
+                        ? 'selected'
+                        : ''
+                    }
+                    onClick={() => {
+                      setDownloadDefaultsAll(true);
+                      setDownloadAdvanced(false);
+                    }}
+                  >
                     {_i18n.t('启用')}
                   </button>
-                  <button type="button" className={!downloadAdvanced && downloadMode === 'disabled' ? 'selected' : ''}
-                    onClick={() => { setDownloadDefaultsAll(false); setDownloadAdvanced(false); }}>
+                  <button
+                    type="button"
+                    className={
+                      !downloadAdvanced && downloadMode === 'disabled'
+                        ? 'selected'
+                        : ''
+                    }
+                    onClick={() => {
+                      setDownloadDefaultsAll(false);
+                      setDownloadAdvanced(false);
+                    }}
+                  >
                     {_i18n.t('禁用')}
                   </button>
-                  <button type="button" className={downloadAdvanced || downloadMode === 'advanced' ? 'selected' : ''}
-                    onClick={() => setDownloadAdvanced((value) => !value)}>
+                  <button
+                    type="button"
+                    className={
+                      downloadAdvanced || downloadMode === 'advanced'
+                        ? 'selected'
+                        : ''
+                    }
+                    onClick={() => setDownloadAdvanced((value) => !value)}
+                  >
                     {_i18n.t('高级')}
                   </button>
                 </div>
@@ -148,8 +216,12 @@ export const Settings = () => {
                       <span>{type}</span>
                       <input
                         type="checkbox"
-                        checked={downloadTypeDefaults[type] ?? downloadDefaultEnabled}
-                        onChange={(event) => setDownloadTypeDefault(type, event.target.checked)}
+                        checked={
+                          downloadTypeDefaults[type] ?? downloadDefaultEnabled
+                        }
+                        onChange={(event) =>
+                          setDownloadTypeDefault(type, event.target.checked)
+                        }
                       />
                     </label>
                   ))}
@@ -160,26 +232,57 @@ export const Settings = () => {
         </section>
 
         <section className="settings-section">
-          <div className="settings-section-title"><Icon name="drive" /><span>{_i18n.t('Mod 管理')}</span></div>
+          <div className="settings-section-title">
+            <Icon name="drive" />
+            <span>{_i18n.t('Mod 管理')}</span>
+          </div>
           <div className="settings-card">
-            <SettingToggle title={_i18n.t('切换 Mod 时同步必要依赖')}
+            <SettingToggle
+              title={_i18n.t('切换 Mod 时同步必要依赖')}
               description={_i18n.t('启用时打开依赖，关闭时关闭不再使用的依赖')}
-              checked={autoToggleDependencies} onChange={setAutoToggleDependencies} />
-            <SettingToggle title={_i18n.t('切换 Mod 时同步可选依赖')}
-              description={_i18n.t('仅在同步必要依赖开启时生效')}
-              checked={autoToggleOptionalDependencies} onChange={setAutoToggleOptionalDependencies} />
-            <SettingToggle title={_i18n.t('删除时默认勾选孤立依赖')}
+              checked={autoToggleDependencies}
+              onChange={setAutoToggleDependencies}
+            />
+            {
+              autoToggleDependencies && <SettingToggle
+                title={_i18n.t('切换 Mod 时同步可选依赖')}
+                description={_i18n.t('仅在同步必要依赖开启时生效')}
+                checked={autoToggleOptionalDependencies}
+                onChange={setAutoToggleOptionalDependencies}
+              />
+            }
+            <SettingToggle
+              title={_i18n.t('删除时默认勾选孤立依赖')}
               description={_i18n.t('自动选择删除后不再被其他 Mod 依赖的项目')}
-              checked={deleteOrphansByDefault} onChange={setDeleteOrphansByDefault} />
-            <SettingToggle title={_i18n.t('在树中检查可选依赖')}
+              checked={deleteOrphansByDefault}
+              onChange={setDeleteOrphansByDefault}
+            />
+            <SettingToggle
+              title={_i18n.t('在树中检查可选依赖')}
               description={_i18n.t('显示可选依赖的缺失、版本和循环关系')}
-              checked={checkOptionalDep} onChange={setCheckOptionalDep} />
-            <SettingToggle title={_i18n.t('显示可用更新')}
+              checked={checkOptionalDep}
+              onChange={setCheckOptionalDep}
+            />
+            <SettingToggle
+              title={_i18n.t('显示可用更新')}
               description={_i18n.t('在管理列表中检查并显示新版本')}
-              checked={showUpdate} onChange={setShowUpdate} />
-            <SettingToggle title={_i18n.t('显示文件详情')}
+              checked={showUpdate}
+              onChange={setShowUpdate}
+            />
+            <SettingToggle
+              title={_i18n.t('显示文件详情')}
               description={_i18n.t('在 Mod 行中显示压缩包名称与大小')}
-              checked={showDetailed} onChange={setShowDetailed} />
+              checked={showDetailed}
+              onChange={setShowDetailed}
+            />
+            <SettingToggle
+              title={_i18n.t('检查 blacklist.txt 与 Profile 同步')}
+              description={_i18n.t(
+                '发现 blacklist.txt 被外部修改时提示选择要保留的版本'
+              )}
+              checked={checkBlacklistSync}
+              onChange={setCheckBlacklistSync}
+            />
 
             <div className="hidden-types-setting">
               <strong>{_i18n.t('管理页默认隐藏的类型')}</strong>
@@ -188,10 +291,18 @@ export const Settings = () => {
                 {MOD_TYPE_OPTIONS.map((type) => {
                   const hidden = hiddenModTypes.includes(type);
                   return (
-                    <button type="button" key={type} className={hidden ? 'selected' : ''}
-                      onClick={() => setHiddenModTypes(hidden
-                        ? hiddenModTypes.filter((value) => value !== type)
-                        : [...hiddenModTypes, type])}>
+                    <button
+                      type="button"
+                      key={type}
+                      className={hidden ? 'selected' : ''}
+                      onClick={() =>
+                        setHiddenModTypes(
+                          hidden
+                            ? hiddenModTypes.filter((value) => value !== type)
+                            : [...hiddenModTypes, type]
+                        )
+                      }
+                    >
                       {type}
                     </button>
                   );
@@ -202,17 +313,30 @@ export const Settings = () => {
         </section>
 
         <section className="settings-section">
-          <div className="settings-section-title"><Icon name="save" /><span>{_i18n.t('Mod 列表缓存')}</span></div>
+          <div className="settings-section-title">
+            <Icon name="save" />
+            <span>{_i18n.t('Mod 列表缓存')}</span>
+          </div>
           <div className="settings-card">
             <div className="setting-select-row cache-ttl-row">
-              <span><strong>{_i18n.t('缓存时效')}</strong><small>{_i18n.t('过期后才重新请求完整 Mod 列表；0 表示每次刷新')}</small></span>
+              <span>
+                <strong>{_i18n.t('缓存时效')}</strong>
+                <small>
+                  {_i18n.t('过期后才重新请求完整 Mod 列表；0 表示每次刷新')}
+                </small>
+              </span>
               <div className="number-with-unit">
-                <input type="number" min="0" max="720" value={modCacheTtlHours}
+                <input
+                  type="number"
+                  min="0"
+                  max="720"
+                  value={modCacheTtlHours}
                   onChange={(event) => {
                     const value = Math.max(0, Number(event.target.value) || 0);
                     setModCacheTtlHours(value);
                     void callRemote('configure_mod_cache', value * 60 * 60);
-                  }} />
+                  }}
+                />
                 <span>{_i18n.t('小时')}</span>
               </div>
             </div>
@@ -227,42 +351,42 @@ export const Settings = () => {
               </div>
               <div>
                 <span>{_i18n.t('更新时间')}</span>
-                <strong>{cacheStatus ? formatCacheTime(cacheStatus.updatedAt) : '--'}</strong>
+                <strong>
+                  {cacheStatus ? formatCacheTime(cacheStatus.updatedAt) : '--'}
+                </strong>
               </div>
-            </div>
-            <div className="cache-actions">
-              <span title={cacheStatus?.path}>{cacheStatus?.path || _i18n.t('缓存尚未建立')}</span>
-              <button type="button" disabled={cacheBusy} onClick={async () => {
-                setCacheBusy(true);
-                setCacheError('');
-                try {
-                  clearInMemoryModCatalog();
-                  await loadModCatalog(modCacheTtlHours, true);
-                  refreshCacheStatus();
-                } catch (error) {
-                  setCacheError(String(error));
-                } finally {
-                  setCacheBusy(false);
-                }
-              }}>{cacheBusy ? _i18n.t('刷新中…') : _i18n.t('立即刷新')}</button>
             </div>
             {cacheError && <div className="settings-error">{cacheError}</div>}
           </div>
         </section>
 
         <section className="settings-section">
-          <div className="settings-section-title"><Icon name="settings" /><span>{_i18n.t('界面')}</span></div>
+          <div className="settings-section-title">
+            <Icon name="settings" />
+            <span>{_i18n.t('界面')}</span>
+          </div>
           <div className="settings-card">
-            <SettingToggle title={_i18n.t('启用亚克力效果')}
+            <SettingToggle
+              title={_i18n.t('启用亚克力效果')}
               description={_i18n.t('使用系统窗口模糊和半透明背景')}
-              checked={enableAcrylic} onChange={setEnableAcrylic} />
+              checked={enableAcrylic}
+              onChange={setEnableAcrylic}
+            />
             <div className="setting-select-row">
-              <span><strong>{_i18n.t('语言/Language')}</strong><small>{_i18n.t('切换界面显示语言')}</small></span>
-              <select value={i18n.currentLang} onChange={(event) => {
-                i18n.setLang(event.target.value);
-                setMirror(event.target.value === 'zh-CN' ? 'wegfan' : '0x0ade');
-              }}>
-                <option value="zh-CN">简体中文</option>
+              <span>
+                <strong>{_i18n.t('语言/Language')}</strong>
+                <small>{_i18n.t('切换界面显示语言')}</small>
+              </span>
+              <select
+                value={i18n.currentLang}
+                onChange={(event) => {
+                  i18n.setLang(event.target.value);
+                  setMirror(
+                    event.target.value === 'zh-CN' ? 'wegfan' : '0x0ade'
+                  );
+                }}
+              >
+                <option value="zh-CN">{_i18n.t('简体中文')}</option>
                 <option value="en-US">English</option>
                 <option value="ru-RU">русский</option>
                 <option value="pt-BR">Brazilian Portuguese</option>

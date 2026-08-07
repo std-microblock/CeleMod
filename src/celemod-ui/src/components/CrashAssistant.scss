@@ -1,0 +1,378 @@
+@use "../styles/theme" as theme;
+
+.popup-container.crash-popup-container,
+.popup-container:has(.crash-assistant-popup) {
+  inset: 45px 0 0;
+  align-items: stretch;
+  justify-content: stretch;
+  border-radius: 0;
+  overflow: hidden;
+  background: theme.$bg !important;
+}
+
+.popup-content.crash-assistant-popup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px 28px 18px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-sizing: border-box;
+  text-align: left;
+  background: theme.$bg;
+  box-shadow: none;
+}
+
+.crash-popup-heading {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.crash-popup-heading .title {
+  margin: 0 0 3px;
+  font-size: 18px;
+}
+
+.crash-popup-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 159, 67, 0.5);
+  border-radius: 8px;
+  color: #ffad61;
+  background: rgba(255, 132, 40, 0.12);
+  font-size: 18px;
+}
+
+.crash-time {
+  color: theme.$fg1;
+  font-size: 11px;
+}
+
+.crash-close {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: theme.$fg1;
+  font-size: 22px;
+}
+
+.crash-summary-line {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  background: rgba(255, 159, 67, 0.07);
+  border-radius: 6px;
+}
+
+.crash-summary-line strong {
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+
+.crash-summary-line span {
+  min-width: 0;
+  overflow: hidden;
+  color: theme.$fg1;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crash-main-grid {
+  display: grid;
+  grid-template-columns: minmax(255px, 0.82fr) minmax(0, 1.18fr);
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-top: 1px solid theme.$bg2;
+  border-bottom: 1px solid theme.$bg2;
+}
+
+.crash-main-grid section {
+  min-width: 0;
+  padding: 10px 10px 9px;
+  overflow: auto;
+}
+
+.crash-main-grid h3 {
+  margin: 0 0 7px;
+  color: theme.$fg;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.crash-trace {
+  border-left: 1px solid theme.$bg2;
+}
+
+.crash-trace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.crash-trace-heading h3 {
+  margin-bottom: 5px;
+}
+
+.crash-exception {
+  display: block;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  user-select: text;
+  color: #ffc58f;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 10px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.crash-suspect {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+}
+
+.crash-suspect:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.crash-suspect-main,
+.crash-suspect-main > span {
+  display: flex;
+  min-width: 0;
+}
+
+.crash-suspect-main {
+  flex-direction: column;
+  gap: 1px;
+}
+
+.crash-suspect-main > span {
+  align-items: baseline;
+  gap: 6px;
+}
+
+.crash-suspect-main strong,
+.crash-suspect-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crash-suspect-main em {
+  color: #ffbd7a;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.crash-suspect-main small {
+  color: theme.$fg1;
+  font-size: 10px;
+}
+
+.crash-suspect-main .crash-dependent-list {
+  margin-top: 2px;
+  color: #ffbd7a;
+}
+
+.crash-update-badge,
+.crash-everest-state span {
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.crash-update-badge,
+.crash-everest-state .outdated {
+  color: #ffe3a3;
+  background: rgba(224, 157, 28, 0.17);
+}
+
+.crash-empty {
+  padding: 16px 8px;
+  color: theme.$fg1;
+  font-size: 11px;
+  text-align: center;
+}
+
+.crash-everest-state {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+}
+
+.crash-everest-state span {
+  color: theme.$fg1;
+  background: theme.$bg1;
+}
+
+.crash-everest-state .ultra {
+  color: #d9c5ff;
+  background: rgba(143, 89, 255, 0.18);
+}
+
+.crash-advice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 7px 10px;
+  margin-bottom: 8px;
+  padding: 4px 2px;
+  color: theme.$fg1;
+  font-size: 10px;
+}
+
+.crash-advice > strong {
+  color: theme.$fg;
+  font-size: 11px;
+}
+
+.crash-advice > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+}
+
+.crash-advice small {
+  grid-column: 2;
+  color: #df8c8c;
+  font-size: 9px;
+}
+
+.crash-report-file {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(116, 185, 255, 0.2);
+  border-radius: 8px;
+  cursor: grab;
+}
+
+.crash-report-file:active {
+  cursor: grabbing;
+}
+
+.crash-report-file > .icon {
+  color: #80bfff;
+  font-size: 22px;
+}
+
+.crash-report-file > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crash-report-file strong,
+.crash-report-file span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crash-report-file span {
+  color: theme.$fg1;
+  font-size: 10px;
+}
+
+.crash-report-file button {
+  min-height: 27px;
+  padding: 2px 9px;
+  font-size: 10px;
+}
+
+.crash-excerpt {
+  height: calc(100% - 54px);
+  min-height: 170px;
+  max-height: none;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border: 0;
+  user-select: text;
+  color: #c9c9c9;
+  background: #0d0d0d;
+  font-size: 9px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.crash-action-status,
+.crash-action-error {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.crash-action-status {
+  color: #bfe1ff;
+  background: rgba(64, 150, 255, 0.1);
+}
+
+.crash-action-error {
+  user-select: text;
+  color: #ffb5b5;
+  background: rgba(220, 60, 60, 0.12);
+}
+
+.crash-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end !important;
+  margin-top: 8px;
+}
+
+.crash-actions button {
+  margin: 0 !important;
+  letter-spacing: 0.2px;
+}
+
+.crash-actions button:disabled,
+.crash-close:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+@media (max-width: 760px) {
+  .crash-main-grid {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .crash-trace {
+    border-top: 1px solid theme.$bg2;
+    border-left: 0;
+  }
+}

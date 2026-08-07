@@ -174,7 +174,7 @@
       min-width: 0;
       padding: 10px;
       border-radius: 9px;
-      background: color.change(theme.$bg, $alpha: .65);
+      border: 1px solid color.change(theme.$bg, $alpha: .55);
       span, strong { display: block; }
       span { color: theme.$fg3; font-size: 9px; }
       strong { margin-top: 4px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }

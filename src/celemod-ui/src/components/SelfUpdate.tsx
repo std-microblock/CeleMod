@@ -1,39 +1,10 @@
 import _i18n from 'src/i18n';
 import { createPopup } from './Popup';
 import { callRemote, compareVersion } from '../utils';
-import { fetch } from '../lib/http';
 import './SelfUpdate.scss';
 import { Fragment, useState } from 'react';
 import { ProgressIndicator } from './Progress';
-
-export interface UpdateInfo {
-  version: string;
-  info: string;
-  auto_download: {
-    name: string;
-    url: string;
-  }[];
-  manual: {
-    name: string;
-    url: string;
-  }[];
-  force?: string;
-}
-
-export const getLatestUpdateInfo = async () => {
-  return await fetch(
-    'https://ganbei-hot-update-1258625969.file.myqcloud.com/celemod/updateInfo.json?' +
-      Date.now()
-  )
-    .then((v) => v.text())
-    .then((v) =>
-      v
-        .split('\n')
-        .filter((v) => !v.trim().startsWith('//'))
-        .join('\n')
-    )
-    .then((v) => JSON.parse(v) as UpdateInfo);
-};
+import { getLatestUpdateInfo } from '../api/updateInfo';
 
 export const checkUpdate = async () => {
   const currentVersion = (await callRemote<string>('celemod_version'))

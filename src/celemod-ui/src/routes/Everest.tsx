@@ -1,42 +1,67 @@
 import _i18n from 'src/i18n';
-import { Fragment, createContext } from 'react';
+import {
+  Fragment,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import './Everest.scss';
 import { fetch } from '../lib/http';
 import {
-  BackendDep,
-  BackendModInfo,
-  useCurrentBlacklistProfile,
   useCurrentEverestVersion,
+  useCurrentLang,
   useGamePath,
-  useInstalledMods,
   useMirror,
 } from '../states';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { callRemote, displayDate } from '../utils';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import { useGlobalContext } from '../App';
-//@ts-ignore
 import everest from '../resources/everest.png';
 import { ProgressIndicator } from '../components/Progress';
 import { createPopup, PopupContext } from '../components/Popup';
+import {
+  EverestUltraVersion,
+  featureVisible,
+  useUpdateInfo,
+} from '../api/updateInfo';
 
 interface Maddie480EverestVersion {
   date: string;
   mainFileSize: number;
   mainDownload: string;
-  olympusMetaDownload: string;
   commit: string;
-  olympusBuildDownload: string;
   branch: string;
   version: number;
-  isNative: boolean;
 }
 
+interface DisplayVersion {
+  key: string;
+  version: string;
+  date: string;
+  commit?: string;
+  size?: number;
+  url: string;
+}
+
+const formatSize = (size?: number) => {
+  if (!size) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = size;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(unit > 1 ? 1 : 0)} ${units[unit]}`;
+};
+
 const getInstallTip = (state: string | null) => {
-  if (state?.startsWith('[1/3]')) return '正在下载';
-  if (state?.startsWith('[2/3]')) return '正在解压';
-  return '正在安装';
+  if (state?.startsWith('[1/3]')) return _i18n.t('正在下载');
+  if (state?.startsWith('[2/3]')) return _i18n.t('正在解压');
+  return _i18n.t('正在安装');
 };
 
 const getInstallDetail = (state: string | null) => {
@@ -49,75 +74,152 @@ const getInstallDetail = (state: string | null) => {
     .trim();
 };
 
-const Channel = ({
-  dataFull,
-  branch,
+const VersionList = ({
+  versions,
   onInstall,
-  title,
 }: {
-  dataFull: Maddie480EverestVersion[];
+  versions: DisplayVersion[];
+  onInstall: (url: string) => void;
+}) => (
+  <div className="version-list">
+    {versions.length === 0 ? (
+      <div className="empty">{_i18n.t('无数据')}</div>
+    ) : (
+      versions.map((item) => (
+        <div key={item.key} className="version-item">
+          <div className="version-main">
+            <strong>{item.version}</strong>
+            <span>{displayDate(item.date)}</span>
+          </div>
+          <div className="version-meta">
+            <span>{item.commit?.slice(0, 7) || _i18n.t('镜像版本')}</span>
+            {item.size ? <span>{formatSize(item.size)}</span> : null}
+            <Button onClick={() => onInstall(item.url)}>
+              {_i18n.t('安装')}
+            </Button>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+);
+
+const OfficialChannel = ({
+  versions,
+  branch,
+  title,
+  onInstall,
+}: {
+  versions: Maddie480EverestVersion[];
   branch: string;
   title: string;
   onInstall: (url: string) => void;
 }) => {
-  const [data, setData] = useState<Maddie480EverestVersion[] | null>(null);
-
-  useEffect(() => {
-    setData(
-      dataFull.filter(
-        (v: Maddie480EverestVersion) => v.branch === branch.toLowerCase()
-      )
-    );
-  }, [dataFull]);
-
-  const [mirror] = useMirror()
-
-  const getDownloadUrl = (data: Maddie480EverestVersion) => {
-    if (data.branch === 'stable') {
-      if (mirror === 'wegfan') return `https://celeste.weg.fan/api/v2/download/everest/${data.version}`;
-      return data.mainDownload;
-    }
-    return data.mainDownload;
-  };
+  const [mirror] = useMirror();
+  const items = useMemo<DisplayVersion[]>(
+    () =>
+      versions
+        .filter((version) => version.branch === branch.toLowerCase())
+        .map((version) => ({
+          key: `${version.branch}-${version.version}-${version.commit}`,
+          version: String(version.version),
+          date: version.date,
+          commit: version.commit,
+          size: version.mainFileSize,
+          url:
+            version.branch === 'stable' && mirror === 'wegfan'
+              ? `https://celeste.weg.fan/api/v2/download/everest/${version.version}`
+              : version.mainDownload,
+        })),
+    [branch, mirror, versions]
+  );
 
   return (
-    <div className="channel">
-      <h2>{title}</h2>
-      <div className="list">
-        {data === null ? (
-          <div>{_i18n.t('加载中...')}</div>
-        ) : data.length === 0 ? (
-          <div>{_i18n.t('无数据')}</div>
-        ) : (
-          data.map((v, i) => (
-            <div key={i} className="item">
-              <div className="line1">
-                <span className="version">{v.version}</span>
-                <span className="date">{displayDate(v.date)}</span>
-              </div>
-              <div className="line2">
-                <div className="commit">{v.commit.slice(0, 7)}</div>
-                <Button onClick={() => onInstall(getDownloadUrl(v))}>
-                  {_i18n.t('安装')}
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+    <section className="channel-card">
+      {title ? <h2>{title}</h2> : null}
+      <VersionList versions={items} onInstall={onInstall} />
+    </section>
   );
 };
 
+const UltraChannel = ({
+  versions,
+  onInstall,
+}: {
+  versions: EverestUltraVersion[];
+  onInstall: (url: string) => void;
+}) => {
+  return (
+    <section className="channel-card tab-channel ultra-channel">
+      <VersionList
+        versions={versions
+          .filter(
+            (version) =>
+              !version.channel || version.channel.toLowerCase() === 'stable'
+          )
+          .map((version) => ({
+            key: `ultra-stable-${version.version}-${
+              version.commit || version.url
+            }`,
+            version: version.version,
+            date: version.date,
+            commit: version.commit,
+            size: version.size,
+            url: version.url,
+          }))}
+        onInstall={onInstall}
+      />
+    </section>
+  );
+};
+
+type EverestTab = 'stable' | 'beta' | 'dev' | 'ultra-stable';
+
 export const Everest = () => {
   const ctx = useGlobalContext();
-  const { setCurrentEverestVersion, currentEverestVersion } =
+  const { currentEverestVersion, setCurrentEverestVersion } =
     useCurrentEverestVersion();
+  const { currentLang } = useCurrentLang();
   const [gamePath] = useGamePath();
+  const { data: updateInfo } = useUpdateInfo();
+  const ultra = updateInfo?.everest_ultra;
+  const showUltra = featureVisible(ultra, currentLang);
+  const [activeTab, setActiveTab] = useState<EverestTab>('stable');
+  const cloudDefaultApplied = useRef(false);
   const [installingUrl, setInstallingUrl] = useState<string | null>(null);
   const [installState, setInstallState] = useState<string | null>(null);
   const [installProgress, setInstallProgress] = useState<number | null>(null);
   const [failedReason, setFailedReason] = useState<string | null>(null);
+  const [everestData, setEverestData] = useState<
+    Maddie480EverestVersion[] | null
+  >(null);
+  const [everestError, setEverestError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!updateInfo || cloudDefaultApplied.current) return;
+    setActiveTab(
+      ultra?.default_tab === 'ultra-stable' && showUltra
+        ? 'ultra-stable'
+        : 'stable'
+    );
+    cloudDefaultApplied.current = true;
+  }, [showUltra, ultra?.default_tab, updateInfo]);
+
+  useEffect(() => {
+    if (!showUltra && activeTab === 'ultra-stable') setActiveTab('stable');
+  }, [activeTab, showUltra]);
+
+  useEffect(() => {
+    fetch(
+      'https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true'
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((value) => setEverestData(value))
+      .catch((error) => setEverestError(String(error)));
+  }, []);
 
   const installEverest = (url: string) => {
     setInstallingUrl(url);
@@ -128,53 +230,49 @@ export const Everest = () => {
       'download_and_install_everest',
       gamePath,
       url,
-      (status: string, data: any) => {
+      (status: string, data: unknown) => {
         if (status === 'Failed') {
           setInstallState('Failed');
-          setFailedReason(data);
+          setFailedReason(String(data));
         } else {
           setInstallState(status);
-          if (typeof data === 'number') {
-            // console.log('progress', data);
-            setInstallProgress(data);
-          }
+          if (typeof data === 'number') setInstallProgress(data);
         }
-
-        if (status === 'Success') {
-          ctx.everest.updateEverestVersion();
-        }
+        if (status === 'Success') ctx.everest.updateEverestVersion();
       }
-    );
+    ).catch((error) => {
+      setInstallState('Failed');
+      setFailedReason(String(error));
+    });
   };
-
-  const [everestData, setEverestData] = useState<
-    Maddie480EverestVersion[] | null
-  >(null);
-
-  useEffect(() => {
-    fetch(
-      'https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true'
-    )
-      .then((v) => v.json())
-      .then((v) => setEverestData(v));
-  }, []);
 
   const showManualVersionPopup = () => {
     createPopup(() => {
       const { hide } = useContext(PopupContext);
-      const [manualVersion, setManualVersion] = useState(currentEverestVersion || '');
-
+      const [manualVersion, setManualVersion] = useState(
+        currentEverestVersion || ''
+      );
       return (
         <div className="popup-content manual-everest-popup">
           <div className="title">{_i18n.t('手动指定 Everest 版本')}</div>
           <div className="content">
-            <p>{_i18n.t('如果你已经安装了 Everest，但 CeleMod 没有正确识别，可以在这里手动填写版本号。')}</p>
-            <p>{_i18n.t('注意：如果实际上没有安装 Everest，就无法通过 Mod 方式启动游戏。')}</p>
+            <p>
+              {_i18n.t(
+                '如果你已经安装了 Everest，但 CeleMod 没有正确识别，可以在这里手动填写版本号。'
+              )}
+            </p>
+            <p>
+              {_i18n.t(
+                '注意：如果实际上没有安装 Everest，就无法通过 Mod 方式启动游戏。'
+              )}
+            </p>
             <input
               type="text"
               value={manualVersion}
               placeholder={_i18n.t('例如 4000')}
-              onInput={(e) => setManualVersion((e.target as HTMLInputElement).value)}
+              onInput={(event) =>
+                setManualVersion((event.target as HTMLInputElement).value)
+              }
             />
           </div>
           <div className="buttons">
@@ -197,118 +295,153 @@ export const Everest = () => {
 
   return (
     <div className="everest">
-      <img src={everest} alt="" srcSet="" width={300} />
-
-      <div className="line">
-        {currentEverestVersion.length > 0 ? (
-          <Fragment>
-            <span className="ico">
-              <Icon name="i-asterisk" />
-            </span>
-            <span className="ti">{_i18n.t('当前安装的 Everest 版本')}</span>
-            <span className="value">{currentEverestVersion}</span>
-          </Fragment>
-        ) : (
-          <span className="ti">{_i18n.t('未安装 Everest')}</span>
-        )}
-      </div>
-      {
-        !currentEverestVersion && <div className="manual-everest-version" onClick={showManualVersionPopup}>
-          {_i18n.t('我已安装 Everest，但未显示')}
-        </div>
-      }
-      {installingUrl === null ? (
-        <Fragment>
-          {everestData ? (
-            <Fragment>
-              <div className="channels">
-                <Channel
-                  title={_i18n.t('Stable 通道')}
-                  branch="Stable"
-                  dataFull={everestData}
-                  onInstall={(url) => installEverest(url)}
-                />
-
-                <Channel
-                  title={_i18n.t('Beta 通道')}
-                  branch="Beta"
-                  dataFull={everestData}
-                  onInstall={(url) => installEverest(url)}
-                />
-
-                <Channel
-                  branch="Dev"
-                  title={_i18n.t('Dev 通道')}
-                  dataFull={everestData}
-                  onInstall={(url) => installEverest(url)}
-                />
-              </div>
-            </Fragment>
-          ) : (
-            <div
-              style={{
-                textAlign: 'center',
-              }}
+      <header className="everest-header">
+        <img src={everest} alt="Everest" />
+        <div className="everest-status">
+          <div
+            className={`status-line ${
+              currentEverestVersion ? 'installed' : 'missing'
+            }`}
+          >
+            <div>
+              <span className="ti">
+                {currentEverestVersion
+                  ? _i18n.t('当前安装的 Everest 版本')
+                  : _i18n.t('未安装 Everest')}
+              </span>
+              <strong className="value">{currentEverestVersion || '—'}</strong>
+            </div>
+          </div>
+          {!currentEverestVersion ? (
+            <button
+              className="manual-everest-version"
+              onClick={showManualVersionPopup}
             >
+              {_i18n.t('我已安装 Everest，但未显示')}
+            </button>
+          ) : null}
+        </div>
+      </header>
+
+      {installingUrl === null ? (
+        <div className="everest-catalog">
+          <div className="channel-tabs">
+            <button
+              className={activeTab === 'stable' ? 'active' : ''}
+              onClick={() => setActiveTab('stable')}
+            >
+              Stable
+            </button>
+            {showUltra ? (
+              <button
+                className={
+                  activeTab === 'ultra-stable' ? 'active ultra' : 'ultra'
+                }
+                onClick={() => setActiveTab('ultra-stable')}
+              >
+                Ultra Stable
+              </button>
+            ) : null}
+            <button
+              className={activeTab === 'beta' ? 'active' : ''}
+              onClick={() => setActiveTab('beta')}
+            >
+              Beta
+            </button>
+            <button
+              className={activeTab === 'dev' ? 'active' : ''}
+              onClick={() => setActiveTab('dev')}
+            >
+              Dev
+            </button>
+          </div>
+
+          {activeTab === 'ultra-stable' && ultra ? (
+            <Fragment>
+              <div className="edition-description ultra-description">
+                <div>
+                  <span className="ultra-kicker">EVEREST · ACCELERATED</span>
+                  <strong>
+                    {ultra.name || 'EverestUltra'}
+                    {_i18n.t('· 加速启动版')}
+                  </strong>
+                  <p>{ultra.description}</p>
+                </div>
+              </div>
+              <UltraChannel
+                versions={ultra.versions || []}
+                onInstall={installEverest}
+              />
+            </Fragment>
+          ) : everestData ? (
+            <OfficialChannel
+              title={
+                activeTab === 'beta' || activeTab === 'dev'
+                  ? `${activeTab[0].toUpperCase()}${activeTab.slice(1)} Channel`
+                  : ''
+              }
+              branch={activeTab}
+              versions={everestData}
+              onInstall={installEverest}
+            />
+          ) : everestError ? (
+            <div className="load-error">
+              {_i18n.t('加载失败')}: {everestError}
+            </div>
+          ) : (
+            <div className="catalog-loading">
               <ProgressIndicator infinite />
             </div>
           )}
-        </Fragment>
+        </div>
       ) : (
-        <Fragment>
-          <div className="installing">
-            {installState === 'Failed' ? (
-              <Fragment>
-                <div className="wrapperin">
-                  <Icon name="i-cross" />
-                </div>
-                <div className="tip">{_i18n.t('安装失败')}</div>
-                <div className="url">{installingUrl}</div>
-                <div className="state">
-                  <textarea>{failedReason}</textarea>
-                </div>
-                <div className="state">
-                  <Button onClick={() => setInstallingUrl(null)}>
-                    {_i18n.t('取消')}
-                  </Button>
-                </div>
-              </Fragment>
-            ) : installState === 'Success' ? (
-              <Fragment>
-                <div className="wrapperin">
-                  <Icon name="i-tick" />
-                </div>
-                <div className="tip">{_i18n.t('安装成功')}</div>
-                <div className="url">{installingUrl}</div>
-                <div className="state">
-                  <Button onClick={() => setInstallingUrl(null)}>
-                    {_i18n.t('确认')}
-                  </Button>
-                </div>
-              </Fragment>
-            ) : (
-              <Fragment>
-                <div className="wrapperin">
-                  <ProgressIndicator
-                    {...(installProgress
-                      ? {
-                        value: installProgress,
-                        max: 100,
-                      }
-                      : {
-                        infinite: true,
-                      })}
-                  />
-                </div>
-                <div className="tip">{getInstallTip(installState)}</div>
-                <div className="url">{installingUrl}</div>
-                {getInstallDetail(installState) ? (
-                  <div className="state">{getInstallDetail(installState)}</div>
-                ) : null}
-              </Fragment>
-            )}
-          </div>
-        </Fragment>
+        <div className="installing">
+          {installState === 'Failed' ? (
+            <Fragment>
+              <div className="wrapperin">
+                <Icon name="i-cross" />
+              </div>
+              <div className="tip">{_i18n.t('安装失败')}</div>
+              <div className="url">{installingUrl}</div>
+              <div className="state">
+                <textarea readOnly value={failedReason || ''} />
+              </div>
+              <div className="state">
+                <Button onClick={() => setInstallingUrl(null)}>
+                  {_i18n.t('取消')}
+                </Button>
+              </div>
+            </Fragment>
+          ) : installState === 'Success' ? (
+            <Fragment>
+              <div className="wrapperin">
+                <Icon name="i-tick" />
+              </div>
+              <div className="tip">{_i18n.t('安装成功')}</div>
+              <div className="url">{installingUrl}</div>
+              <div className="state">
+                <Button onClick={() => setInstallingUrl(null)}>
+                  {_i18n.t('确认')}
+                </Button>
+              </div>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <div className="wrapperin">
+                <ProgressIndicator
+                  {...(installProgress !== null
+                    ? { value: installProgress, max: 100 }
+                    : { infinite: true })}
+                />
+              </div>
+              <div className="tip">{getInstallTip(installState)}</div>
+              <div className="url">{installingUrl}</div>
+              {getInstallDetail(installState) ? (
+                <div className="state">{getInstallDetail(installState)}</div>
+              ) : null}
+            </Fragment>
+          )}
+        </div>
       )}
     </div>
   );

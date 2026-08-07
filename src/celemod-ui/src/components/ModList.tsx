@@ -1,10 +1,24 @@
 import _i18n from 'src/i18n';
-import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { CSSProperties } from 'react';
 import './ModList.scss';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { Awaitable, callRemote, displayDate, horizontalScrollMouseWheelHandler } from '../utils';
+import {
+  Awaitable,
+  callRemote,
+  displayDate,
+  horizontalScrollMouseWheelHandler,
+} from '../utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Content } from '../api/wegfan';
 import { useAutoDisableNewMods } from '../states';
@@ -27,21 +41,23 @@ const formatShortDate = (dateValue: string | Date) => {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return '--';
   const pad = (value: number) => value.toString().padStart(2, '0');
-  return `${date.getFullYear().toString().slice(-2)}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}`;
+  return `${date.getFullYear().toString().slice(-2)}/${pad(
+    date.getMonth() + 1
+  )}/${pad(date.getDate())}`;
 };
 
 const getCategoryLabel = (category: string) => {
   const categoryI18nMap: Record<string, string> = {
-    Map: '地图',
-    Maps: '地图',
-    Assets: '资源',
-    Effects: '特效',
-    Dialog: '对话',
-    'Other/Misc': '其他',
-    Helpers: '辅助',
-    'Lönn Plugin': '辅助',
-    Skins: '皮肤',
-    Mechanics: '机制',
+    Map: _i18n.t('地图'),
+    Maps: _i18n.t('地图'),
+    Assets: _i18n.t('资源'),
+    Effects: _i18n.t('特效'),
+    Dialog: _i18n.t('对话'),
+    'Other/Misc': _i18n.t('其他'),
+    Helpers: _i18n.t('辅助'),
+    'Lönn Plugin': _i18n.t('辅助'),
+    Skins: _i18n.t('皮肤'),
+    Mechanics: _i18n.t('机制'),
     UI: 'UI',
   };
 
@@ -50,18 +66,26 @@ const getCategoryLabel = (category: string) => {
     : category;
 };
 
-const BackgroundEle = memo(({ preview, name }: { preview: string; name: string }) => (
-  <Fragment>
-    <div className="mod-media">
-      <img src={preview + '?w=560'} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-      <div className="mod-media-shade" />
-      <span className="sr-only">{name}</span>
-    </div>
-    <div className="mod-info-backdrop" aria-hidden="true">
-      <img src={preview + '?w=560'} alt="" loading="lazy" decoding="async" />
-    </div>
-  </Fragment>
-));
+const BackgroundEle = memo(
+  ({ preview, name }: { preview: string; name: string }) => (
+    <Fragment>
+      <div className="mod-media">
+        <img
+          src={preview + '?w=560'}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+        />
+        <div className="mod-media-shade" />
+        <span className="sr-only">{name}</span>
+      </div>
+      <div className="mod-info-backdrop" aria-hidden="true">
+        <img src={preview + '?w=560'} alt="" loading="lazy" decoding="async" />
+      </div>
+    </Fragment>
+  )
+);
 
 const CARD_HEIGHT = 242;
 const LIST_CARD_HEIGHT = 64;
@@ -92,7 +116,7 @@ export interface FileToDownload {
 export interface ModInfo {
   name: string;
   downloadKey?: string;
-  downloadUrl: (() => Awaitable<string | FileToDownload[]>);
+  downloadUrl: () => Awaitable<string | FileToDownload[]>;
   previewUrl: string;
   author: string;
   other: string;
@@ -122,11 +146,14 @@ export const Mod = memo(
     const { mod } = props;
     const preview = mod.previewUrl;
     const downloadOwnerId = mod.downloadKey ?? mod.name;
-    const downloadTask = useDownloadStore((state) => (
-      Object.values(state.tasks).find((task) => task.ownerId === downloadOwnerId)
-      ?? state.tasks[mod.name]
-    ));
-    const downloadActive = downloadTask?.state === 'pending' && !downloadTask.canceled;
+    const downloadTask = useDownloadStore(
+      (state) =>
+        Object.values(state.tasks).find(
+          (task) => task.ownerId === downloadOwnerId
+        ) ?? state.tasks[mod.name]
+    );
+    const downloadActive =
+      downloadTask?.state === 'pending' && !downloadTask.canceled;
     const downloadProgress = Math.max(
       0,
       Math.min(100, Number(downloadTask?.progress ?? 0))
@@ -147,17 +174,27 @@ export const Mod = memo(
               {_i18n.t('已安装')}
             </span>
           )}
-          {mod.category && <span className="mod-category-badge">{mod.category}</span>}
+          {mod.category && (
+            <span className="mod-category-badge">{mod.category}</span>
+          )}
         </div>
 
         <div className="operations">
           <Button
-            title={downloadActive
-              ? `${Math.round(downloadProgress)}%`
-              : props.isInstalled ? _i18n.t('已安装') : _i18n.t('下载')}
-            aria-label={downloadActive
-              ? `${Math.round(downloadProgress)}%`
-              : props.isInstalled ? _i18n.t('已安装') : _i18n.t('下载')}
+            title={
+              downloadActive
+                ? `${Math.round(downloadProgress)}%`
+                : props.isInstalled
+                ? _i18n.t('已安装')
+                : _i18n.t('下载')
+            }
+            aria-label={
+              downloadActive
+                ? `${Math.round(downloadProgress)}%`
+                : props.isInstalled
+                ? _i18n.t('已安装')
+                : _i18n.t('下载')
+            }
             onClick={async (event) => {
               event.stopPropagation();
               if (props.isInstalled) return;
@@ -227,7 +264,10 @@ export const Mod = memo(
                             <div
                               className="file"
                               onClick={() => {
-                                down(v.name, parseInt(v.id) === -1 ? v.url : v.id);
+                                down(
+                                  v.name,
+                                  parseInt(v.id) === -1 ? v.url : v.id
+                                );
                                 popupCtx.hide();
                               }}
                             >
@@ -281,9 +321,11 @@ export const Mod = memo(
               downloadActive ? (
                 <span
                   className="download-progress"
-                  style={{
-                    '--download-progress': `${downloadProgress}%`,
-                  } as CSSProperties}
+                  style={
+                    {
+                      '--download-progress': `${downloadProgress}%`,
+                    } as CSSProperties
+                  }
                 >
                   <span>{downloadTask.subtasks.length}</span>
                 </span>
@@ -318,7 +360,10 @@ export const Mod = memo(
                     useEffect(() => {
                       if (!refImages.current) return;
                       // horizontal scroll
-                      refImages.current.addEventListener('mousewheel', horizontalScrollMouseWheelHandler());
+                      refImages.current.addEventListener(
+                        'mousewheel',
+                        horizontalScrollMouseWheelHandler()
+                      );
                     }, [data]);
 
                     useEffect(() => {
@@ -330,7 +375,9 @@ export const Mod = memo(
 
                       // Keep external links going through the native opener.
                       // @ts-ignore
-                      for (const a of refContent.current.querySelectorAll('a')) {
+                      for (const a of refContent.current.querySelectorAll(
+                        'a'
+                      )) {
                         const url = a.getAttribute('href');
                         if (!url) continue;
                         a.href = '#';
@@ -342,7 +389,9 @@ export const Mod = memo(
                       }
 
                       // @ts-ignore
-                      for (const img of refContent.current.querySelectorAll('img'))
+                      for (const img of refContent.current.querySelectorAll(
+                        'img'
+                      ))
                         img.style.maxWidth = '300px';
                     }, [data]);
 
@@ -356,6 +405,7 @@ export const Mod = memo(
                           <ProgressIndicator infinite />
                         </div>
                       );
+
                     return (
                       <div className="mod-detail-popup">
                         <div className="closeBtn" onClick={() => ctx.hide()}>
@@ -424,13 +474,26 @@ export const Mod = memo(
         </div>
 
         <div className="info">
-          <div className="name" title={mod.name}>{mod.name}</div>
-          <div className="author" title={mod.author}>{mod.author}</div>
+          <div className="name" title={mod.name}>
+            {mod.name}
+          </div>
+          <div className="author" title={mod.author}>
+            {mod.author}
+          </div>
           {mod.stats ? (
             <div className="mod-stats">
-              <span><Icon name="heart" />{processLargeNum(mod.stats.likes)}</span>
-              <span><Icon name="eye" />{processLargeNum(mod.stats.views)}</span>
-              <span><Icon name="download" />{processLargeNum(mod.stats.downloads)}</span>
+              <span>
+                <Icon name="heart" />
+                {processLargeNum(mod.stats.likes)}
+              </span>
+              <span>
+                <Icon name="eye" />
+                {processLargeNum(mod.stats.views)}
+              </span>
+              <span>
+                <Icon name="download" />
+                {processLargeNum(mod.stats.downloads)}
+              </span>
               {mod.dates && (
                 <Fragment>
                   <span className="mod-date-stat" title={_i18n.t('发布')}>
@@ -516,7 +579,8 @@ export const ModList = (props: {
       props.loading ||
       loadMoreLocked.current ||
       lastRow.index < rowCount - 2
-    ) return;
+    )
+      return;
 
     loadMoreLocked.current = true;
     Promise.resolve(props.onLoadMore?.()).finally(() => {
@@ -540,68 +604,75 @@ export const ModList = (props: {
     return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
 
-  const createModInfo = useCallback((mod2: Content) => {
-    const mod = {
-      name: mod2.name,
-      downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
-      downloadUrl: () => {
-        const dedup = new Set();
-        if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
-          return mod2.files[0]?.url ? mod2.files[0].url : [];
-        }
-        return Promise.resolve(
-          mod2.files
-            .filter((v) => {
-              if (v.mods.length === 0) return false;
-              if (dedup.has(v.mods[0].id)) return false;
-              dedup.add(v.mods[0].id);
-              return true;
-            })
-            .map(
-              (v) =>
-                ({
-                  id: v.gameBananaId.toString(),
-                  name: `${v.description.includes(v.mods[0].version)
-                    ? ''
-                    : v.mods[0].version + '-'
+  const createModInfo = useCallback(
+    (mod2: Content) => {
+      const mod = {
+        name: mod2.name,
+        downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
+        downloadUrl: () => {
+          const dedup = new Set();
+          if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
+            return mod2.files[0]?.url ? mod2.files[0].url : [];
+          }
+          return Promise.resolve(
+            mod2.files
+              .filter((v) => {
+                if (v.mods.length === 0) return false;
+                if (dedup.has(v.mods[0].id)) return false;
+                dedup.add(v.mods[0].id);
+                return true;
+              })
+              .map(
+                (v) =>
+                  ({
+                    id: v.gameBananaId.toString(),
+                    name: `${
+                      v.description.includes(v.mods[0].version)
+                        ? ''
+                        : v.mods[0].version + '-'
                     }${v.description}-${v.mods[0].name}`,
-                  size: formatSize(v.size),
-                  url: v.url,
-                } as FileToDownload)
-            )
-        );
-      },
-      previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
-      author: mod2.submitter,
-      isInstalled: installedModIDs?.includes(mod2.gameBananaId?.toString()) ?? false,
-      other: `${mod2.likes} · ${processLargeNum(mod2.views)} · ${processLargeNum(mod2.downloads)}`,
-      category: getCategoryLabel(mod2.categoryName),
-      stats: {
-        likes: mod2.likes,
-        views: mod2.views,
-        downloads: mod2.downloads,
-      },
-      dates: {
-        published: mod2.createTime,
-        updated: mod2.latestUpdateAddedTime ?? mod2.updateTime,
-      },
-      detail: () =>
-        Promise.resolve({
-          description: mod2.description,
-          authors: mod2.credits
-            .map((v) => v.authors.map((v) => v.name))
-            .flat(),
-          images: mod2.screenshots.map((v) => v.url),
-          files: mod2.files.map((v) => ({
-            name: v.description,
-            downloadUrl: v.url,
-          })),
-          lastUpdate: mod2.latestUpdateAddedTime,
-          externalUrl: mod2.pageUrl,
-        }),
-    };
-    return mod;
-  }, [installedModIDs]);
+                    size: formatSize(v.size),
+                    url: v.url,
+                  } as FileToDownload)
+              )
+          );
+        },
+        previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
+        author: mod2.submitter,
+        isInstalled:
+          installedModIDs?.includes(mod2.gameBananaId?.toString()) ?? false,
+        other: `${mod2.likes} · ${processLargeNum(
+          mod2.views
+        )} · ${processLargeNum(mod2.downloads)}`,
+        category: getCategoryLabel(mod2.categoryName),
+        stats: {
+          likes: mod2.likes,
+          views: mod2.views,
+          downloads: mod2.downloads,
+        },
+        dates: {
+          published: mod2.createTime,
+          updated: mod2.latestUpdateAddedTime ?? mod2.updateTime,
+        },
+        detail: () =>
+          Promise.resolve({
+            description: mod2.description,
+            authors: mod2.credits
+              .map((v) => v.authors.map((v) => v.name))
+              .flat(),
+            images: mod2.screenshots.map((v) => v.url),
+            files: mod2.files.map((v) => ({
+              name: v.description,
+              downloadUrl: v.url,
+            })),
+            lastUpdate: mod2.latestUpdateAddedTime,
+            externalUrl: mod2.pageUrl,
+          }),
+      };
+      return mod;
+    },
+    [installedModIDs]
+  );
 
   return (
     <div className={`mod-list-shell view-${viewMode}`}>
@@ -610,35 +681,41 @@ export const ModList = (props: {
           className="mod-virtual-canvas"
           style={{ height: rowVirtualizer.getTotalSize() + GRID_PADDING * 2 }}
         >
-          {installedModIDs !== null && virtualRows.map((virtualRow) => {
-            const startIndex = virtualRow.index * columnCount;
-            const rowMods = props.mods.slice(startIndex, startIndex + columnCount);
+          {installedModIDs !== null &&
+            virtualRows.map((virtualRow) => {
+              const startIndex = virtualRow.index * columnCount;
+              const rowMods = props.mods.slice(
+                startIndex,
+                startIndex + columnCount
+              );
 
-            return (
-              <div
-                className="mod-grid-row"
-                key={virtualRow.key}
-                style={{
-                  height: rowHeight,
-                  gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
-                  paddingRight: gridRightPadding,
-                  transform: `translateY(${virtualRow.start + GRID_PADDING}px)`,
-                }}
-              >
-                {rowMods.map((mod2) => {
-                  const mod = createModInfo(mod2);
-                  return (
-                    <Mod
-                      key={`${mod2.gameBananaId ?? mod2.id}-${mod2.name}`}
-                      mod={mod}
-                      modFolder={props.modFolder}
-                      isInstalled={mod.isInstalled}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+              return (
+                <div
+                  className="mod-grid-row"
+                  key={virtualRow.key}
+                  style={{
+                    height: rowHeight,
+                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                    paddingRight: gridRightPadding,
+                    transform: `translateY(${
+                      virtualRow.start + GRID_PADDING
+                    }px)`,
+                  }}
+                >
+                  {rowMods.map((mod2) => {
+                    const mod = createModInfo(mod2);
+                    return (
+                      <Mod
+                        key={`${mod2.gameBananaId ?? mod2.id}-${mod2.name}`}
+                        mod={mod}
+                        modFolder={props.modFolder}
+                        isInstalled={mod.isInstalled}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
         </div>
       </div>
 

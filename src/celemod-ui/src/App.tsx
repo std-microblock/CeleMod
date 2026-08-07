@@ -17,12 +17,15 @@ import { createThemeContext } from './context/theme';
 import { createBlacklistContext } from './context/blacklist';
 import { DropInstaller } from './components/DropInstaller';
 import { WindowTitlebar } from './components/WindowTitlebar';
+import { CrashAssistant } from './components/CrashAssistant';
 import { Settings } from './routes/Settings';
+import { Loenn } from './routes/Loenn';
+import { featureVisible, useUpdateInfo } from './api/updateInfo';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
   Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods),
-  Settings: memo(Settings),
+  Loenn: memo(Loenn), Settings: memo(Settings),
 };
 
 type Services = {
@@ -50,6 +53,8 @@ export default function App() {
   const setDownloadMenuOpen = useAppStore((state) => state.setDownloadMenuOpen);
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
+  const { data: updateInfo } = useUpdateInfo();
+  const showLoenn = featureVisible(updateInfo?.loenn, currentLang);
 
   const modManage = createModManageContext();
   const everest = createEverestContext();
@@ -70,6 +75,10 @@ export default function App() {
     if (page === 'RecommendMaps') setPage('RecommendMods');
   }, [page, setPage]);
 
+  useEffect(() => {
+    if (page === 'Loenn' && updateInfo && !showLoenn) setPage('Home');
+  }, [page, setPage, showLoenn, updateInfo]);
+
   const SidebarButton = ({ icon, name, title }: { icon: string; name: string; title: string }) => (
     <button className={`navBtn ${name === page ? 'selected' : ''}`} onClick={() => setPage(name)}>
       <Icon name={icon} />
@@ -83,6 +92,7 @@ export default function App() {
     <div className="app-shell">
       <DownloadListMenu open={downloadMenuOpen} onClose={() => setDownloadMenuOpen(false)} />
       <DropInstaller />
+      <CrashAssistant />
       <nav className="sidebar">
         <SidebarButton icon="home" name="Home" title={_i18n.t('主页')} />
         {gamePath && (
@@ -96,6 +106,7 @@ export default function App() {
             <SidebarButton icon="flag" name="RecommendMods" title={_i18n.t('推荐模组')} />
           </Fragment>
         )}
+        {showLoenn && <SidebarButton icon="edit" name="Loenn" title="Loenn" />}
         <SidebarButton icon="settings" name="Settings" title={_i18n.t('设置')} />
         <button className="downloadListBtn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
           <Icon name="download" />

@@ -287,7 +287,7 @@ const ManageTreeNode = ({
         >
           <Icon name={hasDependencies ? (expanded ? 'i-down' : 'i-right') : 'i-asterisk'} />
         </button>
-        <div className="tree-row-main">
+        <div className={`tree-row-main ${actions.showDetailed ? 'detailed' : 'compact'}`}>
           <div className="tree-primary-line">
             <button
               className={`state-switch ${isAlwaysOn ? 'always' : node.enabled ? 'enabled' : ''}`}
@@ -393,6 +393,7 @@ export const Manage = () => {
   const [updateStates, setUpdateStates] = useState<Record<string, string>>({});
   const [fullCheckRunning, setFullCheckRunning] = useState(false);
   const [fixingDependencies, setFixingDependencies] = useState(false);
+  const [filtersSuspended, setFiltersSuspended] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState('');
   const filterWrapRef = useRef<HTMLDivElement>(null);
   const actionsWrapRef = useRef<HTMLDivElement>(null);
@@ -470,7 +471,7 @@ export const Manage = () => {
   const updateNames = useMemo(() => new Set(updates.map((update) => update.name)), [updates]);
   const updateVersions = useMemo(() => Object.fromEntries(updates.map((update) => [update.name, update.version])), [updates]);
 
-  const visibleRoots = useMemo(() => selectVisibleRootNames({
+  const filteredRoots = useMemo(() => selectVisibleRootNames({
     nodes,
     filters,
     rootOnly,
@@ -479,16 +480,42 @@ export const Manage = () => {
     updateNames,
   }), [nodes, filters, rootOnly, checkOptional, hiddenModTypes, updateNames]);
 
+  const keywordOnlyFilters = useMemo(() => ({
+    ...filters,
+    enabled: 'all' as const,
+    health: 'all' as const,
+    types: [],
+    updateOnly: false,
+    showHiddenTypes: true,
+  }), [filters]);
+  const keywordRoots = useMemo(() => selectVisibleRootNames({
+    nodes,
+    filters: keywordOnlyFilters,
+    rootOnly: false,
+    includeOptional: checkOptional,
+    hiddenTypes: hiddenModTypes,
+    updateNames,
+  }), [nodes, keywordOnlyFilters, checkOptional, hiddenModTypes, updateNames]);
+  const hasSearchQuery = filters.query.trim().length > 0;
+  const hiddenKeywordMatchCount = hasSearchQuery
+    ? keywordRoots.filter((name) => !filteredRoots.includes(name)).length
+    : 0;
+  const visibleRoots = filtersSuspended && hasSearchQuery ? keywordRoots : filteredRoots;
+
+  useEffect(() => {
+    if (!hasSearchQuery) setFiltersSuspended(false);
+  }, [hasSearchQuery]);
+
   const missingDependencies = useMemo(() => {
     const missing = new Map<string, string>();
     for (const node of Object.values(nodes)) {
       for (const dependency of node.dependencies) {
-        if (excludedDependencyNames.has(dependency.name) || (dependency.optional && !checkOptional)) continue;
+        if (excludedDependencyNames.has(dependency.name) || dependency.optional) continue;
         if (!nodes[dependency.name]) missing.set(dependency.name, dependency.version);
       }
     }
     return [...missing.entries()].map(([name, version]) => ({ name, version }));
-  }, [nodes, checkOptional]);
+  }, [nodes]);
 
   const applyProfileSoon = useCallback(() => {
     const request = Date.now();
@@ -762,6 +789,7 @@ export const Manage = () => {
     resetFilters();
     setRootOnly(false);
     setFullTree(false);
+    setFiltersSuspended(false);
   };
 
   if (noEverest) return noEverest;
@@ -807,7 +835,6 @@ export const Manage = () => {
                 </div>
               )}
             </div>
-            <Button className="toolbar-icon-button" onClick={() => global.pageController.setPage('Settings')} title={_i18n.t('管理设置')}><Icon name="settings" /></Button>
             <div className="toolbar-menu-wrap" ref={actionsWrapRef}>
               <Button className={`toolbar-action-button ${actionMenuOpen ? 'active' : ''}`} onClick={() => setActionMenuOpen(!actionMenuOpen)}>
                 {_i18n.t('操作')} <Icon name="i-down" />
@@ -829,8 +856,8 @@ export const Manage = () => {
           {(updates.length > 0 || missingDependencies.length > 0) && (
             <div className="manage-notice-bar">
               {showUpdate && updates.length > 0 && (
-                <button onClick={async () => {
-                  for (const update of updates) await updateNode(update.name);
+                <button onClick={() => {
+                  for (const update of updates) void updateNode(update.name);
                 }}><Icon name="download" />{_i18n.t('更新全部 ({count})', { count: updates.length })}</button>
               )}
               {missingDependencies.length > 0 && (
@@ -849,6 +876,18 @@ export const Manage = () => {
                   }
                 }}><Icon name="warn" />{fixingDependencies ? _i18n.t('补全中…') : _i18n.t('补全缺失依赖 ({count})', { count: missingDependencies.length })}</button>
               )}
+            </div>
+          )}
+
+          {hasSearchQuery && (hiddenKeywordMatchCount > 0 || filtersSuspended) && (
+            <div className="manage-filter-hint">
+              <Icon name="filter" />
+              <span>{filtersSuspended
+                ? _i18n.t('已暂时关闭筛选条件')
+                : _i18n.t('另有 {count} 个符合关键词的 Mod 被筛选条件隐藏', { count: hiddenKeywordMatchCount })}</span>
+              <button onClick={() => setFiltersSuspended((value) => !value)}>
+                {filtersSuspended ? _i18n.t('恢复筛选条件') : _i18n.t('暂时关闭筛选条件')}
+              </button>
             </div>
           )}
 

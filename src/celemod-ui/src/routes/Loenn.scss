@@ -1,0 +1,207 @@
+@use "../styles/theme" as theme;
+
+.loenn {
+  width: min(920px, 100%);
+  height: 100%;
+  padding: 42px 48px;
+  overflow: auto;
+  box-sizing: border-box;
+
+  &.loenn-loading,
+  &.loenn-unavailable {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.65;
+  }
+
+  .loenn-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+    h1 {
+      margin: 0 0 7px;
+      font-size: 32px;
+      font-weight: 720;
+    }
+
+    p {
+      max-width: 650px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.57);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+
+    button {
+      padding: 6px 9px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      white-space: nowrap;
+      opacity: 0.62;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .loenn-local {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+
+    > div {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .label {
+      color: rgba(255, 255, 255, 0.48);
+      font-size: 12px;
+    }
+
+    strong {
+      font-size: 21px;
+    }
+
+    .installed {
+      color: #79cf9b;
+      font-size: 11px;
+    }
+  }
+
+  .loenn-install {
+    padding-top: 27px;
+  }
+
+  .install-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 12px;
+    }
+
+    select {
+      min-width: 160px;
+    }
+  }
+
+  .release-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 18px;
+    color: rgba(255, 255, 255, 0.48);
+    font-size: 11px;
+
+    p {
+      width: 100%;
+      margin: 8px 0 0;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+  }
+
+  .package-note {
+    margin-top: 20px;
+    font-size: 12px;
+    opacity: 0.55;
+
+    &.error {
+      color: #ef8a8a;
+      opacity: 1;
+    }
+  }
+
+  .install-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 28px;
+  }
+
+  .loenn-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+
+    strong {
+      font-size: 13px;
+    }
+
+    span {
+      font-size: 11px;
+      opacity: 0.5;
+    }
+  }
+
+  .install-result {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
+
+    > .icon {
+      font-size: 18px;
+    }
+
+    &.success > .icon {
+      color: #79cf9b;
+    }
+
+    &.failed > .icon {
+      color: #ef8a8a;
+    }
+
+    textarea {
+      width: 100%;
+      height: 64px;
+      padding: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.12);
+      color: theme.$fg;
+      resize: none;
+      box-sizing: border-box;
+    }
+  }
+
+  .inline-error {
+    padding: 9px 0;
+    color: #ef8a8a;
+    font-size: 11px;
+    word-break: break-word;
+  }
+}

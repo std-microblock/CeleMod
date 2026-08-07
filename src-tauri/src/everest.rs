@@ -76,11 +76,7 @@ fn compact_catalog(mods: &[wegfan::Mod]) -> HashMap<String, ModInfoCached> {
         .map(|item| {
             let compact = ModInfoCached {
                 game_banana_file_id: item.submission_file.game_banana_id.unwrap_or(-1),
-                game_banana_id: item
-                    .submission_file
-                    .submission
-                    .game_banana_id
-                    .unwrap_or(-1),
+                game_banana_id: item.submission_file.submission.game_banana_id.unwrap_or(-1),
                 download_url: item.submission_file.url.clone(),
                 name: item.name.clone(),
                 version: item.version.clone(),
@@ -133,7 +129,11 @@ fn save_raw_cache(raw: &str) {
     }
 }
 
-fn catalog_state_from_raw(raw: String, source: &str, updated_at: SystemTime) -> anyhow::Result<ModCatalogState> {
+fn catalog_state_from_raw(
+    raw: String,
+    source: &str,
+    updated_at: SystemTime,
+) -> anyhow::Result<ModCatalogState> {
     let mods = Arc::new(parse_raw_catalog(&raw)?);
     let compact = Arc::new(compact_catalog(&mods));
     let categories = Arc::new(catalog_categories(&mods));
@@ -215,6 +215,14 @@ pub fn get_mod_catalog_status() -> anyhow::Result<ModCacheStatus> {
 
 pub fn get_mod_cached_new() -> anyhow::Result<Arc<HashMap<String, ModInfoCached>>> {
     Ok(catalog(false)?.compact)
+}
+
+pub fn get_mod_cached_if_loaded() -> Option<Arc<HashMap<String, ModInfoCached>>> {
+    MOD_CATALOG_STATE
+        .lock()
+        .ok()?
+        .as_ref()
+        .map(|state| Arc::clone(&state.compact))
 }
 
 pub fn get_mod_category(name: &str) -> Option<String> {

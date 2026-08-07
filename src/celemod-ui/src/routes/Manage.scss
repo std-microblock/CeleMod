@@ -208,6 +208,34 @@
   }
 }
 
+.manage-filter-hint {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 4px 10px;
+  border-bottom: 1px solid color.change(#ffc66d, $alpha: .12);
+  background: color.change(#ffc66d, $alpha: .055);
+  color: color.change(theme.$fg, $alpha: .72);
+  font-size: 9px;
+
+  > .icon { flex: 0 0 auto; color: #ffc66d; }
+  span { flex: 1 1 auto; min-width: 0; }
+  button {
+    flex: 0 0 auto;
+    min-height: 25px;
+    padding: 0 9px;
+    border: 1px solid color.change(#ffc66d, $alpha: .24);
+    border-radius: 6px;
+    background: color.change(#ffc66d, $alpha: .08);
+    box-shadow: none;
+    color: #ffd893;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+
 .manage-tree-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -264,9 +292,30 @@
   &:not(.leaf):hover { background: theme.$bg3; color: theme.$fg; }
 }
 
-.tree-row-main { min-width: 0; padding: 3px 5px; }
+.tree-row-main {
+  min-width: 0;
+  padding: 3px 5px;
+
+  &.compact {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+
+    .tree-primary-line {
+      flex: 0 1 auto;
+      overflow: hidden;
+    }
+
+    .tree-secondary-line {
+      flex: 1 1 auto;
+      min-height: 18px;
+      overflow: hidden;
+    }
+  }
+}
 .tree-primary-line,
-.tree-secondary-line { display: flex; align-items: center; min-width: 0; flex-wrap: wrap; }
+.tree-secondary-line { display: flex; align-items: center; min-width: 0; flex-wrap: nowrap; }
 .tree-primary-line { min-height: 18px; gap: 4px; }
 .tree-secondary-line { min-height: 12px; gap: 3px; }
 
@@ -305,7 +354,7 @@
 .tree-version { color: theme.$fg3; font-size: 8px; white-space: nowrap; }
 .tree-comment { max-width: 190px; overflow: hidden; color: color.change(theme.$fg, $alpha: .52); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .tree-comment-input { height: 23px; max-width: 220px; padding: 0 7px; border: 1px solid color.change(theme.$primary, $alpha: .5); border-radius: 6px; background: theme.$bg; color: theme.$fg; font-size: 10px; outline: none; }
-.tree-file-detail { max-width: 420px; margin-left: 3px; overflow: hidden; color: color.change(theme.$fg, $alpha: .32); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.tree-file-detail { flex: 1 1 auto; min-width: 0; max-width: 420px; margin-left: 3px; overflow: hidden; color: color.change(theme.$fg, $alpha: .32); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 
 .manage-badge {
   display: inline-flex;

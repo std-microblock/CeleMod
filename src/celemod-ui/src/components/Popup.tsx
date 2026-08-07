@@ -5,10 +5,14 @@ export const PopupContext = createContext<{ hide(): void }>({ hide() {} });
 
 export const createPopup = (
   Content: ComponentType,
-  { cancelable = true, backgroundMask = 'rgba(0, 0, 0, 0.5)' } = {},
+  {
+    cancelable = true,
+    backgroundMask = 'rgba(0, 0, 0, 0.5)',
+    className = '',
+  }: { cancelable?: boolean; backgroundMask?: string; className?: string } = {},
 ) => {
   const container = document.createElement('div');
-  container.className = 'popup-container';
+  container.className = ['popup-container', className].filter(Boolean).join(' ');
   container.style.background = backgroundMask;
   document.body.appendChild(container);
   const root = createRoot(container);

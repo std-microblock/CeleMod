@@ -6,10 +6,12 @@
     "dev": "vite",
     "start": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:standalone": "node scripts/tauri.mjs build --no-bundle",
     "preview": "vite preview",
     "tauri": "node scripts/tauri.mjs",
     "typecheck": "tsc --noEmit",
-    "translate": "di18n sync"
+    "translate": "di18n sync",
+    "test:i18n": "node --test scripts/deepseek-translator.test.cjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",

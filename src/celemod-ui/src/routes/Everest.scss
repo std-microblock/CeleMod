@@ -2,214 +2,320 @@
 @use "../styles/theme" as theme;
 
 .everest {
-    padding: 40px;
-    height: 100%;
-    overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 30px 38px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  .everest-header {
+    display: flex;
+    align-items: center;
+    gap: 34px;
+    flex: 0 0 auto;
+    margin-bottom: 18px;
+
+    > img {
+      width: 215px;
+      max-height: 86px;
+      object-fit: contain;
+    }
+  }
+
+  .everest-status {
+    min-width: 0;
+  }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ti {
+      font-size: 11px;
+      opacity: 0.48;
+    }
+
+    .value {
+      color: color.mix(theme.$primary, theme.$fg, 55%);
+      font-size: 23px;
+      font-weight: 720;
+      line-height: 1.1;
+    }
+
+    &.missing .value {
+      color: rgba(255, 255, 255, 0.34);
+    }
+  }
+
+  .manual-everest-version {
+    margin-top: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: rgba(255, 255, 255, 0.46);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.78);
+    }
+  }
+
+  .manual-everest-popup input {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .everest-catalog {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .channel-tabs {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    flex: 0 0 auto;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+
+    > button {
+      position: relative;
+      display: flex;
+      min-width: 126px;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      color: theme.$fg;
+      font-size: 13px;
+      font-weight: 450;
+      opacity: 0.52;
+      cursor: pointer;
+      list-style: none;
+      transition: opacity 0.16s;
+
+      &:hover {
+        opacity: 0.82;
+      }
+
+      &.active {
+        opacity: 1;
+
+        &::after {
+          background: color.mix(theme.$primary, theme.$fg, 65%);
+        }
+      }
+
+      &.ultra.active {
+        color: #d7b7ff;
+
+        &::after {
+          background: #ae79e7;
+        }
+      }
+    }
+
+  }
+
+  .edition-description {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 20px;
+    padding: 4px 2px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    .ultra-kicker {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(211, 166, 255, 0.76);
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0.18em;
+    }
+
+    strong {
+      display: block;
+      font-size: 19px;
+    }
+
+    p {
+      max-width: 760px;
+      margin: 7px 0 0;
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-line;
+    }
+
+    button {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
+
+  .channel-card {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     box-sizing: border-box;
 
-    img {
-        margin-bottom: 30px;
+    h2 {
+      flex: 0 0 auto;
+      margin: 0 0 12px;
+      font-size: 15px;
+      opacity: 0.75;
+    }
+  }
+
+  .ultra-channel {
+    border: 0;
+  }
+
+  .version-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    column-gap: 22px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .version-item {
+    min-width: 0;
+    padding: 11px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .version-main,
+  .version-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .version-main {
+    strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .line {
-        display: flex; flex-wrap: wrap;
-        align-items: center;
-        margin-bottom: 20px;
-        transform: translateY(-14px);
+    span {
+      flex: 0 0 auto;
+      font-size: 9px;
+      opacity: 0.5;
+    }
+  }
 
-        &>* {
-            width: max-content;
-        }
+  .version-meta {
+    min-height: 24px;
+    margin-top: 4px;
+    justify-content: flex-start;
 
-        .ti {
-            font-size: 20px;
-            font-weight: 400;
-            opacity: 0.8;
-        }
-
-        .ico {
-            font-size: 20px;
-            display: inline-block;
-            opacity: 0.6;
-            margin-top: 5px;
-        }
-
-        .value {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 0;
-            margin-left: 10px;
-            display: inline-block;
-            color: color.mix(theme.$primary,
-                    theme.$fg,
-                    50%);
-        }
+    span {
+      font-size: 10px;
+      opacity: 0.48;
     }
 
-    .manual-everest-version {
-        margin: 8px 0 20px;
-        color: rgba(255, 255, 255, 0.45);
-        font-size: 13px;
-        width: max-content;
-        cursor: pointer;
+    button {
+      margin-left: auto;
+      padding: 3px 8px;
+      border: 0;
+      background: transparent;
+      font-size: 11px;
+    }
+  }
 
-        &:hover {
-            color: rgba(255, 255, 255, 0.7);
-        }
+  .empty,
+  .load-error,
+  .catalog-loading {
+    padding: 28px;
+    text-align: center;
+    opacity: 0.62;
+  }
+
+  .catalog-loading {
+    margin: auto;
+  }
+
+  .installing {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    .wrapperin {
+      padding-bottom: 14px;
+      font-size: 82px;
     }
 
-    .manual-everest-popup {
-        input {
-            width: 100%;
-            margin-top: 10px;
-        }
+    .tip {
+      margin-bottom: 8px;
+      font-size: 30px;
+      font-weight: 700;
     }
 
-    .channels {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.3%;
-        height: calc(100% - 150px);
-        min-height: 0;
-        overflow: hidden;
-        transform: translateY(-5px);
-
-        .channel {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-width: 0;
-            min-height: 0;
-            overflow: hidden;
-
-            h2 {
-                flex: 0 0 auto;
-            }
-
-            .list {
-                flex: 1 1 auto;
-                height: auto;
-                min-height: 0;
-                overflow-x: hidden;
-                overflow-y: auto;
-                box-sizing: border-box;
-
-                .item {
-                    min-width: 0;
-                    overflow: hidden;
-                    margin-bottom: 5px;
-                    padding-bottom: 5px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-
-                    * {
-                        margin: 0 5px;
-                        display: inline-block;
-                    }
-
-                    .line1 {
-                        position: relative;
-                        width: 100%;
-
-                        .version {
-                            font-weight: 700;
-                        }
-
-                        .date {
-                            font-size: 10px;
-                            opacity: 0.6;
-                            right: 0;
-                            top: 5px;
-                            position: absolute;
-                        }
-                    }
-
-                    .line2 {
-                        position: relative;
-                        width: 100%;
-
-                        .commit {
-                            font-size: 12px;
-                            opacity: 0.6;
-                            left: 0;
-                        }
-
-                        button {
-                            position: absolute;
-                            right: 0;
-                            top: 0;
-                            border: none;
-                            background: none;
-                            color: theme.$fg;
-                            opacity: 0.7;
-                            font-size: 10px;
-                            padding: 0;
-
-                            &:hover {
-                                opacity: 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    .url {
+      max-width: 78%;
+      overflow: hidden;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .installing {
-        width: 100%;
-        display: flex; flex-direction: column;
-        align-items: center;
-        justify-content: center;
+    .state {
+      display: flex;
+      width: 78%;
+      justify-content: center;
+      margin-top: 8px;
+      overflow: hidden;
+      font-size: 13px;
+      opacity: 0.74;
+      text-align: center;
+      text-overflow: ellipsis;
+      white-space: nowrap;
 
-        .wrapperin {
-            padding-bottom: 14px;
-            font-size: 88px;
-        }
-
-        &>* {
-            width: max-content;
-        }
-
-        .tip {
-            font-size: 34px;
-            font-weight: 700;
-            margin-right: 0;
-            margin-bottom: 8px;
-        }
-
-        .url {
-            font-size: 14px;
-            font-weight: 500;
-            max-width: 78%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            opacity: 0.62;
-        }
-
-        .state {
-            font-size: 13px;
-            font-weight: 500;
-            margin-top: 8px;
-            width: 78%;
-            text-align: center;
-            justify-content: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            opacity: 0.72;
-
-            textarea {
-                text-align: left;
-                width: 90%;
-                height: 70px;
-                border: none;
-                background: none;
-                color: theme.$fg;
-                font-size: 15px;
-                font-weight: 700;
-                resize: none;
-                padding: 0;
-            }
-        }
+      textarea {
+        width: 90%;
+        height: 70px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: theme.$fg;
+        font-size: 14px;
+        resize: none;
+        text-align: left;
+      }
     }
+  }
 }

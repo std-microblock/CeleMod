@@ -1,3 +1,4 @@
+import _i18n, { useI18N } from 'src/i18n';
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { callRemote } from '../tauri/commands';
@@ -36,10 +37,12 @@ export function WindowTitlebar() {
     void Promise.all([
       callRemote<string>('celemod_version'),
       callRemote<string>('celemod_hash'),
-    ]).then(([nextVersion, nextHash]) => {
-      setVersion(nextVersion);
-      setHash(nextHash.slice(0, 6));
-    }).catch(console.error);
+    ])
+      .then(([nextVersion, nextHash]) => {
+        setVersion(nextVersion);
+        setHash(nextHash.slice(0, 6));
+      })
+      .catch(console.error);
     return () => {
       disposed = true;
     };
@@ -48,7 +51,8 @@ export function WindowTitlebar() {
   if (platform !== 'windows') return null;
 
   const startDragging = (event: MouseEvent<HTMLElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest('button')) return;
+    if (event.button !== 0 || (event.target as HTMLElement).closest('button'))
+      return;
     event.preventDefault();
     void getCurrentWindow().startDragging();
   };
@@ -60,10 +64,14 @@ export function WindowTitlebar() {
       data-tauri-drag-region
       onMouseDown={startDragging}
     >
-      <div className="window-caption" data-tauri-drag-region>CeleMod</div>
+      <div className="window-caption" data-tauri-drag-region>
+        CeleMod
+      </div>
       <button
         className="celemod-version"
-        title="左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console"
+        title={_i18n.t(
+          '左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console'
+        )}
         onClick={(event) => {
           if (event.shiftKey) void callRemote('show_log_window');
           else void window._checkUpdate?.();
