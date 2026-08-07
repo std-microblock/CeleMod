@@ -25,7 +25,7 @@ jobs:
           - platform: ubuntu-22.04
             args: --bundles appimage,deb
           - platform: windows-latest
-            args: --bundles nsis,msi
+            args: --bundles nsis
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -70,5 +70,5 @@ jobs:
           args: ${{ matrix.args }}
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('CeleMod {0}', github.ref_name) || '' }}
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false

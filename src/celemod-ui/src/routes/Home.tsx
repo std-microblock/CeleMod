@@ -1,6 +1,6 @@
 import _i18n from 'src/i18n';
 import { useI18N } from 'src/i18n';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { GameSelector } from '../components/GameSelector';
 import { Icon } from '../components/Icon';
 import { callRemote, selectGamePath, useBlockingMask } from '../utils';
@@ -59,9 +59,16 @@ export const Home = () => {
   }, [currentProfileName, profiles]);
 
   const [alwaysOnMods] = useAlwaysOnMods();
+  const blacklistSyncPopupRef = useRef<ReturnType<typeof createPopup> | null>(null);
 
   useEffect(() => {
-    if (!checkBlacklistSync || !currentProfile || !gamePath) return;
+    if (
+      !checkBlacklistSync ||
+      !currentProfile ||
+      !gamePath ||
+      blacklistSyncPopupRef.current
+    )
+      return;
     const checkSync = async () => {
       const content = await callRemote<string>(
         'get_current_blacklist_content',
@@ -86,8 +93,11 @@ export const Home = () => {
           disabledFiles.filter((file) => !expectedDisabledFiles.includes(file))
         ),
       ];
-      if (onlyInProfile.length > 0 || onlyInFile.length > 0) {
-        createPopup(() => {
+      if (
+        (onlyInProfile.length > 0 || onlyInFile.length > 0) &&
+        !blacklistSyncPopupRef.current
+      ) {
+        const popup = createPopup(() => {
           const { hide } = useContext(PopupContext);
           const [error, setError] = useState('');
 
@@ -181,6 +191,14 @@ export const Home = () => {
             </div>
           );
         });
+        const hide = popup.hide;
+        popup.hide = () => {
+          if (blacklistSyncPopupRef.current === popup) {
+            blacklistSyncPopupRef.current = null;
+          }
+          hide();
+        };
+        blacklistSyncPopupRef.current = popup;
       }
     };
     void checkSync().catch(console.error);
