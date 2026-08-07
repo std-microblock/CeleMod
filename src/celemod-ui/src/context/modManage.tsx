@@ -1,18 +1,15 @@
-import _i18n, { useI18N } from 'src/i18n';
+import _i18n from 'src/i18n';
 import { callRemote } from '../utils';
 import {
     useInstalledMods,
     useGamePath,
     initGamePath,
-    useCurrentEverestVersion,
     initModComments,
 } from '../states';
-import { useEffect, useMemo, useContext } from 'react';
+import { useEffect, useContext } from 'react';
 import { createPopup, PopupContext } from 'src/components/Popup';
-import { Fragment } from 'react';
 import { ProgressIndicator } from 'src/components/Progress';
 
-let lastGamePath = '';
 export const createModManageContext = () => {
     initModComments();
 
@@ -30,12 +27,16 @@ export const createModManageContext = () => {
                     rj('game path not set');
                     return;
                 }
-                callRemote('get_installed_mods', gamePath + '/Mods', (data: string) => {
-                    console.log('mod reload finished');
-                    const da = JSON.parse(data);
-                    rs(da);
-                    setInstalledMods(da);
-                });
+                void callRemote('get_installed_mods', gamePath + '/Mods', (data: string) => {
+                    try {
+                        console.log('mod reload finished');
+                        const da = JSON.parse(data);
+                        rs(da);
+                        setInstalledMods(da);
+                    } catch (error) {
+                        rj(error);
+                    }
+                }).catch(rj);
             });
         },
         checkInvalidZipMods: () => {
@@ -72,57 +73,52 @@ export const createModManageContext = () => {
         modsPath: gamePath + '/Mods',
     };
 
-    // WHY THE FUCK useEffect doesn't trigger here
-    if (lastGamePath !== gamePath) {
-        lastGamePath = gamePath;
+    useEffect(() => {
+        if (!gamePath) return;
 
-        if (gamePath) {
+        let cancelled = false;
+        let popup: ReturnType<typeof createPopup> | undefined;
+        const timer = window.setTimeout(() => {
+            if (cancelled) return;
+            popup = createPopup(
+                () => (
+                    <div className="loading-popup">
+                        <ProgressIndicator infinite />
+                        <span>{_i18n.t('正在加载 Mod 列表，请稍等')}</span>
+                    </div>
+                ),
+                { cancelable: false },
+            );
+            ctx.reloadMods()
+                .then(() => {
+                    popup?.hide();
+                    if (!cancelled) ctx.checkInvalidZipMods();
+                })
+                .catch((error) => {
+                    popup?.hide();
+                    if (cancelled) return;
+                    const errorPopup = createPopup(() => (
+                        <div className="popup-content">
+                            <div className="title">{_i18n.t('加载 Mod 列表失败')}</div>
+                            <div className="content">
+                                <p>{_i18n.t('请检查游戏路径是否正确，或网络连接是否正常')}</p>
+                                <p>{_i18n.t('部分功能将不可用')}</p>
+                                <p>{String(error)}</p>
+                            </div>
+                            <div className="buttons">
+                                <button onClick={() => errorPopup.hide()}>{_i18n.t('确定')}</button>
+                            </div>
+                        </div>
+                    ));
+                });
+        }, 10);
 
-            callRemote("get_everest_version", gamePath, (ver: string) => {
-                console.log("[modManage] Everest version", ver)
-                if (ver && ver.length > 2) {
-                    setTimeout(() => {
-                        const popup = createPopup(
-                            () => {
-                                return (
-                                    <div className="loading-popup">
-                                        <ProgressIndicator infinite />
-                                        <span>{_i18n.t('正在加载 Mod 列表，请稍等')}</span>
-                                    </div>
-                                );
-                            },
-                            {
-                                cancelable: false,
-                            }
-                        );
-                        ctx
-                            .reloadMods()
-                            .then(async (mods) => {
-                                popup.hide();
-                                ctx.checkInvalidZipMods();
-                            })
-                            .catch((e) => {
-                                popup.hide();
-                                const p = createPopup(() => {
-                                    return (
-                                        <div className="popup-content">
-                                            <div className="title">{_i18n.t('加载 Mod 列表失败')}</div> <div className="content">
-                                                <p>{_i18n.t('请检查游戏路径是否正确，或网络连接是否正常')}</p>
-                                                <p>{_i18n.t('部分功能将不可用')}</p>
-                                                <p>{e}</p></div><div className="buttons">
-                                                <button onClick={() => {
-                                                    p.hide()
-                                                }}>{_i18n.t('确定')}</button>
-                                            </div>
-                                        </div>
-                                    );
-                                });
-                            });
-                    }, 10);
-                }
-            });
-        }
-    }
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timer);
+            popup?.hide();
+        };
+    }, [gamePath]);
 
     return ctx;
 };

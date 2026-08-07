@@ -262,7 +262,10 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
                 check_file(game_path.join("Celeste.dll"))
             }
         })
-        .or(None)
+        // Locally-built / development Everest packages do not necessarily embed
+        // the EverestBuild marker. Celeste.Mod.mm.dll is an Everest-specific
+        // installation artifact, so treat it as an installed development build.
+        .or_else(|| game_path.join("Celeste.Mod.mm.dll").is_file().then_some(0))
 }
 
 fn run_command(

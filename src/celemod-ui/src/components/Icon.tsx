@@ -16,10 +16,12 @@ import {
   FaFlag,
   FaFloppyDisk,
   FaGlobe,
+  FaGamepad,
   FaHardDrive,
   FaHouse,
   FaHeart,
   FaImage,
+  FaKeyboard,
   FaListUl,
   FaMagnifyingGlass,
   FaGear,
@@ -64,6 +66,8 @@ const icons: Record<string, IconType> = {
   fail: FaCircleExclamation,
   replay: FaRotateRight,
   settings: FaGear,
+  keyboard: FaKeyboard,
+  gamepad: FaGamepad,
 };
 
 export const Icon = ({ name }: { name: string }) => {

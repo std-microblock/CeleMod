@@ -54,6 +54,8 @@ const parameterNames: Record<string, string[]> = {
   get_database_path: [],
   set_mod_options_order: ['gamePath', 'profileName', 'orderJson'],
   start_miaonet_oauth: ['gamePath', 'onEvent'],
+  get_key_bindings: ['gamePath', 'language'],
+  update_key_binding: ['gamePath', 'request'],
 };
 
 const isTauriRuntime = () => '__TAURI_INTERNALS__' in window;

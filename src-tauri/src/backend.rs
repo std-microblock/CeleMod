@@ -55,6 +55,8 @@ mod blacklist;
 mod crash_analysis;
 #[path = "everest.rs"]
 mod everest;
+#[path = "keybindings.rs"]
+mod keybindings;
 #[path = "ureq.rs"]
 mod ureq;
 #[path = "wegfan.rs"]
@@ -1246,7 +1248,7 @@ fn parse_version(mod_version: &serde_yaml::Value) -> String {
 
 fn get_installed_mods_sync_with_catalog(
     mods_folder_path: String,
-    mod_data: Arc<HashMap<String, everest::ModInfoCached>>,
+    mod_data: Option<Arc<HashMap<String, everest::ModInfoCached>>>,
 ) -> Vec<LocalMod> {
     let mut mods = Vec::new();
 
@@ -1258,7 +1260,6 @@ fn get_installed_mods_sync_with_catalog(
         let Ok(entry) = entry else {
             continue;
         };
-        println!("Checking mod entry: {:?}", entry.file_name());
         let res: anyhow::Result<_> = try {
             if false {
                 anyhow::Ok(())?
@@ -1279,10 +1280,6 @@ fn get_installed_mods_sync_with_catalog(
                         read_to_string_bom(&cache_path)?
                     }
                     None => {
-                        println!(
-                            "[ WARNING ] Failed to find yaml, skipping {:?}",
-                            entry.file_name()
-                        );
                         continue;
                     }
                 }
@@ -1309,10 +1306,6 @@ fn get_installed_mods_sync_with_catalog(
                 }
                 read_to_string_bom(&cache_path)?
             } else {
-                println!(
-                    "[ WARNING ] Failed to find yaml, skipping {:?}",
-                    entry.file_name()
-                );
                 continue;
             };
 
@@ -1347,16 +1340,11 @@ fn get_installed_mods_sync_with_catalog(
 
             let name = yaml[0]["Name"].as_str().context("")?.to_string();
             let version = parse_version(&yaml[0]["Version"]);
-            if !mod_data.contains_key(&name) {
-                println!(
-                    "[ WARNING ] Failed to resolve {name} in mod data, using -1 as gamebanana id"
-                );
-            }
-            let gbid = if mod_data.contains_key(&name) {
-                mod_data[&name].game_banana_id
-            } else {
-                -1
-            };
+            let gbid = mod_data
+                .as_ref()
+                .and_then(|catalog| catalog.get(&name))
+                .map(|item| item.game_banana_id)
+                .unwrap_or(-1);
 
             let metadata = entry.metadata().context("Failed to read Mod metadata")?;
             let size = metadata.len();
@@ -1390,11 +1378,11 @@ fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
         eprintln!("Failed to load Mod catalog while scanning installed Mods: {error:#}");
         Arc::new(HashMap::new())
     });
-    get_installed_mods_sync_with_catalog(mods_folder_path, mod_data)
+    get_installed_mods_sync_with_catalog(mods_folder_path, Some(mod_data))
 }
 
 fn get_installed_mods_without_catalog_sync(mods_folder_path: String) -> Vec<LocalMod> {
-    get_installed_mods_sync_with_catalog(mods_folder_path, Arc::new(HashMap::new()))
+    get_installed_mods_sync_with_catalog(mods_folder_path, None)
 }
 
 fn download_and_install_mod(
@@ -3731,6 +3719,8 @@ pub fn run() {
             get_miaonet_local_state,
             logout_miaonet,
             start_miaonet_oauth,
+            keybindings::get_key_bindings,
+            keybindings::update_key_binding,
         ])
         .run(tauri::generate_context!())
         .expect("error while running CeleMod");

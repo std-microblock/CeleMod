@@ -20,12 +20,14 @@ import { WindowTitlebar } from './components/WindowTitlebar';
 import { CrashAssistant } from './components/CrashAssistant';
 import { Settings } from './routes/Settings';
 import { Loenn } from './routes/Loenn';
+import { KeyBindings } from './routes/KeyBindings';
 import { featureVisible, useUpdateInfo } from './api/updateInfo';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
   Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods),
   Loenn: memo(Loenn), Settings: memo(Settings),
+  KeyBindings: memo(KeyBindings),
 };
 
 type Services = {
@@ -100,6 +102,7 @@ export default function App() {
             <SidebarButton icon="chart-area" name="Everest" title="Everest" />
             <SidebarButton icon="search" name="Search" title={_i18n.t('搜索')} />
             <SidebarButton icon="drive" name="Manage" title={_i18n.t('管理')} />
+            <SidebarButton icon="keyboard" name="KeyBindings" title={_i18n.t('按键')} />
             {currentLang === 'zh-CN' && (
               <SidebarButton icon="web" name="Multiplayer" title={_i18n.t('联机相关')} />
             )}

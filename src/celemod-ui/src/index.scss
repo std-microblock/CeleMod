@@ -244,6 +244,11 @@ html[data-platform="macos"] .app-shell {
   overflow: hidden;
 }
 
+.page-KeyBindings {
+  width: calc(100vw - 97px);
+  overflow: hidden;
+}
+
 .page[hidden] {
   display: none;
 }
