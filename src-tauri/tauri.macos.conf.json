@@ -4,8 +4,8 @@
       {
         "label": "main",
         "title": "CeleMod",
-        "width": 800,
-        "height": 640,
+        "width": 1100,
+        "height": 900,
         "minWidth": 1100,
         "minHeight": 900,
         "decorations": true,

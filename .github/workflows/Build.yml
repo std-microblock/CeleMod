@@ -25,7 +25,7 @@ jobs:
           - platform: ubuntu-22.04
             args: --bundles appimage,deb
           - platform: windows-latest
-            args: --bundles nsis
+            args: --no-bundle
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -65,6 +65,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0.6.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CMAKE_POLICY_VERSION_MINIMUM: 3.5
         with:
           projectPath: .
           args: ${{ matrix.args }}
@@ -72,3 +73,25 @@ jobs:
           releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('CeleMod {0}', github.ref_name) || '' }}
           releaseDraft: false
           prerelease: false
+
+      - name: Rename Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Move-Item target/release/cele-mod.exe target/release/CeleMod.exe
+
+      - name: Upload Windows executable artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CeleMod-windows-exe
+          path: target/release/CeleMod.exe
+          if-no-files-found: error
+
+      - name: Upload Windows executable to release
+        if: runner.os == 'Windows' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: CeleMod ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          files: target/release/CeleMod.exe
