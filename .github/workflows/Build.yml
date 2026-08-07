@@ -62,7 +62,14 @@ jobs:
       - name: Typecheck frontend
         run: pnpm --dir src/celemod-ui typecheck
 
+      - name: Build Windows executable
+        if: runner.os == 'Windows'
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: 3.5
+        run: node src/celemod-ui/scripts/tauri.mjs build --no-bundle
+
       - uses: tauri-apps/tauri-action@v0.6.2
+        if: runner.os != 'Windows'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CMAKE_POLICY_VERSION_MINIMUM: 3.5
