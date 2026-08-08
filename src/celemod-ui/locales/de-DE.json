@@ -443,5 +443,11 @@
   "字体缩放": "Schriftskalierung",
   "同步放大界面文字和控件": "Text und Steuerelemente der Oberfläche gemeinsam skalieren",
   "页面切换动画": "Seitenübergangsanimationen",
-  "在不同页面之间切换时播放淡入淡出动画": "Beim Wechseln zwischen Seiten Einblend- und Verschiebeanimationen abspielen"
+  "在不同页面之间切换时播放淡入淡出动画": "Beim Wechseln zwischen Seiten Einblend- und Verschiebeanimationen abspielen",
+  "管理页字体缩放": "Schriftgröße der Verwaltungsseite",
+  "单独调整 Mod 管理页面的文字大小": "Textgröße der Mod-Verwaltung separat anpassen",
+  "按键管理页字体缩放": "Schriftgröße der Tastenbelegungsseite",
+  "单独调整按键管理页面的文字大小": "Textgröße der Tastenbelegungen separat anpassen",
+  "自定义": "Benutzerdefiniert",
+  "自定义缩放百分比": "Benutzerdefinierter Skalierungswert"
 }

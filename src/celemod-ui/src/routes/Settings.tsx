@@ -44,6 +44,79 @@ const SettingToggle = ({
   </label>
 );
 
+const FONT_SCALE_PRESETS = [100, 110, 125, 150] as const;
+
+const FontScaleSwitch = ({
+  title,
+  description,
+  value,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  value: FontScale;
+  onChange: (value: FontScale) => void;
+}) => {
+  const [customSelected, setCustomSelected] = useState(
+    !FONT_SCALE_PRESETS.includes(value as (typeof FONT_SCALE_PRESETS)[number])
+  );
+  const presetSelected = FONT_SCALE_PRESETS.includes(
+    value as (typeof FONT_SCALE_PRESETS)[number]
+  );
+  const showCustom = customSelected || !presetSelected;
+
+  return (
+    <div className="font-scale-row">
+      <span>
+        <strong>{title}</strong>
+        <small>{description}</small>
+      </span>
+      <div className="font-scale-control">
+        <div className="segmented-setting font-scale-segments">
+          {FONT_SCALE_PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              className={!showCustom && value === preset ? "selected" : ""}
+              onClick={() => {
+                setCustomSelected(false);
+                onChange(preset);
+              }}
+            >
+              {preset}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={showCustom ? "selected" : ""}
+            onClick={() => setCustomSelected(true)}
+          >
+            {_i18n.t("自定义")}
+          </button>
+        </div>
+        {showCustom && (
+          <label className="font-scale-custom">
+            <input
+              type="number"
+              min="50"
+              max="200"
+              step="1"
+              value={value}
+              aria-label={_i18n.t("自定义缩放百分比")}
+              onChange={(event) => {
+                const nextValue = Number(event.target.value);
+                if (Number.isFinite(nextValue))
+                  onChange(Math.min(200, Math.max(50, Math.round(nextValue))));
+              }}
+            />
+            <span>%</span>
+          </label>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const Settings = () => {
   const i18n = useI18N();
   const { enableAcrylic, setEnableAcrylic } = useEnableAcrylic();
@@ -100,15 +173,20 @@ export const Settings = () => {
   );
   const fontScale = useAppStore((state) => state.fontScale);
   const setFontScale = useAppStore((state) => state.setFontScale);
+  const manageFontScale = useAppStore((state) => state.manageFontScale);
+  const setManageFontScale = useAppStore((state) => state.setManageFontScale);
+  const keyBindingsFontScale = useAppStore(
+    (state) => state.keyBindingsFontScale
+  );
+  const setKeyBindingsFontScale = useAppStore(
+    (state) => state.setKeyBindingsFontScale
+  );
   const enablePageTransitions = useAppStore(
     (state) => state.enablePageTransitions
   );
   const setEnablePageTransitions = useAppStore(
     (state) => state.setEnablePageTransitions
   );
-  const fontScaleOptions: FontScale[] = [100, 125, 150, 200];
-  const fontScaleIndex = Math.max(0, fontScaleOptions.indexOf(fontScale));
-
   const downloadMode = useMemo(() => {
     const values = MOD_TYPE_OPTIONS.map(
       (type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled
@@ -389,39 +467,24 @@ export const Settings = () => {
               checked={enablePageTransitions}
               onChange={setEnablePageTransitions}
             />
-            <div className="font-scale-row">
-              <span>
-                <strong>{_i18n.t("字体缩放")}</strong>
-                <small>{_i18n.t("CeleMod 老年版（不是")}</small>
-              </span>
-              <div
-                className="font-scale-control"
-                style={
-                  {
-                    "--font-scale-progress": `${
-                      (fontScaleIndex / (fontScaleOptions.length - 1)) * 100
-                    }%`,
-                  } as React.CSSProperties
-                }
-              >
-                <input
-                  type="range"
-                  min="0"
-                  max={fontScaleOptions.length - 1}
-                  step="1"
-                  value={fontScaleIndex}
-                  aria-label={_i18n.t("字体缩放")}
-                  onChange={(event) =>
-                    setFontScale(fontScaleOptions[Number(event.target.value)])
-                  }
-                />
-                <div className="font-scale-labels" aria-hidden="true">
-                  {fontScaleOptions.map((value) => (
-                    <span key={value}>{value}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <FontScaleSwitch
+              title={_i18n.t("字体缩放")}
+              description={_i18n.t("CeleMod 老年版（不是")}
+              value={fontScale}
+              onChange={setFontScale}
+            />
+            <FontScaleSwitch
+              title={_i18n.t("管理页字体缩放")}
+              description={_i18n.t("单独调整 Mod 管理页面的文字大小")}
+              value={manageFontScale}
+              onChange={setManageFontScale}
+            />
+            <FontScaleSwitch
+              title={_i18n.t("按键管理页字体缩放")}
+              description={_i18n.t("单独调整按键管理页面的文字大小")}
+              value={keyBindingsFontScale}
+              onChange={setKeyBindingsFontScale}
+            />
             <div className="setting-select-row">
               <span>
                 <strong>{_i18n.t("语言/Language")}</strong>

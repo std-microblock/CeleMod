@@ -470,5 +470,11 @@
   "仅向上冲刺": "Dash Up Only",
   "仅向下冲刺": "Dash Down Only",
   "页面切换动画": "Animações de transição de página",
-  "在不同页面之间切换时播放淡入淡出动画": "Reproduzir animações de fade e deslizamento ao alternar entre páginas"
+  "在不同页面之间切换时播放淡入淡出动画": "Reproduzir animações de fade e deslizamento ao alternar entre páginas",
+  "管理页字体缩放": "Escala da fonte da página de gerenciamento",
+  "单独调整 Mod 管理页面的文字大小": "Ajustar separadamente o texto do gerenciamento de Mods",
+  "按键管理页字体缩放": "Escala da fonte da página de teclas",
+  "单独调整按键管理页面的文字大小": "Ajustar separadamente o texto das teclas",
+  "自定义": "Personalizado",
+  "自定义缩放百分比": "Percentual de escala personalizado"
 }

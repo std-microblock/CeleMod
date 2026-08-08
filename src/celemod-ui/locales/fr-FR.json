@@ -443,5 +443,11 @@
   "字体缩放": "Échelle de police",
   "同步放大界面文字和控件": "Agrandir ensemble le texte et les contrôles de l’interface",
   "页面切换动画": "Animations de transition entre les pages",
-  "在不同页面之间切换时播放淡入淡出动画": "Jouer des animations de fondu et de glissement lors du changement de page"
+  "在不同页面之间切换时播放淡入淡出动画": "Jouer des animations de fondu et de glissement lors du changement de page",
+  "管理页字体缩放": "Taille du texte de la page de gestion",
+  "单独调整 Mod 管理页面的文字大小": "Ajuster séparément le texte de la gestion des Mods",
+  "按键管理页字体缩放": "Taille du texte des raccourcis",
+  "单独调整按键管理页面的文字大小": "Ajuster séparément le texte des raccourcis",
+  "自定义": "Personnalisé",
+  "自定义缩放百分比": "Pourcentage de mise à l’échelle personnalisé"
 }

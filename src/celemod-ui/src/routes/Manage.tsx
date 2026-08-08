@@ -373,7 +373,9 @@ const ManageTreeNode = ({
   return (
     <div className="manage-tree-node">
       <div
-        className={`manage-tree-row ${node.enabled ? "enabled" : "disabled"}`}
+        className={`manage-tree-row ${node.enabled ? "enabled" : "disabled"} ${
+          menuOpen ? "menu-open" : ""
+        }`}
         style={{ "--tree-depth": depth } as React.CSSProperties}
       >
         <span className="tree-connector" />
@@ -501,7 +503,10 @@ const ManageTreeNode = ({
             )}
           </div>
         </div>
-        <div className="tree-row-actions" ref={menuRef}>
+        <div
+          className={`tree-row-actions ${menuOpen ? "menu-open" : ""}`}
+          ref={menuRef}
+        >
           <button
             className={menuOpen ? "active" : ""}
             onClick={() => setOpenMenuName(menuOpen ? null : name)}

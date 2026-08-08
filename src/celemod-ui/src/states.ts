@@ -23,7 +23,7 @@ export interface BackendModInfo {
 }
 
 type SearchSort = "new" | "updateAdded" | "updated" | "views" | "likes";
-export type FontScale = 100 | 125 | 150 | 200;
+export type FontScale = number;
 
 export const MOD_TYPE_OPTIONS = [
   "Maps",
@@ -47,6 +47,13 @@ const createDownloadTypeDefaults = (
   enabled: boolean
 ): Record<string, boolean> =>
   Object.fromEntries(MOD_TYPE_OPTIONS.map((type) => [type, enabled]));
+
+const normalizeFontScale = (value: unknown): FontScale => {
+  const scale = Number(value);
+  return Number.isFinite(scale)
+    ? Math.min(200, Math.max(50, Math.round(scale)))
+    : 100;
+};
 
 interface AppState {
   currentProfileName: string;
@@ -78,6 +85,8 @@ interface AppState {
   checkBlacklistSync: boolean;
   enablePageTransitions: boolean;
   fontScale: FontScale;
+  manageFontScale: FontScale;
+  keyBindingsFontScale: FontScale;
   page: string;
   downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
@@ -112,6 +121,8 @@ interface AppState {
   setCheckBlacklistSync: (value: boolean) => void;
   setEnablePageTransitions: (value: boolean) => void;
   setFontScale: (value: FontScale) => void;
+  setManageFontScale: (value: FontScale) => void;
+  setKeyBindingsFontScale: (value: FontScale) => void;
   setPage: (value: string) => void;
   setDownloadMenuOpen: (value: boolean) => void;
 }
@@ -161,6 +172,8 @@ const setters = {
   setCheckBlacklistSync: "checkBlacklistSync",
   setEnablePageTransitions: "enablePageTransitions",
   setFontScale: "fontScale",
+  setManageFontScale: "manageFontScale",
+  setKeyBindingsFontScale: "keyBindingsFontScale",
   setPage: "page",
   setDownloadMenuOpen: "downloadMenuOpen",
 } as const;
@@ -209,6 +222,8 @@ export const useAppStore = create<AppState>()(
         checkBlacklistSync: true,
         enablePageTransitions: true,
         fontScale: 100,
+        manageFontScale: 100,
+        keyBindingsFontScale: 100,
         page: "Home",
         downloadMenuOpen: false,
         ...actions,
@@ -241,6 +256,18 @@ export const useAppStore = create<AppState>()(
     {
       name: "celemod-preferences",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState ?? {}) as Partial<AppState>;
+        return {
+          ...currentState,
+          ...persisted,
+          fontScale: normalizeFontScale(persisted.fontScale),
+          manageFontScale: normalizeFontScale(persisted.manageFontScale),
+          keyBindingsFontScale: normalizeFontScale(
+            persisted.keyBindingsFontScale
+          ),
+        };
+      },
       partialize: ({
         mirror,
         gamePath,
@@ -265,6 +292,8 @@ export const useAppStore = create<AppState>()(
         checkBlacklistSync,
         enablePageTransitions,
         fontScale,
+        manageFontScale,
+        keyBindingsFontScale,
         currentLang,
       }) => ({
         mirror,
@@ -290,6 +319,8 @@ export const useAppStore = create<AppState>()(
         checkBlacklistSync,
         enablePageTransitions,
         fontScale,
+        manageFontScale,
+        keyBindingsFontScale,
         currentLang,
       }),
     }

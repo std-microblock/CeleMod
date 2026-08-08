@@ -470,5 +470,11 @@
   "仅向上冲刺": "Dash Up Only",
   "仅向下冲刺": "Dash Down Only",
   "页面切换动画": "Page transition animations",
-  "在不同页面之间切换时播放淡入淡出动画": "Play fade and slide animations when switching between pages"
+  "在不同页面之间切换时播放淡入淡出动画": "Play fade and slide animations when switching between pages",
+  "管理页字体缩放": "Manage page font scale",
+  "单独调整 Mod 管理页面的文字大小": "Adjust the Mod Management page text size separately",
+  "按键管理页字体缩放": "Bindings page font scale",
+  "单独调整按键管理页面的文字大小": "Adjust the Key Bindings page text size separately",
+  "自定义": "Custom",
+  "自定义缩放百分比": "Custom scale percentage"
 }

@@ -123,6 +123,72 @@ html[data-platform="macos"] .app-shell {
   margin-right: 15px;
 }
 
+.sidebar-scroll {
+  width: 50px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  &.fade-top {
+    mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 18px,
+      #000 100%
+    );
+  }
+
+  &.fade-bottom {
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+  }
+
+  &.fade-top.fade-bottom {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 18px,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 18px,
+      #000 calc(100% - 18px),
+      transparent 100%
+    );
+  }
+}
+
+.sidebar-items {
+  display: flex;
+  width: 50px;
+  min-height: min-content;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .sidebar .navBtn {
   display: flex;
   flex: 0 0 auto;
@@ -185,7 +251,8 @@ html[data-platform="macos"] .app-shell {
   justify-content: center;
   width: 50px;
   min-height: 0;
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
   margin-bottom: 10px;
   padding: 10px;
   border: 0;

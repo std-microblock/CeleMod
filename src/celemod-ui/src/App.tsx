@@ -1,4 +1,12 @@
-import { Fragment, memo, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import _i18n, { createI18NContext } from "./i18n";
 import { Icon } from "./components/Icon";
 import { Search } from "./routes/Search";
@@ -66,6 +74,10 @@ export default function App() {
   const downloadMenuOpen = useAppStore((state) => state.downloadMenuOpen);
   const setDownloadMenuOpen = useAppStore((state) => state.setDownloadMenuOpen);
   const fontScale = useAppStore((state) => state.fontScale);
+  const manageFontScale = useAppStore((state) => state.manageFontScale);
+  const keyBindingsFontScale = useAppStore(
+    (state) => state.keyBindingsFontScale
+  );
   const enablePageTransitions = useAppStore(
     (state) => state.enablePageTransitions
   );
@@ -82,6 +94,21 @@ export default function App() {
   const [visiblePage, setVisiblePage] = useState(page);
   const [leavingPage, setLeavingPage] = useState<string | null>(null);
   const visiblePageRef = useRef(page);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  const [sidebarFade, setSidebarFade] = useState({ top: false, bottom: false });
+
+  const updateSidebarFade = useCallback(() => {
+    const element = sidebarScrollRef.current;
+    if (!element) return;
+    const top = element.scrollTop > 1;
+    const bottom =
+      element.scrollTop + element.clientHeight < element.scrollHeight - 1;
+    setSidebarFade((current) =>
+      current.top === top && current.bottom === bottom
+        ? current
+        : { top, bottom }
+    );
+  }, []);
 
   currentServices = {
     bus,
@@ -108,6 +135,27 @@ export default function App() {
     }
     document.documentElement.style.zoom = String(scale);
   }, [fontScale]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--manage-font-scale",
+      String(manageFontScale / 100)
+    );
+    document.documentElement.style.setProperty(
+      "--keybindings-font-scale",
+      String(keyBindingsFontScale / 100)
+    );
+  }, [keyBindingsFontScale, manageFontScale]);
+
+  useEffect(() => {
+    const element = sidebarScrollRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(updateSidebarFade);
+    observer.observe(element);
+    if (element.firstElementChild) observer.observe(element.firstElementChild);
+    updateSidebarFade();
+    return () => observer.disconnect();
+  }, [currentLang, gamePath, showLoenn, updateSidebarFade]);
 
   useEffect(() => {
     if (page === "RecommendMaps") setPage("RecommendMods");
@@ -166,47 +214,65 @@ export default function App() {
         <DropInstaller />
         <CrashAssistant />
         <nav className="sidebar">
-          <SidebarButton icon="home" name="Home" title={_i18n.t("主页")} />
-          {gamePath && (
-            <Fragment>
-              <SidebarButton icon="chart-area" name="Everest" title="Everest" />
-              <SidebarButton
-                icon="search"
-                name="Search"
-                title={_i18n.t("搜索")}
-              />
-              <SidebarButton
-                icon="drive"
-                name="Manage"
-                title={_i18n.t("管理")}
-              />
-              <SidebarButton
-                icon="keyboard"
-                name="KeyBindings"
-                title={_i18n.t("按键")}
-              />
-              {currentLang === "zh-CN" && (
+          <div
+            ref={sidebarScrollRef}
+            className={`sidebar-scroll ${sidebarFade.top ? "fade-top" : ""} ${
+              sidebarFade.bottom ? "fade-bottom" : ""
+            }`}
+            onScroll={updateSidebarFade}
+          >
+            <div className="sidebar-items">
+              <SidebarButton icon="home" name="Home" title={_i18n.t("主页")} />
+              {gamePath && (
+                <Fragment>
+                  <SidebarButton
+                    icon="chart-area"
+                    name="Everest"
+                    title="Everest"
+                  />
+                  <SidebarButton
+                    icon="search"
+                    name="Search"
+                    title={_i18n.t("搜索")}
+                  />
+                  <SidebarButton
+                    icon="drive"
+                    name="Manage"
+                    title={_i18n.t("管理")}
+                  />
+                  <SidebarButton
+                    icon="keyboard"
+                    name="KeyBindings"
+                    title={_i18n.t("按键")}
+                  />
+                  {currentLang === "zh-CN" && (
+                    <SidebarButton
+                      icon="web"
+                      name="Multiplayer"
+                      title={_i18n.t("联机相关")}
+                    />
+                  )}
+                  <SidebarButton
+                    icon="flag"
+                    name="RecommendMods"
+                    title={_i18n.t("推荐模组")}
+                  />
+                </Fragment>
+              )}
+              {showLoenn && (
                 <SidebarButton
-                  icon="web"
-                  name="Multiplayer"
-                  title={_i18n.t("联机相关")}
+                  icon="edit"
+                  name="Loenn"
+                  title="Loenn"
                 />
               )}
               <SidebarButton
-                icon="flag"
-                name="RecommendMods"
-                title={_i18n.t("推荐模组")}
+                icon="settings"
+                name="Settings"
+                title={_i18n.t("设置")}
               />
-            </Fragment>
-          )}
-          {showLoenn && (
-            <SidebarButton icon="edit" name="Loenn" title="Loenn" />
-          )}
-          <SidebarButton
-            icon="settings"
-            name="Settings"
-            title={_i18n.t("设置")}
-          />
+            </div>
+          </div>
           <button
             className="downloadListBtn"
             onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}

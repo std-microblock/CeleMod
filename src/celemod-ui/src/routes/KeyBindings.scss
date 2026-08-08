@@ -27,7 +27,7 @@
     height: 29px;
     padding: 0 8px;
     color: theme.$fg3;
-    font-size: 9px;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
     font-weight: 700;
     line-height: 29px;
     letter-spacing: 0.08em;
@@ -47,7 +47,7 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
-    font-size: 9px;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
 
@@ -58,7 +58,7 @@
     }
     small {
       color: color.change(theme.$fg, $alpha: 0.35);
-      font-size: 8px;
+      font-size: calc(8px * var(--keybindings-font-scale, 1));
     }
     &:hover {
       background: color.change(theme.$bg2, $alpha: 0.56);
@@ -79,7 +79,7 @@
         flex: 0 0 auto;
         color: color.change(theme.$fg, $alpha: 0.34);
         font-family: inherit;
-        font-size: 7px;
+        font-size: calc(7px * var(--keybindings-font-scale, 1));
       }
     }
   }
@@ -117,14 +117,14 @@
   min-width: 72px;
   h1 {
     margin: 0;
-    font-size: 15px;
+    font-size: calc(15px * var(--keybindings-font-scale, 1));
     line-height: 1.15;
   }
   span {
     display: block;
     margin-top: 3px;
     color: theme.$fg3;
-    font-size: 9px;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
   }
 }
 
@@ -152,7 +152,7 @@
     background: color.change(theme.$bg1, $alpha: 0.82);
     color: theme.$fg;
     outline: none;
-    font-size: 10px;
+    font-size: calc(10px * var(--keybindings-font-scale, 1));
     &:focus {
       border-color: color.change(theme.$primary, $alpha: 0.58);
     }
@@ -189,7 +189,7 @@
   background: color.change(theme.$bg1, $alpha: 0.82);
   box-shadow: none;
   color: theme.$fg3;
-  font-size: 9px;
+  font-size: calc(9px * var(--keybindings-font-scale, 1));
   letter-spacing: 0;
   span {
     min-width: 15px;
@@ -257,7 +257,7 @@
   border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.12);
   background: color.change(#ffc66d, $alpha: 0.05);
   color: color.change(theme.$fg, $alpha: 0.73);
-  font-size: 9px;
+  font-size: calc(9px * var(--keybindings-font-scale, 1));
   box-sizing: border-box;
   > .icon {
     color: #ffc66d;
@@ -324,7 +324,7 @@
   strong {
     min-width: 0;
     overflow: hidden;
-    font-size: 10px;
+    font-size: calc(10px * var(--keybindings-font-scale, 1));
     font-weight: 680;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -333,7 +333,7 @@
     margin: 3px 0 0;
     overflow: hidden;
     color: color.change(theme.$fg, $alpha: 0.55);
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -343,7 +343,7 @@
     margin-top: 2px;
     overflow: hidden;
     color: color.change(theme.$fg, $alpha: 0.28);
-    font-size: 7px;
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -357,7 +357,7 @@
   border-radius: 99px;
   background: color.change(theme.$fg, $alpha: 0.055);
   color: theme.$fg3;
-  font-size: 7px;
+  font-size: calc(7px * var(--keybindings-font-scale, 1));
 }
 
 .conflict-badge {
@@ -395,7 +395,7 @@
 }
 .device-name {
   color: color.change(theme.$fg, $alpha: 0.42);
-  font-size: 7px;
+  font-size: calc(7px * var(--keybindings-font-scale, 1));
   text-align: right;
 }
 .binding-values {
@@ -418,7 +418,7 @@
   box-shadow: none;
   color: color.change(theme.$fg, $alpha: 0.78);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 8px;
+  font-size: calc(8px * var(--keybindings-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0;
 
@@ -470,17 +470,17 @@
   backdrop-filter: blur(12px);
   span {
     color: theme.$fg3;
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
   strong {
     color: #efc16c;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 9px;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
   }
   small {
     margin-left: auto;
     color: color.change(theme.$fg, $alpha: 0.38);
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
 }
 
@@ -504,17 +504,17 @@
   }
   span {
     color: theme.$fg3;
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
   strong {
     color: #efc16c;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
+    font-size: calc(12px * var(--keybindings-font-scale, 1));
   }
   > small {
     margin-left: auto;
     color: color.change(theme.$fg, $alpha: 0.43);
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
 }
 
@@ -538,18 +538,18 @@
     min-width: 0;
   }
   strong {
-    font-size: 10px;
+    font-size: calc(10px * var(--keybindings-font-scale, 1));
   }
   span {
     margin-left: 7px;
     color: theme.$fg3;
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
   p {
     margin: 4px 0 0;
     overflow: hidden;
     color: color.change(theme.$fg, $alpha: 0.5);
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -571,7 +571,7 @@
     background: color.change(theme.$primary, $alpha: 0.075);
     box-shadow: none;
     color: color.adjust(theme.$primary, $lightness: 21%);
-    font-size: 8px;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
     letter-spacing: 0;
     &:hover:not(:disabled) {
       background: color.change(theme.$primary, $alpha: 0.14);
@@ -595,13 +595,13 @@
   flex-direction: column;
   gap: 9px;
   color: theme.$fg3;
-  font-size: 10px;
+  font-size: calc(10px * var(--keybindings-font-scale, 1));
   .icon {
     width: 24px;
     height: 24px;
   }
   strong {
-    font-size: 11px;
+    font-size: calc(11px * var(--keybindings-font-scale, 1));
   }
 }
 
@@ -629,18 +629,18 @@
     color: color.adjust(theme.$primary, $lightness: 18%);
   }
   > strong {
-    font-size: 20px;
+    font-size: calc(20px * var(--keybindings-font-scale, 1));
   }
   > span {
     min-height: 22px;
     color: theme.$fg3;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 11px;
+    font-size: calc(11px * var(--keybindings-font-scale, 1));
   }
   > button:not(.capture-cancel) {
     min-height: 31px;
     padding: 0 13px;
-    font-size: 9px;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
   }
   .capture-cancel {
     position: absolute;
