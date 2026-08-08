@@ -528,76 +528,269 @@
 }
 
 .download-file-popup {
-  width: calc(100vw - 50px);
+  display: flex;
+  width: calc(100vw - 48px);
+  height: calc(100vh - 48px);
   align-items: center;
   justify-content: center;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
-  height: 90vh;
+  padding: 24px;
+  box-sizing: border-box;
 
-  .group {
+  .download-file-dialog {
     display: flex;
-    width: min-content;
+    width: min(720px, 100%);
+    max-height: min(680px, 82vh);
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.11);
+    border-radius: 16px;
+    background: color.adjust(theme.$bg1, $lightness: -2%);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  }
+
+  .download-file-header {
+    display: flex;
+    min-height: 64px;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    background: color.change(theme.$bg2, $alpha: 0.45);
+    gap: 12px;
+  }
+
+  .download-file-header-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    border-radius: 10px;
+    color: color.adjust(theme.$primary, $lightness: 14%);
+    background: color.change(theme.$primary, $alpha: 0.16);
+  }
+
+  .download-file-heading {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    gap: 9px;
+
+    strong {
+      overflow: hidden;
+      color: theme.$fg;
+      font-size: 15px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    > span {
+      display: inline-grid;
+      min-width: 22px;
+      height: 22px;
+      place-items: center;
+      padding: 0 6px;
+      border-radius: 999px;
+      box-sizing: border-box;
+      color: theme.$fg2;
+      background: color.change(theme.$fg, $alpha: 0.07);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .download-file-close {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    color: theme.$fg2;
+    background: transparent;
+    cursor: pointer;
+
+    &:hover {
+      color: theme.$fg;
+      background: color.change(theme.$fg, $alpha: 0.08);
+    }
+  }
+
+  .download-file-list {
+    min-height: 0;
+    padding: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .file {
-    width: 230px;
-    height: 70px;
-    background: theme.$bg1;
-    padding: 10px 15px;
-    border-radius: 5px;
-    margin: 10px 8px;
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-height: 76px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    box-sizing: border-box;
+    color: inherit;
+    background: transparent;
     cursor: pointer;
-    .name {
-      font-size: 14px;
-      font-weight: 600;
-      width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      vertical-align: middle;
-      display: flex;
+    gap: 12px;
+    text-align: left;
+    transition: border-color 150ms ease, background 150ms ease;
 
-      .icon {
-        margin-right: 4px;
-        display: inline-block;
-      }
-    }
-
-    .info {
-      font-size: 12px;
-      font-weight: 400;
-      width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 0.6;
-      position: relative;
-      margin-top: 10px;
-
-      .id {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        opacity: 0.4;
-      }
-    }
-
-    .url {
-      font-size: 12px;
-      font-weight: 400;
-      width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 0.8;
+    + .file {
       margin-top: 4px;
     }
 
     &:hover {
-      background: theme.$bg2;
+      border-color: color.change(theme.$fg, $alpha: 0.1);
+      background: color.change(theme.$fg, $alpha: 0.045);
+    }
+
+    &.file-primary {
+      border-color: color.change(theme.$primary, $alpha: 0.65);
+      background: color.change(theme.$primary, $alpha: 0.075);
+      box-shadow: inset 3px 0 color.adjust(theme.$primary, $lightness: 8%);
+    }
+
+    &.file-primary:hover {
+      border-color: color.adjust(theme.$primary, $lightness: 8%);
+      background: color.change(theme.$primary, $alpha: 0.12);
+    }
+
+    .file-icon {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      place-items: center;
+      border-radius: 9px;
+      color: theme.$fg2;
+      background: color.change(theme.$fg, $alpha: 0.07);
+    }
+
+    &.file-primary .file-icon {
+      color: color.adjust(theme.$primary, $lightness: 16%);
+      background: color.change(theme.$primary, $alpha: 0.17);
+    }
+
+    &.file-installed .file-icon {
+      color: #8ee6b4;
+      background: rgba(65, 184, 117, 0.14);
+    }
+
+    .file-content {
+      display: flex;
+      min-width: 0;
+      flex: 1;
+      flex-direction: column;
+
+      .name {
+        width: 100%;
+        overflow: hidden;
+        color: theme.$fg;
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 18px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .info {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        margin-top: 4px;
+        color: theme.$fg2;
+        font-size: 10px;
+        font-variant-numeric: tabular-nums;
+        gap: 10px;
+      }
+
+      .id {
+        color: theme.$fg3;
+        opacity: 0.72;
+      }
+
+      .installed-badge {
+        display: inline-flex;
+        height: 20px;
+        align-items: center;
+        padding: 0 7px;
+        border-radius: 999px;
+        color: #9ce8bc;
+        background: rgba(65, 184, 117, 0.14);
+        font-size: 9px;
+        font-weight: 650;
+        gap: 4px;
+
+        .icon {
+          width: 8px;
+          height: 8px;
+        }
+      }
+
+      .url {
+        width: 100%;
+        margin-top: 4px;
+        overflow: hidden;
+        color: theme.$fg3;
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: 9px;
+        line-height: 13px;
+        opacity: 0.68;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .file-action {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
+      place-items: center;
+      border-radius: 8px;
+      color: theme.$fg2;
+      background: color.change(theme.$fg, $alpha: 0.06);
+      transition: color 150ms ease, background 150ms ease;
+    }
+
+    &:hover .file-action {
+      color: theme.$fg;
+      background: color.change(theme.$primary, $alpha: 0.42);
+    }
+  }
+
+  .download-file-error {
+    max-width: min(560px, 100%);
+    padding: 18px 22px;
+    border: 1px solid rgba(239, 89, 111, 0.32);
+    border-radius: 12px;
+    color: #ff9daf;
+    background: rgba(239, 89, 111, 0.1);
+  }
+
+  @media (max-width: 620px) {
+    padding: 12px;
+
+    .download-file-dialog {
+      max-height: 88vh;
+    }
+
+    .file {
+      padding-right: 10px;
+
+      .file-action {
+        display: none;
+      }
     }
   }
 }

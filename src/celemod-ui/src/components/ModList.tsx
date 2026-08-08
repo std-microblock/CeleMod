@@ -111,6 +111,14 @@ export interface FileToDownload {
   url: string;
   id: string;
   size: string;
+  isInstalled?: boolean;
+  isPrimary?: boolean;
+}
+
+interface InstalledModSummary {
+  game_banana_id: number;
+  name: string;
+  version: string;
 }
 
 export interface ModInfo {
@@ -256,44 +264,81 @@ export const Mod = memo(
                       if (e.target === e.currentTarget) ctx.hide();
                     }}
                   >
-                    {downloads &&
-                      downloads
-                        .map((v) => {
-                          console.log(downloads);
-                          return (
-                            <div
-                              className="file"
+                    {downloads && (
+                      <div
+                        className="download-file-dialog"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="download-file-header">
+                          <span className="download-file-header-icon">
+                            <Icon name="file" />
+                          </span>
+                          <div className="download-file-heading">
+                            <strong title={mod.name}>{mod.name}</strong>
+                            <span>{downloads.length}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="download-file-close"
+                            title={_i18n.t("关闭")}
+                            aria-label={_i18n.t("关闭")}
+                            onClick={() => popupCtx.hide()}
+                          >
+                            <Icon name="i-cross" />
+                          </button>
+                        </div>
+
+                        <div className="download-file-list">
+                          {downloads.map((file) => (
+                            <button
+                              type="button"
+                              key={`${file.id}-${file.name}`}
+                              className={`file ${
+                                file.isPrimary ? "file-primary" : ""
+                              } ${file.isInstalled ? "file-installed" : ""}`}
                               onClick={() => {
                                 down(
-                                  v.name,
-                                  parseInt(v.id) === -1 ? v.url : v.id
+                                  file.name,
+                                  parseInt(file.id) === -1 ? file.url : file.id
                                 );
                                 popupCtx.hide();
                               }}
                             >
-                              <div className="name">
-                                <Icon name="save" />
-                                {v.name}
-                              </div>
-                              <div className="info">
-                                <span className="size">{v.size}</span>
-                                <span className="id">{v.id}</span>
-                              </div>
-                              <div className="url">{v.url}</div>
-                            </div>
-                          );
-                        })
-                        .reduce((pre: any[], cur) => {
-                          // group by 3
-                          if (pre.length === 0) return [[cur]];
-                          if (pre[pre.length - 1].length === 2)
-                            return [...pre, [cur]];
-                          pre[pre.length - 1].push(cur);
-                          return pre;
-                        }, [])
-                        .map((v) => <div className="group">{v}</div>)}
+                              <span className="file-icon">
+                                <Icon
+                                  name={file.isInstalled ? "i-tick" : "file"}
+                                />
+                              </span>
+                              <span className="file-content">
+                                <span className="name" title={file.name}>
+                                  {file.name}
+                                </span>
+                                <span className="info">
+                                  <span className="size">{file.size}</span>
+                                  <span className="id">#{file.id}</span>
+                                  {file.isInstalled && (
+                                    <span className="installed-badge">
+                                      <Icon name="i-tick" />
+                                      {_i18n.t("已安装")}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="url" title={file.url}>
+                                  {file.url}
+                                </span>
+                              </span>
+                              <span className="file-action">
+                                <Icon name="download" />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                    <span>{error}</span>
+                    {error && (
+                      <span className="download-file-error">{error}</span>
+                    )}
                   </div>
                 );
               });
@@ -523,17 +568,37 @@ export const ModList = (props: {
   loading?: boolean;
   viewMode?: "grid" | "list";
 }) => {
-  const [installedModIDs, setInstalledModIDs] = useState<string[] | null>(null);
+  const [installedMods, setInstalledMods] = useState<
+    InstalledModSummary[] | null
+  >(null);
   const [listWidth, setListWidth] = useState(0);
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
   const refList = useRef<HTMLDivElement>(null);
   const loadMoreLocked = useRef(false);
 
   useEffect(() => {
-    callRemote("get_installed_mod_ids", props.modFolder, (ids: string) => {
-      setInstalledModIDs(ids.split("\n").filter(Boolean));
+    callRemote("get_installed_mods", props.modFolder, (data: string) => {
+      setInstalledMods(JSON.parse(data));
     });
   }, [props.modFolder]);
+
+  const installedModIDs = useMemo(
+    () =>
+      installedMods === null
+        ? null
+        : new Set(installedMods.map((item) => item.game_banana_id.toString())),
+    [installedMods]
+  );
+  const installedModVersions = useMemo(() => {
+    const versions = new Map<string, Set<string>>();
+    for (const item of installedMods ?? []) {
+      const name = item.name.toLocaleLowerCase();
+      const current = versions.get(name) ?? new Set<string>();
+      current.add(item.version);
+      versions.set(name, current);
+    }
+    return versions;
+  }, [installedMods]);
 
   useEffect(() => {
     const element = refList.current;
@@ -614,33 +679,47 @@ export const ModList = (props: {
           if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
             return mod2.files[0]?.url ? mod2.files[0].url : [];
           }
-          return Promise.resolve(
-            mod2.files
-              .filter((v) => {
-                if (v.mods.length === 0) return false;
-                if (dedup.has(v.mods[0].id)) return false;
-                dedup.add(v.mods[0].id);
-                return true;
-              })
-              .map(
-                (v) =>
-                  ({
-                    id: v.gameBananaId.toString(),
-                    name: `${
-                      v.description.includes(v.mods[0].version)
-                        ? ""
-                        : v.mods[0].version + "-"
-                    }${v.description}-${v.mods[0].name}`,
-                    size: formatSize(v.size),
-                    url: v.url,
-                  } as FileToDownload)
+          const files = mod2.files.filter((file) => {
+            if (file.mods.length === 0) return false;
+            if (dedup.has(file.mods[0].id)) return false;
+            dedup.add(file.mods[0].id);
+            return true;
+          });
+          const normalizeName = (value: string) =>
+            value.toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
+          const submissionName = normalizeName(mod2.name);
+          const primaryIndex = Math.max(
+            0,
+            files.findIndex((file) =>
+              file.mods.some(
+                (fileMod) => normalizeName(fileMod.name) === submissionName
               )
+            )
+          );
+
+          return Promise.resolve(
+            files.map((file, index) => ({
+              id: file.gameBananaId.toString(),
+              name: `${
+                file.description.includes(file.mods[0].version)
+                  ? ""
+                  : file.mods[0].version + "-"
+              }${file.description}-${file.mods[0].name}`,
+              size: formatSize(file.size),
+              url: file.url,
+              isPrimary: index === primaryIndex,
+              isInstalled: file.mods.every((fileMod) =>
+                installedModVersions
+                  .get(fileMod.name.toLocaleLowerCase())
+                  ?.has(fileMod.version)
+              ),
+            }))
           );
         },
         previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
         author: mod2.submitter,
         isInstalled:
-          installedModIDs?.includes(mod2.gameBananaId?.toString()) ?? false,
+          installedModIDs?.has(mod2.gameBananaId?.toString()) ?? false,
         other: `${mod2.likes} · ${processLargeNum(
           mod2.views
         )} · ${processLargeNum(mod2.downloads)}`,
@@ -671,7 +750,7 @@ export const ModList = (props: {
       };
       return mod;
     },
-    [installedModIDs]
+    [installedModIDs, installedModVersions]
   );
 
   return (
@@ -681,7 +760,7 @@ export const ModList = (props: {
           className="mod-virtual-canvas"
           style={{ height: rowVirtualizer.getTotalSize() + GRID_PADDING * 2 }}
         >
-          {installedModIDs !== null &&
+          {installedMods !== null &&
             virtualRows.map((virtualRow) => {
               const startIndex = virtualRow.index * columnCount;
               const rowMods = props.mods.slice(
@@ -719,7 +798,7 @@ export const ModList = (props: {
         </div>
       </div>
 
-      {(props.loading || installedModIDs === null) && (
+      {(props.loading || installedMods === null) && (
         <div className="mod-list-loading" aria-label={_i18n.t("加载中")}>
           <ProgressIndicator infinite size={26} lineWidth={3} />
         </div>
