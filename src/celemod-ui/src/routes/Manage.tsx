@@ -30,6 +30,10 @@ import { CatalogMod, loadModCatalog } from "../api/modCatalog";
 import { Content, searchSubmission } from "../api/wegfan";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 import {
+  getAvailableModPageUrl,
+  getOtherModPageSource,
+} from "../modPage";
+import {
   ManageCatalogMeta,
   ManageNode,
   alternativesCovering,
@@ -108,6 +112,7 @@ const catalogMaps = (mods: CatalogMod[]) => {
     if (!current || Date.parse(mod.updateTime) > Date.parse(current.updateTime))
       fullByName.set(key, mod);
     metaByName[key] = {
+      submissionId: submission.id,
       category: submission.categoryName,
       subCategory: submission.subCategoryName,
       submitter: submission.submitter,
@@ -128,6 +133,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
       const popup = useContext(PopupContext);
       const [cloud, setCloud] = useState<Content | null>(null);
       const [cloudDone, setCloudDone] = useState(false);
+      const modPageSource = useAppStore((state) => state.modPageSource);
       const descriptionRef = useRef<HTMLDivElement>(null);
 
       useEffect(() => {
@@ -183,10 +189,32 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
                 {node.name} · {node.version}
               </p>
             </div>
-            {meta?.pageUrl && (
+            {(meta?.submissionId || meta?.pageUrl) && (
               <button
-                onClick={() => callRemote("open_url", meta.pageUrl!)}
-                title={_i18n.t("打开原页面")}
+                onClick={() => {
+                  const url = getAvailableModPageUrl(
+                    {
+                      submissionId: meta.submissionId,
+                      gameBananaUrl: meta.pageUrl,
+                    },
+                    modPageSource
+                  );
+                  if (url) callRemote("open_url", url);
+                }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  const url = getAvailableModPageUrl(
+                    {
+                      submissionId: meta.submissionId,
+                      gameBananaUrl: meta.pageUrl,
+                    },
+                    getOtherModPageSource(modPageSource)
+                  );
+                  if (url) callRemote("open_url", url);
+                }}
+                title={_i18n.t(
+                  "左键打开所选来源，右键打开另一个来源"
+                )}
               >
                 <Icon name="external" />
               </button>

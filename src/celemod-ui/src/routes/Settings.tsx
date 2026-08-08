@@ -4,6 +4,7 @@ import { Icon } from "../components/Icon";
 import { useEnableAcrylic } from "../context/theme";
 import {
   FontScale,
+  ModPageSource,
   MOD_TYPE_OPTIONS,
   useAppStore,
   useMirror,
@@ -145,6 +146,8 @@ export const Settings = () => {
   const setShowUpdate = useAppStore((state) => state.setShowUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
   const setShowDetailed = useAppStore((state) => state.setShowDetailed);
+  const modPageSource = useAppStore((state) => state.modPageSource);
+  const setModPageSource = useAppStore((state) => state.setModPageSource);
   const autoToggleDependencies = useAppStore(
     (state) => state.autoToggleDependencies
   );
@@ -364,6 +367,23 @@ export const Settings = () => {
               checked={showDetailed}
               onChange={setShowDetailed}
             />
+            <div className="setting-select-row">
+              <span>
+                <strong>{_i18n.t("打开 Mod 页面")}</strong>
+                <small>
+                  {_i18n.t("左键打开所选来源，右键打开另一个来源")}
+                </small>
+              </span>
+              <select
+                value={modPageSource}
+                onChange={(event) =>
+                  setModPageSource(event.target.value as ModPageSource)
+                }
+              >
+                <option value="wegfan">WEGFan</option>
+                <option value="gamebanana">GameBanana</option>
+              </select>
+            </div>
             <SettingToggle
               title={_i18n.t("检查 blacklist.txt 与 Profile 同步")}
               description={_i18n.t(

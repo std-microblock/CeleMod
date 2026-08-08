@@ -250,6 +250,8 @@
   "切换界面显示语言": "Alternar o idioma da interface",
   "本地 Mod": "Mods Locais",
   "打开原页面": "Abrir página original",
+  "打开 Mod 页面": "Abrir página do mod",
+  "左键打开所选来源，右键打开另一个来源": "Clique com o botão esquerdo para abrir a fonte selecionada; com o direito, a outra",
   "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。": "O cache local contém versão, categoria, autor, downloads, tamanho e data de atualização; os detalhes da nuvem estão temporariamente indisponíveis.",
   "本地文件": "Arquivos locais",
   "下载中…": "Baixando…",

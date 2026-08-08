@@ -21,12 +21,16 @@ import {
 } from "../utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Content } from "../api/wegfan";
-import { useAutoDisableNewMods } from "../states";
+import { useAppStore, useAutoDisableNewMods } from "../states";
 import { useGlobalContext } from "../App";
 import { useDownloadStore } from "../stores/download";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
+import {
+  getAvailableModPageUrl,
+  getOtherModPageSource,
+} from "../modPage";
 // @ts-ignore
 import celemodIcon from "../resources/Celemod.png";
 
@@ -103,6 +107,7 @@ export interface ModDetailInfo {
     downloadUrl: string;
   }[];
   lastUpdate?: Date;
+  submissionId?: string;
   externalUrl?: string;
 }
 
@@ -395,6 +400,9 @@ export const Mod = memo(
                     const [data, setData] = useState<ModDetailInfo | null>(
                       null
                     );
+                    const modPageSource = useAppStore(
+                      (state) => state.modPageSource
+                    );
                     const ctx = useContext(PopupContext);
                     useEffect(() => {
                       mod.detail?.().then(setData);
@@ -456,12 +464,33 @@ export const Mod = memo(
                         <div className="closeBtn" onClick={() => ctx.hide()}>
                           <Icon name="i-cross" />
                         </div>
-                        {data.externalUrl && (
+                        {(data.submissionId || data.externalUrl) && (
                           <div
                             className="openExternal"
                             onClick={() => {
-                              callRemote("open_url", data.externalUrl);
+                              const url = getAvailableModPageUrl(
+                                {
+                                  submissionId: data.submissionId,
+                                  gameBananaUrl: data.externalUrl,
+                                },
+                                modPageSource
+                              );
+                              if (url) callRemote("open_url", url);
                             }}
+                            onContextMenu={(event) => {
+                              event.preventDefault();
+                              const url = getAvailableModPageUrl(
+                                {
+                                  submissionId: data.submissionId,
+                                  gameBananaUrl: data.externalUrl,
+                                },
+                                getOtherModPageSource(modPageSource)
+                              );
+                              if (url) callRemote("open_url", url);
+                            }}
+                            title={_i18n.t(
+                              "左键打开所选来源，右键打开另一个来源"
+                            )}
                           >
                             <Icon name="external" />
                           </div>
@@ -745,6 +774,7 @@ export const ModList = (props: {
               downloadUrl: v.url,
             })),
             lastUpdate: mod2.latestUpdateAddedTime,
+            submissionId: mod2.id,
             externalUrl: mod2.pageUrl,
           }),
       };

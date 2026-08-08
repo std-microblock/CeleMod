@@ -250,6 +250,8 @@
   "切换界面显示语言": "Switch interface display language",
   "本地 Mod": "Local Mods",
   "打开原页面": "Open original page",
+  "打开 Mod 页面": "Open Mod page",
+  "左键打开所选来源，右键打开另一个来源": "Left-click opens the selected source; right-click opens the other source",
   "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。": "Local cache includes version, category, author, download count, size, and update time; cloud details are currently unavailable.",
   "本地文件": "Local files",
   "下载中…": "Downloading…",

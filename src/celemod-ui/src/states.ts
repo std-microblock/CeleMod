@@ -24,6 +24,7 @@ export interface BackendModInfo {
 
 type SearchSort = "new" | "updateAdded" | "updated" | "views" | "likes";
 export type FontScale = number;
+export type ModPageSource = "wegfan" | "gamebanana";
 
 export const MOD_TYPE_OPTIONS = [
   "Maps",
@@ -87,6 +88,7 @@ interface AppState {
   fontScale: FontScale;
   manageFontScale: FontScale;
   keyBindingsFontScale: FontScale;
+  modPageSource: ModPageSource;
   page: string;
   downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
@@ -123,6 +125,7 @@ interface AppState {
   setFontScale: (value: FontScale) => void;
   setManageFontScale: (value: FontScale) => void;
   setKeyBindingsFontScale: (value: FontScale) => void;
+  setModPageSource: (value: ModPageSource) => void;
   setPage: (value: string) => void;
   setDownloadMenuOpen: (value: boolean) => void;
 }
@@ -174,6 +177,7 @@ const setters = {
   setFontScale: "fontScale",
   setManageFontScale: "manageFontScale",
   setKeyBindingsFontScale: "keyBindingsFontScale",
+  setModPageSource: "modPageSource",
   setPage: "page",
   setDownloadMenuOpen: "downloadMenuOpen",
 } as const;
@@ -224,6 +228,7 @@ export const useAppStore = create<AppState>()(
         fontScale: 100,
         manageFontScale: 100,
         keyBindingsFontScale: 100,
+        modPageSource: "wegfan",
         page: "Home",
         downloadMenuOpen: false,
         ...actions,
@@ -294,6 +299,7 @@ export const useAppStore = create<AppState>()(
         fontScale,
         manageFontScale,
         keyBindingsFontScale,
+        modPageSource,
         currentLang,
       }) => ({
         mirror,
@@ -321,6 +327,7 @@ export const useAppStore = create<AppState>()(
         fontScale,
         manageFontScale,
         keyBindingsFontScale,
+        modPageSource,
         currentLang,
       }),
     }

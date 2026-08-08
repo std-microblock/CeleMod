@@ -7,6 +7,7 @@ export type ManageEnabledFilter = "all" | "enabled" | "disabled";
 export type ManageHealthFilter = "all" | "healthy" | "issues" | "missing";
 
 export interface ManageCatalogMeta {
+  submissionId?: string;
   category: string | null;
   subCategory: string | null;
   submitter: string;
