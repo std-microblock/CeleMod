@@ -52,6 +52,38 @@ const defaultLocalFilters: LocalCatalogFilters = {
 
 const numberValue = (value: string) => (value === "" ? null : Number(value));
 
+const SearchSkeleton = ({ viewMode }: { viewMode: "grid" | "list" }) => {
+  const itemCount = viewMode === "grid" ? 6 : 8;
+
+  return (
+    <div
+      className={`search-skeleton view-${viewMode}`}
+      role="status"
+      aria-label={_i18n.t("加载中")}
+    >
+      <span className="sr-only">{_i18n.t("加载中")}</span>
+      <div className="search-skeleton-grid" aria-hidden="true">
+        {Array.from({ length: itemCount }, (_, index) => (
+          <div className="search-skeleton-card" key={index}>
+            <div className="skeleton-preview">
+              <span className="skeleton-block skeleton-badge" />
+            </div>
+            <div className="skeleton-content">
+              <span className="skeleton-block skeleton-title" />
+              <span className="skeleton-block skeleton-author" />
+              <div className="skeleton-meta">
+                <span className="skeleton-block" />
+                <span className="skeleton-block" />
+                <span className="skeleton-block" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const Search = () => {
   const noEverest = enforceEverest();
   const [mode, setMode] = useState<"cloud" | "local">("cloud");
@@ -573,7 +605,7 @@ export const Search = () => {
           </Button>
         </div>
       ) : loading ? (
-        <div className="empty search-empty-state"></div>
+        <SearchSkeleton viewMode={mode === "local" ? "list" : viewMode} />
       ) : (
         <div className="empty search-empty-state">
           <Icon name="search" />
