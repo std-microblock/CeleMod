@@ -23,6 +23,7 @@ export interface BackendModInfo {
 }
 
 type SearchSort = 'new' | 'updateAdded' | 'updated' | 'views' | 'likes';
+export type FontScale = 100 | 125 | 150 | 200;
 
 export const MOD_TYPE_OPTIONS = [
   'Maps', 'Skins', 'Helpers', 'Other/Misc', 'Assets', 'UI', 'Mechanics',
@@ -63,6 +64,8 @@ interface AppState {
   modComments: Record<string, string>;
   enableAcrylic: boolean;
   checkBlacklistSync: boolean;
+  enablePageTransitions: boolean;
+  fontScale: FontScale;
   page: string;
   downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
@@ -93,6 +96,8 @@ interface AppState {
   setModComments: (value: Record<string, string>) => void;
   setEnableAcrylic: (value: boolean) => void;
   setCheckBlacklistSync: (value: boolean) => void;
+  setEnablePageTransitions: (value: boolean) => void;
+  setFontScale: (value: FontScale) => void;
   setPage: (value: string) => void;
   setDownloadMenuOpen: (value: boolean) => void;
 }
@@ -130,6 +135,8 @@ const setters = {
   setHiddenModTypes: 'hiddenModTypes', setModCacheTtlHours: 'modCacheTtlHours',
   setModComments: 'modComments', setEnableAcrylic: 'enableAcrylic',
   setCheckBlacklistSync: 'checkBlacklistSync',
+  setEnablePageTransitions: 'enablePageTransitions',
+  setFontScale: 'fontScale',
   setPage: 'page', setDownloadMenuOpen: 'downloadMenuOpen',
 } as const;
 
@@ -152,7 +159,8 @@ export const useAppStore = create<AppState>()(
         fullTree: false, showUpdate: true, showDetailed: false, modComments: {},
         autoToggleDependencies: true, autoToggleOptionalDependencies: false,
         deleteOrphansByDefault: true, hiddenModTypes: [], modCacheTtlHours: 24,
-        enableAcrylic: true, checkBlacklistSync: true, page: 'Home', downloadMenuOpen: false,
+        enableAcrylic: true, checkBlacklistSync: true, enablePageTransitions: true, fontScale: 100,
+        page: 'Home', downloadMenuOpen: false,
         ...actions,
         setAutoDisableNewMods: (value) => {
           set((state) => {
@@ -186,13 +194,13 @@ export const useAppStore = create<AppState>()(
         autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
         checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
         autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
-        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, checkBlacklistSync, currentLang,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, checkBlacklistSync, enablePageTransitions, fontScale, currentLang,
       }) => ({
         mirror, gamePath, useMultiThread, alwaysOnMods, searchSort,
         autoDisableNewMods, downloadDefaultEnabled, downloadTypeDefaults,
         checkOptionalDep, excludeDependents, fullTree, showUpdate, showDetailed,
         autoToggleDependencies, autoToggleOptionalDependencies, deleteOrphansByDefault,
-        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, checkBlacklistSync, currentLang,
+        hiddenModTypes, modCacheTtlHours, modComments, enableAcrylic, checkBlacklistSync, enablePageTransitions, fontScale, currentLang,
       }),
     },
   ),

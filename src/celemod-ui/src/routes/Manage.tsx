@@ -196,7 +196,7 @@ interface ManageActions {
   deleteNode: (name: string) => void;
   showDuplicates: (name: string) => void;
   updateNode: (name: string) => Promise<boolean>;
-  downloadMissing: (name: string) => void;
+  downloadMissing: (name: string) => Promise<boolean>;
   showDetails: (name: string) => void;
   toggleAlwaysOn: (name: string) => void;
   updateNames: Set<string>;
@@ -216,21 +216,39 @@ const ManageActionsContext = createContext<ManageActions | null>(null);
 
 const MissingDependencyRow = ({ dependency, depth }: { dependency: { name: string; version: string; optional: boolean }; depth: number }) => {
   const actions = useContext(ManageActionsContext)!;
-  const [state, setState] = useState(dependency.optional ? _i18n.t('可选依赖 · 下载') : _i18n.t('缺失 · 下载'));
+  const [downloading, setDownloading] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <div className="manage-tree-row missing" style={{ '--tree-depth': depth } as React.CSSProperties}>
       <span className="tree-connector" />
       <span className="tree-expander leaf"><Icon name="warn" /></span>
-      <div className="tree-row-main">
+      <div className="tree-row-main missing-main">
         <div className="tree-primary-line">
-          <Badge tone={dependency.optional ? 'warning' : 'danger'} onClick={() => {
-            setState(_i18n.t('下载中…'));
-            actions.downloadMissing(dependency.name);
-          }}>{state}</Badge>
           <strong>{dependency.name}</strong>
           <span className="tree-version">≥ {dependency.version}</span>
         </div>
+        <div className="tree-secondary-line">
+          <Badge tone={dependency.optional ? 'warning' : 'danger'}>
+            {dependency.optional ? _i18n.t('可选依赖') : _i18n.t('缺失依赖')}
+          </Badge>
+        </div>
       </div>
+      <button
+        type="button"
+        className="missing-download-button"
+        disabled={downloading}
+        onClick={() => {
+          setDownloading(true);
+          setFailed(false);
+          void actions.downloadMissing(dependency.name).then((success) => {
+            setDownloading(false);
+            setFailed(!success);
+          });
+        }}
+      >
+        <Icon name="download" />
+        {downloading ? _i18n.t('下载中…') : failed ? _i18n.t('重试') : _i18n.t('下载')}
+      </button>
     </div>
   );
 };
@@ -262,7 +280,9 @@ const ManageTreeNode = ({
   const hasDependencies = visibleDependencies.length > 0;
   const cycle = path.includes(name);
   const health = getDependencyHealth(name, nodes, actions.checkOptional);
-  const isAlwaysOn = actions.alwaysOnMods.includes(name);
+  const isAlwaysOn = actions.alwaysOnMods.some((alwaysOnName) => (
+    nodes[alwaysOnName]?.file === node.file
+  ));
   const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
   const menuOpen = openMenuName === name;
@@ -450,6 +470,7 @@ export const Manage = () => {
     hydrate({
       installedMods,
       disabledNames: currentProfile?.mods.map((mod) => mod.name) ?? [],
+      disabledFiles: currentProfile?.mods.map((mod) => mod.file) ?? [],
       catalogByName: metaByName,
     });
   }, [installedMods, currentProfile, metaByName]);
@@ -529,7 +550,19 @@ export const Manage = () => {
 
   const batchSwitch = useCallback((names: string[], enabled: boolean) => {
     if (!currentProfile || names.length === 0) return;
-    const effectiveNames = enabled ? names : names.filter((name) => !alwaysOnMods.includes(name));
+    const requestedNames = new Set(names);
+    const requestedFiles = new Set(
+      names.map((name) => nodes[name]?.file).filter(Boolean) as string[]
+    );
+    const packageNames = Object.values(nodes)
+      .filter((node) => requestedNames.has(node.name) || requestedFiles.has(node.file))
+      .map((node) => node.name);
+    const alwaysOnFiles = new Set(
+      alwaysOnMods.map((name) => nodes[name]?.file).filter(Boolean) as string[]
+    );
+    const effectiveNames = enabled
+      ? packageNames
+      : packageNames.filter((name) => !alwaysOnFiles.has(nodes[name]?.file));
     const files = effectiveNames.map((name) => nodes[name]?.file).filter(Boolean) as string[];
     if (effectiveNames.length === 0) return;
     void callRemote(
@@ -541,10 +574,16 @@ export const Manage = () => {
       enabled,
     );
     let nextMods = currentProfile.mods;
-    if (enabled) nextMods = nextMods.filter((item) => !effectiveNames.includes(item.name));
+    const effectiveFiles = new Set(files);
+    if (enabled) {
+      nextMods = nextMods.filter((item) => (
+        !effectiveNames.includes(item.name) && !effectiveFiles.has(item.file)
+      ));
+    }
     else {
       const additions = effectiveNames
-        .filter((name) => !nextMods.some((item) => item.name === name))
+        .filter((name, index) => files.indexOf(nodes[name].file) === index)
+        .filter((name) => !nextMods.some((item) => item.file === nodes[name].file))
         .map((name) => ({ name, file: nodes[name].file }));
       nextMods = [...nextMods, ...additions];
     }
@@ -570,11 +609,22 @@ export const Manage = () => {
     callRemote('get_installed_mods', modPath, (data: string) => setInstalledMods(JSON.parse(data)));
   }, [modPath]);
 
-  const downloadMissing = useCallback((name: string) => {
-    callRemote('get_mod_update', name, (data: string) => {
-      if (!data) return;
-      const [fileId] = JSON.parse(data);
-      downloadMod(name, fileId, { onFinished: reloadMods });
+  const downloadMissing = useCallback((name: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      callRemote('get_mod_update', name, (data: string) => {
+        if (!data) {
+          resolve(false);
+          return;
+        }
+        const [fileId] = JSON.parse(data);
+        downloadMod(name, fileId, {
+          onFinished: () => {
+            reloadMods();
+            resolve(true);
+          },
+          onFailed: () => resolve(false),
+        });
+      }).catch(() => resolve(false));
     });
   }, [downloadMod, reloadMods]);
 
@@ -751,8 +801,11 @@ export const Manage = () => {
       if (node) showModDetails(node, fullByName.get(name.trim().toLocaleLowerCase()));
     },
     toggleAlwaysOn(name) {
-      setAlwaysOnMods(alwaysOnMods.includes(name)
-        ? alwaysOnMods.filter((value) => value !== name)
+      const file = nodes[name]?.file;
+      if (!file) return;
+      const packageIsAlwaysOn = alwaysOnMods.some((value) => nodes[value]?.file === file);
+      setAlwaysOnMods(packageIsAlwaysOn
+        ? alwaysOnMods.filter((value) => nodes[value]?.file !== file)
         : [...alwaysOnMods, name]);
     },
     updateNames: showUpdate ? updateNames : new Set<string>(),
@@ -905,7 +958,9 @@ export const Manage = () => {
               {profiles.map((profile) => (
                 <button key={profile.name} className={profile.name === currentProfileName ? 'selected' : ''} onClick={() => global.blacklist.switchProfile(profile.name)}>
                   <span className="profile-name">{profile.name}</span>
-                  <small>{installedMods.length - profile.mods.length}</small>
+                  <small>{installedMods.filter((mod) => !profile.mods.some((item) => (
+                    item.name === mod.name || item.file === mod.file
+                  ))).length}</small>
                   {profile.name !== 'Default' && <span className="profile-delete" onClick={(event) => {
                     event.stopPropagation();
                     void callRemote('remove_mod_blacklist_profile', gamePath, profile.name);

@@ -1,4 +1,7 @@
-use super::{LocalMod, everest, get_installed_mods_without_catalog_sync, parse_mod_yaml};
+use super::{
+    EverestModMetadata, LocalMod, everest, get_installed_mods_without_catalog_sync,
+    parse_mod_yaml, parse_mod_yaml_document,
+};
 use anyhow::{Context, bail};
 use lazy_static::lazy_static;
 use serde::Serialize;
@@ -16,6 +19,7 @@ const PRE_CRASH_LINES: usize = 180;
 const MAX_CRASH_LINES: usize = 1200;
 const MAX_ERROR_LOG_BYTES: usize = 2_000_000;
 const LOG_SETTLE_MILLIS: u64 = 3_000;
+const MAX_CRASH_AGE_MILLIS: u64 = 60 * 60 * 1000;
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -95,6 +99,11 @@ fn now_millis() -> u64 {
         .as_millis()
         .try_into()
         .unwrap_or(u64::MAX)
+}
+
+fn should_analyze_crash(modified_at: u64, now: u64) -> bool {
+    let age = now.saturating_sub(modified_at);
+    (LOG_SETTLE_MILLIS..MAX_CRASH_AGE_MILLIS).contains(&age)
 }
 
 fn is_crash_marker(line: &str) -> bool {
@@ -394,13 +403,13 @@ fn version_is_newer(latest: &str, installed: &str) -> bool {
     })
 }
 
-fn yaml_for_directory(path: &Path) -> Option<serde_yaml::Value> {
+fn yaml_for_directory(path: &Path) -> Option<Vec<EverestModMetadata>> {
     ["everest.yaml", "everest.yml"]
         .iter()
         .map(|name| path.join(name))
         .find(|candidate| candidate.is_file())
         .and_then(|candidate| fs::read_to_string(candidate).ok())
-        .and_then(|text| serde_yaml::from_str(&text).ok())
+        .and_then(|text| parse_mod_yaml_document(&text).ok())
 }
 
 fn mod_tokens(game_path: &Path, local_mod: &LocalMod) -> Vec<String> {
@@ -411,9 +420,9 @@ fn mod_tokens(game_path: &Path, local_mod: &LocalMod) -> Vec<String> {
         parse_mod_yaml(&mod_path).ok()
     };
     let mut tokens = vec![local_mod.name.clone()];
-    if let Some(serde_yaml::Value::Sequence(entries)) = yaml {
+    if let Some(entries) = yaml {
         for entry in entries {
-            if let Some(dll) = entry.get("DLL").and_then(serde_yaml::Value::as_str) {
+            if let Some(dll) = entry.dll.as_deref() {
                 let stem = Path::new(dll)
                     .file_stem()
                     .and_then(|value| value.to_str())
@@ -956,9 +965,9 @@ pub fn analyze_latest_crash(game_path: &str) -> anyhow::Result<Option<CrashAnaly
         (None, None) => return Ok(None),
     };
 
-    // Wait for Everest to finish flushing the exception and stacktrace before
-    // generating a report or caching the latest crash sequence.
-    if now_millis().saturating_sub(latest.modified_at) < LOG_SETTLE_MILLIS {
+    // Wait for Everest to finish flushing the exception and stacktrace, and do
+    // not notify about crashes that are already at least one hour old.
+    if !should_analyze_crash(latest.modified_at, now_millis()) {
         return Ok(None);
     }
 
@@ -1099,6 +1108,15 @@ mod tests {
         assert!(latest_crash_body(&record.excerpt).contains("OutOfMemoryException"));
         assert!(!latest_crash_body(&record.excerpt).contains("System.Exception: first"));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn only_analyzes_recent_settled_crashes() {
+        let now = 10 * MAX_CRASH_AGE_MILLIS;
+        assert!(!should_analyze_crash(now - LOG_SETTLE_MILLIS + 1, now));
+        assert!(should_analyze_crash(now - LOG_SETTLE_MILLIS, now));
+        assert!(should_analyze_crash(now - MAX_CRASH_AGE_MILLIS + 1, now));
+        assert!(!should_analyze_crash(now - MAX_CRASH_AGE_MILLIS, now));
     }
 
     #[test]

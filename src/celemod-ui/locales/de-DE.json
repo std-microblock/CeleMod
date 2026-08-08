@@ -439,5 +439,9 @@
   "此按键同时被以下功能使用": "This binding is used by the following actions",
   "显示未启用的 Mod": "Show disabled mods",
   "隐藏未启用的 Mod": "Hide disabled mods",
-  "清除绑定": "Clear binding"
+  "清除绑定": "Clear binding",
+  "字体缩放": "Schriftskalierung",
+  "同步放大界面文字和控件": "Text und Steuerelemente der Oberfläche gemeinsam skalieren",
+  "页面切换动画": "Seitenübergangsanimationen",
+  "在不同页面之间切换时播放淡入淡出动画": "Beim Wechseln zwischen Seiten Einblend- und Verschiebeanimationen abspielen"
 }

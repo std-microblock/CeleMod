@@ -948,15 +948,39 @@ fn read_mod_yaml_bytes(path: &Path) -> anyhow::Result<Vec<u8>> {
     Ok(buffer)
 }
 
-fn parse_mod_yaml(path: &Path) -> anyhow::Result<serde_yaml::Value> {
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct EverestModDependency {
+    name: Option<String>,
+    version: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct EverestModMetadata {
+    name: Option<String>,
+    version: Option<String>,
+    dependencies: Option<Vec<EverestModDependency>>,
+    optional_dependencies: Option<Vec<EverestModDependency>>,
+    #[serde(rename = "DLL")]
+    dll: Option<String>,
+}
+
+fn parse_mod_yaml_document(
+    content: &str,
+) -> Result<Vec<EverestModMetadata>, serde_yaml::Error> {
+    serde_yaml::from_str(content)
+}
+
+fn parse_mod_yaml(path: &Path) -> anyhow::Result<Vec<EverestModMetadata>> {
     use strip_bom::StripBom;
     let buffer = read_mod_yaml_bytes(path)?;
-    Ok(serde_yaml::from_str(
+    Ok(parse_mod_yaml_document(
         String::from_utf8(buffer)?.strip_bom(),
     )?)
 }
 
-fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
+fn extract_mod_for_yaml(path: &Path) -> anyhow::Result<Vec<EverestModMetadata>> {
     use std::io::Write;
     use strip_bom::StripBom;
 
@@ -972,7 +996,7 @@ fn extract_mod_for_yaml(path: &PathBuf) -> anyhow::Result<serde_yaml::Value> {
     let mut file =
         std::fs::File::create(cache_dir.join(path.with_extension("yaml").file_name().unwrap()))?;
     file.write_all(&buffer)?;
-    Ok(serde_yaml::from_str(
+    Ok(parse_mod_yaml_document(
         String::from_utf8(buffer)?.strip_bom(),
     )?)
 }
@@ -1223,27 +1247,39 @@ fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
     Ok(String::from_utf8(bytes.to_vec())?)
 }
 
-fn parse_version(mod_version: &serde_yaml::Value) -> String {
-    // 1. 处理数字类型 (如 YAML 中写 1.0)
-    if let Some(f) = mod_version.as_f64() {
-        return f.to_string();
-    }
-
-    // 2. 处理字符串类型
-    let v_str = mod_version.as_str().unwrap_or("1.0.0");
-
-    // 3. 去除前缀 (例如 "v0.3.3" -> "0.3.3")
-    // 找到第一个数字出现的位置
+fn parse_version(mod_version: Option<&str>) -> String {
+    let v_str = mod_version.unwrap_or("1.0.0");
     let start_idx = v_str.find(|c: char| c.is_ascii_digit()).unwrap_or(0);
     let trimmed = &v_str[start_idx..];
 
-    // 4. 验证基本合法性
-    // SemVer 允许数字、点、连字符和加号 (0.3.3-dev3+build1)
     if !trimmed.is_empty() && trimmed.chars().next().unwrap().is_ascii_digit() {
         trimmed.to_string()
     } else {
         "1.0.0".to_string()
     }
+}
+
+fn parse_mod_dependencies(metadata: &EverestModMetadata) -> Vec<ModDependency> {
+    let mut dependencies = Vec::new();
+    for (items, optional) in [
+        (&metadata.dependencies, false),
+        (&metadata.optional_dependencies, true),
+    ] {
+        let Some(items) = items else {
+            continue;
+        };
+        for dependency in items {
+            let Some(name) = dependency.name.as_ref() else {
+                continue;
+            };
+            dependencies.push(ModDependency {
+                name: name.clone(),
+                version: parse_version(dependency.version.as_deref()),
+                optional,
+            });
+        }
+    }
+    dependencies
 }
 
 fn get_installed_mods_sync_with_catalog(
@@ -1309,42 +1345,17 @@ fn get_installed_mods_sync_with_catalog(
                 continue;
             };
 
-            let yaml = serde_yaml::from_str(&yaml);
-            if let Err(e) = yaml {
-                println!("[ WARNING ] Failed to parse {:?}: {}", entry.file_name(), e);
-                continue;
-            }
-            let yaml: serde_yaml::Value = yaml.unwrap();
-
-            let mut deps: Vec<ModDependency> = Vec::new();
-
-            if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
-                for dep in deps_yaml {
-                    deps.push(ModDependency {
-                        name: dep["Name"].as_str().unwrap().to_string(),
-                        version: parse_version(&dep["Version"]),
-                        optional: false,
-                    });
+            let metadata_entries = match parse_mod_yaml_document(&yaml) {
+                Ok(metadata_entries) => metadata_entries,
+                Err(error) => {
+                    println!(
+                        "[ WARNING ] Failed to parse {:?}: {}",
+                        entry.file_name(),
+                        error
+                    );
+                    continue;
                 }
-            }
-
-            if let Some(deps_yaml) = yaml[0]["OptionalDependencies"].as_sequence() {
-                for dep in deps_yaml {
-                    deps.push(ModDependency {
-                        name: dep["Name"].as_str().unwrap().to_string(),
-                        version: parse_version(&dep["Version"]),
-                        optional: true,
-                    });
-                }
-            }
-
-            let name = yaml[0]["Name"].as_str().context("")?.to_string();
-            let version = parse_version(&yaml[0]["Version"]);
-            let gbid = mod_data
-                .as_ref()
-                .and_then(|catalog| catalog.get(&name))
-                .map(|item| item.game_banana_id)
-                .unwrap_or(-1);
+            };
 
             let metadata = entry.metadata().context("Failed to read Mod metadata")?;
             let size = metadata.len();
@@ -1355,15 +1366,32 @@ fn get_installed_mods_sync_with_catalog(
                 .map(|value| value.as_millis() as u64)
                 .unwrap_or_default();
 
-            mods.push(LocalMod {
-                name,
-                version,
-                game_banana_id: gbid,
-                deps,
-                file: entry.file_name().to_str().unwrap().to_string(),
-                size,
-                modified_at,
-            });
+            let file = entry.file_name().to_string_lossy().to_string();
+            for metadata_entry in &metadata_entries {
+                let Some(name) = metadata_entry.name.as_ref() else {
+                    println!(
+                        "[ WARNING ] Skipping unnamed metadata in {:?}",
+                        entry.file_name()
+                    );
+                    continue;
+                };
+                let name = name.clone();
+                let gbid = mod_data
+                    .as_ref()
+                    .and_then(|catalog| catalog.get(&name))
+                    .map(|item| item.game_banana_id)
+                    .unwrap_or(-1);
+
+                mods.push(LocalMod {
+                    name,
+                    version: parse_version(metadata_entry.version.as_deref()),
+                    game_banana_id: gbid,
+                    deps: parse_mod_dependencies(metadata_entry),
+                    file: file.clone(),
+                    size,
+                    modified_at,
+                });
+            }
         };
 
         if let Err(e) = res {
@@ -1394,22 +1422,24 @@ fn download_and_install_mod(
 ) -> anyhow::Result<Vec<(String, String)>> {
     download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
 
-    let yaml = extract_mod_for_yaml(&Path::new(&dest).to_path_buf())?;
+    let metadata_entries = extract_mod_for_yaml(Path::new(dest))?;
 
     let mut deps: Vec<(String, String)> = Vec::new();
 
-    if let Some(deps_yaml) = yaml[0]["Dependencies"].as_sequence() {
-        for dep in deps_yaml {
-            // FUCK YOU YAML
-            let version = parse_version(&dep["Version"]);
-
-            deps.push((
-                dep["Name"]
-                    .as_str()
-                    .context("Interrupted yaml dependency")?
-                    .to_string(),
-                version,
-            ));
+    for metadata_entry in &metadata_entries {
+        if let Some(dependencies) = &metadata_entry.dependencies {
+            for dependency in dependencies {
+                let dependency = (
+                    dependency
+                        .name
+                        .clone()
+                        .context("Interrupted yaml dependency")?,
+                    parse_version(dependency.version.as_deref()),
+                );
+                if !deps.contains(&dependency) {
+                    deps.push(dependency);
+                }
+            }
         }
     }
     Ok(deps)
@@ -1927,11 +1957,11 @@ fn replace_local_mod_archive(source: &Path, destination: &Path) -> anyhow::Resul
 }
 
 fn install_local_mod(game_path: &Path, package_path: &Path) -> anyhow::Result<(String, String)> {
-    let yaml = parse_mod_yaml(package_path)?;
-    let mod_name = yaml[0]["Name"]
-        .as_str()
-        .context("everest.yaml is missing the Mod name")?
-        .to_string();
+    let metadata = parse_mod_yaml(package_path)?;
+    let mod_name = metadata
+        .first()
+        .and_then(|metadata| metadata.name.clone())
+        .context("everest.yaml is missing the Mod name")?;
     let source_name = package_path
         .file_name()
         .context("Package path has no file name")?;
@@ -1951,12 +1981,17 @@ fn replace_installed_mod_with_fix(
     affected_versions: &[String],
     fixed_version: &str,
 ) -> anyhow::Result<String> {
-    let yaml = parse_mod_yaml(package_path)?;
-    let package_name = yaml[0]["Name"]
-        .as_str()
+    let metadata = parse_mod_yaml(package_path)?;
+    let package_metadata = metadata
+        .first()
+        .context("Fix package everest.yaml contains no Mod metadata")?;
+    let package_name = package_metadata
+        .name
+        .as_deref()
         .context("Fix package everest.yaml is missing the Mod name")?;
-    let package_version = yaml[0]["Version"]
-        .as_str()
+    let package_version = package_metadata
+        .version
+        .as_deref()
         .context("Fix package everest.yaml is missing the Mod version")?;
     if package_name != expected_mod_name {
         bail!("Fix package contains {package_name}, expected {expected_mod_name}");
@@ -2128,9 +2163,81 @@ mod local_package_tests {
         );
         install_local_mod(&game_path, &package).unwrap();
         assert_eq!(
-            parse_mod_yaml(&installed_path).unwrap()[0]["Name"].as_str(),
+            parse_mod_yaml(&installed_path).unwrap()[0].name.as_deref(),
             Some("DropInstallReplacement")
         );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn accepts_unquoted_numeric_names_and_versions() {
+        let root = test_dir("numeric-mod-metadata");
+        let mods_path = root.join("Mods");
+        fs::create_dir_all(&mods_path).unwrap();
+        let package = mods_path.join("Numeric.zip");
+        write_zip(
+            &package,
+            &[(
+                "everest.yaml",
+                b"- Name: 1234\n  Version: 1.20\n  Dependencies:\n    - Name: 5678\n      Version: 2.00\n",
+            )],
+        );
+
+        let metadata = parse_mod_yaml(&package).unwrap();
+        assert_eq!(metadata[0].name.as_deref(), Some("1234"));
+        assert_eq!(metadata[0].version.as_deref(), Some("1.20"));
+        let dependency = &metadata[0].dependencies.as_ref().unwrap()[0];
+        assert_eq!(dependency.name.as_deref(), Some("5678"));
+        assert_eq!(dependency.version.as_deref(), Some("2.00"));
+
+        let installed =
+            get_installed_mods_sync_with_catalog(mods_path.to_string_lossy().into_owned(), None);
+        assert_eq!(installed.len(), 1);
+        assert_eq!(installed[0].name, "1234");
+        assert_eq!(installed[0].version, "1.20");
+        assert_eq!(installed[0].deps.len(), 1);
+        assert_eq!(installed[0].deps[0].name, "5678");
+        assert_eq!(installed[0].deps[0].version, "2.00");
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scans_every_metadata_entry_in_one_mod_archive() {
+        let root = test_dir("multi-metadata-mod");
+        let mods_path = root.join("Mods");
+        fs::create_dir_all(&mods_path).unwrap();
+        write_zip(
+            &mods_path.join("Bundle.zip"),
+            &[(
+                "everest.yaml",
+                b"- Name: Bundle.Main\n  Version: 1.2.0\n  Dependencies:\n    - Name: MainDependency\n      Version: 2.0.0\n- Name: Bundle.Extra\n  Version: 3.4.0\n  OptionalDependencies:\n    - Name: ExtraDependency\n      Version: 1.0.0\n",
+            )],
+        );
+
+        let installed =
+            get_installed_mods_sync_with_catalog(mods_path.to_string_lossy().into_owned(), None);
+        assert_eq!(installed.len(), 2);
+        let main = installed
+            .iter()
+            .find(|item| item.name == "Bundle.Main")
+            .unwrap();
+        assert_eq!(main.file, "Bundle.zip");
+        assert_eq!(main.version, "1.2.0");
+        assert_eq!(main.deps.len(), 1);
+        assert_eq!(main.deps[0].name, "MainDependency");
+        assert!(!main.deps[0].optional);
+
+        let extra = installed
+            .iter()
+            .find(|item| item.name == "Bundle.Extra")
+            .unwrap();
+        assert_eq!(extra.file, "Bundle.zip");
+        assert_eq!(extra.version, "3.4.0");
+        assert_eq!(extra.deps.len(), 1);
+        assert_eq!(extra.deps[0].name, "ExtraDependency");
+        assert!(extra.deps[0].optional);
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -2167,8 +2274,11 @@ mod local_package_tests {
         )
         .unwrap();
         assert_eq!(replaced, "RushHelper.zip");
-        let yaml = parse_mod_yaml(&installed).unwrap();
-        assert_eq!(yaml[0]["Version"].as_str(), Some("1.1.1+celemodfix.1"));
+        let metadata = parse_mod_yaml(&installed).unwrap();
+        assert_eq!(
+            metadata[0].version.as_deref(),
+            Some("1.1.1+celemodfix.1")
+        );
         assert!(!mods_path.join("RushHelper-fix.zip").exists());
         fs::remove_dir_all(root).unwrap();
     }

@@ -1,4 +1,4 @@
-import { Fragment, memo, useEffect, useMemo } from 'react';
+import { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
 import _i18n, { createI18NContext } from './i18n';
 import { Icon } from './components/Icon';
 import { Search } from './routes/Search';
@@ -22,6 +22,7 @@ import { Settings } from './routes/Settings';
 import { Loenn } from './routes/Loenn';
 import { KeyBindings } from './routes/KeyBindings';
 import { featureVisible, useUpdateInfo } from './api/updateInfo';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 
 const pages = {
   Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
@@ -53,6 +54,8 @@ export default function App() {
   const setPage = useAppStore((state) => state.setPage);
   const downloadMenuOpen = useAppStore((state) => state.downloadMenuOpen);
   const setDownloadMenuOpen = useAppStore((state) => state.setDownloadMenuOpen);
+  const fontScale = useAppStore((state) => state.fontScale);
+  const enablePageTransitions = useAppStore((state) => state.enablePageTransitions);
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
   const { data: updateInfo } = useUpdateInfo();
@@ -63,6 +66,9 @@ export default function App() {
   const blacklist = createBlacklistContext();
   const theme = createThemeContext();
   const bus = useMemo(() => new EventTarget(), []);
+  const [visiblePage, setVisiblePage] = useState(page);
+  const [leavingPage, setLeavingPage] = useState<string | null>(null);
+  const visiblePageRef = useRef(page);
 
   currentServices = {
     bus, modManage, everest, blacklist, theme,
@@ -74,12 +80,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const scale = fontScale / 100;
+    if ('__TAURI_INTERNALS__' in window) {
+      void getCurrentWebview().setZoom(scale).catch((error) => {
+        console.error('Failed to apply interface scale', error);
+      });
+      return;
+    }
+    document.documentElement.style.zoom = String(scale);
+  }, [fontScale]);
+
+  useEffect(() => {
     if (page === 'RecommendMaps') setPage('RecommendMods');
   }, [page, setPage]);
 
   useEffect(() => {
     if (page === 'Loenn' && updateInfo && !showLoenn) setPage('Home');
   }, [page, setPage, showLoenn, updateInfo]);
+
+  useEffect(() => {
+    const previousPage = visiblePageRef.current;
+
+    if (!enablePageTransitions) {
+      visiblePageRef.current = page;
+      setVisiblePage(page);
+      setLeavingPage(null);
+      return;
+    }
+
+    if (previousPage === page) return;
+
+    visiblePageRef.current = page;
+    setLeavingPage(previousPage);
+    setVisiblePage(page);
+
+    const timer = window.setTimeout(() => setLeavingPage(null), 240);
+    return () => window.clearTimeout(timer);
+  }, [enablePageTransitions, page]);
 
   const SidebarButton = ({ icon, name, title }: { icon: string; name: string; title: string }) => (
     <button className={`navBtn ${name === page ? 'selected' : ''}`} onClick={() => setPage(name)}>
@@ -117,8 +154,13 @@ export default function App() {
       </nav>
       <main className="app-content">
         {Object.entries(pages).map(([name, Page]) => (
-          <section className={`page page-${name}`} key={name} hidden={name !== page}>
-            {name === page && <Page />}
+          <section
+            className={`page page-${name}${enablePageTransitions && name === visiblePage ? ' page-entering' : ''}${enablePageTransitions && name === leavingPage ? ' page-leaving' : ''}`}
+            key={name}
+            hidden={name !== visiblePage && name !== leavingPage}
+            aria-hidden={name !== visiblePage}
+          >
+            {(name === visiblePage || name === leavingPage) && <Page />}
           </section>
         ))}
       </main>

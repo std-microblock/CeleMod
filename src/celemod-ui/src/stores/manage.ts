@@ -56,6 +56,7 @@ interface ManageFilters {
 interface HydrateInput {
   installedMods: BackendModInfo[];
   disabledNames: string[];
+  disabledFiles: string[];
   catalogByName: Record<string, ManageCatalogMeta>;
 }
 
@@ -101,9 +102,10 @@ export const useManageStore = create<ManageTreeState>()(
       filterOpen: false,
       actionMenuOpen: false,
       openMenuName: null,
-      hydrate({ installedMods, disabledNames, catalogByName }) {
+      hydrate({ installedMods, disabledNames, disabledFiles, catalogByName }) {
         set((state) => {
           const disabled = new Set(disabledNames);
+          const disabledPackages = new Set(disabledFiles);
           const nodes: Record<string, ManageNode> = {};
           for (const mod of installedMods) {
             const current = nodes[mod.name];
@@ -129,7 +131,7 @@ export const useManageStore = create<ManageTreeState>()(
             nodes[mod.name] = {
               name: mod.name,
               id: String(mod.game_banana_id),
-              enabled: !disabled.has(mod.name),
+              enabled: !disabled.has(mod.name) && !disabledPackages.has(mod.file),
               version: mod.version,
               file: mod.file,
               size: mod.size,

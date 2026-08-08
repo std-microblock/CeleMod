@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/Icon';
 import { useEnableAcrylic } from '../context/theme';
 import {
+  FontScale,
   MOD_TYPE_OPTIONS,
   useAppStore,
   useMirror,
@@ -97,6 +98,16 @@ export const Settings = () => {
   const setCheckBlacklistSync = useAppStore(
     (state) => state.setCheckBlacklistSync
   );
+  const fontScale = useAppStore((state) => state.fontScale);
+  const setFontScale = useAppStore((state) => state.setFontScale);
+  const enablePageTransitions = useAppStore(
+    (state) => state.enablePageTransitions
+  );
+  const setEnablePageTransitions = useAppStore(
+    (state) => state.setEnablePageTransitions
+  );
+  const fontScaleOptions: FontScale[] = [100, 125, 150, 200];
+  const fontScaleIndex = Math.max(0, fontScaleOptions.indexOf(fontScale));
 
   const downloadMode = useMemo(() => {
     const values = MOD_TYPE_OPTIONS.map(
@@ -372,6 +383,35 @@ export const Settings = () => {
               checked={enableAcrylic}
               onChange={setEnableAcrylic}
             />
+            <SettingToggle
+              title={_i18n.t('页面切换动画')}
+              description={_i18n.t('在不同页面之间切换时播放淡入淡出动画')}
+              checked={enablePageTransitions}
+              onChange={setEnablePageTransitions}
+            />
+            <div className="font-scale-row">
+              <span>
+                <strong>{_i18n.t('字体缩放')}</strong>
+                <small>{_i18n.t('CeleMod 老年版（不是')}</small>
+              </span>
+              <div
+                className="font-scale-control"
+                style={{ '--font-scale-progress': `${(fontScaleIndex / (fontScaleOptions.length - 1)) * 100}%` } as React.CSSProperties}
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max={fontScaleOptions.length - 1}
+                  step="1"
+                  value={fontScaleIndex}
+                  aria-label={_i18n.t('字体缩放')}
+                  onChange={(event) => setFontScale(fontScaleOptions[Number(event.target.value)])}
+                />
+                <div className="font-scale-labels" aria-hidden="true">
+                  {fontScaleOptions.map((value) => <span key={value}>{value}</span>)}
+                </div>
+              </div>
+            </div>
             <div className="setting-select-row">
               <span>
                 <strong>{_i18n.t('语言/Language')}</strong>

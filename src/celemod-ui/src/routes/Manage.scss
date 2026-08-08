@@ -258,7 +258,16 @@
 
   &:hover { background: color.change(theme.$bg2, $alpha: .36); }
   &.disabled { opacity: .76; }
-  &.missing { grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr); min-height: 28px; color: theme.$fg3; }
+  &.missing {
+    grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
+    min-height: 38px;
+    color: theme.$fg3;
+    background: linear-gradient(90deg, color.change(#ef5350, $alpha: .045), transparent 68%);
+
+    &:hover { background: linear-gradient(90deg, color.change(#ef5350, $alpha: .08), color.change(theme.$bg2, $alpha: .25)); }
+    .tree-expander { color: #ff9997; opacity: .8; }
+    .missing-main strong { color: color.change(theme.$fg, $alpha: .9); font-size: 10px; }
+  }
 
   .tree-connector {
     position: absolute;
@@ -355,6 +364,26 @@
 .tree-comment { max-width: 190px; overflow: hidden; color: color.change(theme.$fg, $alpha: .52); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .tree-comment-input { height: 23px; max-width: 220px; padding: 0 7px; border: 1px solid color.change(theme.$primary, $alpha: .5); border-radius: 6px; background: theme.$bg; color: theme.$fg; font-size: 10px; outline: none; }
 .tree-file-detail { flex: 1 1 auto; min-width: 0; max-width: 420px; margin-left: 3px; overflow: hidden; color: color.change(theme.$fg, $alpha: .32); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+
+.missing-download-button {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  min-height: 24px;
+  margin-right: 6px;
+  padding: 0 8px;
+  gap: 5px;
+  border: 1px solid color.change(#ef5350, $alpha: .3);
+  border-radius: 999px;
+  background: color.change(#ef5350, $alpha: .1);
+  box-shadow: none;
+  color: #ffaaa8;
+  font-size: 8px;
+  letter-spacing: 0;
+
+  &:hover:not(:disabled) { background: color.change(#ef5350, $alpha: .18); }
+  &:disabled { cursor: wait; opacity: .58; }
+}
 
 .manage-badge {
   display: inline-flex;

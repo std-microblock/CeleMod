@@ -162,11 +162,10 @@ const recommendedMaps = () => [
   {
     name: 'LPL Collab',
     installName: 'lplCollab2022',
-    alias: 'LPL Collab 2022 / 乐屁乐',
+    alias: _i18n.t('LPL Collab 2022 / 乐屁乐'),
     previewUrl:
       'https://celeste.weg.fan/images/gamebanana-submissions/Mod/455644/v542gepsh6vojzgw7o7loq4lfuuzhpkz.jpg',
-    downloadUrl:
-      'https://celeste.weg.fan/api/v2/download/mods/lplCollab2022',
+    downloadUrl: 'https://celeste.weg.fan/api/v2/download/mods/lplCollab2022',
     meta: '~ 145 MiB · 2023-07',
     recommendations: [
       _i18n.t('中文社区制作的欢乐向梗图合集，历时一年完成'),
@@ -180,8 +179,7 @@ const recommendedMaps = () => [
     alias: _i18n.t('跨界联动合集'),
     previewUrl:
       'https://celeste.weg.fan/images/gamebanana-submissions/Mod/637482/lb3pfgrmkh3lzg5nmro6btfzf5iofi3q.jpg',
-    downloadUrl:
-      'https://celeste.weg.fan/api/v2/download/mods/CrossoverCollab',
+    downloadUrl: 'https://celeste.weg.fan/api/v2/download/mods/CrossoverCollab',
     meta: '~ 580 MiB · 2025-12',
     recommendations: [
       _i18n.t('将众多游戏世界融入 Celeste，包含 20+ 张地图与额外内容'),
@@ -195,8 +193,7 @@ const recommendedMaps = () => [
     alias: 'P2P Conlab 2025 / LPL2',
     previewUrl:
       'https://celeste.weg.fan/images/gamebanana-submissions/Mod/585371/aa35nvomfrntde5ssge7mysetnv4h3lf.jpg',
-    downloadUrl:
-      'https://celeste.weg.fan/api/v2/download/mods/P2PConlab',
+    downloadUrl: 'https://celeste.weg.fan/api/v2/download/mods/P2PConlab',
     meta: '~ 475 MiB · 2025-04',
     recommendations: [
       _i18n.t('来自中文社区的 LPL 续作，也被称为 LPL2'),
