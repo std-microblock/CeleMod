@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import _i18n from "../i18n";
 import { featureVisible, LoennPackage, useUpdateInfo } from "../api/updateInfo";
 import { Button } from "../components/Button";
@@ -15,6 +16,16 @@ interface LoennState {
 }
 
 type RuntimePlatform = "windows" | "linux" | "macos";
+
+const LOENN_INSTALL_ROOT_STORAGE_KEY = "celemod-loenn-install-root";
+
+const loadInstallRoot = () => {
+  try {
+    return localStorage.getItem(LOENN_INSTALL_ROOT_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+};
 
 const formatSize = (size?: number) => {
   if (!size) return "";
@@ -35,6 +46,7 @@ export const Loenn = () => {
   const config = updateInfo?.loenn;
   const visible = featureVisible(config, currentLang);
   const [platform, setPlatform] = useState<RuntimePlatform | null>(null);
+  const [installRoot, setInstallRoot] = useState(loadInstallRoot);
   const [localState, setLocalState] = useState<LoennState | null>(null);
   const [selectedVersion, setSelectedVersion] = useState("");
   const [installState, setInstallState] = useState<string | null>(null);
@@ -42,8 +54,8 @@ export const Loenn = () => {
   const [failedReason, setFailedReason] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
 
-  const refreshLocalState = () =>
-    callRemote<LoennState>("get_loenn_state")
+  const refreshLocalState = (root = installRoot) =>
+    callRemote<LoennState>("get_loenn_state", root)
       .then(setLocalState)
       .catch((error) => setLaunchError(String(error)));
 
@@ -51,8 +63,14 @@ export const Loenn = () => {
     callRemote<string>("runtime_platform")
       .then((value) => setPlatform(value as RuntimePlatform))
       .catch((error) => setLaunchError(String(error)));
-    void refreshLocalState();
   }, []);
+
+  useEffect(() => {
+    setLocalState(null);
+    setLaunchError(null);
+    setInstallState(null);
+    void refreshLocalState(installRoot);
+  }, [installRoot]);
 
   useEffect(() => {
     if (!selectedVersion && config?.versions?.[0]) {
@@ -80,6 +98,7 @@ export const Loenn = () => {
     setFailedReason(null);
     callRemote(
       "download_and_install_loenn",
+      installRoot,
       version.version,
       selectedPackage.url,
       selectedPackage.package_type,
@@ -93,7 +112,7 @@ export const Loenn = () => {
         } else if (typeof value === "number") {
           setInstallProgress(value);
         }
-        if (state === "success") void refreshLocalState();
+        if (state === "success") void refreshLocalState(installRoot);
       }
     ).catch((error) => {
       setInstallState("failed");
@@ -103,7 +122,35 @@ export const Loenn = () => {
 
   const launch = () => {
     setLaunchError(null);
-    callRemote("start_loenn").catch((error) => setLaunchError(String(error)));
+    callRemote("start_loenn", installRoot).catch((error) =>
+      setLaunchError(String(error))
+    );
+  };
+
+  const chooseInstallRoot = async () => {
+    setLaunchError(null);
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: _i18n.t("选择其他路径"),
+      });
+      if (typeof selected !== "string") return;
+      localStorage.setItem(LOENN_INSTALL_ROOT_STORAGE_KEY, selected);
+      setInstallRoot(selected);
+      if (selected === installRoot) void refreshLocalState(selected);
+    } catch (error) {
+      setLaunchError(String(error));
+    }
+  };
+
+  const resetInstallRoot = () => {
+    try {
+      localStorage.removeItem(LOENN_INSTALL_ROOT_STORAGE_KEY);
+      setInstallRoot("");
+    } catch (error) {
+      setLaunchError(String(error));
+    }
   };
 
   if (!updateInfo && !configError) {
@@ -144,24 +191,41 @@ export const Loenn = () => {
       </header>
 
       <section className="loenn-local">
-        <div>
-          <span className="label">{_i18n.t("本地版本")}</span>
-          <strong>
-            {localState?.installed ? localState.version : _i18n.t("尚未安装")}
-          </strong>
-          {localState?.installed ? (
-            <span className="installed">
-              <Icon name="i-tick" /> {_i18n.t("已安装")}
+        <div className="local-details">
+          <div className="local-version">
+            <span className="label">{_i18n.t("本地版本")}</span>
+            <strong>
+              {localState?.installed ? localState.version : _i18n.t("尚未安装")}
+            </strong>
+            {localState?.installed ? (
+              <span className="installed">
+                <Icon name="i-tick" /> {_i18n.t("已安装")}
+              </span>
+            ) : null}
+          </div>
+          {localState?.path ? (
+            <span className="local-path" title={localState.path}>
+              {localState.path}
             </span>
           ) : null}
         </div>
-        <Button
-          type="primary"
-          disabled={!localState?.installed}
-          onClick={launch}
-        >
-          {_i18n.t("启动 Loenn")}
-        </Button>
+        <div className="local-actions">
+          <Button disabled={installing} onClick={chooseInstallRoot}>
+            {_i18n.t("选择其他路径")}
+          </Button>
+          {installRoot ? (
+            <Button disabled={installing} onClick={resetInstallRoot}>
+              {_i18n.t("重置")}
+            </Button>
+          ) : null}
+          <Button
+            type="primary"
+            disabled={!localState?.installed}
+            onClick={launch}
+          >
+            {_i18n.t("启动 Loenn")}
+          </Button>
+        </div>
       </section>
       {launchError ? <div className="inline-error">{launchError}</div> : null}
 

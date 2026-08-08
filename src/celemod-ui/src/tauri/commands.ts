@@ -50,8 +50,9 @@ const parameterNames: Record<string, string[]> = {
     "onEvent",
   ],
   runtime_platform: [],
-  get_loenn_state: [],
+  get_loenn_state: ["installRoot"],
   download_and_install_loenn: [
+    "installRoot",
     "version",
     "url",
     "packageType",
@@ -60,7 +61,7 @@ const parameterNames: Record<string, string[]> = {
     "sha256",
     "onEvent",
   ],
-  start_loenn: [],
+  start_loenn: ["installRoot"],
   install_local_packages: [
     "gamePath",
     "packagePaths",

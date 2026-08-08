@@ -2328,6 +2328,37 @@ mod local_package_tests {
     }
 
     #[test]
+    fn uses_a_custom_loenn_install_root() {
+        let root = test_dir("custom-loenn-root");
+        let root_string = root.to_string_lossy().into_owned();
+        let install_dir = loenn_install_dir(&root_string).unwrap();
+        assert_eq!(install_dir, root.join("current"));
+
+        fs::create_dir_all(&install_dir).unwrap();
+        fs::write(install_dir.join("Loenn.exe"), b"executable").unwrap();
+        fs::write(
+            install_dir.join("celemod-loenn.json"),
+            serde_json::to_vec(&LoennInstallMetadata {
+                version: "test-version".to_string(),
+                executable: "Loenn.exe".to_string(),
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        let state = get_loenn_state_impl(&root_string);
+        assert!(state.installed);
+        assert_eq!(state.version.as_deref(), Some("test-version"));
+        assert_eq!(
+            state.path.as_deref(),
+            Some(install_dir.to_string_lossy().as_ref())
+        );
+        assert!(loenn_root_dir("relative/path").is_err());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn rejects_unrecognized_zip_archives() {
         let root = test_dir("drop-unknown");
         let package = root.join("unknown.zip");
@@ -2581,15 +2612,33 @@ struct LoennState {
     path: Option<String>,
 }
 
-fn loenn_root_dir() -> anyhow::Result<PathBuf> {
+fn default_loenn_root_dir() -> anyhow::Result<PathBuf> {
     let data_dir = dirs::data_local_dir()
         .or_else(dirs::data_dir)
         .context("Failed to find the local application data directory")?;
     Ok(data_dir.join("CeleMod").join("Loenn"))
 }
 
-fn loenn_install_dir() -> anyhow::Result<PathBuf> {
-    Ok(loenn_root_dir()?.join("current"))
+fn loenn_root_dir(install_root: &str) -> anyhow::Result<PathBuf> {
+    let install_root = install_root.trim();
+    if install_root.is_empty() {
+        return default_loenn_root_dir();
+    }
+    let path = PathBuf::from(install_root);
+    if !path.is_absolute() {
+        bail!("Loenn installation path must be absolute");
+    }
+    if path.is_file() {
+        bail!(
+            "Loenn installation path points to a file: {}",
+            path.display()
+        );
+    }
+    Ok(path)
+}
+
+fn loenn_install_dir(install_root: &str) -> anyhow::Result<PathBuf> {
+    Ok(loenn_root_dir(install_root)?.join("current"))
 }
 
 fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
@@ -2604,22 +2653,22 @@ fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
     Ok(path.to_path_buf())
 }
 
-fn read_loenn_metadata() -> anyhow::Result<LoennInstallMetadata> {
-    let metadata_path = loenn_install_dir()?.join("celemod-loenn.json");
+fn read_loenn_metadata(install_root: &str) -> anyhow::Result<LoennInstallMetadata> {
+    let metadata_path = loenn_install_dir(install_root)?.join("celemod-loenn.json");
     let metadata = std::fs::read_to_string(&metadata_path)
         .with_context(|| format!("Failed to read {}", metadata_path.display()))?;
     serde_json::from_str(&metadata).context("Invalid Loenn installation metadata")
 }
 
-fn get_loenn_state_impl() -> LoennState {
-    let Ok(install_dir) = loenn_install_dir() else {
+fn get_loenn_state_impl(install_root: &str) -> LoennState {
+    let Ok(install_dir) = loenn_install_dir(install_root) else {
         return LoennState {
             installed: false,
             version: None,
             path: None,
         };
     };
-    let Ok(metadata) = read_loenn_metadata() else {
+    let Ok(metadata) = read_loenn_metadata(install_root) else {
         return LoennState {
             installed: false,
             version: None,
@@ -2687,6 +2736,7 @@ fn extract_loenn_zip(
 }
 
 fn install_loenn(
+    install_root: &str,
     version: &str,
     url: &str,
     package_type: &str,
@@ -2695,7 +2745,7 @@ fn install_loenn(
     sha256: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
-    let root = loenn_root_dir()?;
+    let root = loenn_root_dir(install_root)?;
     std::fs::create_dir_all(&root)?;
     let download_path = root.join("loenn.download");
     let staging_dir = root.join("installing");
@@ -2763,7 +2813,7 @@ fn install_loenn(
         serde_json::to_vec_pretty(&metadata)?,
     )?;
 
-    let install_dir = loenn_install_dir()?;
+    let install_dir = loenn_install_dir(install_root)?;
     if install_dir.exists() {
         std::fs::remove_dir_all(&install_dir)
             .context("Failed to replace Loenn. Close Loenn and try again")?;
@@ -2782,12 +2832,13 @@ fn runtime_platform() -> &'static str {
 }
 
 #[tauri::command]
-fn get_loenn_state() -> LoennState {
-    get_loenn_state_impl()
+fn get_loenn_state(install_root: String) -> LoennState {
+    get_loenn_state_impl(&install_root)
 }
 
 #[tauri::command]
 fn download_and_install_loenn(
+    install_root: String,
     version: String,
     url: String,
     package_type: String,
@@ -2805,6 +2856,7 @@ fn download_and_install_loenn(
             return;
         }
         let result = install_loenn(
+            &install_root,
             &version,
             &url,
             &package_type,
@@ -2835,9 +2887,9 @@ fn download_and_install_loenn(
 }
 
 #[tauri::command]
-fn start_loenn() -> Result<(), String> {
-    let install_dir = loenn_install_dir().map_err(|error| format!("{error:#}"))?;
-    let metadata = read_loenn_metadata().map_err(|error| format!("{error:#}"))?;
+fn start_loenn(install_root: String) -> Result<(), String> {
+    let install_dir = loenn_install_dir(&install_root).map_err(|error| format!("{error:#}"))?;
+    let metadata = read_loenn_metadata(&install_root).map_err(|error| format!("{error:#}"))?;
     let executable = install_dir
         .join(safe_relative_path(&metadata.executable).map_err(|error| format!("{error:#}"))?);
     let working_dir = executable.parent().unwrap_or(&install_dir);

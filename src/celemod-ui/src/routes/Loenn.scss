@@ -66,10 +66,32 @@
     padding: 24px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 
-    > div {
+    .local-version {
       display: flex;
       align-items: baseline;
       gap: 12px;
+    }
+
+    .local-details {
+      min-width: 0;
+    }
+
+    .local-path {
+      display: block;
+      max-width: 520px;
+      margin-top: 6px;
+      overflow: hidden;
+      color: rgba(255, 255, 255, 0.38);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .local-actions {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 6px;
     }
 
     .label {
