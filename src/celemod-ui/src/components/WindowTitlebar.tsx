@@ -1,6 +1,5 @@
 import _i18n, { useI18N } from "src/i18n";
-import { type MouseEvent, useEffect, useRef, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect, useRef, useState } from "react";
 import { callRemote } from "../tauri/commands";
 import { detectDesktopPlatform } from "../tauri/window";
 
@@ -50,23 +49,13 @@ export function WindowTitlebar() {
 
   if (platform !== "windows") return null;
 
-  const startDragging = (event: MouseEvent<HTMLElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button"))
-      return;
-    event.preventDefault();
-    void getCurrentWindow().startDragging();
-  };
-
   return (
     <header
       ref={titlebarRef}
       className="window-titlebar"
-      data-tauri-drag-region
-      onMouseDown={startDragging}
+      data-tauri-drag-region="deep"
     >
-      <div className="window-caption" data-tauri-drag-region>
-        CeleMod
-      </div>
+      <div className="window-caption">CeleMod</div>
       <button
         className="celemod-version"
         title={_i18n.t(
