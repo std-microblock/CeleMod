@@ -2,596 +2,602 @@
 @use "../styles/theme" as theme;
 
 .mod {
-    position: relative;
-    isolation: isolate;
-    width: 100%;
-    height: 242px;
-    margin: 0;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 242px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-radius: 14px;
+  box-sizing: border-box;
+  background: linear-gradient(155deg, theme.$bg2, theme.$bg1 62%);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  $mask-start-height: 150px;
+
+  .mod-media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
     overflow: hidden;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 14px;
+    background: theme.$bg2;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      object-fit: cover;
+      object-position: center;
+      transform: scale(1.01);
+      transition: transform 280ms ease, filter 280ms ease;
+    }
+  }
+
+  .mod-media-shade {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 120px;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.25),
+      transparent 48%
+    );
+    pointer-events: none;
+  }
+
+  .mod-info-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    background-color: theme.$bg2;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 100px,
+      transparent 120px,
+      #000 $mask-start-height,
+      #000 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 100px,
+      #000 $mask-start-height,
+      #000 100%
+    );
+    pointer-events: none;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: blur(42px) brightness(0.46) saturate(1.35);
+      transform: scale(1.14);
+    }
+  }
+
+  .mod-badges {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    display: flex;
+    max-width: calc(100% - 108px);
+    gap: 6px;
+    pointer-events: none;
+
+    > span {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+      height: 24px;
+      padding: 0 9px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      box-sizing: border-box;
+      color: rgba(255, 255, 255, 0.92);
+      background: rgba(16, 16, 18, 0.72);
+      backdrop-filter: blur(10px);
+      font-size: 10px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mod-installed-badge {
+      color: #e5d6ff;
+      background: color.change(theme.$primary, $alpha: 0.72);
+
+      .icon {
+        margin-right: 5px;
+        font-size: 9px;
+      }
+    }
+  }
+
+  .info {
+    position: absolute;
+    top: $mask-start-height;
+    right: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 88px;
+    padding: 10px 14px;
     box-sizing: border-box;
-    background: linear-gradient(155deg, theme.$bg2, theme.$bg1 62%);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
-    transition: border-color 160ms ease, box-shadow 160ms ease;
-    $mask-start-height: 150px;
 
-    .mod-media {
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        overflow: hidden;
-        background: theme.$bg2;
-
-        img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            object-fit: cover;
-            object-position: center;
-            transform: scale(1.01);
-            transition: transform 280ms ease, filter 280ms ease;
-        }
+    .name {
+      width: 100%;
+      overflow: hidden;
+      color: rgba(255, 255, 255, 0.96);
+      font-size: 15px;
+      font-weight: 650;
+      letter-spacing: 0.1px;
+      line-height: 20px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .mod-media-shade {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: 0;
-        height: 120px;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25), transparent 48%);
-        pointer-events: none;
+    .author {
+      width: 100%;
+      margin-top: 2px;
+      overflow: hidden;
+      color: theme.$fg2;
+      font-size: 11px;
+      line-height: 16px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .mod-info-backdrop {
+    .other,
+    .mod-stats {
+      margin-top: auto;
+      color: theme.$fg3;
+      font-size: 11px;
+    }
+
+    .other {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mod-stats {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 9px;
+      overflow: hidden;
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
+        monospace;
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+
+      span {
+        display: inline-flex;
+        align-items: center;
+        min-width: 0;
+        gap: 4px;
+        font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
+          monospace;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      time {
+        font-family: inherit;
+        font-variant-numeric: inherit;
+      }
+
+      .icon {
+        width: 11px;
+        height: 11px;
+        color: theme.$fg3;
+        opacity: 0.9;
+      }
+
+      .mod-date-stat {
+        color: theme.$fg2;
+      }
+    }
+  }
+
+  .operations {
+    position: absolute;
+    top: 124px;
+    right: 12px;
+    z-index: 4;
+    display: flex;
+    gap: 7px;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      min-width: 32px;
+      height: 32px;
+      min-height: 32px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 9px;
+      color: white;
+      background: rgba(15, 15, 18, 0.75);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(10px);
+      letter-spacing: 0;
+    }
+
+    button:hover {
+      border-color: color.change(theme.$primary, $alpha: 0.62);
+      background: color.change(theme.$primary, $alpha: 0.8);
+    }
+
+    .download-progress {
+      position: relative;
+      display: grid;
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(
+        color.adjust(theme.$primary, $lightness: 12%) var(--download-progress),
+        rgba(255, 255, 255, 0.16) 0
+      );
+
+      &::after {
         position: absolute;
-        inset: 0;
+        inset: 3px;
+        border-radius: inherit;
+        background: #1b1b1d;
+        content: "";
+      }
+
+      > span {
+        position: relative;
         z-index: 1;
-        overflow: hidden;
-        background-color: theme.$bg2;
-        -webkit-mask-image: linear-gradient(
-            to bottom,
-            transparent 100px,
-            transparent 120px,
-            #000 $mask-start-height,
-            #000 100%
-        );
-        mask-image: linear-gradient(
-            to bottom,
-            transparent 100px,
-            #000 $mask-start-height,
-            #000 100%
-        );
-        pointer-events: none;
-
-        img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            filter: blur(42px) brightness(0.46) saturate(1.35);
-            transform: scale(1.14);
-        }
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
     }
+  }
 
-    .mod-badges {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 3;
-        display: flex;
-        max-width: calc(100% - 108px);
-        gap: 6px;
-        pointer-events: none;
-
-        > span {
-            display: inline-flex;
-            align-items: center;
-            min-width: 0;
-            height: 24px;
-            padding: 0 9px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.13);
-            border-radius: 999px;
-            box-sizing: border-box;
-            color: rgba(255, 255, 255, 0.92);
-            background: rgba(16, 16, 18, 0.72);
-            backdrop-filter: blur(10px);
-            font-size: 10px;
-            font-weight: 600;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .mod-installed-badge {
-            color: #e5d6ff;
-            background: color.change(theme.$primary, $alpha: 0.72);
-
-            .icon {
-                margin-right: 5px;
-                font-size: 9px;
-            }
-        }
-    }
-
-    .info {
-        position: absolute;
-        top: $mask-start-height;
-        right: 0;
-        left: 0;
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        height: 88px;
-        padding: 10px 14px;
-        box-sizing: border-box;
-
-        .name {
-            width: 100%;
-            overflow: hidden;
-            color: rgba(255, 255, 255, 0.96);
-            font-size: 15px;
-            font-weight: 650;
-            letter-spacing: 0.1px;
-            line-height: 20px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .author {
-            width: 100%;
-            margin-top: 2px;
-            overflow: hidden;
-            color: theme.$fg2;
-            font-size: 11px;
-            line-height: 16px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .other,
-        .mod-stats {
-            margin-top: auto;
-            color: theme.$fg3;
-            font-size: 11px;
-        }
-
-        .other {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .mod-stats {
-            display: flex;
-            align-items: center;
-            min-width: 0;
-            gap: 9px;
-            overflow: hidden;
-            font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-            font-variant-numeric: tabular-nums;
-            font-weight: 500;
-            letter-spacing: -0.02em;
-
-            span {
-                display: inline-flex;
-                align-items: center;
-                min-width: 0;
-                gap: 4px;
-                font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-                font-variant-numeric: tabular-nums;
-                white-space: nowrap;
-            }
-
-            time {
-                font-family: inherit;
-                font-variant-numeric: inherit;
-            }
-
-            .icon {
-                width: 11px;
-                height: 11px;
-                color: theme.$fg3;
-                opacity: 0.9;
-            }
-
-            .mod-date-stat {
-                color: theme.$fg2;
-
-            }
-        }
-    }
-
-    .operations {
-        position: absolute;
-        top: 124px;
-        right: 12px;
-        z-index: 4;
-        display: flex;
-        gap: 7px;
-
-        button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            min-width: 32px;
-            height: 32px;
-            min-height: 32px;
-            padding: 0;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 9px;
-            color: white;
-            background: rgba(15, 15, 18, 0.75);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
-            backdrop-filter: blur(10px);
-            letter-spacing: 0;
-        }
-
-        button:hover {
-            border-color: color.change(theme.$primary, $alpha: 0.62);
-            background: color.change(theme.$primary, $alpha: 0.8);
-        }
-
-        .download-progress {
-            position: relative;
-            display: grid;
-            width: 24px;
-            height: 24px;
-            flex: 0 0 24px;
-            place-items: center;
-            border-radius: 50%;
-            background: conic-gradient(
-                color.adjust(theme.$primary, $lightness: 12%) var(--download-progress),
-                rgba(255, 255, 255, 0.16) 0
-            );
-
-            &::after {
-                position: absolute;
-                inset: 3px;
-                border-radius: inherit;
-                background: #1b1b1d;
-                content: "";
-            }
-
-            > span {
-                position: relative;
-                z-index: 1;
-                font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-                font-size: 8px;
-                font-weight: 700;
-                letter-spacing: -0.04em;
-            }
-        }
-    }
-
-    &:hover {
-        border-color: color.change(theme.$primary, $alpha: 0.42);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
-    }
+  &:hover {
+    border-color: color.change(theme.$primary, $alpha: 0.42);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
+  }
 }
 
 .multiplayer > .mod {
-    width: 330px;
+  width: 330px;
 }
 
 .mod-list-shell {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 .mod-list {
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .mod-virtual-canvas {
-    position: relative;
-    width: 100%;
+  position: relative;
+  width: 100%;
 }
 
 .mod-grid-row {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: grid;
-    width: 100%;
-    padding: 0 0 0 14px;
-    gap: 16px;
-    box-sizing: border-box;
-    will-change: transform;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  width: 100%;
+  padding: 0 0 0 14px;
+  gap: 16px;
+  box-sizing: border-box;
+  will-change: transform;
 }
 
 .mod-list-shell.view-list {
-    .mod {
-        height: 64px;
-        border: 0;
-        border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-
-        .mod-media,
-        .mod-info-backdrop {
-            display: none;
-        }
-
-        .info {
-            top: 0;
-            width: auto;
-            height: 64px;
-            margin-left: 0;
-            padding: 6px 78px 5px 12px;
-
-            .name {
-                font-size: 13px;
-                line-height: 16px;
-            }
-
-            .author {
-                margin-top: 0;
-                font-size: 10px;
-                line-height: 12px;
-            }
-
-            .other,
-            .mod-stats {
-                margin-top: 3px;
-                font-size: 9px;
-            }
-
-            .mod-stats {
-                gap: 8px;
-            }
-        }
-
-        .operations {
-            top: 19px;
-            right: 12px;
-
-            button {
-                width: 26px;
-                min-width: 26px;
-                height: 26px;
-                min-height: 26px;
-                border-radius: 7px;
-            }
-
-            .download-progress {
-                width: 21px;
-                height: 21px;
-                flex-basis: 21px;
-
-                &::after {
-                    inset: 3px;
-                }
-
-                > span {
-                    font-size: 7px;
-                }
-            }
-        }
-
-        .mod-badges {
-            display: none;
-        }
-
-        &:hover {
-            border-color: color.change(theme.$fg, $alpha: 0.12);
-            background: color.change(theme.$fg, $alpha: 0.035);
-            box-shadow: none;
-        }
-
-    }
-}
-
-.mod-list-loading {
-    position: absolute;
-    right: 24px;
-    bottom: 16px;
-    z-index: 10;
-    display: grid;
-    width: 42px;
-    height: 42px;
-    place-items: center;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 50%;
-    background: color.change(theme.$bg1, $alpha: 0.9);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-}
-
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
+  .mod {
+    height: 64px;
     border: 0;
-}
+    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 
-.mod-detail-popup {
-    height: calc(100vh - 70px);
-    width: calc(100vw - 110px);
-    overflow-y: scroll;
-    padding: 10px 0;
-    position: relative;
-
-    .openExternal, .closeBtn {
-        position: fixed;
-        top: 55px;
-        right: 30px;
-        z-index: 100;
-        font-size: 20px;
-        opacity: 0.6;
-        cursor: pointer;
-
-        &:hover {
-            opacity: 1;
-        }
-    }
-    .openExternal {
-        right: 70px;
-    }
-
-    h2 {
-        margin-bottom: 10px;
+    .mod-media,
+    .mod-info-backdrop {
+      display: none;
     }
 
     .info {
-        font-size: 12px;
-        opacity: 0.6;
-        margin-top: 10px;
-        margin-bottom: 5px;
-    }
-    .images {
-        display: flex;
-        overflow-y: hidden;
-        overflow-x: scroll;
-        white-space: nowrap;
-        height: 182px;
-        width: 100%;
-        margin-right: 30px;
-        margin-bottom: 15px;
+      top: 0;
+      width: auto;
+      height: 64px;
+      margin-left: 0;
+      padding: 6px 78px 5px 12px;
 
-        img {
-            border-radius: 10px;
-            cursor: pointer;
-            min-width: 300px;
-            width: 300px;
-            object-fit: cover;
-            margin-right: 10px;
-            max-height: 160px;
-            border: 1px solid theme.$bg3;
-        }
-    }
-
-    .credits-title {
-        font-weight: 700;
+      .name {
         font-size: 13px;
-        margin-bottom: -10px;
+        line-height: 16px;
+      }
+
+      .author {
+        margin-top: 0;
+        font-size: 10px;
+        line-height: 12px;
+      }
+
+      .other,
+      .mod-stats {
+        margin-top: 3px;
+        font-size: 9px;
+      }
+
+      .mod-stats {
+        gap: 8px;
+      }
     }
 
-    .credits {
-        text-wrap: nowrap;
-        overflow-x: hidden;
-        overflow-y: hidden;
-        white-space: nowrap;
-        font-size: 12px;
-        text-overflow: ellipsis;
-    }
+    .operations {
+      top: 19px;
+      right: 12px;
 
-    .content {
-        // gamebanana integration
-        .GreenColor {
-            color: #109868;
+      button {
+        width: 26px;
+        min-width: 26px;
+        height: 26px;
+        min-height: 26px;
+        border-radius: 7px;
+      }
+
+      .download-progress {
+        width: 21px;
+        height: 21px;
+        flex-basis: 21px;
+
+        &::after {
+          inset: 3px;
         }
 
-        .RedColor {
-            color: #ef596f;
+        > span {
+          font-size: 7px;
         }
-
-        width: calc(100vw - 100px);
+      }
     }
+
+    .mod-badges {
+      display: none;
+    }
+
+    &:hover {
+      border-color: color.change(theme.$fg, $alpha: 0.12);
+      background: color.change(theme.$fg, $alpha: 0.035);
+      box-shadow: none;
+    }
+  }
+}
+
+.mod-list-loading {
+  position: absolute;
+  right: 24px;
+  bottom: 16px;
+  z-index: 10;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  border-radius: 50%;
+  background: color.change(theme.$bg1, $alpha: 0.9);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mod-detail-popup {
+  height: calc(100vh - 70px);
+  width: calc(100vw - 110px);
+  overflow-y: scroll;
+  padding: 10px 0;
+  position: relative;
+
+  .openExternal,
+  .closeBtn {
+    position: fixed;
+    top: 55px;
+    right: 30px;
+    z-index: 100;
+    font-size: 20px;
+    opacity: 0.6;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+  .openExternal {
+    right: 70px;
+  }
+
+  h2 {
+    margin-bottom: 10px;
+  }
+
+  .info {
+    font-size: 12px;
+    opacity: 0.6;
+    margin-top: 10px;
+    margin-bottom: 5px;
+  }
+  .images {
+    display: flex;
+    overflow-y: hidden;
+    overflow-x: scroll;
+    white-space: nowrap;
+    height: 182px;
+    width: 100%;
+    margin-right: 30px;
+    margin-bottom: 15px;
+
+    img {
+      border-radius: 10px;
+      cursor: pointer;
+      min-width: 300px;
+      width: 300px;
+      object-fit: cover;
+      margin-right: 10px;
+      max-height: 160px;
+      border: 1px solid theme.$bg3;
+    }
+  }
+
+  .credits-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: -10px;
+  }
+
+  .credits {
+    text-wrap: nowrap;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+    font-size: 12px;
+    text-overflow: ellipsis;
+  }
+
+  .content {
+    // gamebanana integration
+    .GreenColor {
+      color: #109868;
+    }
+
+    .RedColor {
+      color: #ef596f;
+    }
+
+    width: calc(100vw - 100px);
+  }
 }
 
 .image-view {
-    pointer-events: none;
-    width: calc(100vw - 30px);
-    height: calc(100vh - 30px);
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  pointer-events: none;
+  width: calc(100vw - 30px);
+  height: calc(100vh - 30px);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    img {
-        max-width: calc(100vw - 30px);
-        max-height: calc(100vh - 30px);
-    }
+  img {
+    max-width: calc(100vw - 30px);
+    max-height: calc(100vh - 30px);
+  }
 }
 
 .download-file-popup {
-    width: calc(100vw - 50px);
-    align-items: center;
-    justify-content: center;
-    display: flex; flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: auto;
-    height: 90vh;
+  width: calc(100vw - 50px);
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 90vh;
 
-    .group {
-        display: flex;
-        width: min-content;
+  .group {
+    display: flex;
+    width: min-content;
+  }
+
+  .file {
+    width: 230px;
+    height: 70px;
+    background: theme.$bg1;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin: 10px 8px;
+    cursor: pointer;
+    .name {
+      font-size: 14px;
+      font-weight: 600;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+      display: flex;
+
+      .icon {
+        margin-right: 4px;
+        display: inline-block;
+      }
     }
 
-    .file {
-        width: 230px;
-        height: 70px;
-        background: theme.$bg1;
-        padding: 10px 15px;
-        border-radius: 5px;
-        margin: 10px 8px;
-        cursor: pointer;
-        .name {
-            font-size: 14px;
-            font-weight: 600;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: middle;
-            display: flex;
-            
-            .icon {
-                margin-right: 4px;
-                display: inline-block;
-            }
-        }
+    .info {
+      font-size: 12px;
+      font-weight: 400;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.6;
+      position: relative;
+      margin-top: 10px;
 
-        .info {
-            font-size: 12px;
-            font-weight: 400;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            opacity: 0.6;
-            position: relative;
-            margin-top: 10px;
-
-            .id {
-                position: absolute;
-                right: 0;
-                bottom: 0;
-                opacity: 0.4;
-            }
-        }
-
-        .url {
-            font-size: 12px;
-            font-weight: 400;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            opacity: 0.8;
-            margin-top: 4px;
-        }
-
-        &:hover {
-            background: theme.$bg2;
-        }
+      .id {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        opacity: 0.4;
+      }
     }
+
+    .url {
+      font-size: 12px;
+      font-weight: 400;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
+    &:hover {
+      background: theme.$bg2;
+    }
+  }
 }

@@ -1,29 +1,29 @@
-import _i18n, { useI18N } from 'src/i18n';
-import { type MouseEvent, useEffect, useRef, useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { callRemote } from '../tauri/commands';
-import { detectDesktopPlatform } from '../tauri/window';
+import _i18n, { useI18N } from "src/i18n";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { callRemote } from "../tauri/commands";
+import { detectDesktopPlatform } from "../tauri/window";
 
 export function WindowTitlebar() {
   const titlebarRef = useRef<HTMLElement>(null);
-  const [version, setVersion] = useState('');
-  const [hash, setHash] = useState('');
+  const [version, setVersion] = useState("");
+  const [hash, setHash] = useState("");
   const platform = detectDesktopPlatform();
 
   useEffect(() => {
-    if (platform !== 'windows') return;
+    if (platform !== "windows") return;
 
     let disposed = false;
     const attachControls = () => {
       if (disposed) return true;
-      const controls = document.getElementById('tbo-controls');
+      const controls = document.getElementById("tbo-controls");
       const titlebar = titlebarRef.current;
       if (!controls || !titlebar) return false;
       if (controls.parentElement !== titlebar) titlebar.appendChild(controls);
       return true;
     };
 
-    void callRemote('enable_window_controls')
+    void callRemote("enable_window_controls")
       .then(() => {
         if (attachControls()) return;
         const observer = new MutationObserver(() => {
@@ -35,8 +35,8 @@ export function WindowTitlebar() {
       .catch(console.error);
 
     void Promise.all([
-      callRemote<string>('celemod_version'),
-      callRemote<string>('celemod_hash'),
+      callRemote<string>("celemod_version"),
+      callRemote<string>("celemod_hash"),
     ])
       .then(([nextVersion, nextHash]) => {
         setVersion(nextVersion);
@@ -48,10 +48,10 @@ export function WindowTitlebar() {
     };
   }, [platform]);
 
-  if (platform !== 'windows') return null;
+  if (platform !== "windows") return null;
 
   const startDragging = (event: MouseEvent<HTMLElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest('button'))
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button"))
       return;
     event.preventDefault();
     void getCurrentWindow().startDragging();
@@ -70,15 +70,15 @@ export function WindowTitlebar() {
       <button
         className="celemod-version"
         title={_i18n.t(
-          '左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console'
+          "左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console"
         )}
         onClick={(event) => {
-          if (event.shiftKey) void callRemote('show_log_window');
+          if (event.shiftKey) void callRemote("show_log_window");
           else void window._checkUpdate?.();
         }}
         onContextMenu={(event) => {
           event.preventDefault();
-          void callRemote('show_log_window');
+          void callRemote("show_log_window");
         }}
       >
         <span className="caption-hash">{hash}</span>

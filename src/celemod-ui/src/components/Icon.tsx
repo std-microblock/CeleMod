@@ -1,5 +1,5 @@
-import type { ComponentType, SVGProps } from 'react';
-import type { IconType } from 'react-icons';
+import type { ComponentType, SVGProps } from "react";
+import type { IconType } from "react-icons";
 import {
   FaArrowUpRightFromSquare,
   FaCalendar,
@@ -32,12 +32,12 @@ import {
   FaTriangleExclamation,
   FaEye,
   FaXmark,
-} from 'react-icons/fa6';
-import { FaAsterisk } from 'react-icons/fa';
+} from "react-icons/fa6";
+import { FaAsterisk } from "react-icons/fa";
 
 const icons: Record<string, IconType> = {
   home: FaHouse,
-  'chart-area': FaChartArea,
+  "chart-area": FaChartArea,
   search: FaMagnifyingGlass,
   drive: FaHardDrive,
   web: FaGlobe,
@@ -57,12 +57,12 @@ const icons: Record<string, IconType> = {
   delete: FaTrash,
   warn: FaTriangleExclamation,
   external: FaArrowUpRightFromSquare,
-  'opts-h': FaEllipsis,
-  'i-down': FaChevronDown,
-  'i-right': FaChevronRight,
-  'i-asterisk': FaAsterisk,
-  'i-cross': FaXmark,
-  'i-tick': FaCheck,
+  "opts-h": FaEllipsis,
+  "i-down": FaChevronDown,
+  "i-right": FaChevronRight,
+  "i-asterisk": FaAsterisk,
+  "i-cross": FaXmark,
+  "i-tick": FaCheck,
   fail: FaCircleExclamation,
   replay: FaRotateRight,
   settings: FaGear,
@@ -71,6 +71,13 @@ const icons: Record<string, IconType> = {
 };
 
 export const Icon = ({ name }: { name: string }) => {
-  const Glyph = (icons[name] ?? FaCircleExclamation) as unknown as ComponentType<SVGProps<SVGSVGElement>>;
-  return <Glyph className={`icon icon-${name}`} aria-hidden="true" focusable="false" />;
+  const Glyph = (icons[name] ??
+    FaCircleExclamation) as unknown as ComponentType<SVGProps<SVGSVGElement>>;
+  return (
+    <Glyph
+      className={`icon icon-${name}`}
+      aria-hidden="true"
+      focusable="false"
+    />
+  );
 };

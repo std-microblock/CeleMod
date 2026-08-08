@@ -22,9 +22,24 @@
   align-items: center;
   gap: 18px;
 
-  img { width: 94px; height: 94px; object-fit: contain; image-rendering: pixelated; }
-  h1 { margin: 0; font-size: 38px; line-height: 1; }
-  p { width: 340px; margin: 10px 0 0; color: theme.$fg3; font-size: 18px; line-height: 1.45; }
+  img {
+    width: 94px;
+    height: 94px;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+  h1 {
+    margin: 0;
+    font-size: 38px;
+    line-height: 1;
+  }
+  p {
+    width: 340px;
+    margin: 10px 0 0;
+    color: theme.$fg3;
+    font-size: 18px;
+    line-height: 1.45;
+  }
 }
 
 .home-language {
@@ -40,7 +55,7 @@
     height: 28px;
     min-width: 132px;
     padding: 0 8px;
-    border: 1px solid color.change(theme.$fg, $alpha: .1);
+    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
     border-radius: 7px;
     background: theme.$bg1;
     color: theme.$fg;
@@ -49,7 +64,10 @@
   }
 }
 
-.home-section { margin-bottom: 19px; padding: 0 4px; }
+.home-section {
+  margin-bottom: 19px;
+  padding: 0 4px;
+}
 
 .home-section-heading {
   display: flex;
@@ -58,8 +76,14 @@
   margin-bottom: 8px;
   gap: 7px;
 
-  h2 { margin: 0; font-size: 13px; font-weight: 550; }
-  .icon { color: theme.$fg; }
+  h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 550;
+  }
+  .icon {
+    color: theme.$fg;
+  }
 }
 
 .home-game-section .gameSelector {
@@ -71,13 +95,20 @@
   align-items: center;
   gap: 9px;
   padding: 13px;
-  border: 1px solid color.change(#ef5350, $alpha: .24);
+  border: 1px solid color.change(#ef5350, $alpha: 0.24);
   border-radius: 8px;
   color: theme.$fg3;
   font-size: 10px;
 
-  .icon { color: #ef7774; }
-  button { margin-left: auto; min-height: 29px; padding: 0 10px; font-size: 9px; }
+  .icon {
+    color: #ef7774;
+  }
+  button {
+    margin-left: auto;
+    min-height: 29px;
+    padding: 0 10px;
+    font-size: 9px;
+  }
 }
 
 .home-profiles-section .profiles {
@@ -96,18 +127,36 @@
   min-height: 38px;
   padding: 12px 13px;
   gap: 10px;
-  border: 1px solid color.change(theme.$fg, $alpha: .07);
+  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
   border-radius: 10px;
-  background: color.change(theme.$bg1, $alpha: .36);
+  background: color.change(theme.$bg1, $alpha: 0.36);
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 
-  &:hover { background: theme.$bg2; }
-  &.selected { border-color: color.change(theme.$primary, $alpha: .52); background: color.change(theme.$primary, $alpha: .08); }
+  &:hover {
+    background: theme.$bg2;
+  }
+  &.selected {
+    border-color: color.change(theme.$primary, $alpha: 0.52);
+    background: color.change(theme.$primary, $alpha: 0.08);
+  }
 
-  .profile-main { flex: 1 1 auto; min-width: 0; }
-  .name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-  .profile-meta { margin-top: 7px; color: theme.$fg3; font-size: 8px; }
+  .profile-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .name {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .profile-meta {
+    margin-top: 7px;
+    color: theme.$fg3;
+    font-size: 8px;
+  }
 }
 
 .blacklist-sync-popup {
@@ -115,23 +164,92 @@
   max-width: 80vw;
   text-align: left;
 
-  .content { margin-bottom: 12px; }
-  .blacklist-diff-list { max-height: 230px; overflow-y: auto; padding: 8px; border: 1px solid theme.$bg2; border-radius: 8px; background: theme.$bg; }
-  section + section { margin-top: 12px; }
-  .diff-title { display: flex; margin: 0 2px 6px; font-size: 12px; font-weight: 600; opacity: .8; }
-  .diff-count { margin-left: auto; padding: 1px 7px; border-radius: 10px; background: theme.$bg2; }
-  .diff-item { display: flex; align-items: center; margin-top: 4px; padding: 6px 8px; border-radius: 6px; background: theme.$bg1; }
-  .diff-source { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 5px; color: white; font-size: 11px; font-weight: 700; line-height: 20px; text-align: center; }
-  .profile-only .diff-source { background: theme.$primary; }
-  .file-only .diff-source { background: #d97706; }
-  .diff-file { margin-left: 8px; overflow: hidden; font-family: monospace; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-  .blacklist-sync-note { margin-top: 10px; font-size: 12px; opacity: .65; }
-  .blacklist-sync-error { margin-top: 8px; color: #ef4444; font-size: 12px; }
-  .buttons { margin-top: 16px; flex-wrap: wrap; }
+  .content {
+    margin-bottom: 12px;
+  }
+  .blacklist-diff-list {
+    max-height: 230px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid theme.$bg2;
+    border-radius: 8px;
+    background: theme.$bg;
+  }
+  section + section {
+    margin-top: 12px;
+  }
+  .diff-title {
+    display: flex;
+    margin: 0 2px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+  .diff-count {
+    margin-left: auto;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: theme.$bg2;
+  }
+  .diff-item {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: theme.$bg1;
+  }
+  .diff-source {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+  }
+  .profile-only .diff-source {
+    background: theme.$primary;
+  }
+  .file-only .diff-source {
+    background: #d97706;
+  }
+  .diff-file {
+    margin-left: 8px;
+    overflow: hidden;
+    font-family: monospace;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .blacklist-sync-note {
+    margin-top: 10px;
+    font-size: 12px;
+    opacity: 0.65;
+  }
+  .blacklist-sync-error {
+    margin-top: 8px;
+    color: #ef4444;
+    font-size: 12px;
+  }
+  .buttons {
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 720px) {
-  .home-brand p { width: auto; font-size: 14px; }
-  .home-brand img { width: 72px; height: 72px; }
-  .home-brand h1 { font-size: 31px; }
+  .home-brand p {
+    width: auto;
+    font-size: 14px;
+  }
+  .home-brand img {
+    width: 72px;
+    height: 72px;
+  }
+  .home-brand h1 {
+    font-size: 31px;
+  }
 }

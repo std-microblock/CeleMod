@@ -1,5 +1,5 @@
-import { type ComponentType, createContext, createElement } from 'react';
-import { createRoot } from 'react-dom/client';
+import { type ComponentType, createContext, createElement } from "react";
+import { createRoot } from "react-dom/client";
 
 export const PopupContext = createContext<{ hide(): void }>({ hide() {} });
 
@@ -7,24 +7,26 @@ export const createPopup = (
   Content: ComponentType,
   {
     cancelable = true,
-    backgroundMask = 'rgba(0, 0, 0, 0.5)',
-    className = '',
-  }: { cancelable?: boolean; backgroundMask?: string; className?: string } = {},
+    backgroundMask = "rgba(0, 0, 0, 0.5)",
+    className = "",
+  }: { cancelable?: boolean; backgroundMask?: string; className?: string } = {}
 ) => {
-  const container = document.createElement('div');
-  container.className = ['popup-container', className].filter(Boolean).join(' ');
+  const container = document.createElement("div");
+  container.className = ["popup-container", className]
+    .filter(Boolean)
+    .join(" ");
   container.style.background = backgroundMask;
   document.body.appendChild(container);
   const root = createRoot(container);
 
   const controls = {
     show() {
-      container.style.opacity = '1';
-      container.style.transform = 'scale(1)';
+      container.style.opacity = "1";
+      container.style.transform = "scale(1)";
     },
     hide() {
-      container.style.opacity = '0';
-      container.style.transform = 'scale(1.3)';
+      container.style.opacity = "0";
+      container.style.transform = "scale(1.3)";
       setTimeout(() => {
         root.unmount();
         container.remove();
@@ -32,14 +34,14 @@ export const createPopup = (
     },
   };
 
-  container.addEventListener('click', (event) => {
+  container.addEventListener("click", (event) => {
     if (cancelable && event.target === container) controls.hide();
   });
   requestAnimationFrame(controls.show);
   root.render(
     <PopupContext.Provider value={controls}>
       {createElement(Content)}
-    </PopupContext.Provider>,
+    </PopupContext.Provider>
   );
   return controls;
 };

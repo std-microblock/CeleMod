@@ -28,7 +28,7 @@
     height: 400px;
 
     html:not([lang="zh-CN"]) & {
-        height: 490px;
+      height: 490px;
     }
     width: 330px;
     background-color: theme.$bg1;
@@ -85,7 +85,8 @@
       position: absolute;
       bottom: 0px;
       padding: 10px;
-      display: flex; flex-wrap: wrap;
+      display: flex;
+      flex-wrap: wrap;
       justify-content: flex-end;
       z-index: 2;
     }

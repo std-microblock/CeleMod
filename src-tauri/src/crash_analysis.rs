@@ -1,6 +1,6 @@
 use super::{
-    EverestModMetadata, LocalMod, everest, get_installed_mods_without_catalog_sync,
-    parse_mod_yaml, parse_mod_yaml_document,
+    EverestModMetadata, LocalMod, everest, get_installed_mods_without_catalog_sync, parse_mod_yaml,
+    parse_mod_yaml_document,
 };
 use anyhow::{Context, bail};
 use lazy_static::lazy_static;

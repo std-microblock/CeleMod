@@ -1,4 +1,4 @@
-import _i18n from 'src/i18n';
+import _i18n from "src/i18n";
 import {
   Fragment,
   memo,
@@ -8,39 +8,39 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import type { CSSProperties } from 'react';
-import './ModList.scss';
-import { Button } from './Button';
-import { Icon } from './Icon';
+} from "react";
+import type { CSSProperties } from "react";
+import "./ModList.scss";
+import { Button } from "./Button";
+import { Icon } from "./Icon";
 import {
   Awaitable,
   callRemote,
   displayDate,
   horizontalScrollMouseWheelHandler,
-} from '../utils';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Content } from '../api/wegfan';
-import { useAutoDisableNewMods } from '../states';
-import { useGlobalContext } from '../App';
-import { useDownloadStore } from '../stores/download';
-import { PopupContext, createPopup } from './Popup';
-import { ProgressIndicator } from './Progress';
-import { sanitizeDescriptionHtml } from '../sanitizeDescriptionHtml';
+} from "../utils";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Content } from "../api/wegfan";
+import { useAutoDisableNewMods } from "../states";
+import { useGlobalContext } from "../App";
+import { useDownloadStore } from "../stores/download";
+import { PopupContext, createPopup } from "./Popup";
+import { ProgressIndicator } from "./Progress";
+import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 // @ts-ignore
-import celemodIcon from '../resources/Celemod.png';
+import celemodIcon from "../resources/Celemod.png";
 
 const processLargeNum = (num: number) => {
   if (num < 1000) return num.toString();
-  if (num < 1000000) return (num / 1000).toFixed(1) + 'k';
-  if (num < 1000000000) return (num / 1000000).toFixed(1) + 'm';
-  return (num / 1000000000).toFixed(1) + 'b';
+  if (num < 1000000) return (num / 1000).toFixed(1) + "k";
+  if (num < 1000000000) return (num / 1000000).toFixed(1) + "m";
+  return (num / 1000000000).toFixed(1) + "b";
 };
 
 const formatShortDate = (dateValue: string | Date) => {
   const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return '--';
-  const pad = (value: number) => value.toString().padStart(2, '0');
+  if (Number.isNaN(date.getTime())) return "--";
+  const pad = (value: number) => value.toString().padStart(2, "0");
   return `${date.getFullYear().toString().slice(-2)}/${pad(
     date.getMonth() + 1
   )}/${pad(date.getDate())}`;
@@ -48,17 +48,17 @@ const formatShortDate = (dateValue: string | Date) => {
 
 const getCategoryLabel = (category: string) => {
   const categoryI18nMap: Record<string, string> = {
-    Map: _i18n.t('地图'),
-    Maps: _i18n.t('地图'),
-    Assets: _i18n.t('资源'),
-    Effects: _i18n.t('特效'),
-    Dialog: _i18n.t('对话'),
-    'Other/Misc': _i18n.t('其他'),
-    Helpers: _i18n.t('辅助'),
-    'Lönn Plugin': _i18n.t('辅助'),
-    Skins: _i18n.t('皮肤'),
-    Mechanics: _i18n.t('机制'),
-    UI: 'UI',
+    Map: _i18n.t("地图"),
+    Maps: _i18n.t("地图"),
+    Assets: _i18n.t("资源"),
+    Effects: _i18n.t("特效"),
+    Dialog: _i18n.t("对话"),
+    "Other/Misc": _i18n.t("其他"),
+    Helpers: _i18n.t("辅助"),
+    "Lönn Plugin": _i18n.t("辅助"),
+    Skins: _i18n.t("皮肤"),
+    Mechanics: _i18n.t("机制"),
+    UI: "UI",
   };
 
   return categoryI18nMap[category]
@@ -71,7 +71,7 @@ const BackgroundEle = memo(
     <Fragment>
       <div className="mod-media">
         <img
-          src={preview + '?w=560'}
+          src={preview + "?w=560"}
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -81,7 +81,7 @@ const BackgroundEle = memo(
         <span className="sr-only">{name}</span>
       </div>
       <div className="mod-info-backdrop" aria-hidden="true">
-        <img src={preview + '?w=560'} alt="" loading="lazy" decoding="async" />
+        <img src={preview + "?w=560"} alt="" loading="lazy" decoding="async" />
       </div>
     </Fragment>
   )
@@ -153,7 +153,7 @@ export const Mod = memo(
         ) ?? state.tasks[mod.name]
     );
     const downloadActive =
-      downloadTask?.state === 'pending' && !downloadTask.canceled;
+      downloadTask?.state === "pending" && !downloadTask.canceled;
     const downloadProgress = Math.max(
       0,
       Math.min(100, Number(downloadTask?.progress ?? 0))
@@ -162,7 +162,7 @@ export const Mod = memo(
     return (
       <div
         onClick={props.onClick}
-        className={`mod ${props.expanded ? 'expanded' : ''}`}
+        className={`mod ${props.expanded ? "expanded" : ""}`}
         key={mod.name}
       >
         <BackgroundEle preview={preview} name={mod.name} />
@@ -171,7 +171,7 @@ export const Mod = memo(
           {props.isInstalled && (
             <span className="mod-installed-badge">
               <Icon name="i-tick" />
-              {_i18n.t('已安装')}
+              {_i18n.t("已安装")}
             </span>
           )}
           {mod.category && (
@@ -185,15 +185,15 @@ export const Mod = memo(
               downloadActive
                 ? `${Math.round(downloadProgress)}%`
                 : props.isInstalled
-                ? _i18n.t('已安装')
-                : _i18n.t('下载')
+                ? _i18n.t("已安装")
+                : _i18n.t("下载")
             }
             aria-label={
               downloadActive
                 ? `${Math.round(downloadProgress)}%`
                 : props.isInstalled
-                ? _i18n.t('已安装')
-                : _i18n.t('下载')
+                ? _i18n.t("已安装")
+                : _i18n.t("下载")
             }
             onClick={async (event) => {
               event.stopPropagation();
@@ -208,7 +208,7 @@ export const Mod = memo(
               };
 
               if (downloadTask) {
-                if (downloadTask.state === 'failed' && downloadTask.source) {
+                if (downloadTask.state === "failed" && downloadTask.source) {
                   downloadMod(downloadTask.name, downloadTask.source, {
                     force: true,
                     autoDisableNewMods,
@@ -242,7 +242,7 @@ export const Mod = memo(
                   return (
                     <div
                       style={{
-                        width: 'min-content',
+                        width: "min-content",
                       }}
                     >
                       <ProgressIndicator infinite />
@@ -300,7 +300,7 @@ export const Mod = memo(
 
               const downloadInfo = await mod.downloadUrl();
 
-              if (typeof downloadInfo === 'string') {
+              if (typeof downloadInfo === "string") {
                 ctx.hide();
                 down(mod.name, downloadInfo);
               } else {
@@ -308,7 +308,7 @@ export const Mod = memo(
                   ctx.hide();
                   down(downloadInfo[0].name, downloadInfo[0].id);
                 } else if (downloadInfo.length === 0) {
-                  ctx.setError(_i18n.t('文件列表为空'));
+                  ctx.setError(_i18n.t("文件列表为空"));
                 } else {
                   ctx.setDownloads(downloadInfo);
                 }
@@ -323,13 +323,13 @@ export const Mod = memo(
                   className="download-progress"
                   style={
                     {
-                      '--download-progress': `${downloadProgress}%`,
+                      "--download-progress": `${downloadProgress}%`,
                     } as CSSProperties
                   }
                 >
                   <span>{downloadTask.subtasks.length}</span>
                 </span>
-              ) : downloadTask.state === 'failed' || downloadTask.canceled ? (
+              ) : downloadTask.state === "failed" || downloadTask.canceled ? (
                 <Icon name="i-cross" />
               ) : (
                 <Icon name="i-tick" />
@@ -341,8 +341,8 @@ export const Mod = memo(
 
           {props.mod.detail && (
             <Button
-              title={_i18n.t('更多')}
-              aria-label={_i18n.t('更多')}
+              title={_i18n.t("更多")}
+              aria-label={_i18n.t("更多")}
               onClick={async (event) => {
                 event.stopPropagation();
                 createPopup(
@@ -361,45 +361,45 @@ export const Mod = memo(
                       if (!refImages.current) return;
                       // horizontal scroll
                       refImages.current.addEventListener(
-                        'mousewheel',
+                        "mousewheel",
                         horizontalScrollMouseWheelHandler()
                       );
                     }, [data]);
 
                     useEffect(() => {
                       if (!refContent.current) return;
-                      refContent.current.innerHTML = '';
+                      refContent.current.innerHTML = "";
                       refContent.current.appendChild(
-                        sanitizeDescriptionHtml(data?.description ?? '')
+                        sanitizeDescriptionHtml(data?.description ?? "")
                       );
 
                       // Keep external links going through the native opener.
                       // @ts-ignore
                       for (const a of refContent.current.querySelectorAll(
-                        'a'
+                        "a"
                       )) {
-                        const url = a.getAttribute('href');
+                        const url = a.getAttribute("href");
                         if (!url) continue;
-                        a.href = '#';
+                        a.href = "#";
                         a.onclick = (e: any) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          callRemote('open_url', url);
+                          callRemote("open_url", url);
                         };
                       }
 
                       // @ts-ignore
                       for (const img of refContent.current.querySelectorAll(
-                        'img'
+                        "img"
                       ))
-                        img.style.maxWidth = '300px';
+                        img.style.maxWidth = "300px";
                     }, [data]);
 
                     if (!data)
                       return (
                         <div
                           style={{
-                            width: 'min-content',
+                            width: "min-content",
                           }}
                         >
                           <ProgressIndicator infinite />
@@ -415,7 +415,7 @@ export const Mod = memo(
                           <div
                             className="openExternal"
                             onClick={() => {
-                              callRemote('open_url', data.externalUrl);
+                              callRemote("open_url", data.externalUrl);
                             }}
                           >
                             <Icon name="external" />
@@ -424,18 +424,18 @@ export const Mod = memo(
 
                         <h2>{mod.name}</h2>
                         <div className="info">
-                          Mod ·{' '}
+                          Mod ·{" "}
                           {data.lastUpdate
-                            ? displayDate(data.lastUpdate) + ' ·'
-                            : ''}
+                            ? displayDate(data.lastUpdate) + " ·"
+                            : ""}
                           {mod.author}
                         </div>
                         {data.authors &&
-                          data.authors.join(' ') !== mod.author && (
+                          data.authors.join(" ") !== mod.author && (
                             <Fragment>
                               <div className="credits-title">Credits</div>
                               <div className="info credits">
-                                {data.authors.join(' / ')}
+                                {data.authors.join(" / ")}
                               </div>
                             </Fragment>
                           )}
@@ -443,7 +443,7 @@ export const Mod = memo(
                           <div className="images" ref={refImages}>
                             {data.images.map((v) => (
                               <img
-                                src={v + '?h=160'}
+                                src={v + "?h=160"}
                                 alt=""
                                 srcSet=""
                                 onClick={() =>
@@ -463,7 +463,7 @@ export const Mod = memo(
                     );
                   },
                   {
-                    backgroundMask: '#131313',
+                    backgroundMask: "#131313",
                   }
                 );
               }}
@@ -496,11 +496,11 @@ export const Mod = memo(
               </span>
               {mod.dates && (
                 <Fragment>
-                  <span className="mod-date-stat" title={_i18n.t('发布')}>
+                  <span className="mod-date-stat" title={_i18n.t("发布")}>
                     <Icon name="calendar" />
                     <time>{formatShortDate(mod.dates.published)}</time>
                   </span>
-                  <span className="mod-date-stat" title={_i18n.t('更新')}>
+                  <span className="mod-date-stat" title={_i18n.t("更新")}>
                     <Icon name="clock" />
                     <time>{formatShortDate(mod.dates.updated)}</time>
                   </span>
@@ -521,7 +521,7 @@ export const ModList = (props: {
   haveMore?: boolean;
   modFolder: string;
   loading?: boolean;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
 }) => {
   const [installedModIDs, setInstalledModIDs] = useState<string[] | null>(null);
   const [listWidth, setListWidth] = useState(0);
@@ -530,8 +530,8 @@ export const ModList = (props: {
   const loadMoreLocked = useRef(false);
 
   useEffect(() => {
-    callRemote('get_installed_mod_ids', props.modFolder, (ids: string) => {
-      setInstalledModIDs(ids.split('\n').filter(Boolean));
+    callRemote("get_installed_mod_ids", props.modFolder, (ids: string) => {
+      setInstalledModIDs(ids.split("\n").filter(Boolean));
     });
   }, [props.modFolder]);
 
@@ -549,10 +549,10 @@ export const ModList = (props: {
     return () => observer.disconnect();
   }, []);
 
-  const viewMode = props.viewMode ?? 'grid';
+  const viewMode = props.viewMode ?? "grid";
   const gridRightPadding = Math.max(0, GRID_PADDING - scrollbarWidth);
   const columnCount = useMemo(() => {
-    if (viewMode === 'list') return 1;
+    if (viewMode === "list") return 1;
     const available = Math.max(0, listWidth - GRID_PADDING * 2);
     return Math.max(
       1,
@@ -561,8 +561,8 @@ export const ModList = (props: {
   }, [listWidth, viewMode]);
 
   const rowCount = Math.ceil(props.mods.length / columnCount);
-  const rowHeight = viewMode === 'list' ? LIST_CARD_HEIGHT : CARD_HEIGHT;
-  const rowGap = viewMode === 'list' ? 0 : GRID_GAP;
+  const rowHeight = viewMode === "list" ? LIST_CARD_HEIGHT : CARD_HEIGHT;
+  const rowGap = viewMode === "list" ? 0 : GRID_GAP;
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => refList.current,
@@ -600,7 +600,7 @@ export const ModList = (props: {
 
   const formatSize = (size: number) => {
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const sizes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     return `${(size / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
   };
 
@@ -628,8 +628,8 @@ export const ModList = (props: {
                     id: v.gameBananaId.toString(),
                     name: `${
                       v.description.includes(v.mods[0].version)
-                        ? ''
-                        : v.mods[0].version + '-'
+                        ? ""
+                        : v.mods[0].version + "-"
                     }${v.description}-${v.mods[0].name}`,
                     size: formatSize(v.size),
                     url: v.url,
@@ -720,7 +720,7 @@ export const ModList = (props: {
       </div>
 
       {(props.loading || installedModIDs === null) && (
-        <div className="mod-list-loading" aria-label={_i18n.t('加载中')}>
+        <div className="mod-list-loading" aria-label={_i18n.t("加载中")}>
           <ProgressIndicator infinite size={26} lineWidth={3} />
         </div>
       )}

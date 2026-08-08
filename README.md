@@ -13,6 +13,7 @@ An alternative mod manager for Celeste
 </div>
 
 ### 好用
+
 ✅ 常用 Mod 列表，一键安装  
 ✅ 国内超快下载（多线程下载，@WEGFan 镜像）  
 ✅ 基于 Tauri 2 的跨平台桌面应用
@@ -20,16 +21,18 @@ An alternative mod manager for Celeste
 ✅ 一键升级 Mod  
 ✅ 按类别搜索，多种排序方式  
 ✅ 国服联机 Celeste.Miao.Net 快速配置  
-✅ Everest 镜像一键安装  
+✅ Everest 镜像一键安装
+
 ### 强大
+
 ✅ 多个 Mod 配置一键切换  
 ✅ 树状 Mod 管理，依赖一目了然  
 ✅ 多个 Mod 同时下载，不阻塞  
 ✅ 软件内 Mod 详情预览  
 ✅ 原生 WebView + React UI
 
-
 ### 页面展示
+
 ![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a906d8bb-16dc-4018-b370-9a13cec5ade1)
 ![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a3592323-c9ea-4ded-9b7c-bf8e23c8f31d)
 ![6e14b711c66dd7b36fcb76f71470c272](https://github.com/MicroCBer/CeleMod/assets/66859419/1ee695a5-59a0-4326-8f54-cad2165bba74)

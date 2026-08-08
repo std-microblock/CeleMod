@@ -10,22 +10,25 @@ An alternative mod manager for Celeste
 </div>
 
 ### Easy to use
+
 ✅ List of commonly used Mods, one-click installation  
 ✅ Super-fast download (multi-threaded download, @WEGFan mirror)  
 ✅ Cross-platform desktop app powered by Tauri 2
 ✅ One-click analysis and dependency completion  
 ✅ One-click upgrade Mod  
 ✅ Search by category, multiple sorting methods  
-✅ Everest mirror one-click installation  
+✅ Everest mirror one-click installation
+
 ### Powerful
+
 ✅ Multiple Mod configurations can be switched with one click  
 ✅ Tree-like Mod management, dependencies are clear at a glance  
 ✅ Multiple Mods can be downloaded at the same time without blocking  
 ✅ Mod details preview in the software  
 ✅ Native WebView + React UI
 
-
 ### Screenshots
+
 ![image](https://images.gamebanana.com/img/ss/tools/65ccb3644231c.jpg)
 ![](https://images.gamebanana.com/img/ss/tools/65ccb3644742f.jpg)
 ![](https://images.gamebanana.com/img/ss/tools/65ccb3644109d.jpg)

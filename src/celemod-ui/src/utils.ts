@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
-import { callRemote } from './tauri/commands';
+import { useEffect, useState } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
+import { callRemote } from "./tauri/commands";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -86,8 +86,8 @@ export class URLSearchParams {
 
 export const getCelemodUA = async () => {
   const [version, hash] = await Promise.all([
-    callRemote<string>('celemod_version'),
-    callRemote<string>('celemod_hash'),
+    callRemote<string>("celemod_version"),
+    callRemote<string>("celemod_hash"),
   ]);
   return `CeleMod/${version}-${hash.slice(0, 6)}`;
 };
@@ -96,9 +96,9 @@ export const displayDate = (date_: string | Date) => {
   const date = new Date(date_);
   const pad = (v: number) => v.toString().padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
+    date.getDate()
   )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-    date.getSeconds(),
+    date.getSeconds()
   )}`;
 };
 
@@ -118,14 +118,16 @@ export const compareVersion = (a: string, b: string) => {
   return 0;
 };
 
-export const selectGamePath = async (successCallback: (path: string) => void) => {
+export const selectGamePath = async (
+  successCallback: (path: string) => void
+) => {
   const selected = await open({
     multiple: false,
     directory: true,
   });
-  if (typeof selected === 'string') {
-    const path = await callRemote<string>('normalize_game_path', selected);
-    if (!await callRemote<boolean>('verify_celeste_install', path)) {
+  if (typeof selected === "string") {
+    const path = await callRemote<string>("normalize_game_path", selected);
+    if (!(await callRemote<boolean>("verify_celeste_install", path))) {
       alert("Invalid Celeste install path.");
       return;
     }

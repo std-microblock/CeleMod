@@ -1,33 +1,43 @@
-import { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
-import _i18n, { createI18NContext } from './i18n';
-import { Icon } from './components/Icon';
-import { Search } from './routes/Search';
-import { Home } from './routes/Home';
-import { Manage } from './routes/Manage';
-import { Multiplayer } from './routes/Multiplayer';
-import { EventTarget } from './utils';
-import { RecommendMods } from './routes/RecommendMods';
-import { useAppStore, useCurrentLang, useGamePath, useInitializeAppStore } from './states';
-import { createModManageContext } from './context/modManage';
-import { DownloadListMenu } from './components/DownloadList';
-import { useEverestCtx as createEverestContext } from './context/everest';
-import { Everest } from './routes/Everest';
-import { checkUpdate } from './components/SelfUpdate';
-import { createThemeContext } from './context/theme';
-import { createBlacklistContext } from './context/blacklist';
-import { DropInstaller } from './components/DropInstaller';
-import { WindowTitlebar } from './components/WindowTitlebar';
-import { CrashAssistant } from './components/CrashAssistant';
-import { Settings } from './routes/Settings';
-import { Loenn } from './routes/Loenn';
-import { KeyBindings } from './routes/KeyBindings';
-import { featureVisible, useUpdateInfo } from './api/updateInfo';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { Fragment, memo, useEffect, useMemo, useRef, useState } from "react";
+import _i18n, { createI18NContext } from "./i18n";
+import { Icon } from "./components/Icon";
+import { Search } from "./routes/Search";
+import { Home } from "./routes/Home";
+import { Manage } from "./routes/Manage";
+import { Multiplayer } from "./routes/Multiplayer";
+import { EventTarget } from "./utils";
+import { RecommendMods } from "./routes/RecommendMods";
+import {
+  useAppStore,
+  useCurrentLang,
+  useGamePath,
+  useInitializeAppStore,
+} from "./states";
+import { createModManageContext } from "./context/modManage";
+import { DownloadListMenu } from "./components/DownloadList";
+import { useEverestCtx as createEverestContext } from "./context/everest";
+import { Everest } from "./routes/Everest";
+import { checkUpdate } from "./components/SelfUpdate";
+import { createThemeContext } from "./context/theme";
+import { createBlacklistContext } from "./context/blacklist";
+import { DropInstaller } from "./components/DropInstaller";
+import { WindowTitlebar } from "./components/WindowTitlebar";
+import { CrashAssistant } from "./components/CrashAssistant";
+import { Settings } from "./routes/Settings";
+import { Loenn } from "./routes/Loenn";
+import { KeyBindings } from "./routes/KeyBindings";
+import { featureVisible, useUpdateInfo } from "./api/updateInfo";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 const pages = {
-  Search: memo(Search), Home: memo(Home), Everest: memo(Everest), Manage: memo(Manage),
-  Multiplayer: memo(Multiplayer), RecommendMods: memo(RecommendMods),
-  Loenn: memo(Loenn), Settings: memo(Settings),
+  Search: memo(Search),
+  Home: memo(Home),
+  Everest: memo(Everest),
+  Manage: memo(Manage),
+  Multiplayer: memo(Multiplayer),
+  RecommendMods: memo(RecommendMods),
+  Loenn: memo(Loenn),
+  Settings: memo(Settings),
   KeyBindings: memo(KeyBindings),
 };
 
@@ -42,7 +52,8 @@ type Services = {
 
 let currentServices: Services | undefined;
 export const useGlobalContext = () => {
-  if (!currentServices) throw new Error('Application services are not initialized');
+  if (!currentServices)
+    throw new Error("Application services are not initialized");
   return currentServices;
 };
 
@@ -55,7 +66,9 @@ export default function App() {
   const downloadMenuOpen = useAppStore((state) => state.downloadMenuOpen);
   const setDownloadMenuOpen = useAppStore((state) => state.setDownloadMenuOpen);
   const fontScale = useAppStore((state) => state.fontScale);
-  const enablePageTransitions = useAppStore((state) => state.enablePageTransitions);
+  const enablePageTransitions = useAppStore(
+    (state) => state.enablePageTransitions
+  );
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
   const { data: updateInfo } = useUpdateInfo();
@@ -71,7 +84,11 @@ export default function App() {
   const visiblePageRef = useRef(page);
 
   currentServices = {
-    bus, modManage, everest, blacklist, theme,
+    bus,
+    modManage,
+    everest,
+    blacklist,
+    theme,
     pageController: { setPage },
   };
 
@@ -81,21 +98,23 @@ export default function App() {
 
   useEffect(() => {
     const scale = fontScale / 100;
-    if ('__TAURI_INTERNALS__' in window) {
-      void getCurrentWebview().setZoom(scale).catch((error) => {
-        console.error('Failed to apply interface scale', error);
-      });
+    if ("__TAURI_INTERNALS__" in window) {
+      void getCurrentWebview()
+        .setZoom(scale)
+        .catch((error) => {
+          console.error("Failed to apply interface scale", error);
+        });
       return;
     }
     document.documentElement.style.zoom = String(scale);
   }, [fontScale]);
 
   useEffect(() => {
-    if (page === 'RecommendMaps') setPage('RecommendMods');
+    if (page === "RecommendMaps") setPage("RecommendMods");
   }, [page, setPage]);
 
   useEffect(() => {
-    if (page === 'Loenn' && updateInfo && !showLoenn) setPage('Home');
+    if (page === "Loenn" && updateInfo && !showLoenn) setPage("Home");
   }, [page, setPage, showLoenn, updateInfo]);
 
   useEffect(() => {
@@ -118,8 +137,19 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [enablePageTransitions, page]);
 
-  const SidebarButton = ({ icon, name, title }: { icon: string; name: string; title: string }) => (
-    <button className={`navBtn ${name === page ? 'selected' : ''}`} onClick={() => setPage(name)}>
+  const SidebarButton = ({
+    icon,
+    name,
+    title,
+  }: {
+    icon: string;
+    name: string;
+    title: string;
+  }) => (
+    <button
+      className={`navBtn ${name === page ? "selected" : ""}`}
+      onClick={() => setPage(name)}
+    >
       <Icon name={icon} />
       <span className="title">{title}</span>
     </button>
@@ -127,44 +157,84 @@ export default function App() {
 
   return (
     <div className="app-frame">
-    <WindowTitlebar />
-    <div className="app-shell">
-      <DownloadListMenu open={downloadMenuOpen} onClose={() => setDownloadMenuOpen(false)} />
-      <DropInstaller />
-      <CrashAssistant />
-      <nav className="sidebar">
-        <SidebarButton icon="home" name="Home" title={_i18n.t('主页')} />
-        {gamePath && (
-          <Fragment>
-            <SidebarButton icon="chart-area" name="Everest" title="Everest" />
-            <SidebarButton icon="search" name="Search" title={_i18n.t('搜索')} />
-            <SidebarButton icon="drive" name="Manage" title={_i18n.t('管理')} />
-            <SidebarButton icon="keyboard" name="KeyBindings" title={_i18n.t('按键')} />
-            {currentLang === 'zh-CN' && (
-              <SidebarButton icon="web" name="Multiplayer" title={_i18n.t('联机相关')} />
-            )}
-            <SidebarButton icon="flag" name="RecommendMods" title={_i18n.t('推荐模组')} />
-          </Fragment>
-        )}
-        {showLoenn && <SidebarButton icon="edit" name="Loenn" title="Loenn" />}
-        <SidebarButton icon="settings" name="Settings" title={_i18n.t('设置')} />
-        <button className="downloadListBtn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
-          <Icon name="download" />
-        </button>
-      </nav>
-      <main className="app-content">
-        {Object.entries(pages).map(([name, Page]) => (
-          <section
-            className={`page page-${name}${enablePageTransitions && name === visiblePage ? ' page-entering' : ''}${enablePageTransitions && name === leavingPage ? ' page-leaving' : ''}`}
-            key={name}
-            hidden={name !== visiblePage && name !== leavingPage}
-            aria-hidden={name !== visiblePage}
+      <WindowTitlebar />
+      <div className="app-shell">
+        <DownloadListMenu
+          open={downloadMenuOpen}
+          onClose={() => setDownloadMenuOpen(false)}
+        />
+        <DropInstaller />
+        <CrashAssistant />
+        <nav className="sidebar">
+          <SidebarButton icon="home" name="Home" title={_i18n.t("主页")} />
+          {gamePath && (
+            <Fragment>
+              <SidebarButton icon="chart-area" name="Everest" title="Everest" />
+              <SidebarButton
+                icon="search"
+                name="Search"
+                title={_i18n.t("搜索")}
+              />
+              <SidebarButton
+                icon="drive"
+                name="Manage"
+                title={_i18n.t("管理")}
+              />
+              <SidebarButton
+                icon="keyboard"
+                name="KeyBindings"
+                title={_i18n.t("按键")}
+              />
+              {currentLang === "zh-CN" && (
+                <SidebarButton
+                  icon="web"
+                  name="Multiplayer"
+                  title={_i18n.t("联机相关")}
+                />
+              )}
+              <SidebarButton
+                icon="flag"
+                name="RecommendMods"
+                title={_i18n.t("推荐模组")}
+              />
+            </Fragment>
+          )}
+          {showLoenn && (
+            <SidebarButton icon="edit" name="Loenn" title="Loenn" />
+          )}
+          <SidebarButton
+            icon="settings"
+            name="Settings"
+            title={_i18n.t("设置")}
+          />
+          <button
+            className="downloadListBtn"
+            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
           >
-            {(name === visiblePage || name === leavingPage) && <Page />}
-          </section>
-        ))}
-      </main>
-    </div>
+            <Icon name="download" />
+          </button>
+        </nav>
+        <main className="app-content">
+          {Object.entries(pages).map(([name, Page]) => (
+            <section
+              className={`page page-${name}${
+                enablePageTransitions && name === visiblePage
+                  ? " page-entering"
+                  : ""
+              }${
+                enablePageTransitions && name === leavingPage
+                  ? " page-leaving"
+                  : ""
+              }`}
+              key={name}
+              hidden={name !== visiblePage && name !== leavingPage}
+              aria-hidden={name !== visiblePage}
+            >
+              {(name === visiblePage || name === leavingPage) && <Page />}
+            </section>
+          ))}
+        </main>
+      </div>
     </div>
   );
 }

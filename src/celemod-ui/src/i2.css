@@ -1,6 +1,7 @@
 * {
   font-family: "Noto Sans SC", "Microsoft Yahei", "Hiragino Sans GB",
-    "WenQuanYi Micro Hei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "WenQuanYi Micro Hei", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   scroll-behavior: smooth;
   scrollbar-color: #56525f transparent;
   scrollbar-width: thin;

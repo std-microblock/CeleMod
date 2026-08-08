@@ -966,9 +966,7 @@ struct EverestModMetadata {
     dll: Option<String>,
 }
 
-fn parse_mod_yaml_document(
-    content: &str,
-) -> Result<Vec<EverestModMetadata>, serde_yaml::Error> {
+fn parse_mod_yaml_document(content: &str) -> Result<Vec<EverestModMetadata>, serde_yaml::Error> {
     serde_yaml::from_str(content)
 }
 
@@ -2275,10 +2273,7 @@ mod local_package_tests {
         .unwrap();
         assert_eq!(replaced, "RushHelper.zip");
         let metadata = parse_mod_yaml(&installed).unwrap();
-        assert_eq!(
-            metadata[0].version.as_deref(),
-            Some("1.1.1+celemodfix.1")
-        );
+        assert_eq!(metadata[0].version.as_deref(), Some("1.1.1+celemodfix.1"));
         assert!(!mods_path.join("RushHelper-fix.zip").exists());
         fs::remove_dir_all(root).unwrap();
     }

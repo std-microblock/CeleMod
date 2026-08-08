@@ -13,11 +13,21 @@
     justify-content: space-between;
     margin-bottom: 22px;
 
-    h1 { margin: 0; font-size: 26px; }
-    p { margin: 6px 0 0; color: theme.$fg3; font-size: 12px; }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+    p {
+      margin: 6px 0 0;
+      color: theme.$fg3;
+      font-size: 12px;
+    }
   }
 
-  .settings-columns { display: grid; gap: 22px; }
+  .settings-columns {
+    display: grid;
+    gap: 22px;
+  }
 
   .settings-section-title {
     display: flex;
@@ -27,15 +37,15 @@
     color: theme.$fg3;
     font-size: 11px;
     font-weight: 750;
-    letter-spacing: .08em;
+    letter-spacing: 0.08em;
   }
 
   .settings-card {
     overflow: hidden;
-    border: 1px solid color.change(theme.$fg, $alpha: .08);
+    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
     border-radius: 14px;
-    background: color.change(theme.$bg1, $alpha: .72);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .12);
+    background: color.change(theme.$bg1, $alpha: 0.72);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   }
 
   .setting-toggle-row,
@@ -50,19 +60,34 @@
     gap: 18px;
     box-sizing: border-box;
 
-    & + & { border-top: 1px solid color.change(theme.$fg, $alpha: .06); }
+    & + & {
+      border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
+    }
 
     > span {
       min-width: 0;
-      strong, small { display: block; }
-      strong { font-size: 13px; font-weight: 650; }
-      small { margin-top: 4px; color: theme.$fg3; font-size: 10px; line-height: 1.35; }
+      strong,
+      small {
+        display: block;
+      }
+      strong {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      small {
+        margin-top: 4px;
+        color: theme.$fg3;
+        font-size: 10px;
+        line-height: 1.35;
+      }
     }
   }
 
   .setting-toggle-row {
     cursor: pointer;
-    input { transform: scale(1.08); }
+    input {
+      transform: scale(1.08);
+    }
   }
 
   .font-scale-row {
@@ -72,14 +97,25 @@
     min-height: 86px;
     padding: 12px 15px;
     gap: 24px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: .06);
+    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
     box-sizing: border-box;
 
     > span {
       min-width: 0;
-      strong, small { display: block; }
-      strong { font-size: 13px; font-weight: 650; }
-      small { margin-top: 4px; color: theme.$fg3; font-size: 10px; line-height: 1.35; }
+      strong,
+      small {
+        display: block;
+      }
+      strong {
+        font-size: 13px;
+        font-weight: 650;
+      }
+      small {
+        margin-top: 4px;
+        color: theme.$fg3;
+        font-size: 10px;
+        line-height: 1.35;
+      }
     }
   }
 
@@ -107,29 +143,29 @@
         to right,
         theme.$primary 0,
         theme.$primary var(--font-scale-progress),
-        color.change(theme.$fg, $alpha: .16) var(--font-scale-progress),
-        color.change(theme.$fg, $alpha: .16) 100%
+        color.change(theme.$fg, $alpha: 0.16) var(--font-scale-progress),
+        color.change(theme.$fg, $alpha: 0.16) 100%
       );
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, .28);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
       cursor: pointer;
 
       &::-webkit-slider-thumb {
         width: 30px;
         height: 30px;
         appearance: none;
-        border: 1px solid color.change(#000, $alpha: .12);
+        border: 1px solid color.change(#000, $alpha: 0.12);
         border-radius: 50%;
         background: #f7f7f7;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .38);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
       }
 
       &::-moz-range-thumb {
         width: 30px;
         height: 30px;
-        border: 1px solid color.change(#000, $alpha: .12);
+        border: 1px solid color.change(#000, $alpha: 0.12);
         border-radius: 50%;
         background: #f7f7f7;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, .38);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
       }
     }
   }
@@ -142,22 +178,29 @@
     color: theme.$fg3;
     font-size: 8px;
 
-    span::after { content: "%"; }
+    span::after {
+      content: "%";
+    }
   }
 
   select,
   input[type="number"] {
     height: 34px;
-    border: 1px solid color.change(theme.$fg, $alpha: .1);
+    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
     border-radius: 8px;
     background: theme.$bg2;
     color: theme.$fg;
     outline: none;
   }
 
-  select { min-width: 140px; padding: 0 9px; }
+  select {
+    min-width: 140px;
+    padding: 0 9px;
+  }
 
-  .download-default-setting { border-top: 1px solid color.change(theme.$fg, $alpha: .06); }
+  .download-default-setting {
+    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  }
 
   .segmented-setting {
     display: flex;
@@ -177,7 +220,10 @@
       font-size: 10px;
       letter-spacing: 0;
 
-      &.selected { background: theme.$bg3; color: theme.$fg; }
+      &.selected {
+        background: theme.$bg3;
+        color: theme.$fg;
+      }
     }
   }
 
@@ -194,21 +240,34 @@
       min-width: 0;
       padding: 8px 10px;
       border-radius: 8px;
-      background: color.change(theme.$bg, $alpha: .65);
+      background: color.change(theme.$bg, $alpha: 0.65);
       font-size: 10px;
       cursor: pointer;
 
-      span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
   }
 
   .hidden-types-setting {
     padding: 14px 15px 15px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: .06);
+    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
 
-    strong, small { display: block; }
-    strong { font-size: 13px; }
-    small { margin-top: 4px; color: theme.$fg3; font-size: 10px; }
+    strong,
+    small {
+      display: block;
+    }
+    strong {
+      font-size: 13px;
+    }
+    small {
+      margin-top: 4px;
+      color: theme.$fg3;
+      font-size: 10px;
+    }
   }
 
   .type-chip-grid {
@@ -220,7 +279,7 @@
     button {
       min-height: 27px;
       padding: 0 10px;
-      border: 1px solid color.change(theme.$fg, $alpha: .08);
+      border: 1px solid color.change(theme.$fg, $alpha: 0.08);
       border-radius: 999px;
       background: theme.$bg2;
       box-shadow: none;
@@ -229,8 +288,8 @@
       letter-spacing: 0;
 
       &.selected {
-        border-color: color.change(#e35d6a, $alpha: .4);
-        background: color.change(#e35d6a, $alpha: .13);
+        border-color: color.change(#e35d6a, $alpha: 0.4);
+        background: color.change(#e35d6a, $alpha: 0.13);
         color: #ff9aa4;
       }
     }
@@ -242,12 +301,15 @@
     gap: 7px;
     color: theme.$fg3;
     font-size: 10px;
-    input { width: 74px; padding: 0 8px; }
+    input {
+      width: 74px;
+      padding: 0 8px;
+    }
   }
 
   .cache-status {
     display: grid;
-    grid-template-columns: .8fr .7fr 1.5fr;
+    grid-template-columns: 0.8fr 0.7fr 1.5fr;
     gap: 8px;
     padding: 0 15px 14px;
 
@@ -255,10 +317,22 @@
       min-width: 0;
       padding: 10px;
       border-radius: 9px;
-      border: 1px solid color.change(theme.$bg, $alpha: .55);
-      span, strong { display: block; }
-      span { color: theme.$fg3; font-size: 9px; }
-      strong { margin-top: 4px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+      border: 1px solid color.change(theme.$bg, $alpha: 0.55);
+      span,
+      strong {
+        display: block;
+      }
+      span {
+        color: theme.$fg3;
+        font-size: 9px;
+      }
+      strong {
+        margin-top: 4px;
+        overflow: hidden;
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
   }
 
@@ -268,18 +342,45 @@
     justify-content: space-between;
     gap: 14px;
     padding: 12px 15px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: .06);
+    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
 
-    span { min-width: 0; overflow: hidden; color: theme.$fg3; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-    button { flex: 0 0 auto; min-height: 30px; padding: 0 12px; font-size: 10px; }
+    span {
+      min-width: 0;
+      overflow: hidden;
+      color: theme.$fg3;
+      font-size: 9px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    button {
+      flex: 0 0 auto;
+      min-height: 30px;
+      padding: 0 12px;
+      font-size: 10px;
+    }
   }
 
-  .settings-error { padding: 0 15px 12px; color: #ff8a94; font-size: 10px; }
+  .settings-error {
+    padding: 0 15px 12px;
+    color: #ff8a94;
+    font-size: 10px;
+  }
 }
 
 @media (max-width: 760px) {
-  .settings-page .download-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .settings-page .cache-status { grid-template-columns: 1fr; }
-  .settings-page .font-scale-row { align-items: stretch; flex-direction: column; gap: 10px; }
-  .settings-page .font-scale-control { width: 100%; min-width: 0; }
+  .settings-page .download-type-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-page .cache-status {
+    grid-template-columns: 1fr;
+  }
+  .settings-page .font-scale-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .settings-page .font-scale-control {
+    width: 100%;
+    min-width: 0;
+  }
 }

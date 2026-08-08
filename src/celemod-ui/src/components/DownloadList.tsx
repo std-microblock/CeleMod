@@ -1,23 +1,25 @@
-import _i18n from 'src/i18n';
-import './DownloadList.scss';
-import { useState } from 'react';
-import { Icon } from './Icon';
-import { Download, useDownloadStore } from '../stores/download';
+import _i18n from "src/i18n";
+import "./DownloadList.scss";
+import { useState } from "react";
+import { Icon } from "./Icon";
+import { Download, useDownloadStore } from "../stores/download";
 
 const formatBytes = (bytes: number) => {
-  if (!bytes) return '0 B';
-  const units = ['B', 'KiB', 'MiB', 'GiB'];
+  if (!bytes) return "0 B";
+  const units = ["B", "KiB", "MiB", "GiB"];
   let value = bytes;
   let index = 0;
   while (value >= 1024 && index < units.length - 1) {
     value /= 1024;
     index += 1;
   }
-  return `${value >= 100 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
+  return `${
+    value >= 100 || index === 0 ? value.toFixed(0) : value.toFixed(1)
+  } ${units[index]}`;
 };
 
 const formatSpeed = (bytesPerSec: number) => {
-  if (!bytesPerSec) return '0 B/s';
+  if (!bytesPerSec) return "0 B/s";
   return `${formatBytes(bytesPerSec)}/s`;
 };
 
@@ -25,23 +27,24 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const all = task.subtasks.length;
-  const finished = task.subtasks.filter((v) => v.state === 'Finished').length;
+  const finished = task.subtasks.filter((v) => v.state === "Finished").length;
 
   const [expanded, setExpanded] = useState(false);
 
-  const activeSubtask = task.subtasks.find((v) => v.state === 'Downloading');
-  const action = task.state === 'pending' && !task.canceled
-    ? {
-      icon: 'i-cross',
-      onClick: () => cancelDownload(task.name),
-      title: _i18n.t('取消'),
-    }
-    : task.state === 'failed' && task.source
+  const activeSubtask = task.subtasks.find((v) => v.state === "Downloading");
+  const action =
+    task.state === "pending" && !task.canceled
       ? {
-        icon: 'replay',
-        onClick: () => downloadMod(task.name, task.source!, { force: true }),
-        title: _i18n.t('重试'),
-      }
+          icon: "i-cross",
+          onClick: () => cancelDownload(task.name),
+          title: _i18n.t("取消"),
+        }
+      : task.state === "failed" && task.source
+      ? {
+          icon: "replay",
+          onClick: () => downloadMod(task.name, task.source!, { force: true }),
+          title: _i18n.t("重试"),
+        }
       : null;
 
   return (
@@ -54,27 +57,36 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
               setExpanded((v) => !v);
             }}
           >
-            {<Icon name={expanded ? 'i-down' : 'i-right'} />}
+            {<Icon name={expanded ? "i-down" : "i-right"} />}
           </button>
           <span className="name">{task.name}</span>
           {action && (
-            <button className="taskInlineAction" title={action.title} onClick={action.onClick}>
+            <button
+              className="taskInlineAction"
+              title={action.title}
+              onClick={action.onClick}
+            >
               <Icon name={action.icon} />
             </button>
           )}
-          <span className="progress-label">{finished}/{all}</span>
+          <span className="progress-label">
+            {finished}/{all}
+          </span>
         </div>
       </label>
       {activeSubtask && (
         <div className="metaLine">
-          <span>{formatBytes(activeSubtask.downloadedBytes)}/{formatBytes(activeSubtask.totalBytes)}</span>
+          <span>
+            {formatBytes(activeSubtask.downloadedBytes)}/
+            {formatBytes(activeSubtask.totalBytes)}
+          </span>
           <span>{formatSpeed(activeSubtask.speedBytesPerSec)}</span>
         </div>
       )}
       {expanded && (
         <div className="subTasks">
           {task.subtasks
-            .filter((v) => v.state !== 'Finished' || v.error)
+            .filter((v) => v.state !== "Finished" || v.error)
             .map((subtask) => (
               <div className="subTask" key={subtask.name}>
                 <div className="name">{subtask.name}</div>
@@ -90,10 +102,13 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
                   <div className="text">{subtask.progress}%</div>
                 </div>
                 <div className="metaLine subMetaLine">
-                  <span>{formatBytes(subtask.downloadedBytes)}/{formatBytes(subtask.totalBytes)}</span>
+                  <span>
+                    {formatBytes(subtask.downloadedBytes)}/
+                    {formatBytes(subtask.totalBytes)}
+                  </span>
                   <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
                 </div>
-                {subtask.state === 'Failed' && (
+                {subtask.state === "Failed" && (
                   <div className="error">
                     <Icon name="fail" />
                     {subtask.error}
@@ -107,23 +122,38 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
   );
 };
 
-export const DownloadListMenu = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+export const DownloadListMenu = ({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
 
   if (!open) return null;
   return (
     <div className="downloadListBackdrop" onClick={onClose}>
-    <menu className="popup downloadList" onClick={(event) => event.stopPropagation()}>
-      <button className="downloadListClose" onClick={onClose} aria-label={_i18n.t('关闭')}>×</button>
-      <h2>{_i18n.t('下载任务')}</h2>
-      <div className="taskList">
-        {Object.values(downloadTasks)
-          .filter((v) => v.state !== 'finished' || v.canceled)
-          .map((task) => (
-            <Task key={task.name} task={task} />
-          ))}
-      </div>
-    </menu>
+      <menu
+        className="popup downloadList"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          className="downloadListClose"
+          onClick={onClose}
+          aria-label={_i18n.t("关闭")}
+        >
+          ×
+        </button>
+        <h2>{_i18n.t("下载任务")}</h2>
+        <div className="taskList">
+          {Object.values(downloadTasks)
+            .filter((v) => v.state !== "finished" || v.canceled)
+            .map((task) => (
+              <Task key={task.name} task={task} />
+            ))}
+        </div>
+      </menu>
     </div>
   );
 };

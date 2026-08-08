@@ -218,7 +218,11 @@
   overflow: hidden;
   border: 1px solid color.change(theme.$fg, $alpha: 0.08);
   border-radius: 15px;
-  background: linear-gradient(125deg, color.change(theme.$bg2, $alpha: 0.74), color.change(theme.$bg1, $alpha: 0.88));
+  background: linear-gradient(
+    125deg,
+    color.change(theme.$bg2, $alpha: 0.74),
+    color.change(theme.$bg1, $alpha: 0.88)
+  );
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 

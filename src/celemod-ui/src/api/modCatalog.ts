@@ -1,5 +1,5 @@
-import type { Content, File as SubmissionFile } from './wegfan';
-import { callRemote } from '../utils';
+import type { Content, File as SubmissionFile } from "./wegfan";
+import { callRemote } from "../utils";
 
 export interface CatalogSubmission {
   id: string;
@@ -61,8 +61,8 @@ export interface LocalCatalogFilters {
   maxDownloads: number | null;
   minSizeMb: number | null;
   maxSizeMb: number | null;
-  sort: 'updated' | 'created' | 'updateAdded' | 'downloads' | 'size' | 'name';
-  direction: 'asc' | 'desc';
+  sort: "updated" | "created" | "updateAdded" | "downloads" | "size" | "name";
+  direction: "asc" | "desc";
 }
 
 export interface LocalCatalogOptions {
@@ -82,13 +82,13 @@ let catalogPromise: Promise<CatalogMod[]> | null = null;
 
 export const loadModCatalog = async (
   ttlHours = 24,
-  forceRefresh = false,
+  forceRefresh = false
 ): Promise<CatalogMod[]> => {
-  await callRemote('configure_mod_cache', Math.max(0, ttlHours) * 60 * 60);
+  await callRemote("configure_mod_cache", Math.max(0, ttlHours) * 60 * 60);
   if (catalog && !forceRefresh) return catalog;
   if (catalogPromise && !forceRefresh) return catalogPromise;
 
-  catalogPromise = callRemote<string>('get_mod_catalog', forceRefresh)
+  catalogPromise = callRemote<string>("get_mod_catalog", forceRefresh)
     .then((raw) => {
       const parsed = JSON.parse(raw) as CatalogResponse;
       catalog = Array.isArray(parsed.data) ? parsed.data : [];
@@ -108,28 +108,37 @@ export const clearInMemoryModCatalog = () => {
 const numberInRange = (
   value: number,
   minimum: number | null,
-  maximum: number | null,
-) => (minimum === null || value >= minimum) && (maximum === null || value <= maximum);
+  maximum: number | null
+) =>
+  (minimum === null || value >= minimum) &&
+  (maximum === null || value <= maximum);
 
 const dateInRange = (value: string, after: string, before: string) => {
   const timestamp = Date.parse(value);
   if (Number.isNaN(timestamp)) return !after && !before;
-  if (after && timestamp < new Date(`${after}T00:00:00`).getTime()) return false;
-  if (before && timestamp > new Date(`${before}T23:59:59.999`).getTime()) return false;
+  if (after && timestamp < new Date(`${after}T00:00:00`).getTime())
+    return false;
+  if (before && timestamp > new Date(`${before}T23:59:59.999`).getTime())
+    return false;
   return true;
 };
 
-export const getLocalCatalogOptions = (mods: CatalogMod[]): LocalCatalogOptions => {
+export const getLocalCatalogOptions = (
+  mods: CatalogMod[]
+): LocalCatalogOptions => {
   const categories = new Set<string>();
   const subCategories = new Set<string>();
   const sections = new Set<string>();
   for (const mod of mods) {
     const submission = mod.submissionFile.submission;
     if (submission.categoryName) categories.add(submission.categoryName);
-    if (submission.subCategoryName) subCategories.add(submission.subCategoryName);
-    if (submission.gameBananaSection) sections.add(submission.gameBananaSection);
+    if (submission.subCategoryName)
+      subCategories.add(submission.subCategoryName);
+    if (submission.gameBananaSection)
+      sections.add(submission.gameBananaSection);
   }
-  const sort = (values: Set<string>) => [...values].sort((a, b) => a.localeCompare(b));
+  const sort = (values: Set<string>) =>
+    [...values].sort((a, b) => a.localeCompare(b));
   return {
     categories: sort(categories),
     subCategories: sort(subCategories),
@@ -139,9 +148,11 @@ export const getLocalCatalogOptions = (mods: CatalogMod[]): LocalCatalogOptions 
 
 export const queryLocalCatalog = (
   mods: CatalogMod[],
-  filters: LocalCatalogFilters,
+  filters: LocalCatalogFilters
 ): LocalSubmission[] => {
-  type MutableSubmission = LocalSubmission & { fileMap: Map<string, SubmissionFile> };
+  type MutableSubmission = LocalSubmission & {
+    fileMap: Map<string, SubmissionFile>;
+  };
   const grouped = new Map<string, MutableSubmission>();
   const searchTerms = filters.search
     .trim()
@@ -149,29 +160,53 @@ export const queryLocalCatalog = (
     .split(/\s+/)
     .filter(Boolean);
   const submitter = filters.submitter.trim().toLocaleLowerCase();
-  const minSize = filters.minSizeMb === null ? null : filters.minSizeMb * 1024 * 1024;
-  const maxSize = filters.maxSizeMb === null ? null : filters.maxSizeMb * 1024 * 1024;
+  const minSize =
+    filters.minSizeMb === null ? null : filters.minSizeMb * 1024 * 1024;
+  const maxSize =
+    filters.maxSizeMb === null ? null : filters.maxSizeMb * 1024 * 1024;
 
   for (const catalogMod of mods) {
     const file = catalogMod.submissionFile;
     const submission = file.submission;
-    if (filters.category && submission.categoryName !== filters.category) continue;
-    if (filters.subCategory && submission.subCategoryName !== filters.subCategory) continue;
-    if (filters.section && submission.gameBananaSection !== filters.section) continue;
-    if (submitter && !submission.submitter.toLocaleLowerCase().includes(submitter)) continue;
-    if (!dateInRange(submission.updateTime, filters.updatedAfter, filters.updatedBefore)) continue;
-    if (!numberInRange(file.downloads, filters.minDownloads, filters.maxDownloads)) continue;
+    if (filters.category && submission.categoryName !== filters.category)
+      continue;
+    if (
+      filters.subCategory &&
+      submission.subCategoryName !== filters.subCategory
+    )
+      continue;
+    if (filters.section && submission.gameBananaSection !== filters.section)
+      continue;
+    if (
+      submitter &&
+      !submission.submitter.toLocaleLowerCase().includes(submitter)
+    )
+      continue;
+    if (
+      !dateInRange(
+        submission.updateTime,
+        filters.updatedAfter,
+        filters.updatedBefore
+      )
+    )
+      continue;
+    if (
+      !numberInRange(file.downloads, filters.minDownloads, filters.maxDownloads)
+    )
+      continue;
     if (!numberInRange(file.size, minSize, maxSize)) continue;
 
     const haystack = [
       submission.name,
       submission.submitter,
-      submission.categoryName ?? '',
-      submission.subCategoryName ?? '',
+      submission.categoryName ?? "",
+      submission.subCategoryName ?? "",
       file.description,
       catalogMod.name,
       catalogMod.version,
-    ].join('\n').toLocaleLowerCase();
+    ]
+      .join("\n")
+      .toLocaleLowerCase();
     if (!searchTerms.every((term) => haystack.includes(term))) continue;
 
     let item = grouped.get(submission.id);
@@ -182,23 +217,27 @@ export const queryLocalCatalog = (
         updateTime: submission.updateTime as unknown as Date,
         deleteTime: null,
         name: submission.name.trim() || catalogMod.name.trim(),
-        submissionType: submission.submissionType as Content['submissionType'],
+        submissionType: submission.submissionType as Content["submissionType"],
         submitter: submission.submitter,
-        pageUrl: submission.pageUrl ?? '',
-        gameBananaSection: (submission.gameBananaSection ?? 'Mod') as Content['gameBananaSection'],
+        pageUrl: submission.pageUrl ?? "",
+        gameBananaSection: (submission.gameBananaSection ??
+          "Mod") as Content["gameBananaSection"],
         gameBananaId: submission.gameBananaId ?? -1,
         categoryId: submission.categoryId ?? -1,
-        categoryName: (submission.categoryName ?? 'Other/Misc') as Content['categoryName'],
+        categoryName: (submission.categoryName ??
+          "Other/Misc") as Content["categoryName"],
         subCategoryId: submission.subCategoryId,
-        subCategoryName: submission.subCategoryName as Content['subCategoryName'],
-        subtitle: '',
-        description: '',
+        subCategoryName:
+          submission.subCategoryName as Content["subCategoryName"],
+        subtitle: "",
+        description: "",
         views: 0,
         likes: 0,
         downloads: 0,
         screenshots: [],
         credits: [],
-        latestUpdateAddedTime: submission.latestUpdateAddedTime as unknown as Date,
+        latestUpdateAddedTime:
+          submission.latestUpdateAddedTime as unknown as Date,
         files: [],
         catalogSize: 0,
         catalogModNames: [],
@@ -242,17 +281,24 @@ export const queryLocalCatalog = (
     }
   }
 
-  const result = [...grouped.values()].map(({ fileMap: _fileMap, ...item }) => item);
-  const direction = filters.direction === 'asc' ? 1 : -1;
+  const result = [...grouped.values()].map(
+    ({ fileMap: _fileMap, ...item }) => item
+  );
+  const direction = filters.direction === "asc" ? 1 : -1;
   return result.sort((a, b) => {
     let comparison = 0;
-    if (filters.sort === 'name') comparison = a.name.localeCompare(b.name);
-    else if (filters.sort === 'downloads') comparison = a.downloads - b.downloads;
-    else if (filters.sort === 'size') comparison = a.catalogSize - b.catalogSize;
+    if (filters.sort === "name") comparison = a.name.localeCompare(b.name);
+    else if (filters.sort === "downloads")
+      comparison = a.downloads - b.downloads;
+    else if (filters.sort === "size")
+      comparison = a.catalogSize - b.catalogSize;
     else {
-      const field = filters.sort === 'created'
-        ? 'createTime'
-        : filters.sort === 'updateAdded' ? 'latestUpdateAddedTime' : 'updateTime';
+      const field =
+        filters.sort === "created"
+          ? "createTime"
+          : filters.sort === "updateAdded"
+          ? "latestUpdateAddedTime"
+          : "updateTime";
       comparison = new Date(a[field]).getTime() - new Date(b[field]).getTime();
     }
     return comparison * direction;
@@ -261,6 +307,8 @@ export const queryLocalCatalog = (
 
 export const getCatalogModType = (mods: CatalogMod[], modName: string) => {
   const normalizedName = modName.trim().toLocaleLowerCase();
-  return mods.find((mod) => mod.name.trim().toLocaleLowerCase() === normalizedName)
-    ?.submissionFile.submission.categoryName ?? null;
+  return (
+    mods.find((mod) => mod.name.trim().toLocaleLowerCase() === normalizedName)
+      ?.submissionFile.submission.categoryName ?? null
+  );
 };

@@ -1,17 +1,17 @@
-import _i18n, { useI18N } from 'src/i18n';
-import { useEffect, useMemo, useState } from 'react';
-import { Icon } from '../components/Icon';
-import { useEnableAcrylic } from '../context/theme';
+import _i18n, { useI18N } from "src/i18n";
+import { useEffect, useMemo, useState } from "react";
+import { Icon } from "../components/Icon";
+import { useEnableAcrylic } from "../context/theme";
 import {
   FontScale,
   MOD_TYPE_OPTIONS,
   useAppStore,
   useMirror,
   useUseMultiThread,
-} from '../states';
-import { callRemote } from '../utils';
-import { clearInMemoryModCatalog, loadModCatalog } from '../api/modCatalog';
-import './Settings.scss';
+} from "../states";
+import { callRemote } from "../utils";
+import { clearInMemoryModCatalog, loadModCatalog } from "../api/modCatalog";
+import "./Settings.scss";
 
 interface CacheStatus {
   source: string;
@@ -52,7 +52,7 @@ export const Settings = () => {
   const [downloadAdvanced, setDownloadAdvanced] = useState(false);
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null);
   const [cacheBusy, setCacheBusy] = useState(false);
-  const [cacheError, setCacheError] = useState('');
+  const [cacheError, setCacheError] = useState("");
 
   const downloadDefaultEnabled = useAppStore(
     (state) => state.downloadDefaultEnabled
@@ -113,13 +113,13 @@ export const Settings = () => {
     const values = MOD_TYPE_OPTIONS.map(
       (type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled
     );
-    if (values.every(Boolean)) return 'enabled';
-    if (values.every((value) => !value)) return 'disabled';
-    return 'advanced';
+    if (values.every(Boolean)) return "enabled";
+    if (values.every((value) => !value)) return "disabled";
+    return "advanced";
   }, [downloadDefaultEnabled, downloadTypeDefaults]);
 
   const refreshCacheStatus = () => {
-    void callRemote<CacheStatus>('get_mod_cache_status')
+    void callRemote<CacheStatus>("get_mod_cache_status")
       .then(setCacheStatus)
       .catch((error) => setCacheError(String(error)));
   };
@@ -127,10 +127,10 @@ export const Settings = () => {
   useEffect(refreshCacheStatus, []);
 
   const formatCacheTime = (timestamp: number) => {
-    if (!timestamp) return _i18n.t('未知');
+    if (!timestamp) return _i18n.t("未知");
     return new Intl.DateTimeFormat(i18n.currentLang || undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
+      dateStyle: "medium",
+      timeStyle: "short",
     }).format(new Date(timestamp));
   };
 
@@ -138,7 +138,7 @@ export const Settings = () => {
     <div className="settings-page">
       <header className="settings-header">
         <div>
-          <h1>{_i18n.t('设置')}</h1>
+          <h1>{_i18n.t("设置")}</h1>
         </div>
       </header>
 
@@ -146,13 +146,13 @@ export const Settings = () => {
         <section className="settings-section">
           <div className="settings-section-title">
             <Icon name="download" />
-            <span>{_i18n.t('下载')}</span>
+            <span>{_i18n.t("下载")}</span>
           </div>
           <div className="settings-card">
             <div className="setting-select-row">
               <span>
-                <strong>{_i18n.t('下载镜像')}</strong>
-                <small>{_i18n.t('选择 Mod 和 Everest 的下载来源')}</small>
+                <strong>{_i18n.t("下载镜像")}</strong>
+                <small>{_i18n.t("选择 Mod 和 Everest 的下载来源")}</small>
               </span>
               <select
                 value={mirror}
@@ -164,8 +164,8 @@ export const Settings = () => {
               </select>
             </div>
             <SettingToggle
-              title={_i18n.t('多线程下载')}
-              description={_i18n.t('使用 ureq 并行下载大文件')}
+              title={_i18n.t("多线程下载")}
+              description={_i18n.t("使用 ureq 并行下载大文件")}
               checked={useMultiThread}
               onChange={setUseMultiThread}
             />
@@ -173,54 +173,54 @@ export const Settings = () => {
             <div className="download-default-setting">
               <div className="download-default-head">
                 <span>
-                  <strong>{_i18n.t('Mod 下载后默认行为')}</strong>
+                  <strong>{_i18n.t("Mod 下载后默认行为")}</strong>
                   <small>
-                    {_i18n.t('高级：勾选即为默认启用，不勾选即为默认禁用')}
+                    {_i18n.t("高级：勾选即为默认启用，不勾选即为默认禁用")}
                   </small>
                 </span>
                 <div className="segmented-setting">
                   <button
                     type="button"
                     className={
-                      !downloadAdvanced && downloadMode === 'enabled'
-                        ? 'selected'
-                        : ''
+                      !downloadAdvanced && downloadMode === "enabled"
+                        ? "selected"
+                        : ""
                     }
                     onClick={() => {
                       setDownloadDefaultsAll(true);
                       setDownloadAdvanced(false);
                     }}
                   >
-                    {_i18n.t('启用')}
+                    {_i18n.t("启用")}
                   </button>
                   <button
                     type="button"
                     className={
-                      !downloadAdvanced && downloadMode === 'disabled'
-                        ? 'selected'
-                        : ''
+                      !downloadAdvanced && downloadMode === "disabled"
+                        ? "selected"
+                        : ""
                     }
                     onClick={() => {
                       setDownloadDefaultsAll(false);
                       setDownloadAdvanced(false);
                     }}
                   >
-                    {_i18n.t('禁用')}
+                    {_i18n.t("禁用")}
                   </button>
                   <button
                     type="button"
                     className={
-                      downloadAdvanced || downloadMode === 'advanced'
-                        ? 'selected'
-                        : ''
+                      downloadAdvanced || downloadMode === "advanced"
+                        ? "selected"
+                        : ""
                     }
                     onClick={() => setDownloadAdvanced((value) => !value)}
                   >
-                    {_i18n.t('高级')}
+                    {_i18n.t("高级")}
                   </button>
                 </div>
               </div>
-              {(downloadAdvanced || downloadMode === 'advanced') && (
+              {(downloadAdvanced || downloadMode === "advanced") && (
                 <div className="download-type-grid">
                   {MOD_TYPE_OPTIONS.map((type) => (
                     <label key={type}>
@@ -245,59 +245,59 @@ export const Settings = () => {
         <section className="settings-section">
           <div className="settings-section-title">
             <Icon name="drive" />
-            <span>{_i18n.t('Mod 管理')}</span>
+            <span>{_i18n.t("Mod 管理")}</span>
           </div>
           <div className="settings-card">
             <SettingToggle
-              title={_i18n.t('切换 Mod 时同步必要依赖')}
-              description={_i18n.t('启用时打开依赖，关闭时关闭不再使用的依赖')}
+              title={_i18n.t("切换 Mod 时同步必要依赖")}
+              description={_i18n.t("启用时打开依赖，关闭时关闭不再使用的依赖")}
               checked={autoToggleDependencies}
               onChange={setAutoToggleDependencies}
             />
-            {
-              autoToggleDependencies && <SettingToggle
-                title={_i18n.t('切换 Mod 时同步可选依赖')}
-                description={_i18n.t('仅在同步必要依赖开启时生效')}
+            {autoToggleDependencies && (
+              <SettingToggle
+                title={_i18n.t("切换 Mod 时同步可选依赖")}
+                description={_i18n.t("仅在同步必要依赖开启时生效")}
                 checked={autoToggleOptionalDependencies}
                 onChange={setAutoToggleOptionalDependencies}
               />
-            }
+            )}
             <SettingToggle
-              title={_i18n.t('删除时默认勾选孤立依赖')}
-              description={_i18n.t('自动选择删除后不再被其他 Mod 依赖的项目')}
+              title={_i18n.t("删除时默认勾选孤立依赖")}
+              description={_i18n.t("自动选择删除后不再被其他 Mod 依赖的项目")}
               checked={deleteOrphansByDefault}
               onChange={setDeleteOrphansByDefault}
             />
             <SettingToggle
-              title={_i18n.t('在树中检查可选依赖')}
-              description={_i18n.t('显示可选依赖的缺失、版本和循环关系')}
+              title={_i18n.t("在树中检查可选依赖")}
+              description={_i18n.t("显示可选依赖的缺失、版本和循环关系")}
               checked={checkOptionalDep}
               onChange={setCheckOptionalDep}
             />
             <SettingToggle
-              title={_i18n.t('显示可用更新')}
-              description={_i18n.t('在管理列表中检查并显示新版本')}
+              title={_i18n.t("显示可用更新")}
+              description={_i18n.t("在管理列表中检查并显示新版本")}
               checked={showUpdate}
               onChange={setShowUpdate}
             />
             <SettingToggle
-              title={_i18n.t('显示文件详情')}
-              description={_i18n.t('在 Mod 行中显示压缩包名称与大小')}
+              title={_i18n.t("显示文件详情")}
+              description={_i18n.t("在 Mod 行中显示压缩包名称与大小")}
               checked={showDetailed}
               onChange={setShowDetailed}
             />
             <SettingToggle
-              title={_i18n.t('检查 blacklist.txt 与 Profile 同步')}
+              title={_i18n.t("检查 blacklist.txt 与 Profile 同步")}
               description={_i18n.t(
-                '发现 blacklist.txt 被外部修改时提示选择要保留的版本'
+                "发现 blacklist.txt 被外部修改时提示选择要保留的版本"
               )}
               checked={checkBlacklistSync}
               onChange={setCheckBlacklistSync}
             />
 
             <div className="hidden-types-setting">
-              <strong>{_i18n.t('管理页默认隐藏的类型')}</strong>
-              <small>{_i18n.t('仍可在管理页筛选面板中临时显示')}</small>
+              <strong>{_i18n.t("管理页默认隐藏的类型")}</strong>
+              <small>{_i18n.t("仍可在管理页筛选面板中临时显示")}</small>
               <div className="type-chip-grid">
                 {MOD_TYPE_OPTIONS.map((type) => {
                   const hidden = hiddenModTypes.includes(type);
@@ -305,7 +305,7 @@ export const Settings = () => {
                     <button
                       type="button"
                       key={type}
-                      className={hidden ? 'selected' : ''}
+                      className={hidden ? "selected" : ""}
                       onClick={() =>
                         setHiddenModTypes(
                           hidden
@@ -326,14 +326,14 @@ export const Settings = () => {
         <section className="settings-section">
           <div className="settings-section-title">
             <Icon name="save" />
-            <span>{_i18n.t('Mod 列表缓存')}</span>
+            <span>{_i18n.t("Mod 列表缓存")}</span>
           </div>
           <div className="settings-card">
             <div className="setting-select-row cache-ttl-row">
               <span>
-                <strong>{_i18n.t('缓存时效')}</strong>
+                <strong>{_i18n.t("缓存时效")}</strong>
                 <small>
-                  {_i18n.t('过期后才重新请求完整 Mod 列表；0 表示每次刷新')}
+                  {_i18n.t("过期后才重新请求完整 Mod 列表；0 表示每次刷新")}
                 </small>
               </span>
               <div className="number-with-unit">
@@ -345,25 +345,25 @@ export const Settings = () => {
                   onChange={(event) => {
                     const value = Math.max(0, Number(event.target.value) || 0);
                     setModCacheTtlHours(value);
-                    void callRemote('configure_mod_cache', value * 60 * 60);
+                    void callRemote("configure_mod_cache", value * 60 * 60);
                   }}
                 />
-                <span>{_i18n.t('小时')}</span>
+                <span>{_i18n.t("小时")}</span>
               </div>
             </div>
             <div className="cache-status">
               <div>
-                <span>{_i18n.t('当前来源')}</span>
-                <strong>{cacheStatus?.source ?? '--'}</strong>
+                <span>{_i18n.t("当前来源")}</span>
+                <strong>{cacheStatus?.source ?? "--"}</strong>
               </div>
               <div>
-                <span>{_i18n.t('记录数')}</span>
-                <strong>{cacheStatus?.count ?? '--'}</strong>
+                <span>{_i18n.t("记录数")}</span>
+                <strong>{cacheStatus?.count ?? "--"}</strong>
               </div>
               <div>
-                <span>{_i18n.t('更新时间')}</span>
+                <span>{_i18n.t("更新时间")}</span>
                 <strong>
-                  {cacheStatus ? formatCacheTime(cacheStatus.updatedAt) : '--'}
+                  {cacheStatus ? formatCacheTime(cacheStatus.updatedAt) : "--"}
                 </strong>
               </div>
             </div>
@@ -374,29 +374,35 @@ export const Settings = () => {
         <section className="settings-section">
           <div className="settings-section-title">
             <Icon name="settings" />
-            <span>{_i18n.t('界面')}</span>
+            <span>{_i18n.t("界面")}</span>
           </div>
           <div className="settings-card">
             <SettingToggle
-              title={_i18n.t('启用亚克力效果')}
-              description={_i18n.t('使用系统窗口模糊和半透明背景')}
+              title={_i18n.t("启用亚克力效果")}
+              description={_i18n.t("使用系统窗口模糊和半透明背景")}
               checked={enableAcrylic}
               onChange={setEnableAcrylic}
             />
             <SettingToggle
-              title={_i18n.t('页面切换动画')}
-              description={_i18n.t('在不同页面之间切换时播放淡入淡出动画')}
+              title={_i18n.t("页面切换动画")}
+              description={_i18n.t("在不同页面之间切换时播放淡入淡出动画")}
               checked={enablePageTransitions}
               onChange={setEnablePageTransitions}
             />
             <div className="font-scale-row">
               <span>
-                <strong>{_i18n.t('字体缩放')}</strong>
-                <small>{_i18n.t('CeleMod 老年版（不是')}</small>
+                <strong>{_i18n.t("字体缩放")}</strong>
+                <small>{_i18n.t("CeleMod 老年版（不是")}</small>
               </span>
               <div
                 className="font-scale-control"
-                style={{ '--font-scale-progress': `${(fontScaleIndex / (fontScaleOptions.length - 1)) * 100}%` } as React.CSSProperties}
+                style={
+                  {
+                    "--font-scale-progress": `${
+                      (fontScaleIndex / (fontScaleOptions.length - 1)) * 100
+                    }%`,
+                  } as React.CSSProperties
+                }
               >
                 <input
                   type="range"
@@ -404,29 +410,33 @@ export const Settings = () => {
                   max={fontScaleOptions.length - 1}
                   step="1"
                   value={fontScaleIndex}
-                  aria-label={_i18n.t('字体缩放')}
-                  onChange={(event) => setFontScale(fontScaleOptions[Number(event.target.value)])}
+                  aria-label={_i18n.t("字体缩放")}
+                  onChange={(event) =>
+                    setFontScale(fontScaleOptions[Number(event.target.value)])
+                  }
                 />
                 <div className="font-scale-labels" aria-hidden="true">
-                  {fontScaleOptions.map((value) => <span key={value}>{value}</span>)}
+                  {fontScaleOptions.map((value) => (
+                    <span key={value}>{value}</span>
+                  ))}
                 </div>
               </div>
             </div>
             <div className="setting-select-row">
               <span>
-                <strong>{_i18n.t('语言/Language')}</strong>
-                <small>{_i18n.t('切换界面显示语言')}</small>
+                <strong>{_i18n.t("语言/Language")}</strong>
+                <small>{_i18n.t("切换界面显示语言")}</small>
               </span>
               <select
                 value={i18n.currentLang}
                 onChange={(event) => {
                   i18n.setLang(event.target.value);
                   setMirror(
-                    event.target.value === 'zh-CN' ? 'wegfan' : '0x0ade'
+                    event.target.value === "zh-CN" ? "wegfan" : "0x0ade"
                   );
                 }}
               >
-                <option value="zh-CN">{_i18n.t('简体中文')}</option>
+                <option value="zh-CN">{_i18n.t("简体中文")}</option>
                 <option value="en-US">English</option>
                 <option value="ru-RU">русский</option>
                 <option value="pt-BR">Brazilian Portuguese</option>

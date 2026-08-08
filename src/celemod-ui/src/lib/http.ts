@@ -1,1 +1,1 @@
-export { fetch } from '@tauri-apps/plugin-http';
+export { fetch } from "@tauri-apps/plugin-http";

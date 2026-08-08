@@ -46,11 +46,11 @@ The translator sends the source file, line and column, enclosing function or com
 
 Optional environment variables:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek model ID |
-| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | API base URL, useful for a compatible proxy |
-| `DEEPSEEK_CONCURRENCY` | `3` | Maximum simultaneous API requests |
-| `DEEPSEEK_TIMEOUT_MS` | `60000` | Per-request timeout in milliseconds |
+| Variable               | Default                    | Description                                 |
+| ---------------------- | -------------------------- | ------------------------------------------- |
+| `DEEPSEEK_MODEL`       | `deepseek-v4-flash`        | DeepSeek model ID                           |
+| `DEEPSEEK_BASE_URL`    | `https://api.deepseek.com` | API base URL, useful for a compatible proxy |
+| `DEEPSEEK_CONCURRENCY` | `3`                        | Maximum simultaneous API requests           |
+| `DEEPSEEK_TIMEOUT_MS`  | `60000`                    | Per-request timeout in milliseconds         |
 
 The API request uses JSON output and verifies that placeholders such as `{count}`, HTML-like tags, and printf tokens are preserved. Run `pnpm test:i18n` to test context collection and placeholder validation without making an API request.

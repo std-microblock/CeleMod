@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetch } from '../lib/http';
+import { useEffect, useState } from "react";
+import { fetch } from "../lib/http";
 
 export interface DownloadLink {
   name: string;
@@ -19,14 +19,14 @@ export interface EverestUltraVersion {
 export interface EverestUltraConfig {
   enabled: boolean;
   only_zh_cn?: boolean;
-  default_tab?: 'stable' | 'ultra-stable';
+  default_tab?: "stable" | "ultra-stable";
   name?: string;
   description?: string;
   homepage?: string;
   versions: EverestUltraVersion[];
 }
 
-export type LoennPackageType = 'zip' | 'file';
+export type LoennPackageType = "zip" | "file";
 
 export interface LoennPackage {
   url: string;
@@ -41,7 +41,7 @@ export interface LoennVersion {
   version: string;
   date: string;
   description?: string;
-  packages: Partial<Record<'windows' | 'linux' | 'macos', LoennPackage>>;
+  packages: Partial<Record<"windows" | "linux" | "macos", LoennPackage>>;
 }
 
 export interface LoennConfig {
@@ -79,23 +79,26 @@ export interface UpdateInfo {
 }
 
 const UPDATE_INFO_URL =
-  'https://ganbei-hot-update-1258625969.file.myqcloud.com/celemod/updateInfo.json';
+  "https://ganbei-hot-update-1258625969.file.myqcloud.com/celemod/updateInfo.json";
 
 let cachedUpdateInfo: Promise<UpdateInfo> | null = null;
 
 const parseUpdateInfo = (text: string) =>
   JSON.parse(
     text
-      .split('\n')
-      .filter((line) => !line.trim().startsWith('//'))
-      .join('\n'),
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("//"))
+      .join("\n")
   ) as UpdateInfo;
 
 export const getLatestUpdateInfo = (forceRefresh = false) => {
   if (!cachedUpdateInfo || forceRefresh) {
     cachedUpdateInfo = fetch(`${UPDATE_INFO_URL}?${Date.now()}`)
       .then((response) => {
-        if (!response.ok) throw new Error(`Failed to load update info: HTTP ${response.status}`);
+        if (!response.ok)
+          throw new Error(
+            `Failed to load update info: HTTP ${response.status}`
+          );
         return response.text();
       })
       .then(parseUpdateInfo)
@@ -109,8 +112,9 @@ export const getLatestUpdateInfo = (forceRefresh = false) => {
 
 export const featureVisible = (
   feature: { enabled: boolean; only_zh_cn?: boolean } | null | undefined,
-  currentLang: string,
-) => Boolean(feature?.enabled && (!feature.only_zh_cn || currentLang === 'zh-CN'));
+  currentLang: string
+) =>
+  Boolean(feature?.enabled && (!feature.only_zh_cn || currentLang === "zh-CN"));
 
 export const useUpdateInfo = () => {
   const [data, setData] = useState<UpdateInfo | null>(null);

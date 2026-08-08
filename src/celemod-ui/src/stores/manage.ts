@@ -1,10 +1,10 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
-import type { BackendModInfo } from '../states';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+import type { BackendModInfo } from "../states";
 
-export type ManageEnabledFilter = 'all' | 'enabled' | 'disabled';
-export type ManageHealthFilter = 'all' | 'healthy' | 'issues' | 'missing';
+export type ManageEnabledFilter = "all" | "enabled" | "disabled";
+export type ManageHealthFilter = "all" | "healthy" | "issues" | "missing";
 
 export interface ManageCatalogMeta {
   category: string | null;
@@ -85,9 +85,9 @@ interface ManageTreeState {
 }
 
 const defaultFilters: ManageFilters = {
-  query: '',
-  enabled: 'all',
-  health: 'all',
+  query: "",
+  enabled: "all",
+  health: "all",
   types: [],
   updateOnly: false,
   showHiddenTypes: false,
@@ -118,20 +118,29 @@ export const useManageStore = create<ManageTreeState>()(
             if (current) {
               current.duplicateFiles.push(file);
               const versionOrder = compareVersion(mod.version, current.version);
-              const currentFile = current.duplicateFiles.find((item) => item.file === current.file);
-              if (versionOrder > 0 || (versionOrder === 0 && mod.modified_at > (currentFile?.modifiedAt ?? 0))) {
+              const currentFile = current.duplicateFiles.find(
+                (item) => item.file === current.file
+              );
+              if (
+                versionOrder > 0 ||
+                (versionOrder === 0 &&
+                  mod.modified_at > (currentFile?.modifiedAt ?? 0))
+              ) {
                 current.id = String(mod.game_banana_id);
                 current.version = mod.version;
                 current.file = mod.file;
                 current.size = mod.size;
-                current.dependencies = mod.deps.map((dependency) => ({ ...dependency }));
+                current.dependencies = mod.deps.map((dependency) => ({
+                  ...dependency,
+                }));
               }
               continue;
             }
             nodes[mod.name] = {
               name: mod.name,
               id: String(mod.game_banana_id),
-              enabled: !disabled.has(mod.name) && !disabledPackages.has(mod.file),
+              enabled:
+                !disabled.has(mod.name) && !disabledPackages.has(mod.file),
               version: mod.version,
               file: mod.file,
               size: mod.size,
@@ -155,10 +164,14 @@ export const useManageStore = create<ManageTreeState>()(
         });
       },
       setExpanded(name, expanded) {
-        set((state) => { state.expanded[name] = expanded; });
+        set((state) => {
+          state.expanded[name] = expanded;
+        });
       },
       collapseAll() {
-        set((state) => { state.expanded = {}; });
+        set((state) => {
+          state.expanded = {};
+        });
       },
       expandAll() {
         set((state) => {
@@ -167,9 +180,21 @@ export const useManageStore = create<ManageTreeState>()(
           }
         });
       },
-      setQuery(query) { set((state) => { state.filters.query = query; }); },
-      setEnabledFilter(enabled) { set((state) => { state.filters.enabled = enabled; }); },
-      setHealthFilter(health) { set((state) => { state.filters.health = health; }); },
+      setQuery(query) {
+        set((state) => {
+          state.filters.query = query;
+        });
+      },
+      setEnabledFilter(enabled) {
+        set((state) => {
+          state.filters.enabled = enabled;
+        });
+      },
+      setHealthFilter(health) {
+        set((state) => {
+          state.filters.health = health;
+        });
+      },
       toggleType(type) {
         set((state) => {
           state.filters.types = state.filters.types.includes(type)
@@ -177,12 +202,36 @@ export const useManageStore = create<ManageTreeState>()(
             : [...state.filters.types, type];
         });
       },
-      setUpdateOnly(value) { set((state) => { state.filters.updateOnly = value; }); },
-      setShowHiddenTypes(value) { set((state) => { state.filters.showHiddenTypes = value; }); },
-      resetFilters() { set((state) => { state.filters = defaultFilters; }); },
-      setFilterOpen(value) { set((state) => { state.filterOpen = value; }); },
-      setActionMenuOpen(value) { set((state) => { state.actionMenuOpen = value; }); },
-      setOpenMenuName(value) { set((state) => { state.openMenuName = value; }); },
+      setUpdateOnly(value) {
+        set((state) => {
+          state.filters.updateOnly = value;
+        });
+      },
+      setShowHiddenTypes(value) {
+        set((state) => {
+          state.filters.showHiddenTypes = value;
+        });
+      },
+      resetFilters() {
+        set((state) => {
+          state.filters = defaultFilters;
+        });
+      },
+      setFilterOpen(value) {
+        set((state) => {
+          state.filterOpen = value;
+        });
+      },
+      setActionMenuOpen(value) {
+        set((state) => {
+          state.actionMenuOpen = value;
+        });
+      },
+      setOpenMenuName(value) {
+        set((state) => {
+          state.openMenuName = value;
+        });
+      },
       setNodesEnabled(names, enabled) {
         set((state) => {
           for (const name of names) {
@@ -192,35 +241,46 @@ export const useManageStore = create<ManageTreeState>()(
       },
     })),
     {
-      name: 'celemod-manage-tree',
+      name: "celemod-manage-tree",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         expanded: state.expanded,
         filters: state.filters,
       }),
-    },
-  ),
+    }
+  )
 );
 
-const EXCLUDED_DEPENDENCIES = new Set(['Everest', 'Celeste', 'EverestCore']);
-const ALTERNATIVE_MODS = ['CelesteNet.Client', 'MiaoNet', 'Miao.CelesteNet.Client'];
+const EXCLUDED_DEPENDENCIES = new Set(["Everest", "Celeste", "EverestCore"]);
+const ALTERNATIVE_MODS = [
+  "CelesteNet.Client",
+  "MiaoNet",
+  "Miao.CelesteNet.Client",
+];
 
-export const alternativesCovering = (name: string, nodes: Record<string, ManageNode>) => {
+export const alternativesCovering = (
+  name: string,
+  nodes: Record<string, ManageNode>
+) => {
   if (!ALTERNATIVE_MODS.includes(name)) return [];
-  return ALTERNATIVE_MODS.filter((alternative) => alternative !== name && nodes[alternative]?.enabled);
+  return ALTERNATIVE_MODS.filter(
+    (alternative) => alternative !== name && nodes[alternative]?.enabled
+  );
 };
 
 export interface ManageDependencyHealth {
-  status: 'healthy' | 'missing' | 'disabled' | 'version';
+  status: "healthy" | "missing" | "disabled" | "version";
   messages: string[];
 }
 
 const compareVersion = (left: string, right: string) => {
-  const normalize = (value: string) => value.split(/[.-]/).map((part) => Number(part) || 0);
+  const normalize = (value: string) =>
+    value.split(/[.-]/).map((part) => Number(part) || 0);
   const a = normalize(left);
   const b = normalize(right);
   for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-    if ((a[index] ?? 0) !== (b[index] ?? 0)) return (a[index] ?? 0) - (b[index] ?? 0);
+    if ((a[index] ?? 0) !== (b[index] ?? 0))
+      return (a[index] ?? 0) - (b[index] ?? 0);
   }
   return 0;
 };
@@ -228,14 +288,14 @@ const compareVersion = (left: string, right: string) => {
 export const getDependencyHealth = (
   name: string,
   nodes: Record<string, ManageNode>,
-  includeOptional: boolean,
+  includeOptional: boolean
 ): ManageDependencyHealth => {
   const messages: string[] = [];
-  let status: ManageDependencyHealth['status'] = 'healthy';
+  let status: ManageDependencyHealth["status"] = "healthy";
   const visiting = new Set<string>();
   const ranks = { healthy: 0, version: 1, disabled: 2, missing: 3 };
 
-  const merge = (next: ManageDependencyHealth['status'], message: string) => {
+  const merge = (next: ManageDependencyHealth["status"], message: string) => {
     if (ranks[next] > ranks[status]) status = next;
     if (message) messages.push(message);
   };
@@ -246,17 +306,24 @@ export const getDependencyHealth = (
     if (!node) return;
     visiting.add(nodeName);
     for (const dependency of node.dependencies) {
-      if (EXCLUDED_DEPENDENCIES.has(dependency.name) || (dependency.optional && !includeOptional)) continue;
+      if (
+        EXCLUDED_DEPENDENCIES.has(dependency.name) ||
+        (dependency.optional && !includeOptional)
+      )
+        continue;
       const installed = nodes[dependency.name];
       const covered = alternativesCovering(dependency.name, nodes).length > 0;
       if (!installed) {
-        if (!covered) merge('missing', `${node.name} → ${dependency.name}`);
+        if (!covered) merge("missing", `${node.name} → ${dependency.name}`);
         continue;
       }
       if (compareVersion(installed.version, dependency.version) < 0) {
-        merge('version', `${dependency.name} ${installed.version} < ${dependency.version}`);
+        merge(
+          "version",
+          `${dependency.name} ${installed.version} < ${dependency.version}`
+        );
       }
-      if (!installed.enabled && !covered) merge('disabled', dependency.name);
+      if (!installed.enabled && !covered) merge("disabled", dependency.name);
       visit(installed.name);
     }
     visiting.delete(nodeName);
@@ -285,15 +352,22 @@ export const collectSwitchNames = ({
     if (!includeDependencies) return;
     const node = nodes[name];
     for (const dependency of node.dependencies) {
-      if (EXCLUDED_DEPENDENCIES.has(dependency.name) || (dependency.optional && !includeOptional)) continue;
+      if (
+        EXCLUDED_DEPENDENCIES.has(dependency.name) ||
+        (dependency.optional && !includeOptional)
+      )
+        continue;
       const installed = nodes[dependency.name];
       if (!installed || ALTERNATIVE_MODS.includes(dependency.name)) continue;
       if (enabled) {
         visit(dependency.name);
       } else {
-        const hasOtherEnabledDependent = installed.dependedBy.some((dependent) => (
-          dependent !== name && nodes[dependent]?.enabled && !result.has(dependent)
-        ));
+        const hasOtherEnabledDependent = installed.dependedBy.some(
+          (dependent) =>
+            dependent !== name &&
+            nodes[dependent]?.enabled &&
+            !result.has(dependent)
+        );
         if (!hasOtherEnabledDependent) visit(dependency.name);
       }
     }
@@ -319,23 +393,46 @@ export const selectVisibleRootNames = ({
 }) => {
   const query = filters.query.trim().toLocaleLowerCase();
   const matches = (node: ManageNode) => {
-    if (!filters.showHiddenTypes && node.meta?.category && hiddenTypes.includes(node.meta.category)) return false;
-    if (filters.types.length > 0 && (!node.meta?.category || !filters.types.includes(node.meta.category))) return false;
-    if (filters.enabled === 'enabled' && !node.enabled) return false;
-    if (filters.enabled === 'disabled' && node.enabled) return false;
+    if (
+      !filters.showHiddenTypes &&
+      node.meta?.category &&
+      hiddenTypes.includes(node.meta.category)
+    )
+      return false;
+    if (
+      filters.types.length > 0 &&
+      (!node.meta?.category || !filters.types.includes(node.meta.category))
+    )
+      return false;
+    if (filters.enabled === "enabled" && !node.enabled) return false;
+    if (filters.enabled === "disabled" && node.enabled) return false;
     if (filters.updateOnly && !updateNames.has(node.name)) return false;
     const health = getDependencyHealth(node.name, nodes, includeOptional);
-    if (filters.health === 'healthy' && health.status !== 'healthy') return false;
-    if (filters.health === 'issues' && health.status === 'healthy') return false;
-    if (filters.health === 'missing' && health.status !== 'missing') return false;
+    if (filters.health === "healthy" && health.status !== "healthy")
+      return false;
+    if (filters.health === "issues" && health.status === "healthy")
+      return false;
+    if (filters.health === "missing" && health.status !== "missing")
+      return false;
     if (query) {
-      const text = [node.name, node.version, node.file, node.meta?.submissionName, node.meta?.submitter, node.meta?.category]
-        .filter(Boolean).join('\n').toLocaleLowerCase();
-      if (!query.split(/\s+/).every((term) => text.includes(term))) return false;
+      const text = [
+        node.name,
+        node.version,
+        node.file,
+        node.meta?.submissionName,
+        node.meta?.submitter,
+        node.meta?.category,
+      ]
+        .filter(Boolean)
+        .join("\n")
+        .toLocaleLowerCase();
+      if (!query.split(/\s+/).every((term) => text.includes(term)))
+        return false;
     }
     return true;
   };
-  return Object.values(nodes).filter(matches)
+  return Object.values(nodes)
+    .filter(matches)
     .filter((node) => {
       if (!rootOnly || query) return true;
       return !node.dependedBy.some((dependent) => Boolean(nodes[dependent]));
