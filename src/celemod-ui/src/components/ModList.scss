@@ -538,36 +538,41 @@
 
   .download-file-dialog {
     display: flex;
-    width: min(720px, 100%);
-    max-height: min(680px, 82vh);
+    width: min(660px, 100%);
+    max-height: min(560px, 76vh);
     min-height: 0;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.11);
-    border-radius: 16px;
-    background: color.adjust(theme.$bg1, $lightness: -2%);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+    border: 1px solid color.change(theme.$fg, $alpha: 0.09);
+    border-radius: 14px;
+    background: color.adjust(theme.$bg1, $lightness: -4%);
+    box-shadow: 0 20px 64px rgba(0, 0, 0, 0.55);
   }
 
   .download-file-header {
     display: flex;
-    min-height: 64px;
+    min-height: 56px;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 14px;
     border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    background: color.change(theme.$bg2, $alpha: 0.45);
-    gap: 12px;
+    background: color.change(theme.$fg, $alpha: 0.025);
+    gap: 10px;
   }
 
   .download-file-header-icon {
     display: grid;
-    width: 34px;
-    height: 34px;
-    flex: 0 0 34px;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
     place-items: center;
-    border-radius: 10px;
-    color: color.adjust(theme.$primary, $lightness: 14%);
-    background: color.change(theme.$primary, $alpha: 0.16);
+    border-radius: 8px;
+    color: color.adjust(theme.$primary, $lightness: 12%);
+    background: color.change(theme.$primary, $alpha: 0.13);
+
+    .icon {
+      width: 13px;
+      height: 13px;
+    }
   }
 
   .download-file-heading {
@@ -580,37 +585,39 @@
     strong {
       overflow: hidden;
       color: theme.$fg;
-      font-size: 15px;
+      font-size: 14px;
+      font-weight: 650;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     > span {
       display: inline-grid;
-      min-width: 22px;
-      height: 22px;
+      min-width: 20px;
+      height: 20px;
       place-items: center;
-      padding: 0 6px;
+      padding: 0 5px;
       border-radius: 999px;
       box-sizing: border-box;
       color: theme.$fg2;
-      background: color.change(theme.$fg, $alpha: 0.07);
-      font-size: 10px;
+      background: color.change(theme.$fg, $alpha: 0.055);
+      font-size: 9px;
       font-variant-numeric: tabular-nums;
     }
   }
 
   .download-file-close {
     display: grid;
-    width: 30px;
-    height: 30px;
-    min-height: 30px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
     padding: 0;
     place-items: center;
     border: 0;
     border-radius: 8px;
     color: theme.$fg2;
     background: transparent;
+    box-shadow: none;
     cursor: pointer;
 
     &:hover {
@@ -621,7 +628,7 @@
 
   .download-file-list {
     min-height: 0;
-    padding: 8px;
+    padding: 6px;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -632,21 +639,22 @@
     position: relative;
     display: flex;
     width: 100%;
-    min-height: 76px;
+    min-height: 60px;
     align-items: center;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px solid transparent;
-    border-radius: 10px;
+    border-radius: 8px;
     box-sizing: border-box;
     color: inherit;
     background: transparent;
+    box-shadow: none;
     cursor: pointer;
-    gap: 12px;
+    gap: 10px;
     text-align: left;
     transition: border-color 150ms ease, background 150ms ease;
 
     + .file {
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     &:hover {
@@ -655,25 +663,29 @@
     }
 
     &.file-primary {
-      border-color: color.change(theme.$primary, $alpha: 0.65);
-      background: color.change(theme.$primary, $alpha: 0.075);
-      box-shadow: inset 3px 0 color.adjust(theme.$primary, $lightness: 8%);
+      border-color: color.change(theme.$primary, $alpha: 0.52);
+      background: color.change(theme.$primary, $alpha: 0.055);
     }
 
     &.file-primary:hover {
-      border-color: color.adjust(theme.$primary, $lightness: 8%);
-      background: color.change(theme.$primary, $alpha: 0.12);
+      border-color: color.change(theme.$primary, $alpha: 0.72);
+      background: color.change(theme.$primary, $alpha: 0.09);
     }
 
     .file-icon {
       display: grid;
-      width: 34px;
-      height: 34px;
-      flex: 0 0 34px;
+      width: 30px;
+      height: 30px;
+      flex: 0 0 30px;
       place-items: center;
-      border-radius: 9px;
+      border-radius: 8px;
       color: theme.$fg2;
-      background: color.change(theme.$fg, $alpha: 0.07);
+      background: color.change(theme.$fg, $alpha: 0.055);
+
+      .icon {
+        width: 12px;
+        height: 12px;
+      }
     }
 
     &.file-primary .file-icon {
@@ -696,9 +708,10 @@
         width: 100%;
         overflow: hidden;
         color: theme.$fg;
-        font-size: 13px;
-        font-weight: 650;
-        line-height: 18px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0;
+        line-height: 17px;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -707,11 +720,11 @@
         display: flex;
         min-width: 0;
         align-items: center;
-        margin-top: 4px;
+        margin-top: 2px;
         color: theme.$fg2;
         font-size: 10px;
         font-variant-numeric: tabular-nums;
-        gap: 10px;
+        gap: 8px;
       }
 
       .id {
@@ -738,29 +751,25 @@
       }
 
       .url {
-        width: 100%;
-        margin-top: 4px;
-        overflow: hidden;
-        color: theme.$fg3;
-        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-        font-size: 9px;
-        line-height: 13px;
-        opacity: 0.68;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: none;
       }
     }
 
     .file-action {
       display: grid;
-      width: 30px;
-      height: 30px;
-      flex: 0 0 30px;
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
       place-items: center;
-      border-radius: 8px;
+      border-radius: 7px;
       color: theme.$fg2;
-      background: color.change(theme.$fg, $alpha: 0.06);
+      background: color.change(theme.$fg, $alpha: 0.045);
       transition: color 150ms ease, background 150ms ease;
+
+      .icon {
+        width: 12px;
+        height: 12px;
+      }
     }
 
     &:hover .file-action {
