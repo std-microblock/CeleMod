@@ -1,5 +1,5 @@
 <div align=center>
-<img src="src\celemod-ui\src\resources\Celemod.png" />
+<img src="src/celemod-ui/src/resources/Celemod.png" width="96" alt="CeleMod logo" />
 
 # CeleMod
 
@@ -29,11 +29,24 @@ An alternative mod manager for Celeste
 
 ### Screenshots
 
-![image](https://images.gamebanana.com/img/ss/tools/65ccb3644231c.jpg)
-![](https://images.gamebanana.com/img/ss/tools/65ccb3644742f.jpg)
-![](https://images.gamebanana.com/img/ss/tools/65ccb3644109d.jpg)
-![](https://images.gamebanana.com/img/ss/tools/65ccb364509c0.jpg)
-![](https://images.gamebanana.com/img/ss/tools/65ccb36445da2.jpg)
+<table>
+  <tr>
+    <td><img src="docs/screenshots/home.webp" alt="CeleMod home" /><br /><b>Home and profiles</b></td>
+    <td><img src="docs/screenshots/discover.webp" alt="CeleMod community search" /><br /><b>Community search</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/manager.webp" alt="CeleMod mod manager" /><br /><b>Tree-based management</b></td>
+    <td><img src="docs/screenshots/keybindings.webp" alt="CeleMod keybindings" /><br /><b>Keybinding manager</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/multiplayer.webp" alt="CeleMod multiplayer setup" /><br /><b>Multiplayer setup</b></td>
+    <td><img src="docs/screenshots/recommended.webp" alt="CeleMod recommended mods" /><br /><b>Recommended mods</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/skins.webp" alt="CeleMod skins" /><br /><b>Skin browser</b></td>
+    <td><img src="docs/screenshots/settings.webp" alt="CeleMod settings" /><br /><b>Complete settings</b></td>
+  </tr>
+</table>
 
 ### Credits
 

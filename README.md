@@ -1,7 +1,7 @@
 [English](./README.en.md)
 
 <div align=center>
-<img src="src\celemod-ui\src\resources\Celemod.png" />
+<img src="src/celemod-ui/src/resources/Celemod.png" width="96" alt="CeleMod logo" />
 
 # CeleMod
 
@@ -33,13 +33,24 @@ An alternative mod manager for Celeste
 
 ### 页面展示
 
-![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a906d8bb-16dc-4018-b370-9a13cec5ade1)
-![image](https://github.com/MicroCBer/CeleMod/assets/66859419/a3592323-c9ea-4ded-9b7c-bf8e23c8f31d)
-![6e14b711c66dd7b36fcb76f71470c272](https://github.com/MicroCBer/CeleMod/assets/66859419/1ee695a5-59a0-4326-8f54-cad2165bba74)
-![9265bfd9eba65e2d05512510a7b15575](https://github.com/MicroCBer/CeleMod/assets/66859419/8c63b169-4b4b-4fc4-998e-1aae48b4275d)
-![a80ca1bb96919629ee69fc237048bdd5](https://github.com/MicroCBer/CeleMod/assets/66859419/ff77be2f-3599-4831-9c38-3703979066b2)
-![f5125abf1462349308bf51ad16e42601](https://github.com/MicroCBer/CeleMod/assets/66859419/40705319-3896-4b17-bb68-51f70560df19)
-![c7501d330b8620839e0f6a77c5b549c3](https://github.com/MicroCBer/CeleMod/assets/66859419/72ba4cb6-e60d-459a-a7f7-f59521dae63b)
+<table>
+  <tr>
+    <td><img src="docs/screenshots/home.webp" alt="CeleMod 主页" /><br /><b>主页与 Profile</b></td>
+    <td><img src="docs/screenshots/discover.webp" alt="CeleMod 社区搜索" /><br /><b>社区 Mod 搜索</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/manager.webp" alt="CeleMod Mod 管理" /><br /><b>树状 Mod 管理</b></td>
+    <td><img src="docs/screenshots/keybindings.webp" alt="CeleMod 按键管理" /><br /><b>按键管理</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/multiplayer.webp" alt="CeleMod 群服联机" /><br /><b>群服联机配置</b></td>
+    <td><img src="docs/screenshots/recommended.webp" alt="CeleMod 推荐模组" /><br /><b>推荐模组</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/skins.webp" alt="CeleMod 皮肤推荐" /><br /><b>皮肤浏览</b></td>
+    <td><img src="docs/screenshots/settings.webp" alt="CeleMod 设置" /><br /><b>完整设置</b></td>
+  </tr>
+</table>
 
 ### Credits
 
