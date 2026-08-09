@@ -59,6 +59,7 @@ export const Home = () => {
   }, [currentProfileName, profiles]);
 
   const [alwaysOnMods] = useAlwaysOnMods();
+  const { installedMods } = useInstalledMods();
   const blacklistSyncPopupRef = useRef<ReturnType<typeof createPopup> | null>(
     null
   );
@@ -81,10 +82,23 @@ export const Home = () => {
         .map((v) => v.trim())
         .filter((v) => v && !v.startsWith("#"))
         .sort();
-      const expectedDisabledFiles: string[] = currentProfile.mods
-        .filter((m) => !alwaysOnMods.includes(m.name))
-        .map((m) => m.file)
-        .sort();
+      const installedModsByName = new Map(
+        installedMods.map((mod) => [mod.name, mod])
+      );
+      const alwaysOnFiles = new Set(
+        installedMods
+          .filter((mod) => alwaysOnMods.includes(mod.name))
+          .map((mod) => mod.file)
+      );
+      const expectedDisabledFiles = [
+        ...new Set(
+          currentProfile.mods.flatMap((profileMod) => {
+            const installedMod = installedModsByName.get(profileMod.name);
+            if (!installedMod || alwaysOnFiles.has(installedMod.file)) return [];
+            return [installedMod.file];
+          })
+        ),
+      ].sort();
       const onlyInProfile = [
         ...new Set<string>(
           expectedDisabledFiles.filter((file) => !disabledFiles.includes(file))
@@ -103,13 +117,30 @@ export const Home = () => {
           const { hide } = useContext(PopupContext);
           const [error, setError] = useState("");
 
-          const refreshProfiles = (selectedProfileName?: string) => {
-            callRemote("get_blacklist_profiles", gamePath, (data: string) => {
-              setProfiles(JSON.parse(data));
-              if (selectedProfileName) {
-                setCurrentProfileName(selectedProfileName);
+          const refreshProfiles = async (selectedProfileName?: string) => {
+            const nextProfiles = await new Promise<typeof profiles>(
+              (resolve, reject) => {
+                void callRemote(
+                  "get_blacklist_profiles",
+                  gamePath,
+                  (data: string) => {
+                    try {
+                      resolve(JSON.parse(data));
+                    } catch (error) {
+                      reject(error);
+                    }
+                  }
+                ).catch(reject);
               }
-            });
+            );
+            const nextProfileName = selectedProfileName ?? currentProfileName;
+            setProfiles(nextProfiles);
+            setCurrentProfileName(nextProfileName);
+            setCurrentProfile(
+              nextProfiles.find((profile) => profile.name === nextProfileName) ??
+                nextProfiles[0] ??
+                null
+            );
           };
 
           return (
@@ -164,9 +195,14 @@ export const Home = () => {
               {error && <div className="blacklist-sync-error">{error}</div>}
               <div className="buttons">
                 <button
-                  onClick={() => {
-                    globalCtx.blacklist.switchProfile(currentProfileName);
-                    hide();
+                  onClick={async () => {
+                    try {
+                      await globalCtx.blacklist.switchProfile(currentProfileName);
+                      await refreshProfiles(currentProfileName);
+                      hide();
+                    } catch (error) {
+                      setError(error instanceof Error ? error.message : String(error));
+                    }
                   }}
                 >
                   {_i18n.t("使用 CeleMod Profile")}
@@ -182,8 +218,12 @@ export const Home = () => {
                       setError(importedProfileName);
                       return;
                     }
-                    refreshProfiles(importedProfileName);
-                    hide();
+                    try {
+                      await refreshProfiles(importedProfileName);
+                      hide();
+                    } catch (error) {
+                      setError(error instanceof Error ? error.message : String(error));
+                    }
                   }}
                 >
                   {_i18n.t("将文件保存为新 Profile")}
@@ -209,10 +249,10 @@ export const Home = () => {
     currentProfile,
     gamePath,
     alwaysOnMods,
+    installedMods,
     currentProfileName,
   ]);
 
-  const { installedMods } = useInstalledMods();
   const [, setMirror] = useMirror();
 
   return (

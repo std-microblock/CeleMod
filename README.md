@@ -16,7 +16,7 @@ An alternative mod manager for Celeste
 
 ✅ 常用 Mod 列表，一键安装  
 ✅ 国内超快下载（多线程下载，@WEGFan 镜像）  
-✅ 基于 Tauri 2 的跨平台桌面应用
+✅ 基于 Tauri 2 的跨平台桌面应用  
 ✅ 一键解析，补全依赖  
 ✅ 一键升级 Mod  
 ✅ 按类别搜索，多种排序方式  

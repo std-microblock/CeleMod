@@ -22,14 +22,15 @@ export const createBlacklistContext = () => {
   const [gamePath] = useGamePath();
 
   const ctx = {
-    switchProfile: (name: string) => {
+    switchProfile: async (name: string) => {
       console.log("switch to profile", name);
-      callRemote(
+      const result = await callRemote<string>(
         "apply_blacklist_profile",
         gamePath,
         name,
         JSON.stringify(alwaysOnMods)
       );
+      if (result !== "Success") throw new Error(result);
       setCurrentProfileName(name);
       setCurrentProfile(profiles.find((p) => p.name === name) || profiles[0]);
     },

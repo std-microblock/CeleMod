@@ -62,6 +62,13 @@ pub fn apply_mod_blacklist_profile(
 
     let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
     let mut profile_changed = false;
+    profile.mods.retain(|blacklisted_mod| {
+        let is_installed = mods.iter().any(|item| item.name == blacklisted_mod.name);
+        if !is_installed {
+            profile_changed = true;
+        }
+        is_installed
+    });
     for blacklisted_mod in &mut profile.mods {
         let Some(installed_mod) = mods.iter().find(|item| item.name == blacklisted_mod.name) else {
             continue;
@@ -358,15 +365,12 @@ pub fn import_blacklist_file_as_profile(
             .lines()
             .map(|v| v.trim())
             .filter(|v| !v.starts_with('#') && !v.is_empty())
-            .map(|v| ModBlacklist {
-                name: {
-                    if let Some(mod_name) = mods.iter().find(|m| m.file == v) {
-                        mod_name.name.clone()
-                    } else {
-                        v.to_string()
-                    }
-                },
-                file: v.to_string(),
+            .filter_map(|v| {
+                let installed_mod = mods.iter().find(|mod_| mod_.file == v)?;
+                Some(ModBlacklist {
+                    name: installed_mod.name.clone(),
+                    file: installed_mod.file.clone(),
+                })
             })
             .collect(),
         mod_options_order: vec![],
@@ -452,6 +456,50 @@ mod tests {
 
         switch_mod_blacklist_profile(&game_path, &profile_name, vec![(&extra_name, &file)], true)
             .unwrap();
+        let profile = get_mod_blacklist_profiles(&game_path)
+            .into_iter()
+            .find(|profile| profile.name == profile_name)
+            .unwrap();
+        assert!(profile.mods.is_empty());
+
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn applying_a_profile_removes_deleted_mods() {
+        let game_path = test_game_path("deleted-mod");
+        let profile_name = "Default".to_string();
+        get_mod_blacklist_profiles(&game_path);
+
+        let mod_name = "Deleted.Mod".to_string();
+        let file = "DeletedMod.zip".to_string();
+        switch_mod_blacklist_profile(&game_path, &profile_name, vec![(&mod_name, &file)], false)
+            .unwrap();
+
+        apply_mod_blacklist_profile(&game_path, &profile_name, &[]).unwrap();
+
+        let profile = get_mod_blacklist_profiles(&game_path)
+            .into_iter()
+            .find(|profile| profile.name == profile_name)
+            .unwrap();
+        assert!(profile.mods.is_empty());
+        let blacklist =
+            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
+        assert!(!blacklist.contains(&file));
+
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn importing_a_blacklist_ignores_deleted_mods() {
+        let game_path = test_game_path("import-deleted-mod");
+        fs::write(
+            Path::new(&game_path).join("Mods/blacklist.txt"),
+            "# externally edited\nDeletedMod.zip\n",
+        )
+        .unwrap();
+
+        let profile_name = import_blacklist_file_as_profile(&game_path, &[]).unwrap();
         let profile = get_mod_blacklist_profiles(&game_path)
             .into_iter()
             .find(|profile| profile.name == profile_name)
