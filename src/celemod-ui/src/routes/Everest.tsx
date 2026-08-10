@@ -60,6 +60,11 @@ const formatSize = (size?: number) => {
   return `${value.toFixed(unit > 1 ? 1 : 0)} ${units[unit]}`;
 };
 
+const versionBuild = (value: string) => {
+  const numbers = value.match(/\d+/g)?.map(Number) ?? [];
+  return numbers.length === 0 ? 0 : Math.max(...numbers);
+};
+
 const getInstallTip = (state: string | null) => {
   if (state?.startsWith("[1/3]")) return _i18n.t("正在下载");
   if (state?.startsWith("[2/3]")) return _i18n.t("正在解压");
@@ -91,10 +96,16 @@ const VersionList = ({
       <div className="empty">{_i18n.t("无数据")}</div>
     ) : (
       versions.map((item) => {
+        const installedBuild = versionBuild(installedVersion);
         const installed =
-          installedEdition && item.version === installedVersion;
+          installedEdition &&
+          installedBuild > 0 &&
+          versionBuild(item.version) === installedBuild;
         return (
-          <div key={item.key} className="version-item">
+          <div
+            key={item.key}
+            className={`version-item${installed ? " installed" : ""}`}
+          >
             <div className="version-main">
               <strong>{item.version}</strong>
               <span>{displayDate(item.date)}</span>

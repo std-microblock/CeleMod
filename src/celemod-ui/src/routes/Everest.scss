@@ -195,6 +195,14 @@
     &:last-child {
       border-bottom: 0;
     }
+
+    &.installed {
+      border-bottom-color: rgba(167, 127, 219, 0.24);
+
+      .version-main strong {
+        color: color.mix(theme.$primary, theme.$fg, 62%);
+      }
+    }
   }
 
   .version-main,
@@ -222,6 +230,7 @@
   .version-meta {
     min-height: 24px;
     margin-top: 4px;
+
     justify-content: flex-start;
 
     span {
