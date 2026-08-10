@@ -50,6 +50,9 @@ export const Home = () => {
   }, [gamePath]);
   const globalCtx = useGlobalContext();
   const checkBlacklistSync = useAppStore((state) => state.checkBlacklistSync);
+  const installedModsLoaded = useAppStore(
+    (state) => state.installedModsLoaded
+  );
 
   const {
     profiles,
@@ -86,6 +89,7 @@ export const Home = () => {
 
   useEffect(() => {
     if (
+      !installedModsLoaded ||
       !checkBlacklistSync ||
       !currentProfile ||
       !gamePath ||
@@ -268,6 +272,7 @@ export const Home = () => {
     checkBlacklistSync,
     currentProfile,
     gamePath,
+    installedModsLoaded,
     alwaysOnMods,
     installedMods,
     currentProfileName,

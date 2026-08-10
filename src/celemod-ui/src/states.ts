@@ -61,6 +61,7 @@ interface AppState {
   profiles: ModBlacklistProfile[];
   currentProfile: ModBlacklistProfile | null;
   installedMods: BackendModInfo[];
+  installedModsLoaded: boolean;
   currentEverestVersion: string;
   currentEverestIsUltra: boolean;
   currentLang: string;
@@ -202,6 +203,7 @@ export const useAppStore = create<AppState>()(
         profiles: [],
         currentProfile: null,
         installedMods: [],
+        installedModsLoaded: false,
         currentEverestVersion: "",
         currentEverestIsUltra: false,
         currentLang: "",
@@ -236,6 +238,13 @@ export const useAppStore = create<AppState>()(
         page: "Home",
         downloadMenuOpen: false,
         ...actions,
+        setGamePath: (value) =>
+          set((state) => {
+            if (state.gamePath === value) return;
+            state.gamePath = value;
+            state.installedMods = [];
+            state.installedModsLoaded = false;
+          }),
         setAutoDisableNewMods: (value) => {
           set((state) => {
             state.autoDisableNewMods = value;
@@ -364,7 +373,7 @@ export const reloadInstalledMods = async (
     useAppStore.getState().gamePath === gamePath
   ) {
     installedModsAppliedRequest = request;
-    useAppStore.getState().setInstalledMods(installedMods);
+    useAppStore.setState({ installedMods, installedModsLoaded: true });
   }
   return installedMods;
 };
