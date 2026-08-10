@@ -15,21 +15,37 @@ export const useBlockingMask = () => {
   if (!element) {
     element = document.createElement("div");
     element.className = "blocking-mask";
+    element.setAttribute("role", "status");
+    element.setAttribute("aria-live", "polite");
+    element.innerHTML = [
+      '<div class="blocking-mask-panel">',
+      '<span class="blocking-mask-spinner" aria-hidden="true"></span>',
+      '<span class="blocking-mask-text"></span>',
+      '</div>',
+    ].join("");
     document.body.appendChild(element);
   }
 
   useEffect(() => {
+    const text = element.querySelector(".blocking-mask-text");
+    if (text) text.textContent = maskText;
+    const pendingHide = Number(element.dataset.hideTimer || 0);
+    if (pendingHide) window.clearTimeout(pendingHide);
+
     if (maskEnabled) {
-      element.style.display = "block";
-      element.style.opacity = "1";
-      element.innerText = maskText;
+      element.style.display = "flex";
+      requestAnimationFrame(() => {
+        element.style.opacity = "1";
+      });
     } else {
       element.style.opacity = "0";
-      setTimeout(() => {
+      const hideTimer = window.setTimeout(() => {
         element.style.display = "none";
-      }, 200);
+        delete element.dataset.hideTimer;
+      }, 180);
+      element.dataset.hideTimer = String(hideTimer);
     }
-  }, [maskEnabled, maskText]);
+  }, [element, maskEnabled, maskText]);
 
   return {
     setMaskEnabled,

@@ -457,12 +457,49 @@ select option {
   align-items: center;
   justify-content: center;
   margin: 0;
-  padding: 0;
+  padding: 24px;
   overflow: hidden;
-  color: white;
+  color: $fg;
   text-align: center;
-  background: #00000088;
-  transition: opacity 0.2s ease-in-out;
+  background: rgba(5, 5, 7, 0.72);
+  backdrop-filter: blur(10px) saturate(0.8);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.blocking-mask-panel {
+  display: flex;
+  min-width: 180px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 22px;
+  gap: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(20, 20, 24, 0.88);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
+}
+
+.blocking-mask-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: blocking-mask-spin 700ms linear infinite;
+}
+
+.blocking-mask-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+@keyframes blocking-mask-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .no-everest {
