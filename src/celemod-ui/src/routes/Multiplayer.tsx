@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   FaArrowUpRightFromSquare,
-  FaCheck,
   FaCircleExclamation,
   FaCloudArrowDown,
   FaGamepad,
@@ -37,9 +36,11 @@ const miaoNetDownloadUrl =
 
 const MultiplayerFrame = ({
   step,
+  plain = false,
   children,
 }: {
   step: string;
+  plain?: boolean;
   children: ReactNode;
 }) => (
   <div className="multiplayer-page">
@@ -50,7 +51,13 @@ const MultiplayerFrame = ({
       </div>
       <span>{step}</span>
     </header>
-    <div className="multiplayer-page-body multiplayer-centered">{children}</div>
+    <div
+      className={`multiplayer-page-body multiplayer-centered${
+        plain ? " multiplayer-plain" : ""
+      }`}
+    >
+      {children}
+    </div>
   </div>
 );
 
@@ -210,18 +217,11 @@ export const Multiplayer = () => {
 
   if (localState.authenticated) {
     return (
-      <MultiplayerFrame step={_i18n.t("配置完成")}>
-        <div className="multiplayer-state-icon complete">
-          <FaCheck />
-        </div>
+      <MultiplayerFrame step={_i18n.t("配置完成")} plain>
         <strong>{_i18n.t("群服联机已配置")}</strong>
         <div className="multiplayer-local-summary">
+          <span>{_i18n.t("Mod 已安装")}</span>
           <span>
-            <FaCheck />
-            {_i18n.t("Mod 已安装")}
-          </span>
-          <span>
-            <FaLock />
             {_i18n.t("已登录 ·")}
             {localState.lastName}
           </span>

@@ -99,6 +99,14 @@
   }
 }
 
+.multiplayer-centered.multiplayer-plain {
+  grid-template-columns: minmax(0, 1fr);
+
+  > * {
+    grid-column: 1;
+  }
+}
+
 .multiplayer-state-description {
   max-width: 520px;
   color: theme.$fg2;
@@ -212,12 +220,6 @@
       padding-left: 0;
       border-left: 0;
     }
-  }
-
-  svg {
-    margin-right: 6px;
-    color: #8fc79f;
-    font-size: 8px;
   }
 }
 
