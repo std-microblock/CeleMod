@@ -470,23 +470,10 @@ select option {
   overflow: hidden;
   color: $fg;
   text-align: center;
-  background: rgba(5, 5, 7, 0.72);
-  backdrop-filter: blur(10px) saturate(0.8);
+  background: rgba(5, 5, 7, 0.82);
   opacity: 0;
+  gap: 12px;
   transition: opacity 180ms ease-out;
-}
-
-.blocking-mask-panel {
-  display: flex;
-  min-width: 180px;
-  align-items: center;
-  justify-content: center;
-  padding: 16px 22px;
-  gap: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  background: rgba(20, 20, 24, 0.88);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.34);
 }
 
 .blocking-mask-spinner {

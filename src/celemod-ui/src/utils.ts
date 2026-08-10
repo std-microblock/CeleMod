@@ -18,10 +18,8 @@ export const useBlockingMask = () => {
     element.setAttribute("role", "status");
     element.setAttribute("aria-live", "polite");
     element.innerHTML = [
-      '<div class="blocking-mask-panel">',
       '<span class="blocking-mask-spinner" aria-hidden="true"></span>',
       '<span class="blocking-mask-text"></span>',
-      '</div>',
     ].join("");
     document.body.appendChild(element);
   }
