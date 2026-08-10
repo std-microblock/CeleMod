@@ -45,23 +45,26 @@
 }
 
 .recommend-tabs {
-  display: inline-flex;
+  display: flex;
   flex: 0 0 auto;
-  width: max-content;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
   margin: 20px 0 14px;
-  padding: 4px;
-  gap: 3px;
+  gap: 8px;
+  box-sizing: border-box;
 
   button {
     display: inline-flex;
     align-items: center;
-    min-width: 104px;
+    min-width: 112px;
     min-height: 34px;
-    padding: 0 14px;
-    border: 1px solid transparent;
+    justify-content: center;
+    padding: 0 16px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
     border-radius: 8px;
     color: theme.$fg2;
-    background: transparent;
+    background: color.change(theme.$fg, $alpha: 0.025);
     box-shadow: none;
     font-size: 12px;
     font-weight: 600;
@@ -74,9 +77,9 @@
     }
 
     &.selected {
-      border-color: color.change(theme.$primary, $alpha: 0.4);
+      border-color: color.change(theme.$primary, $alpha: 0.55);
       color: #fff;
-      background: color.change(theme.$primary, $alpha: 0.1);
+      background: color.change(theme.$primary, $alpha: 0.2);
     }
   }
 }
