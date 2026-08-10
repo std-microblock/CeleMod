@@ -26,6 +26,9 @@ export const Home = () => {
   const [newKeyboardInputEnabled, setNewKeyboardInputEnabled] = useState<
     boolean | null
   >(null);
+  const [enablingNewKeyboardInput, setEnablingNewKeyboardInput] =
+    useState(false);
+  const [newKeyboardInputError, setNewKeyboardInputError] = useState("");
   useEffect(() => {
     void callRemote<string>("get_celeste_dirs")
       .then((paths) => setGamePaths(paths.split("\n").filter(Boolean)))
@@ -38,10 +41,14 @@ export const Home = () => {
     }
     const checkNewKeyboardInput = () => {
       void callRemote<boolean>("has_new_keyboard_input_enabled", gamePath)
-        .then(setNewKeyboardInputEnabled)
+        .then((enabled) => {
+          setNewKeyboardInputEnabled(enabled);
+          setNewKeyboardInputError("");
+        })
         .catch((error) => {
           console.error("Failed to read everest-env.txt", error);
-          setNewKeyboardInputEnabled(null);
+          setNewKeyboardInputEnabled(false);
+          setNewKeyboardInputError(String(error));
         });
     };
     checkNewKeyboardInput();
@@ -317,8 +324,28 @@ export const Home = () => {
                 "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟："
               )}
             </span>
+            {newKeyboardInputError ? (
+              <span className="home-keyboard-input-error">
+                {newKeyboardInputError}
+              </span>
+            ) : null}
           </div>
-          <code>EVEREST_NEW_KEYBOARD_INPUT=1</code>
+          <div className="home-keyboard-input-actions">
+            <code>EVEREST_NEW_KEYBOARD_INPUT=1</code>
+            <button
+              disabled={enablingNewKeyboardInput}
+              onClick={() => {
+                setEnablingNewKeyboardInput(true);
+                setNewKeyboardInputError("");
+                void callRemote("enable_new_keyboard_input", gamePath)
+                  .then(() => setNewKeyboardInputEnabled(true))
+                  .catch((error) => setNewKeyboardInputError(String(error)))
+                  .finally(() => setEnablingNewKeyboardInput(false));
+              }}
+            >
+              {_i18n.t("立即启用")}
+            </button>
+          </div>
         </aside>
       ) : null}
 

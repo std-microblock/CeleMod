@@ -453,5 +453,6 @@
   "自定义": "Personnalisé",
   "自定义缩放百分比": "Pourcentage de mise à l’échelle personnalisé",
   "建议启用 Everest 新键盘输入": "Activer la nouvelle saisie clavier d’Everest",
-  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Ajoutez le réglage suivant à everest-env.txt pour éviter la latence avec une méthode de saisie chinoise :"
+  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Ajoutez le réglage suivant à everest-env.txt pour éviter la latence avec une méthode de saisie chinoise :",
+  "立即启用": "Activer maintenant"
 }

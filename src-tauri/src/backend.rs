@@ -3366,11 +3366,50 @@ fn new_keyboard_input_enabled(content: &str) -> bool {
     })
 }
 
+fn with_new_keyboard_input_enabled(content: &str) -> String {
+    let mut found = false;
+    let mut lines = content
+        .lines()
+        .map(|line| {
+            let trimmed = line.trim();
+            if !trimmed.starts_with('#')
+                && trimmed
+                    .split_once('=')
+                    .is_some_and(|(key, _)| key.trim() == "EVEREST_NEW_KEYBOARD_INPUT")
+            {
+                found = true;
+                "EVEREST_NEW_KEYBOARD_INPUT=1".to_string()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+    if !found {
+        if lines.last().is_some_and(|line| !line.trim().is_empty()) {
+            lines.push(String::new());
+        }
+        lines.push("EVEREST_NEW_KEYBOARD_INPUT=1".to_string());
+    }
+    format!("{}\n", lines.join("\n"))
+}
+
 #[tauri::command]
 fn has_new_keyboard_input_enabled(game_path: String) -> bool {
     let game_path = normalize_game_path_impl(&game_path);
     fs::read_to_string(Path::new(&game_path).join("everest-env.txt"))
         .is_ok_and(|content| new_keyboard_input_enabled(&content))
+}
+
+#[tauri::command]
+fn enable_new_keyboard_input(game_path: String) -> Result<(), String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    let path = Path::new(&game_path).join("everest-env.txt");
+    let content = match fs::read_to_string(&path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => return Err(error.to_string()),
+    };
+    fs::write(path, with_new_keyboard_input_enabled(&content)).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -3778,7 +3817,7 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
 }
 #[cfg(test)]
 mod keyboard_input_tests {
-    use super::new_keyboard_input_enabled;
+    use super::{new_keyboard_input_enabled, with_new_keyboard_input_enabled};
 
     #[test]
     fn parses_new_keyboard_input_environment_setting() {
@@ -3791,6 +3830,18 @@ mod keyboard_input_tests {
         assert!(!new_keyboard_input_enabled(
             "# EVEREST_NEW_KEYBOARD_INPUT=1\n"
         ));
+    }
+
+    #[test]
+    fn enables_new_keyboard_input_without_duplicate_active_values() {
+        let updated = with_new_keyboard_input_enabled(
+            "# Everest settings\nEVEREST_NEW_KEYBOARD_INPUT=0\nOTHER=1\n",
+        );
+        assert!(new_keyboard_input_enabled(&updated));
+        assert_eq!(updated.matches("EVEREST_NEW_KEYBOARD_INPUT=1").count(), 1);
+
+        let appended = with_new_keyboard_input_enabled("OTHER=1\n");
+        assert!(new_keyboard_input_enabled(&appended));
     }
 }
 
@@ -3892,6 +3943,7 @@ pub fn run() {
             delete_mod_files,
             get_everest_version,
             has_new_keyboard_input_enabled,
+            enable_new_keyboard_input,
             download_and_install_everest,
             download_and_install_crash_mod_fix,
             install_local_packages,

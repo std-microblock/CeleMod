@@ -107,6 +107,30 @@
   }
 }
 
+.home-keyboard-input-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 7px !important;
+
+  button {
+    min-height: 27px;
+    padding: 0 10px;
+    border: 1px solid color.change(#e7b34e, $alpha: 0.38);
+    color: #f5d99e;
+    background: color.change(#e7b34e, $alpha: 0.1);
+    box-shadow: none;
+    font-size: 9px;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+}
+
+.home-keyboard-input-error {
+  color: #e88b8b;
+  user-select: text;
+}
+
 .home-section {
   margin-bottom: 19px;
   padding: 0 4px;

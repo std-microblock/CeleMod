@@ -453,5 +453,6 @@
   "自定义": "Benutzerdefiniert",
   "自定义缩放百分比": "Benutzerdefinierter Skalierungswert",
   "建议启用 Everest 新键盘输入": "Neue Everest-Tastatureingabe aktivieren",
-  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Füge die folgende Einstellung zu everest-env.txt hinzu, um Eingabeverzögerungen mit einer chinesischen Eingabemethode zu vermeiden:"
+  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Füge die folgende Einstellung zu everest-env.txt hinzu, um Eingabeverzögerungen mit einer chinesischen Eingabemethode zu vermeiden:",
+  "立即启用": "Jetzt aktivieren"
 }

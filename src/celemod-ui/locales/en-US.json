@@ -480,5 +480,6 @@
   "自定义": "Custom",
   "自定义缩放百分比": "Custom scale percentage",
   "建议启用 Everest 新键盘输入": "Enable Everest's new keyboard input",
-  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Add the following setting to everest-env.txt to avoid input lag when using a Chinese IME:"
+  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Add the following setting to everest-env.txt to avoid input lag when using a Chinese IME:",
+  "立即启用": "Enable now"
 }
