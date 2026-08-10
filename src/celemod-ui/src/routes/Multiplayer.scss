@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "../styles/theme" as theme;
 
 .page-Multiplayer {
@@ -7,103 +8,127 @@
 
 .multiplayer-page {
   display: flex;
-  flex-direction: column;
-  width: 100%;
+  width: min(760px, 100%);
   height: 100%;
   min-width: 0;
   min-height: 0;
+  flex-direction: column;
+  margin: 0 auto;
+  padding: 12px 18px 48px;
   box-sizing: border-box;
   color: theme.$fg;
 }
 
 .multiplayer-page-header {
   display: flex;
-  flex: 0 0 46px;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 18px 4px 16px;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  gap: 20px;
+
+  > span {
+    padding-bottom: 4px;
+    color: theme.$fg2;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+}
+
+.multiplayer-page-title {
+  display: flex;
   align-items: center;
-  margin-right: 8px;
-  padding: 0 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  box-sizing: border-box;
+  gap: 10px;
+
+  > svg {
+    color: theme.$primary;
+    font-size: 20px;
+  }
 
   h1 {
     margin: 0;
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  span {
-    margin-left: auto;
-    color: theme.$fg3;
-    font-size: 9px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 }
 
 .multiplayer-page-body {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
 }
 
 .multiplayer-centered {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  text-align: center;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  height: 100%;
+  align-content: center;
+  align-items: start;
+  padding: 20px 4px 54px;
+  box-sizing: border-box;
+  text-align: left;
+  column-gap: 15px;
+  row-gap: 9px;
+
+  > .progress-indicator,
+  > .multiplayer-state-icon {
+    grid-column: 1;
+    grid-row: 1 / span 5;
+  }
+
+  > .progress-indicator {
+    margin: 7px auto 0;
+  }
+
+  > :not(.progress-indicator):not(.multiplayer-state-icon) {
+    grid-column: 2;
+  }
 
   > strong {
-    margin-top: 16px;
-    font-size: 17px;
-    font-weight: 600;
+    margin-top: 1px;
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 1.35;
   }
 
   > small {
-    margin-top: 7px;
     color: theme.$fg3;
-    font-size: 10px;
+    font-size: 9px;
   }
 }
 
 .multiplayer-state-description {
-  max-width: 430px;
-  margin-top: 7px;
+  max-width: 520px;
   color: theme.$fg2;
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .multiplayer-state-icon {
   display: grid;
-  width: 46px;
-  height: 46px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 50%;
-  color: theme.$fg2;
-  background: theme.$bg1;
+  width: 36px;
+  height: 36px;
   place-items: center;
+  color: color.adjust(theme.$primary, $lightness: 14%);
 
   svg {
-    font-size: 17px;
+    font-size: 19px;
   }
 
   &.complete {
-    color: #bbdac5;
-    border-color: rgba(121, 178, 139, 0.2);
-    background: rgba(77, 126, 92, 0.13);
+    color: #8fc79f;
   }
 
   &.error {
-    color: #dfb5b5;
-    border-color: rgba(190, 103, 103, 0.2);
-    background: rgba(133, 65, 65, 0.12);
+    color: #e77d84;
   }
 }
 
 .multiplayer-spinner {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.12);
   border-top-color: theme.$fg2;
   border-radius: 50%;
@@ -117,37 +142,38 @@
 }
 
 .multiplayer-download-progress {
-  width: min(360px, 72%);
+  width: min(460px, 100%);
   height: 3px;
-  margin-top: 19px;
+  margin-top: 8px;
   overflow: hidden;
-  border-radius: 999px;
   background: theme.$bg2;
 
   span {
     display: block;
     height: 100%;
-    border-radius: inherit;
-    background: theme.$fg3;
+    background: theme.$primary;
     transition: width 180ms ease;
   }
 }
 
-.multiplayer-install {
-  min-height: 31px;
-  margin-top: 18px;
-  padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+.multiplayer-install,
+.multiplayer-authorize {
+  width: max-content;
+  min-height: 36px;
+  margin-top: 9px;
+  padding: 0 18px;
+  border: 1px solid color.change(theme.$primary, $alpha: 0.68);
+  border-radius: 7px;
   color: theme.$fg;
-  background: theme.$bg1;
+  background: color.change(theme.$primary, $alpha: 0.28);
   box-shadow: none;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
 
   &:hover {
-    background: theme.$bg2;
+    background: color.change(theme.$primary, $alpha: 0.27);
   }
 
   &:disabled {
@@ -156,36 +182,52 @@
   }
 }
 
+.multiplayer-authorize {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  svg {
+    font-size: 9px;
+  }
+}
+
 .multiplayer-local-summary {
   display: flex;
-  margin-top: 22px;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 4px;
+  color: theme.$fg2;
+  font-size: 9px;
+  gap: 0;
 
   span {
     display: inline-flex;
     align-items: center;
-    min-height: 27px;
+    min-height: 22px;
     padding: 0 10px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 5px;
-    color: theme.$fg2;
-    background: rgba(255, 255, 255, 0.025);
-    font-size: 9px;
+    border-left: 1px solid color.change(theme.$fg, $alpha: 0.12);
+
+    &:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
   }
 
   svg {
     margin-right: 6px;
-    color: #a8c8b1;
+    color: #8fc79f;
     font-size: 8px;
   }
 }
 
 .multiplayer-logout {
+  width: max-content;
   min-height: 27px;
-  margin-top: 18px;
-  padding: 0 11px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 5px;
+  margin-top: 7px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
   color: theme.$fg2;
   background: transparent;
   box-shadow: none;
@@ -195,7 +237,7 @@
 
   &:hover {
     color: theme.$fg;
-    background: rgba(255, 255, 255, 0.04);
+    background: theme.$bg2;
   }
 
   &:disabled {
@@ -204,65 +246,48 @@
   }
 }
 
+.multiplayer-waiting {
+  color: theme.$fg2;
+  font-size: 10px;
+}
+
+.multiplayer-auth-error,
 .multiplayer-logout-error {
-  max-width: 420px;
-  margin-top: 9px;
-  color: #d9aaaa;
+  max-width: 520px;
+  padding-left: 9px;
+  border-left: 2px solid #b95e64;
+  color: #ddaeb1;
   font-size: 9px;
   line-height: 1.5;
+  user-select: text;
 }
 
 .multiplayer-auth-description {
-  max-width: 480px;
-  line-height: 1.7;
-}
-
-.multiplayer-authorize {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  margin-top: 18px;
-  padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  color: theme.$fg;
-  background: theme.$bg1;
-  box-shadow: none;
-  font-size: 10px;
-  letter-spacing: 0;
-  text-transform: none;
-
-  svg {
-    margin-right: 7px;
-    font-size: 9px;
-  }
-
-  &:hover {
-    background: theme.$bg2;
-  }
-
-  &:disabled {
-    cursor: default;
-    opacity: 0.58;
-  }
-}
-
-.multiplayer-waiting {
-  margin-top: 10px;
-  color: theme.$fg3;
-  font-size: 9px;
-}
-
-.multiplayer-auth-error {
-  max-width: 440px;
-  margin-top: 10px;
-  color: #d9aaaa;
-  font-size: 9px;
-  line-height: 1.5;
+  max-width: 520px;
 }
 
 @media (max-width: 700px) {
-  .multiplayer-local-summary {
+  .multiplayer-page {
+    padding-inline: 12px;
+  }
+
+  .multiplayer-page-header {
+    align-items: flex-start;
     flex-direction: column;
+    gap: 6px;
+
+    > span {
+      padding: 0;
+    }
+  }
+
+  .multiplayer-centered {
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 11px;
+  }
+
+  .multiplayer-state-icon {
+    width: 30px;
+    height: 30px;
   }
 }

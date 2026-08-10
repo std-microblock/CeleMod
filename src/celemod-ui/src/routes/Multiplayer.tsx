@@ -44,7 +44,10 @@ const MultiplayerFrame = ({
 }) => (
   <div className="multiplayer-page">
     <header className="multiplayer-page-header">
-      <h1>{_i18n.t("群服联机")}</h1>
+      <div className="multiplayer-page-title">
+        <FaGamepad />
+        <h1>{_i18n.t("群服联机")}</h1>
+      </div>
       <span>{step}</span>
     </header>
     <div className="multiplayer-page-body multiplayer-centered">{children}</div>
