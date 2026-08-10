@@ -95,6 +95,7 @@
 
   .channel-tabs {
     margin-bottom: 18px;
+    justify-content: flex-start;
     > button:not(.active) {
       border-color: transparent;
       background: transparent;
