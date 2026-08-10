@@ -268,13 +268,16 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         .or_else(|| game_path.join("Celeste.Mod.mm.dll").is_file().then_some(0))
 }
 
-const EVEREST_PARALLEL_LOAD_MARKER: &[u8] = b"EVEREST_PARALLEL_LOAD";
+const EVEREST_PARALLEL_LOAD_MARKERS: [&[u8]; 2] = [
+    b"EVEREST_PARALLEL_LOAD",
+    b"E\0V\0E\0R\0E\0S\0T\0_\0P\0A\0R\0A\0L\0L\0E\0L\0_\0L\0O\0A\0D\0",
+];
 
-pub fn is_everest_ultra(game_path: &str) -> bool {
-    std::fs::read(Path::new(game_path).join("Celeste.Mod.mm.dll")).is_ok_and(|bytes| {
-        bytes
-            .windows(EVEREST_PARALLEL_LOAD_MARKER.len())
-            .any(|window| window == EVEREST_PARALLEL_LOAD_MARKER)
+pub fn is_everest_ultra(game_path: &Path) -> bool {
+    std::fs::read(game_path.join("Celeste.Mod.mm.dll")).is_ok_and(|bytes| {
+        EVEREST_PARALLEL_LOAD_MARKERS
+            .iter()
+            .any(|marker| bytes.windows(marker.len()).any(|window| window == *marker))
     })
 }
 
@@ -515,13 +518,23 @@ mod tests {
         std::fs::create_dir_all(&root).expect("test directory should be created");
         let binary = root.join("Celeste.Mod.mm.dll");
 
+        std::fs::write(
+            &binary,
+            "prefix\0EVEREST_PARALLEL_LOAD\0suffix"
+                .encode_utf16()
+                .flat_map(u16::to_le_bytes)
+                .collect::<Vec<_>>(),
+        )
+        .expect("UTF-16 test binary should be written");
+        assert!(is_everest_ultra(&root));
+
         std::fs::write(&binary, b"prefix\0EVEREST_PARALLEL_LOAD\0suffix")
-            .expect("test binary should be written");
-        assert!(is_everest_ultra(root.to_str().expect("UTF-8 test path")));
+            .expect("ASCII test binary should be written");
+        assert!(is_everest_ultra(&root));
 
         std::fs::write(&binary, b"ordinary Everest binary")
             .expect("test binary should be replaced");
-        assert!(!is_everest_ultra(root.to_str().expect("UTF-8 test path")));
+        assert!(!is_everest_ultra(&root));
 
         std::fs::remove_dir_all(root).expect("test directory should be removed");
     }

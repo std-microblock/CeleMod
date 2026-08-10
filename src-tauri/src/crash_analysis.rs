@@ -818,11 +818,7 @@ fn is_everest_ultra(game_path: &Path, text: &str) -> bool {
     {
         return true;
     }
-    fs::read(game_path.join("Celeste.Mod.mm.dll")).is_ok_and(|bytes| {
-        bytes
-            .windows(b"EVEREST_PARALLEL_LOAD".len())
-            .any(|window| window == b"EVEREST_PARALLEL_LOAD")
-    })
+    everest::is_everest_ultra(game_path)
 }
 
 fn report_directory() -> anyhow::Result<PathBuf> {

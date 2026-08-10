@@ -3344,7 +3344,7 @@ fn get_everest_version(game_path: String, on_event: Channel<IpcEvent>) {
                 everest::get_everest_version(&game_path)
                     .map(|value| value.to_string())
                     .unwrap_or_default(),
-                everest::is_everest_ultra(&game_path),
+                everest::is_everest_ultra(Path::new(&game_path)),
             )
         };
         send_event(
