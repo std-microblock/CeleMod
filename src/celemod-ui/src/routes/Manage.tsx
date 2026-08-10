@@ -1178,7 +1178,7 @@ export const Manage = () => {
           });
         }, []);
         return (
-          <div className="full-mod-check-popup">
+          <div className="popup-content full-mod-check-popup">
             <div className="title">{_i18n.t("检查 Mod 压缩包")}</div>
             {!progress.done ? (
               <div className="check-progress">
@@ -1241,7 +1241,7 @@ export const Manage = () => {
           </div>
         );
       },
-      { cancelable: false }
+      { cancelable: false, className: "full-mod-check-overlay" }
     );
   };
 
