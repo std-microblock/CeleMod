@@ -96,13 +96,30 @@
 }
 
 .helper-mod-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
   overflow: hidden;
   color: theme.$fg;
   font-size: 13px;
   font-weight: 600;
   line-height: 20px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  gap: 6px;
+
+  > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.helper-mod-one-click {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #e5b959;
+  font-size: 8px;
 }
 
 .helper-mod-description {

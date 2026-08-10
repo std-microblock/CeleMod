@@ -226,6 +226,7 @@ const HelperModRow = ({
   installed,
   handler,
   autoDisableNewMods,
+  includedInDownloadAll,
 }: {
   name: string;
   downloadUrl: string;
@@ -233,6 +234,7 @@ const HelperModRow = ({
   installed: boolean;
   handler: DownloadHandler;
   autoDisableNewMods: boolean;
+  includedInDownloadAll: boolean;
 }) => {
   const downloadMod = useDownloadStore((store) => store.downloadMod);
   const [installedLocally, setInstalledLocally] = useState(installed);
@@ -279,7 +281,17 @@ const HelperModRow = ({
   return (
     <div className="helper-mod-row">
       <div className="helper-mod-info">
-        <div className="helper-mod-name">{name}</div>
+        <div className="helper-mod-name">
+          <span>{name}</span>
+          {includedInDownloadAll ? (
+            <span
+              className="helper-mod-one-click"
+              title={_i18n.t("下载推荐")}
+            >
+              <Icon name="star" />
+            </span>
+          ) : null}
+        </div>
         <div className="helper-mod-description">{description}</div>
       </div>
       <Button
@@ -430,6 +442,7 @@ export const RecommendMods = () => {
                 installed={isInstalled(mod.download_url)}
                 handler={(handlers.current[mod.name] ??= {})}
                 autoDisableNewMods={autoDisableNewMods}
+                includedInDownloadAll={!mod.exclude_from_download_all}
               />
             ))}
           </div>
