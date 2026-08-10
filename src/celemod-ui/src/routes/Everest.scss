@@ -81,50 +81,12 @@
   }
 
   .channel-tabs {
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    gap: 2px;
-    flex: 0 0 auto;
     margin-bottom: 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.11);
 
-    > button {
-      position: relative;
-      display: flex;
-      min-width: 126px;
-      align-items: center;
-      justify-content: center;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      color: theme.$fg;
-      font-size: 13px;
-      font-weight: 450;
-      opacity: 0.52;
-      cursor: pointer;
-      list-style: none;
-      transition: opacity 0.16s;
-
-      &:hover {
-        opacity: 0.82;
-      }
-
-      &.active {
-        opacity: 1;
-
-        &::after {
-          background: color.mix(theme.$primary, theme.$fg, 65%);
-        }
-      }
-
-      &.ultra.active {
-        color: #d7b7ff;
-
-        &::after {
-          background: #ae79e7;
-        }
-      }
+    > button.ultra.active {
+      border-color: rgba(174, 121, 231, 0.64);
+      color: #e2caff;
+      background: rgba(174, 121, 231, 0.18);
     }
   }
 

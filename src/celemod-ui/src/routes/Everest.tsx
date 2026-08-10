@@ -307,7 +307,7 @@ export const Everest = () => {
 
       {installingUrl === null ? (
         <div className="everest-catalog">
-          <div className="channel-tabs">
+          <div className="channel-tabs centered-tab-buttons">
             <button
               className={activeTab === "stable" ? "active" : ""}
               onClick={() => setActiveTab("stable")}

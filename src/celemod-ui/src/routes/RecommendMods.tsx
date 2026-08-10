@@ -397,7 +397,7 @@ export const RecommendMods = () => {
       </header>
 
       <div
-        className="recommend-tabs"
+        className="recommend-tabs centered-tab-buttons"
         role="tablist"
         aria-label={_i18n.t("推荐模组")}
       >

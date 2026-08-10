@@ -502,6 +502,46 @@ select option {
   }
 }
 
+.centered-tab-buttons {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+
+  > button {
+    display: inline-flex;
+    min-width: 112px;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    border: 1px solid color.change($fg, $alpha: 0.1);
+    border-radius: 8px;
+    color: $fg2;
+    background: color.change($fg, $alpha: 0.025);
+    box-shadow: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    gap: 7px;
+
+    &:hover {
+      color: $fg;
+      background: color.change($fg, $alpha: 0.06);
+    }
+
+    &.selected,
+    &.active {
+      border-color: color.change($primary, $alpha: 0.55);
+      color: #fff;
+      background: color.change($primary, $alpha: 0.2);
+    }
+  }
+}
+
 .no-everest {
   padding: 30px;
 }
