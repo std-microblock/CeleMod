@@ -95,6 +95,16 @@
 
   .channel-tabs {
     margin-bottom: 18px;
+    > button:not(.active) {
+      border-color: transparent;
+      background: transparent;
+
+      &:hover {
+        border-color: transparent;
+        background: transparent;
+      }
+    }
+
 
     > button.ultra.active {
       border-color: rgba(174, 121, 231, 0.64);

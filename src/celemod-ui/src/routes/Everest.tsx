@@ -342,6 +342,7 @@ export const Everest = () => {
               className={activeTab === "stable" ? "active" : ""}
               onClick={() => setActiveTab("stable")}
             >
+              <Icon name="i-tick" />
               Stable
             </button>
             {showUltra ? (
@@ -351,6 +352,7 @@ export const Everest = () => {
                 }
                 onClick={() => setActiveTab("ultra-stable")}
               >
+                <Icon name="chart-area" />
                 Ultra Stable
               </button>
             ) : null}
@@ -358,12 +360,14 @@ export const Everest = () => {
               className={activeTab === "beta" ? "active" : ""}
               onClick={() => setActiveTab("beta")}
             >
+              <Icon name="warn" />
               Beta
             </button>
             <button
               className={activeTab === "dev" ? "active" : ""}
               onClick={() => setActiveTab("dev")}
             >
+              <Icon name="settings" />
               Dev
             </button>
           </div>
