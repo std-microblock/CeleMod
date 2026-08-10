@@ -291,6 +291,7 @@ export const getDependencyHealth = (
   nodes: Record<string, ManageNode>,
   includeOptional: boolean
 ): ManageDependencyHealth => {
+  if (!nodes[name]?.enabled) return { status: "healthy", messages: [] };
   const messages: string[] = [];
   let status: ManageDependencyHealth["status"] = "healthy";
   const visiting = new Set<string>();
@@ -324,7 +325,10 @@ export const getDependencyHealth = (
           `${dependency.name} ${installed.version} < ${dependency.version}`
         );
       }
-      if (!installed.enabled && !covered) merge("disabled", dependency.name);
+      if (!installed.enabled && !covered) {
+        merge("disabled", dependency.name);
+        continue;
+      }
       visit(installed.name);
     }
     visiting.delete(nodeName);
