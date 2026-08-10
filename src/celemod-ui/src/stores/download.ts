@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useAppStore } from "../states";
+import { reloadInstalledMods, useAppStore } from "../states";
 import { callRemote } from "../utils";
 
 export namespace Download {
@@ -216,10 +216,17 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
 
       set((store) => ({ tasks: replaceTask(store.tasks, nextTask) }));
 
-      if (state === "finished") onFinished?.(nextTask);
-      else if (state === "failed")
+      if (state === "finished") {
+        void reloadInstalledMods()
+          .catch((error) =>
+            console.error("Failed to refresh installed Mods", error)
+          )
+          .finally(() => onFinished?.(nextTask));
+      } else if (state === "failed") {
         onFailed?.(nextTask, error || "Download failed");
-      else onProgress?.(nextTask, progress);
+      } else {
+        onProgress?.(nextTask, progress);
+      }
     };
 
     void (async () => {

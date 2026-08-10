@@ -338,6 +338,37 @@ export const useAppStore = create<AppState>()(
   )
 );
 
+let installedModsReloadRequest = 0;
+let installedModsAppliedRequest = 0;
+
+export const reloadInstalledMods = async (
+  gamePath = useAppStore.getState().gamePath
+): Promise<BackendModInfo[]> => {
+  if (!gamePath) throw new Error("game path not set");
+  const request = ++installedModsReloadRequest;
+  const installedMods = await new Promise<BackendModInfo[]>((resolve, reject) => {
+    void callRemote(
+      "get_installed_mods",
+      `${gamePath}/Mods`,
+      (data: string) => {
+        try {
+          resolve(JSON.parse(data) as BackendModInfo[]);
+        } catch (error) {
+          reject(error);
+        }
+      }
+    ).catch(reject);
+  });
+  if (
+    request > installedModsAppliedRequest &&
+    useAppStore.getState().gamePath === gamePath
+  ) {
+    installedModsAppliedRequest = request;
+    useAppStore.getState().setInstalledMods(installedMods);
+  }
+  return installedMods;
+};
+
 let initialized = false;
 export async function initializeAppStore() {
   if (initialized) return;

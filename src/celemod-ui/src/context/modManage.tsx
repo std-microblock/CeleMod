@@ -1,10 +1,10 @@
 import _i18n from "src/i18n";
 import { callRemote } from "../utils";
 import {
-  useInstalledMods,
   useGamePath,
   initGamePath,
   initModComments,
+  reloadInstalledMods,
 } from "../states";
 import { useEffect, useContext } from "react";
 import { createPopup, PopupContext } from "src/components/Popup";
@@ -13,34 +13,19 @@ import { ProgressIndicator } from "src/components/Progress";
 export const createModManageContext = () => {
   initModComments();
 
-  const { setInstalledMods } = useInstalledMods();
-
   const [gamePath] = useGamePath();
 
   initGamePath();
 
   const ctx = {
     reloadMods: () => {
-      return new Promise((rs, rj) => {
-        if (!gamePath) {
-          console.warn("game path not set");
-          rj("game path not set");
-          return;
-        }
-        void callRemote(
-          "get_installed_mods",
-          gamePath + "/Mods",
-          (data: string) => {
-            try {
-              console.log("mod reload finished");
-              const da = JSON.parse(data);
-              rs(da);
-              setInstalledMods(da);
-            } catch (error) {
-              rj(error);
-            }
-          }
-        ).catch(rj);
+      if (!gamePath) {
+        console.warn("game path not set");
+        return Promise.reject(new Error("game path not set"));
+      }
+      return reloadInstalledMods(gamePath).then((mods) => {
+        console.log("mod reload finished");
+        return mods;
       });
     },
     checkInvalidZipMods: () => {

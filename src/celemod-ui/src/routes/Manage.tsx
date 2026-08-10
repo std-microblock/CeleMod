@@ -11,6 +11,7 @@ import {
 import "./Manage.scss";
 import {
   MOD_TYPE_OPTIONS,
+  reloadInstalledMods,
   useAlwaysOnMods,
   useAppStore,
   useCurrentBlacklistProfile,
@@ -610,7 +611,7 @@ export const Manage = () => {
   const [gamePath] = useGamePath();
   const modPath = `${gamePath}/Mods`;
   const global = useGlobalContext();
-  const { installedMods, setInstalledMods } = useInstalledMods();
+  const { installedMods } = useInstalledMods();
   const {
     profiles,
     setProfiles,
@@ -628,6 +629,7 @@ export const Manage = () => {
     [string, string, string, string][]
   >([]);
   const [updateStates, setUpdateStates] = useState<Record<string, string>>({});
+  const activeUpdates = useRef(new Set<string>());
   const [fullCheckRunning, setFullCheckRunning] = useState(false);
   const [fixingDependencies, setFixingDependencies] = useState(false);
   const [filtersSuspended, setFiltersSuspended] = useState(false);
@@ -921,11 +923,10 @@ export const Manage = () => {
     [autoToggleDependencies, autoToggleOptionalDependencies, batchSwitch, nodes]
   );
 
-  const reloadMods = useCallback(() => {
-    callRemote("get_installed_mods", modPath, (data: string) =>
-      setInstalledMods(JSON.parse(data))
-    );
-  }, [modPath]);
+  const reloadMods = useCallback(
+    () => reloadInstalledMods(gamePath),
+    [gamePath]
+  );
 
   const downloadMissing = useCallback(
     (name: string): Promise<boolean> => {
@@ -937,22 +938,21 @@ export const Manage = () => {
           }
           const [fileId] = JSON.parse(data);
           downloadMod(name, fileId, {
-            onFinished: () => {
-              reloadMods();
-              resolve(true);
-            },
+            onFinished: () => resolve(true),
             onFailed: () => resolve(false),
           });
         }).catch(() => resolve(false));
       });
     },
-    [downloadMod, reloadMods]
+    [downloadMod]
   );
 
   const updateNode = useCallback(
     (name: string): Promise<boolean> => {
       const update = updates.find((item) => item.name === name);
-      if (!update || updateStates[name]) return Promise.resolve(false);
+      if (!update || activeUpdates.current.has(name))
+        return Promise.resolve(false);
+      activeUpdates.current.add(name);
       setUpdateStates((state) => ({ ...state, [name]: _i18n.t("更新中…") }));
       return new Promise((resolve) => {
         downloadMod(name, update.gbFile === "-1" ? update.url : update.gbFile, {
@@ -963,14 +963,15 @@ export const Manage = () => {
               [name]: `${progress.toFixed(0)}%`,
             })),
           onFinished: () => {
+            activeUpdates.current.delete(name);
             setUpdateStates((state) => ({
               ...state,
               [name]: _i18n.t("已更新"),
             }));
-            reloadMods();
             resolve(true);
           },
           onFailed: () => {
+            activeUpdates.current.delete(name);
             setUpdateStates((state) => ({
               ...state,
               [name]: _i18n.t("更新失败"),
@@ -980,7 +981,7 @@ export const Manage = () => {
         });
       });
     },
-    [downloadMod, reloadMods, updateStates, updates]
+    [downloadMod, updates]
   );
 
   const deleteNode = useCallback(
@@ -1538,7 +1539,19 @@ export const Manage = () => {
               {showUpdate && updates.length > 0 && (
                 <button
                   onClick={() => {
-                    for (const update of updates) void updateNode(update.name);
+                    const names = updates.map((update) => update.name);
+                    void Promise.all(names.map(updateNode))
+                      .then(() => reloadMods())
+                      .then(() =>
+                        setUpdateStates((state) =>
+                          Object.fromEntries(
+                            Object.entries(state).filter(
+                              ([name]) => !names.includes(name)
+                            )
+                          )
+                        )
+                      )
+                      .catch(console.error);
                   }}
                 >
                   <Icon name="download" />
@@ -1565,7 +1578,6 @@ export const Manage = () => {
                             onFinished: () => {
                               if (--remaining === 0) {
                                 setFixingDependencies(false);
-                                reloadMods();
                               }
                             },
                             onFailed: () => {

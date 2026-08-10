@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import { useMemo, useRef, useState } from "react";
 import _i18n, { useI18N } from "src/i18n";
-import { useGlobalContext } from "../App";
 import { Button } from "../components/Button";
 import { enforceEverest } from "../components/EnforceEverestPage";
 import { Icon } from "../components/Icon";
@@ -235,7 +234,6 @@ const HelperModRow = ({
   handler: DownloadHandler;
   autoDisableNewMods: boolean;
 }) => {
-  const ctx = useGlobalContext();
   const downloadMod = useDownloadStore((store) => store.downloadMod);
   const [installedLocally, setInstalledLocally] = useState(installed);
   const installName = modNameFromUrl(downloadUrl) || name;
@@ -258,7 +256,6 @@ const HelperModRow = ({
           ownerId: installName,
           onFinished: () => {
             setInstalledLocally(true);
-            ctx.modManage.reloadMods();
           },
         });
       }
@@ -271,7 +268,6 @@ const HelperModRow = ({
       ownerId: installName,
       onFinished: () => {
         setInstalledLocally(true);
-        ctx.modManage.reloadMods();
       },
     });
   };

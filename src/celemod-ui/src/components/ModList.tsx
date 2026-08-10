@@ -22,7 +22,6 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Content } from "../api/wegfan";
 import { useAppStore, useAutoDisableNewMods } from "../states";
-import { useGlobalContext } from "../App";
 import { useDownloadStore } from "../stores/download";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
@@ -153,7 +152,6 @@ export const Mod = memo(
     modFolder: string;
     isInstalled: boolean;
   }) => {
-    const { modManage } = useGlobalContext();
     const downloadMod = useDownloadStore((state) => state.downloadMod);
     const [autoDisableNewMods] = useAutoDisableNewMods();
     const { mod } = props;
@@ -216,7 +214,6 @@ export const Mod = memo(
                 downloadMod(name, fileid, {
                   autoDisableNewMods,
                   ownerId: downloadOwnerId,
-                  onFinished: () => modManage.reloadMods(),
                 });
               };
 
@@ -226,7 +223,6 @@ export const Mod = memo(
                     force: true,
                     autoDisableNewMods,
                     ownerId: downloadOwnerId,
-                    onFinished: () => modManage.reloadMods(),
                   });
                 }
                 return;

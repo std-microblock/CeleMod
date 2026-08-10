@@ -17,7 +17,6 @@ import { Button } from "src/components/Button";
 import { memo } from "react";
 import { useAutoDisableNewMods, useInstalledMods } from "src/states";
 import { useState } from "react";
-import { useGlobalContext } from "src/App";
 import { useDownloadStore } from "src/stores/download";
 
 export const RecommendMaps = () => {
@@ -26,7 +25,6 @@ export const RecommendMaps = () => {
 
   const { installedMods } = useInstalledMods();
   const [autoDisableNewMods] = useAutoDisableNewMods();
-  const ctx = useGlobalContext();
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const InstallButton = ({ name, url }) => {
     const installed = installedMods.some((mod) => mod.name === name);
@@ -51,7 +49,6 @@ export const RecommendMaps = () => {
             },
             onFinished() {
               setState(_i18n.t("已安装"));
-              ctx.modManage.reloadMods();
             },
             onFailed(task, error) {
               setState(_i18n.t("下载失败"));
