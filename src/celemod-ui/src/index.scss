@@ -91,6 +91,14 @@ textarea,
   font-size: 9px;
 }
 
+#tbo-controls {
+  --tbo-symbol: #fff;
+  --tbo-default: transparent;
+  --tbo-hover: rgba(255, 255, 255, 0.06);
+  --tbo-pressed: rgba(255, 255, 255, 0.1);
+  --tbo-inactive: transparent;
+}
+
 #tbo-controls .tbo-btn {
   min-width: 0 !important;
   min-height: 0 !important;
@@ -100,6 +108,7 @@ textarea,
   box-shadow: none !important;
   letter-spacing: normal !important;
   text-transform: none !important;
+  color: #fff !important;
 }
 
 .app-shell {
