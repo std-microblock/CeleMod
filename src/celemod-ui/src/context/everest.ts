@@ -1,7 +1,7 @@
 import { callRemote } from "../utils";
 import {
-  useInstalledMods,
   useGamePath,
+  useCurrentEverestUltra,
   useCurrentEverestVersion,
 } from "../states";
 import { useEffect } from "react";
@@ -32,8 +32,8 @@ export const useEverestInstallState = create<{
 
 let lastGamePath = "";
 export const useEverestCtx = () => {
-  const { currentEverestVersion, setCurrentEverestVersion } =
-    useCurrentEverestVersion();
+  const { setCurrentEverestVersion } = useCurrentEverestVersion();
+  const { setCurrentEverestIsUltra } = useCurrentEverestUltra();
   const [gamePath] = useGamePath();
   const setEverestInstallState = useEverestInstallState(
     (state) => state.setEverestInstallState
@@ -41,10 +41,15 @@ export const useEverestCtx = () => {
 
   const ctx = {
     updateEverestVersion() {
-      callRemote("get_everest_version", gamePath, (ver: string) => {
-        console.log("Everest version", ver);
-        setCurrentEverestVersion(ver);
-      });
+      callRemote(
+        "get_everest_version",
+        gamePath,
+        (ver: string, isUltra: boolean) => {
+          console.log("Everest version", ver, isUltra ? "Ultra" : "Official");
+          setCurrentEverestVersion(ver);
+          setCurrentEverestIsUltra(isUltra);
+        }
+      );
     },
     downloadAndInstallEverest(url: string) {
       if (useEverestInstallState.getState().everestInstallState.installingUrl)

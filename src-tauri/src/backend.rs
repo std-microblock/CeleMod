@@ -3336,14 +3336,21 @@ fn delete_mod_files(mods_folder_path: String, file_names: String, on_event: Chan
 #[tauri::command]
 fn get_everest_version(game_path: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
-        let version = if is_test_mode() {
-            "4000".to_string()
+        let game_path = normalize_game_path_impl(&game_path);
+        let (version, is_ultra) = if is_test_mode() {
+            ("4000".to_string(), false)
         } else {
-            everest::get_everest_version(&normalize_game_path_impl(&game_path))
-                .map(|value| value.to_string())
-                .unwrap_or_default()
+            (
+                everest::get_everest_version(&game_path)
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
+                everest::is_everest_ultra(&game_path),
+            )
         };
-        send_event(&on_event, vec![serde_json::json!(version)]);
+        send_event(
+            &on_event,
+            vec![serde_json::json!(version), serde_json::json!(is_ultra)],
+        );
     });
 }
 

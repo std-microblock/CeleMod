@@ -54,6 +54,19 @@
     }
   }
 
+  .everest-edition-badge {
+    margin-left: 9px;
+    padding: 3px 7px;
+    border: 1px solid rgba(174, 121, 231, 0.42);
+    border-radius: 999px;
+    color: #e2caff;
+    background: rgba(174, 121, 231, 0.14);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
+  }
+
   .manual-everest-version {
     margin-top: 8px;
     padding: 0;

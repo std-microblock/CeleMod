@@ -62,6 +62,7 @@ interface AppState {
   currentProfile: ModBlacklistProfile | null;
   installedMods: BackendModInfo[];
   currentEverestVersion: string;
+  currentEverestIsUltra: boolean;
   currentLang: string;
   mirror: string;
   gamePath: string;
@@ -99,6 +100,7 @@ interface AppState {
   setCurrentProfile: (value: ModBlacklistProfile | null) => void;
   setInstalledMods: (value: BackendModInfo[]) => void;
   setCurrentEverestVersion: (value: string) => void;
+  setCurrentEverestIsUltra: (value: boolean) => void;
   setCurrentLang: (value: string) => void;
   setMirror: (value: string) => void;
   setGamePath: (value: string) => void;
@@ -154,6 +156,7 @@ const setters = {
   setCurrentProfile: "currentProfile",
   setInstalledMods: "installedMods",
   setCurrentEverestVersion: "currentEverestVersion",
+  setCurrentEverestIsUltra: "currentEverestIsUltra",
   setCurrentLang: "currentLang",
   setMirror: "mirror",
   setGamePath: "gamePath",
@@ -200,6 +203,7 @@ export const useAppStore = create<AppState>()(
         currentProfile: null,
         installedMods: [],
         currentEverestVersion: "",
+        currentEverestIsUltra: false,
         currentLang: "",
         mirror: "wegfan",
         gamePath: "",
@@ -397,6 +401,10 @@ export const useInstalledMods = objectHook([
 export const useCurrentEverestVersion = objectHook([
   "currentEverestVersion",
   "setCurrentEverestVersion",
+] as const);
+export const useCurrentEverestUltra = objectHook([
+  "currentEverestIsUltra",
+  "setCurrentEverestIsUltra",
 ] as const);
 export const useCurrentLang = objectHook([
   "currentLang",

@@ -14,6 +14,7 @@ import {
   useCurrentLang,
   useGamePath,
   useMirror,
+  useCurrentEverestUltra,
 } from "../states";
 import { callRemote, displayDate } from "../utils";
 import { Icon } from "../components/Icon";
@@ -74,33 +75,40 @@ const getInstallDetail = (state: string | null) => {
     .replace(/^Run MiniInstaller:?/i, "")
     .trim();
 };
-
 const VersionList = ({
   versions,
   onInstall,
+  installedVersion,
+  installedEdition,
 }: {
   versions: DisplayVersion[];
   onInstall: (url: string) => void;
+  installedVersion: string;
+  installedEdition: boolean;
 }) => (
   <div className="version-list">
     {versions.length === 0 ? (
       <div className="empty">{_i18n.t("无数据")}</div>
     ) : (
-      versions.map((item) => (
-        <div key={item.key} className="version-item">
-          <div className="version-main">
-            <strong>{item.version}</strong>
-            <span>{displayDate(item.date)}</span>
+      versions.map((item) => {
+        const installed =
+          installedEdition && item.version === installedVersion;
+        return (
+          <div key={item.key} className="version-item">
+            <div className="version-main">
+              <strong>{item.version}</strong>
+              <span>{displayDate(item.date)}</span>
+            </div>
+            <div className="version-meta">
+              <span>{item.commit?.slice(0, 7) || _i18n.t("镜像版本")}</span>
+              {item.size ? <span>{formatSize(item.size)}</span> : null}
+              <Button disabled={installed} onClick={() => onInstall(item.url)}>
+                {installed ? _i18n.t("已安装") : _i18n.t("安装")}
+              </Button>
+            </div>
           </div>
-          <div className="version-meta">
-            <span>{item.commit?.slice(0, 7) || _i18n.t("镜像版本")}</span>
-            {item.size ? <span>{formatSize(item.size)}</span> : null}
-            <Button onClick={() => onInstall(item.url)}>
-              {_i18n.t("安装")}
-            </Button>
-          </div>
-        </div>
-      ))
+        );
+      })
     )}
   </div>
 );
@@ -110,11 +118,15 @@ const OfficialChannel = ({
   branch,
   title,
   onInstall,
+  installedVersion,
+  installedEdition,
 }: {
   versions: Maddie480EverestVersion[];
   branch: string;
   title: string;
   onInstall: (url: string) => void;
+  installedVersion: string;
+  installedEdition: boolean;
 }) => {
   const [mirror] = useMirror();
   const items = useMemo<DisplayVersion[]>(
@@ -137,8 +149,12 @@ const OfficialChannel = ({
 
   return (
     <section className="channel-card">
-      {title ? <h2>{title}</h2> : null}
-      <VersionList versions={items} onInstall={onInstall} />
+      <VersionList
+        versions={items}
+        onInstall={onInstall}
+        installedVersion={installedVersion}
+        installedEdition={installedEdition}
+      />
     </section>
   );
 };
@@ -146,9 +162,13 @@ const OfficialChannel = ({
 const UltraChannel = ({
   versions,
   onInstall,
+  installedVersion,
+  installedEdition,
 }: {
   versions: EverestUltraVersion[];
   onInstall: (url: string) => void;
+  installedVersion: string;
+  installedEdition: boolean;
 }) => {
   return (
     <section className="channel-card tab-channel ultra-channel">
@@ -168,6 +188,8 @@ const UltraChannel = ({
             size: version.size,
             url: version.url,
           }))}
+        installedVersion={installedVersion}
+        installedEdition={installedEdition}
         onInstall={onInstall}
       />
     </section>
@@ -180,6 +202,8 @@ export const Everest = () => {
   const ctx = useGlobalContext();
   const { currentEverestVersion, setCurrentEverestVersion } =
     useCurrentEverestVersion();
+  const { currentEverestIsUltra, setCurrentEverestIsUltra } =
+    useCurrentEverestUltra();
   const { currentLang } = useCurrentLang();
   const [gamePath] = useGamePath();
   const { data: updateInfo } = useUpdateInfo();
@@ -264,6 +288,7 @@ export const Everest = () => {
                 const version = manualVersion.trim();
                 if (!version) return;
                 setCurrentEverestVersion(version);
+                setCurrentEverestIsUltra(false);
                 hide();
               }}
             >
@@ -291,7 +316,12 @@ export const Everest = () => {
                   ? _i18n.t("当前安装的 Everest 版本")
                   : _i18n.t("未安装 Everest")}
               </span>
-              <strong className="value">{currentEverestVersion || "—"}</strong>
+              <strong className="value">
+                {currentEverestVersion || "—"}
+                {currentEverestVersion && currentEverestIsUltra ? (
+                  <span className="everest-edition-badge">Ultra</span>
+                ) : null}
+              </strong>
             </div>
           </div>
           {!currentEverestVersion ? (
@@ -352,6 +382,8 @@ export const Everest = () => {
               </div>
               <UltraChannel
                 versions={ultra.versions || []}
+                installedVersion={currentEverestVersion}
+                installedEdition={currentEverestIsUltra}
                 onInstall={installEverest}
               />
             </Fragment>
@@ -363,6 +395,8 @@ export const Everest = () => {
                   : ""
               }
               branch={activeTab}
+              installedVersion={currentEverestVersion}
+              installedEdition={!currentEverestIsUltra}
               versions={everestData}
               onInstall={installEverest}
             />

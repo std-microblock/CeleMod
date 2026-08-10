@@ -268,6 +268,16 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         .or_else(|| game_path.join("Celeste.Mod.mm.dll").is_file().then_some(0))
 }
 
+const EVEREST_PARALLEL_LOAD_MARKER: &[u8] = b"EVEREST_PARALLEL_LOAD";
+
+pub fn is_everest_ultra(game_path: &str) -> bool {
+    std::fs::read(Path::new(game_path).join("Celeste.Mod.mm.dll")).is_ok_and(|bytes| {
+        bytes
+            .windows(EVEREST_PARALLEL_LOAD_MARKER.len())
+            .any(|window| window == EVEREST_PARALLEL_LOAD_MARKER)
+    })
+}
+
 fn run_command(
     installer_path: PathBuf,
     step_label: &str,
@@ -485,4 +495,34 @@ pub fn download_and_install_everest(
         "[3/3] Run MiniInstaller",
         progress_callback,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_everest_ultra;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn detects_everest_ultra_marker_in_installed_binary() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time must be after Unix epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "celemod-everest-ultra-test-{}-{unique}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&root).expect("test directory should be created");
+        let binary = root.join("Celeste.Mod.mm.dll");
+
+        std::fs::write(&binary, b"prefix\0EVEREST_PARALLEL_LOAD\0suffix")
+            .expect("test binary should be written");
+        assert!(is_everest_ultra(root.to_str().expect("UTF-8 test path")));
+
+        std::fs::write(&binary, b"ordinary Everest binary")
+            .expect("test binary should be replaced");
+        assert!(!is_everest_ultra(root.to_str().expect("UTF-8 test path")));
+
+        std::fs::remove_dir_all(root).expect("test directory should be removed");
+    }
 }
