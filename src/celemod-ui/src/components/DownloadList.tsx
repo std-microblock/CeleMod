@@ -27,21 +27,23 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(false);
-  const all = task.subtasks.length;
-  const finished = task.subtasks.filter((item) => item.state === "Finished").length;
+  const finished = task.subtasks.filter(
+    (subtask) => subtask.state === "Finished"
+  ).length;
   const activeSubtask = task.subtasks.find(
-    (item) => item.state === "Downloading"
+    (subtask) => subtask.state === "Downloading"
   );
   const visibleSubtasks = task.subtasks.filter(
-    (item) => item.state !== "Finished" || item.error
+    (subtask) => subtask.state !== "Finished" || subtask.error
   );
+  const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
   const status = task.canceled
-    ? { label: _i18n.t("已取消"), className: "canceled" }
+    ? { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" }
     : task.state === "failed"
-    ? { label: _i18n.t("失败"), className: "failed" }
+    ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
     : activeSubtask
-    ? { label: _i18n.t("下载中"), className: "active" }
-    : { label: _i18n.t("等待中"), className: "waiting" };
+    ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
+    : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
   const action =
     task.state === "pending" && !task.canceled
       ? {
@@ -58,23 +60,22 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
       : null;
 
   return (
-    <article className={`download-task ${status.className}`}>
-      <div className="download-task-heading">
+    <article className={`download-task download-task-${status.tone}`}>
+      <div className="download-task-topline">
         <button
-          className="download-task-expand"
+          className="download-task-toggle"
           aria-expanded={expanded}
-          aria-label={expanded ? _i18n.t("收起") : _i18n.t("展开")}
           onClick={() => setExpanded((value) => !value)}
         >
+          <span className="download-task-status-icon">
+            <Icon name={status.icon} />
+          </span>
+          <span className="download-task-title" title={task.name}>
+            {task.name}
+          </span>
+          <span className="download-task-status-text">{status.label}</span>
           <Icon name={expanded ? "i-down" : "i-right"} />
         </button>
-        <span className="download-task-state" aria-hidden="true" />
-        <span className="download-task-name" title={task.name}>
-          {task.name}
-        </span>
-        <span className="download-task-count">
-          {finished}/{all}
-        </span>
         {action ? (
           <button
             className="download-task-action"
@@ -88,12 +89,13 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
       </div>
 
       <div className="download-task-progress" aria-hidden="true">
-        <span style={{ width: `${Math.max(0, Math.min(100, task.progress))}%` }} />
+        <span style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="download-task-meta">
-        <span className={`download-task-status ${status.className}`}>
-          {status.label}
+      <div className="download-task-summary">
+        <strong>{Math.round(progress)}%</strong>
+        <span>
+          {finished}/{task.subtasks.length}
         </span>
         {activeSubtask ? (
           <>
@@ -102,7 +104,7 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
             </span>
             <span>{formatSpeed(activeSubtask.speedBytesPerSec)}</span>
           </>
-        ) : task.error ? (
+        ) : task.error && !expanded ? (
           <span className="download-task-error" title={task.error}>
             {task.error}
           </span>
@@ -112,26 +114,27 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
       {expanded ? (
         <div className="download-subtasks">
           {visibleSubtasks.map((subtask) => (
-            <div className={`download-subtask ${subtask.state.toLowerCase()}`} key={subtask.name}>
-              <div className="download-subtask-heading">
+            <div
+              className={`download-subtask download-subtask-${subtask.state.toLowerCase()}`}
+              key={subtask.name}
+            >
+              <div className="download-subtask-line">
                 <span title={subtask.name}>{subtask.name}</span>
                 <strong>{Math.round(subtask.progress)}%</strong>
               </div>
               <div className="download-subtask-progress" aria-hidden="true">
                 <span style={{ width: `${subtask.progress}%` }} />
               </div>
-              <div className="download-subtask-meta">
-                <span>
-                  {formatBytes(subtask.downloadedBytes)} / {formatBytes(subtask.totalBytes)}
-                </span>
-                <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
-              </div>
               {subtask.state === "Failed" ? (
-                <div className="download-subtask-error">
-                  <Icon name="fail" />
-                  <span>{subtask.error}</span>
+                <div className="download-subtask-error">{subtask.error}</div>
+              ) : (
+                <div className="download-subtask-meta">
+                  <span>
+                    {formatBytes(subtask.downloadedBytes)} / {formatBytes(subtask.totalBytes)}
+                  </span>
+                  <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
                 </div>
-              ) : null}
+              )}
             </div>
           ))}
         </div>
@@ -161,18 +164,16 @@ export const DownloadListMenu = ({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="download-list-header">
-          <div className="download-list-title">
+          <div className="download-list-heading">
             <Icon name="download" />
             <h2>{_i18n.t("下载任务")}</h2>
-            <span>{visibleTasks.length}</span>
           </div>
-          <button
-            className="downloadListClose"
-            onClick={onClose}
-            aria-label={_i18n.t("关闭")}
-          >
-            <Icon name="i-cross" />
-          </button>
+          <div className="download-list-tools">
+            <span>{visibleTasks.length}</span>
+            <button onClick={onClose} aria-label={_i18n.t("关闭")}>
+              <Icon name="i-cross" />
+            </button>
+          </div>
         </header>
         <div className="taskList">
           {visibleTasks.length > 0 ? (
