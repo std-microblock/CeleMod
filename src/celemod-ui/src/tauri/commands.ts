@@ -39,6 +39,7 @@ const parameterNames: Record<string, string[]> = {
   delete_mods: ["gamePath", "modNames", "onEvent"],
   delete_mod_files: ["modsFolderPath", "fileNames", "onEvent"],
   get_everest_version: ["gamePath", "onEvent"],
+  has_new_keyboard_input_enabled: ["gamePath"],
   download_and_install_everest: ["gamePath", "url", "onEvent"],
   download_and_install_crash_mod_fix: [
     "gamePath",

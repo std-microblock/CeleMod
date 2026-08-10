@@ -23,10 +23,30 @@ export const Home = () => {
   const i18n = useI18N();
   const [gamePath, setGamePath] = useGamePath();
   const [gamePaths, setGamePaths] = useState<string[]>([]);
+  const [newKeyboardInputEnabled, setNewKeyboardInputEnabled] = useState<
+    boolean | null
+  >(null);
   useEffect(() => {
     void callRemote<string>("get_celeste_dirs")
       .then((paths) => setGamePaths(paths.split("\n").filter(Boolean)))
       .catch(console.error);
+  }, [gamePath]);
+  useEffect(() => {
+    if (!gamePath) {
+      setNewKeyboardInputEnabled(null);
+      return;
+    }
+    const checkNewKeyboardInput = () => {
+      void callRemote<boolean>("has_new_keyboard_input_enabled", gamePath)
+        .then(setNewKeyboardInputEnabled)
+        .catch((error) => {
+          console.error("Failed to read everest-env.txt", error);
+          setNewKeyboardInputEnabled(null);
+        });
+    };
+    checkNewKeyboardInput();
+    window.addEventListener("focus", checkNewKeyboardInput);
+    return () => window.removeEventListener("focus", checkNewKeyboardInput);
   }, [gamePath]);
   const globalCtx = useGlobalContext();
   const checkBlacklistSync = useAppStore((state) => state.checkBlacklistSync);
@@ -281,6 +301,21 @@ export const Home = () => {
           </select>
         </label>
       </header>
+
+      {gamePath && newKeyboardInputEnabled === false ? (
+        <aside className="home-keyboard-input-banner">
+          <Icon name="warn" />
+          <div>
+            <strong>{_i18n.t("建议启用 Everest 新键盘输入")}</strong>
+            <span>
+              {_i18n.t(
+                "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟："
+              )}
+            </span>
+          </div>
+          <code>EVEREST_NEW_KEYBOARD_INPUT=1</code>
+        </aside>
+      ) : null}
 
       <section className="home-section home-game-section">
         <div className="home-section-heading">

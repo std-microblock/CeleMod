@@ -451,5 +451,7 @@
   "按键管理页字体缩放": "Schriftgröße der Tastenbelegungsseite",
   "单独调整按键管理页面的文字大小": "Textgröße der Tastenbelegungen separat anpassen",
   "自定义": "Benutzerdefiniert",
-  "自定义缩放百分比": "Benutzerdefinierter Skalierungswert"
+  "自定义缩放百分比": "Benutzerdefinierter Skalierungswert",
+  "建议启用 Everest 新键盘输入": "Neue Everest-Tastatureingabe aktivieren",
+  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Füge die folgende Einstellung zu everest-env.txt hinzu, um Eingabeverzögerungen mit einer chinesischen Eingabemethode zu vermeiden:"
 }

@@ -64,6 +64,49 @@
   }
 }
 
+.home-keyboard-input-banner {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  margin: 0 4px 18px;
+  padding: 12px 14px;
+  border-top: 1px solid color.change(#e7b34e, $alpha: 0.28);
+  border-bottom: 1px solid color.change(#e7b34e, $alpha: 0.2);
+  color: theme.$fg2;
+  background: color.change(#e7b34e, $alpha: 0.055);
+  gap: 11px;
+
+  > .icon {
+    color: #e7b34e;
+  }
+
+  div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  strong {
+    color: theme.$fg;
+    font-size: 11px;
+  }
+
+  span {
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  code {
+    padding: 5px 8px;
+    color: #f0ca7d;
+    background: rgba(0, 0, 0, 0.2);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 9px;
+    user-select: text;
+  }
+}
+
 .home-section {
   margin-bottom: 19px;
   padding: 0 4px;

@@ -3354,6 +3354,25 @@ fn get_everest_version(game_path: String, on_event: Channel<IpcEvent>) {
     });
 }
 
+fn new_keyboard_input_enabled(content: &str) -> bool {
+    content.lines().any(|line| {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            return false;
+        }
+        line.split_once('=').is_some_and(|(key, value)| {
+            key.trim() == "EVEREST_NEW_KEYBOARD_INPUT" && value.trim() == "1"
+        })
+    })
+}
+
+#[tauri::command]
+fn has_new_keyboard_input_enabled(game_path: String) -> bool {
+    let game_path = normalize_game_path_impl(&game_path);
+    fs::read_to_string(Path::new(&game_path).join("everest-env.txt"))
+        .is_ok_and(|content| new_keyboard_input_enabled(&content))
+}
+
 #[tauri::command]
 fn download_and_install_everest(game_path: String, url: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
@@ -3757,6 +3776,23 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
         }
     });
 }
+#[cfg(test)]
+mod keyboard_input_tests {
+    use super::new_keyboard_input_enabled;
+
+    #[test]
+    fn parses_new_keyboard_input_environment_setting() {
+        assert!(new_keyboard_input_enabled(
+            "# Everest settings\nEVEREST_NEW_KEYBOARD_INPUT = 1\n"
+        ));
+        assert!(!new_keyboard_input_enabled(
+            "EVEREST_NEW_KEYBOARD_INPUT=0\n"
+        ));
+        assert!(!new_keyboard_input_enabled(
+            "# EVEREST_NEW_KEYBOARD_INPUT=1\n"
+        ));
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -3855,6 +3891,7 @@ pub fn run() {
             delete_mods,
             delete_mod_files,
             get_everest_version,
+            has_new_keyboard_input_enabled,
             download_and_install_everest,
             download_and_install_crash_mod_fix,
             install_local_packages,

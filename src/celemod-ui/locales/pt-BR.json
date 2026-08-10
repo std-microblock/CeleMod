@@ -478,5 +478,7 @@
   "按键管理页字体缩放": "Escala da fonte da página de teclas",
   "单独调整按键管理页面的文字大小": "Ajustar separadamente o texto das teclas",
   "自定义": "Personalizado",
-  "自定义缩放百分比": "Percentual de escala personalizado"
+  "自定义缩放百分比": "Percentual de escala personalizado",
+  "建议启用 Everest 新键盘输入": "Ativar a nova entrada de teclado do Everest",
+  "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟：": "Adicione a configuração abaixo ao everest-env.txt para evitar atraso ao usar um método de entrada chinês:"
 }
