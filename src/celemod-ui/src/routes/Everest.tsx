@@ -27,6 +27,7 @@ import {
   featureVisible,
   useUpdateInfo,
 } from "../api/updateInfo";
+import { useEverestInstallState } from "../context/everest";
 
 interface Maddie480EverestVersion {
   date: string;
@@ -186,10 +187,12 @@ export const Everest = () => {
   const showUltra = featureVisible(ultra, currentLang);
   const [activeTab, setActiveTab] = useState<EverestTab>("stable");
   const cloudDefaultApplied = useRef(false);
-  const [installingUrl, setInstallingUrl] = useState<string | null>(null);
-  const [installState, setInstallState] = useState<string | null>(null);
-  const [installProgress, setInstallProgress] = useState<number | null>(null);
-  const [failedReason, setFailedReason] = useState<string | null>(null);
+  const {
+    installingUrl,
+    status: installState,
+    progress: installProgress,
+    failedReason,
+  } = useEverestInstallState((state) => state.everestInstallState);
   const [everestData, setEverestData] = useState<
     Maddie480EverestVersion[] | null
   >(null);
@@ -222,28 +225,7 @@ export const Everest = () => {
   }, []);
 
   const installEverest = (url: string) => {
-    setInstallingUrl(url);
-    setInstallProgress(null);
-    setFailedReason(null);
-    setInstallState("[1/3] Download Everest");
-    callRemote(
-      "download_and_install_everest",
-      gamePath,
-      url,
-      (status: string, data: unknown) => {
-        if (status === "Failed") {
-          setInstallState("Failed");
-          setFailedReason(String(data));
-        } else {
-          setInstallState(status);
-          if (typeof data === "number") setInstallProgress(data);
-        }
-        if (status === "Success") ctx.everest.updateEverestVersion();
-      }
-    ).catch((error) => {
-      setInstallState("Failed");
-      setFailedReason(String(error));
-    });
+    ctx.everest.downloadAndInstallEverest(url);
   };
 
   const showManualVersionPopup = () => {
@@ -407,7 +389,7 @@ export const Everest = () => {
                 <textarea readOnly value={failedReason || ""} />
               </div>
               <div className="state">
-                <Button onClick={() => setInstallingUrl(null)}>
+                <Button onClick={() => ctx.everest.clearInstallState()}>
                   {_i18n.t("取消")}
                 </Button>
               </div>
@@ -420,7 +402,7 @@ export const Everest = () => {
               <div className="tip">{_i18n.t("安装成功")}</div>
               <div className="url">{installingUrl}</div>
               <div className="state">
-                <Button onClick={() => setInstallingUrl(null)}>
+                <Button onClick={() => ctx.everest.clearInstallState()}>
                   {_i18n.t("确认")}
                 </Button>
               </div>

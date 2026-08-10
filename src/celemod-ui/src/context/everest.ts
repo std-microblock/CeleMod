@@ -8,18 +8,24 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 export interface EverestInstallState {
-  status: string;
-  progress: number;
+  installingUrl: string | null;
+  status: string | null;
+  progress: number | null;
+  failedReason: string | null;
 }
+
+const initialEverestInstallState: EverestInstallState = {
+  installingUrl: null,
+  status: null,
+  progress: null,
+  failedReason: null,
+};
 
 export const useEverestInstallState = create<{
   everestInstallState: EverestInstallState;
   setEverestInstallState: (everestInstallState: EverestInstallState) => void;
 }>((set) => ({
-  everestInstallState: {
-    status: "",
-    progress: 0,
-  },
+  everestInstallState: initialEverestInstallState,
   setEverestInstallState: (everestInstallState: EverestInstallState) =>
     set({ everestInstallState }),
 }));
@@ -29,8 +35,9 @@ export const useEverestCtx = () => {
   const { currentEverestVersion, setCurrentEverestVersion } =
     useCurrentEverestVersion();
   const [gamePath] = useGamePath();
-  const { everestInstallState, setEverestInstallState } =
-    useEverestInstallState();
+  const setEverestInstallState = useEverestInstallState(
+    (state) => state.setEverestInstallState
+  );
 
   const ctx = {
     updateEverestVersion() {
@@ -40,17 +47,42 @@ export const useEverestCtx = () => {
       });
     },
     downloadAndInstallEverest(url: string) {
-      if (everestInstallState.status !== "") return;
+      if (useEverestInstallState.getState().everestInstallState.installingUrl)
+        return;
 
-      setEverestInstallState({ status: "Downloading Everest", progress: 0 });
+      setEverestInstallState({
+        installingUrl: url,
+        status: "[1/3] Download Everest",
+        progress: null,
+        failedReason: null,
+      });
       callRemote(
         "download_and_install_everest",
         gamePath,
         url,
-        (status: string, progress: number) => {
-          setEverestInstallState({ status, progress });
+        (status: string, data: unknown) => {
+          const current =
+            useEverestInstallState.getState().everestInstallState;
+          setEverestInstallState({
+            ...current,
+            status,
+            progress:
+              typeof data === "number" ? data : current.progress,
+            failedReason: status === "Failed" ? String(data) : null,
+          });
+          if (status === "Success") ctx.updateEverestVersion();
         }
-      );
+      ).catch((error) => {
+        const current = useEverestInstallState.getState().everestInstallState;
+        setEverestInstallState({
+          ...current,
+          status: "Failed",
+          failedReason: String(error),
+        });
+      });
+    },
+    clearInstallState() {
+      setEverestInstallState(initialEverestInstallState);
     },
   };
 
