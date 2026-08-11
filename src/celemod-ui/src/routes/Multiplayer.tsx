@@ -136,6 +136,7 @@ export const Multiplayer = () => {
     Record<number, MiaoNetAtlasPreview>
   >({});
   const [editingTextIndex, setEditingTextIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
   const [draggedEmoteIndex, setDraggedEmoteIndex] = useState<number | null>(null);
   const [dragOverEmoteIndex, setDragOverEmoteIndex] = useState<number | null>(null);
   const [emoteDragOffset, setEmoteDragOffset] = useState({ x: 0, y: 0 });
@@ -218,6 +219,12 @@ export const Multiplayer = () => {
     }, 180);
     return () => window.clearTimeout(timer);
   }, [gamePath, miaoNetSettings?.emotes]);
+
+  useEffect(() => {
+    if (editingTextIndex !== null && miaoNetSettings) {
+      setEditingText(miaoNetSettings.emotes[editingTextIndex] ?? "");
+    }
+  }, [editingTextIndex, miaoNetSettings]);
 
   const installMiaoNet = useCallback(() => {
     downloadMod("MiaoNet", miaoNetDownloadUrl, {
@@ -451,13 +458,44 @@ export const Multiplayer = () => {
   ) => {
     const sourceIndex = draggedEmoteIndexRef.current;
     const targetIndex = dragOverEmoteIndexRef.current;
+    const sourceRect =
+      sourceIndex !== null ? emoteCardRectsRef.current[sourceIndex] : undefined;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    clearEmoteDrag();
     if (commit && sourceIndex !== null && targetIndex !== null) {
       reorderEmote(sourceIndex, targetIndex);
     }
+    if (sourceRect && sourceIndex !== null && targetIndex !== null) {
+      const grid = event.currentTarget.parentElement;
+      const fromX =
+        sourceRect.left +
+        sourceRect.width / 2 +
+        (event.clientX - emoteDragStartRef.current.x);
+      const fromY =
+        sourceRect.top +
+        sourceRect.height / 2 +
+        (event.clientY - emoteDragStartRef.current.y);
+      requestAnimationFrame(() => {
+        const node = grid?.querySelector<HTMLElement>(
+          `.multiplayer-emote-card[data-emote-index="${targetIndex}"]`
+        );
+        if (!node) return;
+        const toRect = node.getBoundingClientRect();
+        const deltaX = fromX - (toRect.left + toRect.width / 2);
+        const deltaY = fromY - (toRect.top + toRect.height / 2);
+        node.animate(
+          [
+            {
+              transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(1.025)`,
+            },
+            { transform: "translate3d(0, 0, 0) scale(1)" },
+          ],
+          { duration: 160, easing: "ease-out" }
+        );
+      });
+    }
+    clearEmoteDrag();
   };
 
   const removeEmote = (index: number) => {
@@ -829,11 +867,14 @@ export const Multiplayer = () => {
                       {editingTextIndex === index ? (
                         <textarea
                           autoFocus
-                          value={emote}
+                          value={editingText}
                           placeholder={_i18n.t("输入表情文本")}
                           onFocus={(event) => event.currentTarget.select()}
-                          onChange={(event) => updateEmote(index, event.target.value)}
-                          onBlur={() => setEditingTextIndex(null)}
+                          onChange={(event) => setEditingText(event.target.value)}
+                          onBlur={() => {
+                            updateEmote(index, editingText);
+                            setEditingTextIndex(null);
+                          }}
                           onKeyDown={(event) => {
                             if (event.key === "Escape" || (event.ctrlKey && event.key === "Enter")) {
                               event.currentTarget.blur();
