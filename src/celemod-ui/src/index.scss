@@ -136,7 +136,7 @@ html[data-platform="macos"] .app-shell {
   width: 55px;
   min-height: 0;
   flex: 1 1 auto;
-  overflow-x: hidden;
+  overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
