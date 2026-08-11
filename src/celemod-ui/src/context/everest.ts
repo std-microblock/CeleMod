@@ -1,11 +1,13 @@
-import { callRemote } from "../utils";
+import { create } from "zustand";
+import { findInstalledCrashModFix } from "../api/crashModFix";
+import type { CrashModFix } from "../api/updateInfo";
 import {
-  useGamePath,
+  reloadInstalledMods,
   useCurrentEverestUltra,
   useCurrentEverestVersion,
+  useGamePath,
 } from "../states";
-import { useEffect } from "react";
-import { create } from "zustand";
+import { callRemote } from "../utils";
 
 export interface EverestInstallState {
   installingUrl: string | null;
@@ -51,7 +53,10 @@ export const useEverestCtx = () => {
         }
       );
     },
-    downloadAndInstallEverest(url: string) {
+    downloadAndInstallEverest(
+      url: string,
+      postInstallFixes: CrashModFix[] = []
+    ) {
       if (useEverestInstallState.getState().everestInstallState.installingUrl)
         return;
 
@@ -61,18 +66,91 @@ export const useEverestCtx = () => {
         progress: null,
         failedReason: null,
       });
+      let applyingPostInstallFix = false;
       callRemote(
         "download_and_install_everest",
         gamePath,
         url,
         (status: string, data: unknown) => {
+          if (
+            status === "Success" &&
+            postInstallFixes.length > 0 &&
+            !applyingPostInstallFix
+          ) {
+            applyingPostInstallFix = true;
+            void (async () => {
+              const installedMods = await reloadInstalledMods(gamePath);
+              const fix = findInstalledCrashModFix(
+                postInstallFixes,
+                installedMods
+              );
+
+              if (fix) {
+                setEverestInstallState({
+                  installingUrl: url,
+                  status: `[4/4] download ${fix.mod_name} fix`,
+                  progress: null,
+                  failedReason: null,
+                });
+                await new Promise<void>((resolve, reject) => {
+                  callRemote(
+                    "download_and_install_crash_mod_fix",
+                    gamePath,
+                    fix.mod_name,
+                    JSON.stringify(fix.affected_versions),
+                    fix.fixed_version,
+                    fix.url,
+                    fix.sha256,
+                    (fixStatus: string, fixData: unknown) => {
+                      if (fixStatus === "Failed") {
+                        reject(new Error(String(fixData)));
+                        return;
+                      }
+                      if (fixStatus === "Success") {
+                        resolve();
+                        return;
+                      }
+                      setEverestInstallState({
+                        installingUrl: url,
+                        status: `[4/4] ${fixStatus} ${fix.mod_name} fix`,
+                        progress:
+                          typeof fixData === "number" ? fixData : null,
+                        failedReason: null,
+                      });
+                    }
+                  ).catch(reject);
+                });
+                try {
+                  await reloadInstalledMods(gamePath);
+                } catch (error) {
+                  console.error("Failed to refresh Mods after repair", error);
+                }
+              }
+
+              setEverestInstallState({
+                installingUrl: url,
+                status: "Success",
+                progress: 100,
+                failedReason: null,
+              });
+              ctx.updateEverestVersion();
+            })().catch((error) => {
+              setEverestInstallState({
+                installingUrl: url,
+                status: "Failed",
+                progress: null,
+                failedReason: String(error),
+              });
+            });
+            return;
+          }
+
           const current =
             useEverestInstallState.getState().everestInstallState;
           setEverestInstallState({
             ...current,
             status,
-            progress:
-              typeof data === "number" ? data : current.progress,
+            progress: typeof data === "number" ? data : current.progress,
             failedReason: status === "Failed" ? String(data) : null,
           });
           if (status === "Success") ctx.updateEverestVersion();

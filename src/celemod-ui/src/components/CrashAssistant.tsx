@@ -1,5 +1,6 @@
 import { DragEvent, useContext, useEffect, useMemo, useState } from "react";
 import _i18n from "../i18n";
+import { findCrashModFix } from "../api/crashModFix";
 import { CrashModFix, getLatestUpdateInfo } from "../api/updateInfo";
 import { fetch } from "../lib/http";
 import { useGlobalContext } from "../App";
@@ -128,31 +129,11 @@ const compareLooseVersion = (left: string, right: string) => {
   return 0;
 };
 
-const findCrashModFix = async (
+const loadCrashModFix = async (
   analysis: CrashAnalysis
 ): Promise<CrashModFix | null> => {
   const updateInfo = await getLatestUpdateInfo();
-  const crashText =
-    `${analysis.exception}\n${analysis.excerpt}`.toLocaleLowerCase();
-  return (
-    (updateInfo.crash_mod_fixes || []).find((fix) => {
-      const suspect = analysis.suspects.find(
-        (item) =>
-          item.name.toLocaleLowerCase() === fix.mod_name.toLocaleLowerCase()
-      );
-      const affectedVersion = suspect
-        ? fix.affected_versions.includes(suspect.installedVersion)
-        : fix.affected_versions.some((version) =>
-            crashText.includes(`${fix.mod_name} ${version}`.toLocaleLowerCase())
-          );
-      return Boolean(
-        affectedVersion &&
-          (fix.match?.contains || []).every((part) =>
-            crashText.includes(part.toLocaleLowerCase())
-          )
-      );
-    }) || null
-  );
+  return findCrashModFix(updateInfo.crash_mod_fixes, analysis);
 };
 
 const loadLatestEverest = async (
@@ -295,7 +276,7 @@ const CrashPopup = ({
     loadLatestEverest(analysis)
       .then((latest) => active && setLatestEverest(latest))
       .catch((reason) => active && setLatestError(String(reason)));
-    findCrashModFix(analysis)
+    loadCrashModFix(analysis)
       .then((fix) => active && setCrashModFix(fix))
       .catch(console.error);
     return () => {

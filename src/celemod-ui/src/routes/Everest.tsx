@@ -68,6 +68,10 @@ const versionBuild = (value: string) => {
 const getInstallTip = (state: string | null) => {
   if (state?.startsWith("[1/3]")) return _i18n.t("正在下载");
   if (state?.startsWith("[2/3]")) return _i18n.t("正在解压");
+  if (state?.startsWith("[4/4] download")) return _i18n.t("正在下载");
+  if (state?.startsWith("[4/4] verify"))
+    return _i18n.t("正在校验修复包");
+  if (state?.startsWith("[4/4] install")) return _i18n.t("正在替换 Mod");
   return _i18n.t("正在安装");
 };
 
@@ -260,7 +264,14 @@ export const Everest = () => {
   }, []);
 
   const installEverest = (url: string) => {
-    ctx.everest.downloadAndInstallEverest(url);
+    ctx.everest.downloadAndInstallEverest(
+      url,
+      activeTab === "ultra-stable"
+        ? (updateInfo?.crash_mod_fixes || []).filter(
+            (fix) => fix.mod_name.toLocaleLowerCase() === "rushhelper"
+          )
+        : []
+    );
   };
 
   const showManualVersionPopup = () => {
