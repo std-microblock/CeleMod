@@ -4,6 +4,7 @@ use super::{
 };
 use anyhow::{Context, bail};
 use lazy_static::lazy_static;
+use parking_lot::Mutex;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
@@ -11,7 +12,6 @@ use std::{
     fs,
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
-    sync::Mutex,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -76,6 +76,7 @@ struct CrashRecord {
 struct CachedAnalysis {
     game_path: String,
     fingerprint: String,
+    error_log_signature: Option<String>,
     analysis: CrashAnalysis,
 }
 
@@ -333,32 +334,75 @@ fn error_section_time_key(lines: &[&str]) -> Option<(u64, u64, u64, u64, u64, u6
     None
 }
 
-fn extract_latest_error_section(text: &str) -> String {
-    let lines = text.lines().collect::<Vec<_>>();
-    let starts = lines
+fn error_section_starts(lines: &[&str]) -> Vec<usize> {
+    lines
         .iter()
         .enumerate()
-        .filter_map(|(index, line)| line.trim_start().starts_with("Ver ").then_some(index))
-        .collect::<Vec<_>>();
+        .filter_map(|(index, line)| {
+            line.trim_start_matches('\u{feff}')
+                .trim_start()
+                .starts_with("Ver ")
+                .then_some(index)
+        })
+        .collect()
+}
+
+fn exception_type_in_line(line: &str) -> Option<&str> {
+    line.split_whitespace()
+        .map(|token| {
+            token.trim_matches(|character: char| {
+                !character.is_ascii_alphanumeric() && !matches!(character, '.' | '_' | '`' | '+')
+            })
+        })
+        .find(|token| token.ends_with("Exception"))
+}
+
+fn exception_type(text: &str) -> Option<&str> {
+    text.lines().find_map(exception_type_in_line)
+}
+
+fn extract_error_section(text: &str, crash_text: Option<&str>) -> String {
+    let lines = text.lines().collect::<Vec<_>>();
+    let starts = error_section_starts(&lines);
     if starts.is_empty() {
-        return text.trim().to_string();
+        return text.trim_matches(['\u{feff}', '\r', '\n']).to_string();
     }
 
+    let target_time = crash_text.and_then(|text| {
+        let body = latest_crash_body(text);
+        let lines = body.lines().collect::<Vec<_>>();
+        error_section_time_key(&lines)
+    });
+    let target_exception = crash_text.and_then(exception_type);
     let sections = starts.iter().enumerate().map(|(position, start)| {
         let end = starts.get(position + 1).copied().unwrap_or(lines.len());
         let section = &lines[*start..end];
-        (error_section_time_key(section), position, section)
+        let timestamp = error_section_time_key(section);
+        let exception_matches = target_exception
+            .zip(section.iter().find_map(|line| exception_type_in_line(line)))
+            .is_some_and(|(target, candidate)| target == candidate);
+        let score = u8::from(target_time.is_some() && timestamp == target_time) * 2
+            + u8::from(exception_matches);
+        (score, timestamp, position, section)
     });
-    let (_, _, latest) = sections
+    let (_, _, _, selected) = sections
         .max_by(|left, right| {
             left.0
                 .cmp(&right.0)
+                .then_with(|| left.1.cmp(&right.1))
                 // If timestamps cannot be parsed, errorLog normally stores the
                 // newest entry first, so prefer the lower section index.
-                .then_with(|| right.1.cmp(&left.1))
+                .then_with(|| right.2.cmp(&left.2))
         })
         .unwrap();
-    latest.join("\n").trim().to_string()
+    selected
+        .join("\n")
+        .trim_matches(['\u{feff}', '\r', '\n'])
+        .to_string()
+}
+
+fn extract_latest_error_section(text: &str) -> String {
+    extract_error_section(text, None)
 }
 
 fn latest_error_log(game_path: &Path) -> Option<(PathBuf, u64, String)> {
@@ -366,7 +410,7 @@ fn latest_error_log(game_path: &Path) -> Option<(PathBuf, u64, String)> {
         .into_iter()
         .map(|path| {
             let modified = modified_millis(&path);
-            let text = extract_latest_error_section(&read_limited_text(&path, MAX_ERROR_LOG_BYTES));
+            let text = read_limited_text(&path, MAX_ERROR_LOG_BYTES);
             (path, modified, text)
         })
         .max_by_key(|(_, modified, _)| *modified)
@@ -917,7 +961,7 @@ fn report_text(
     output.push_str("\n如果要向别人求助，请直接发送本 TXT 文件，并补充崩溃前正在做什么。\n");
     output.push_str("\n\n================ 主日志：最近一次崩溃片段 ================\n\n");
     output.push_str(log_excerpt);
-    output.push_str("\n\n================ errorLog：最新内容 ================\n\n");
+    output.push_str("\n\n================ errorLog：当次崩溃片段 ================\n\n");
     output.push_str(error_log_text.unwrap_or("未找到 errorLog.txt / error_log.txt。"));
     output
 }
@@ -933,7 +977,7 @@ pub fn analyze_latest_crash(game_path: &str) -> anyhow::Result<Option<CrashAnaly
             .then_with(|| left.crash_index.cmp(&right.crash_index))
     });
     let latest = match (latest_log, error_log.as_ref()) {
-        (Some(log), Some((error_path, error_modified, error_text))) => {
+        (Some(log), Some((error_path, error_modified, full_error_text))) => {
             // A catastrophic crash updates errorLog immediately after log.txt. Keep
             // log.txt as the primary source when both timestamps describe the same
             // event, because it contains the Mod load context needed for diagnosis.
@@ -945,17 +989,17 @@ pub fn analyze_latest_crash(game_path: &str) -> anyhow::Result<Option<CrashAnaly
                     path: error_path.clone(),
                     modified_at: *error_modified,
                     crash_index: 1,
-                    excerpt: error_text.clone(),
+                    excerpt: extract_latest_error_section(full_error_text),
                     inherent_crash_log: true,
                 }
             }
         }
         (Some(log), None) => log,
-        (None, Some((error_path, error_modified, error_text))) => CrashRecord {
+        (None, Some((error_path, error_modified, full_error_text))) => CrashRecord {
             path: error_path.clone(),
             modified_at: *error_modified,
             crash_index: 1,
-            excerpt: error_text.clone(),
+            excerpt: extract_latest_error_section(full_error_text),
             inherent_crash_log: true,
         },
         (None, None) => return Ok(None),
@@ -970,29 +1014,32 @@ pub fn analyze_latest_crash(game_path: &str) -> anyhow::Result<Option<CrashAnaly
     let fingerprint = format!("{}:{}", latest.crash_index, crash_signature(&latest),);
     let event_id = crash_event_id(&latest);
     let normalized_game_path = game_path.to_string_lossy().to_string();
-    if let Some(cached) = ANALYSIS_CACHE.lock().unwrap().as_ref()
+    let relevant_error_log = error_log.as_ref().filter(|(path, modified, _)| {
+        latest.path == *path || latest.modified_at.abs_diff(*modified) <= 20 * 60 * 1000
+    });
+    let selected_error_text =
+        relevant_error_log.map(|(_, _, text)| extract_error_section(text, Some(&latest.excerpt)));
+    let error_log_signature = relevant_error_log.zip(selected_error_text.as_deref()).map(
+        |((path, modified, _), text)| {
+            let mut hasher = Sha256::new();
+            hasher.update(path.to_string_lossy().as_bytes());
+            hasher.update(modified.to_le_bytes());
+            hasher.update(text.as_bytes());
+            format!("{:x}", hasher.finalize())[..16].to_string()
+        },
+    );
+    if let Some(cached) = ANALYSIS_CACHE.lock().as_ref()
         && cached.game_path == normalized_game_path
         && cached.fingerprint == fingerprint
+        && cached.error_log_signature == error_log_signature
         && Path::new(&cached.analysis.report_path).is_file()
     {
         return Ok(Some(cached.analysis.clone()));
     }
 
-    let (error_path, error_text) = error_log
-        .as_ref()
-        .map(|(path, _, text)| {
-            (
-                Some(path.to_string_lossy().to_string()),
-                Some(text.as_str()),
-            )
-        })
-        .unwrap_or((None, None));
-    let error_for_analysis = error_log
-        .as_ref()
-        .filter(|(_, modified, _)| latest.modified_at.abs_diff(*modified) <= 20 * 60 * 1000)
-        .map(|(_, _, text)| text.as_str())
-        .unwrap_or_default();
-    let combined_for_analysis = format!("{}\n{}", latest.excerpt, error_for_analysis);
+    let error_path = relevant_error_log.map(|(path, _, _)| path.to_string_lossy().to_string());
+    let error_text = selected_error_text.as_deref();
+    let combined_for_analysis = format!("{}\n{}", latest.excerpt, error_text.unwrap_or_default());
     let crash_body = latest_crash_body(&combined_for_analysis);
     let suspects = analyze_suspects(game_path, &crash_body);
     let ultra = is_everest_ultra(game_path, &combined_for_analysis);
@@ -1041,9 +1088,10 @@ pub fn analyze_latest_crash(game_path: &str) -> anyhow::Result<Option<CrashAnaly
     )
     .with_context(|| format!("Failed to write {}", report_path.display()))?;
 
-    *ANALYSIS_CACHE.lock().unwrap() = Some(CachedAnalysis {
+    *ANALYSIS_CACHE.lock() = Some(CachedAnalysis {
         game_path: normalized_game_path,
         fingerprint,
+        error_log_signature,
         analysis: analysis.clone(),
     });
     Ok(Some(analysis))
@@ -1280,5 +1328,25 @@ mod tests {
         assert!(latest.contains("ChinaMirror"));
         assert!(!latest.contains("AggregateException: older"));
         assert!(!latest.contains("Old.Mod"));
+    }
+
+    #[test]
+    fn recognizes_bom_prefixed_newest_error_log_entry() {
+        let log = "\u{feff}Ver 1.4.0.0-fna [Everest: 900007-ultra]\n08/04/2026 14:10:29\nSystem.InvalidOperationException: newest\n\nVer 1.4.0.0-fna [Everest: 0-dev]\n08/04/2026 11:12:23\nSystem.AggregateException: older\n";
+        let latest = extract_latest_error_section(log);
+        assert!(latest.starts_with("Ver 1.4.0.0-fna"));
+        assert!(latest.contains("InvalidOperationException: newest"));
+        assert!(!latest.contains("AggregateException: older"));
+    }
+
+    #[test]
+    fn selects_error_log_entry_for_the_current_crash() {
+        let log = "Ver 1.4.0.0-fna\n08/04/2026 14:20:00\nSystem.AggregateException: another crash\n   at Other.Mod.Run()\n\nVer 1.4.0.0-fna\n08/04/2026 14:10:29\nSystem.Collections.Generic.KeyNotFoundException: current crash\n   at Celeste.Mod.ChinaMirror.Run()\n";
+        let crash = "(08/04/2026 14:10:29) [Everest] [Error] [crit-error-handler] ENCOUNTERED A CRITICAL ERROR\nSystem.Collections.Generic.KeyNotFoundException: current crash";
+        let selected = extract_error_section(log, Some(crash));
+        assert!(selected.contains("KeyNotFoundException: current crash"));
+        assert!(selected.contains("ChinaMirror"));
+        assert!(!selected.contains("AggregateException: another crash"));
+        assert!(!selected.contains("Other.Mod"));
     }
 }

@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import { reloadInstalledMods, useAppStore } from "../states";
+import {
+  reloadBlacklistState,
+  reloadInstalledMods,
+  useAppStore,
+} from "../states";
 import { callRemote } from "../utils";
 
 export namespace Download {
@@ -113,7 +117,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       url = `https://gamebanana.com/dl/${gbFileIdOrUrl}`;
     }
 
-    const replacingInstalledMod = appState.installedMods.some(
+    const replacingInstalledMod = appState.installedMods.find(
       (mod) => mod.name === name
     );
     if (replacingInstalledMod && !force) {
@@ -218,6 +222,26 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
 
       if (state === "finished") {
         void reloadInstalledMods()
+          .then(async (installedMods) => {
+            const installedMod = installedMods.find((mod) => mod.name === name);
+            if (
+              replacingInstalledMod &&
+              installedMod &&
+              replacingInstalledMod.file !== installedMod.file
+            ) {
+              const result = await callRemote<string>(
+                "update_blacklist_mod_file",
+                appState.gamePath,
+                name,
+                replacingInstalledMod.file,
+                installedMod.file,
+                appState.profileEnabled,
+                JSON.stringify(appState.alwaysOnMods)
+              );
+              if (result !== "Success") throw new Error(result);
+            }
+            await reloadBlacklistState(appState.gamePath);
+          })
           .catch((error) =>
             console.error("Failed to refresh installed Mods", error)
           )
@@ -239,6 +263,9 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         url,
         `${appState.gamePath}/Mods/`,
         JSON.stringify(downloadTypeDefaults),
+        appState.profileEnabled,
+        appState.currentProfileName,
+        JSON.stringify(appState.alwaysOnMods),
         onDownloadEvent,
         false,
         appState.useMultiThread

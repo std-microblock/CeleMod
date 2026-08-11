@@ -362,6 +362,7 @@ dependencies = [
  "hostname",
  "lazy_static",
  "open",
+ "parking_lot",
  "pbkdf2",
  "rand 0.8.7",
  "rustls",

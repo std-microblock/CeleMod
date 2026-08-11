@@ -11,6 +11,7 @@ import {
 import "./Manage.scss";
 import {
   MOD_TYPE_OPTIONS,
+  reloadBlacklistState,
   reloadInstalledMods,
   useAlwaysOnMods,
   useAppStore,
@@ -30,10 +31,7 @@ import { ProgressIndicator } from "../components/Progress";
 import { CatalogMod, loadModCatalog } from "../api/modCatalog";
 import { Content, searchSubmission } from "../api/wegfan";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
-import {
-  getAvailableModPageUrl,
-  getOtherModPageSource,
-} from "../modPage";
+import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
 import {
   ManageCatalogMeta,
   ManageNode,
@@ -43,6 +41,7 @@ import {
   getDependencyHealth,
   selectVisibleRootNames,
   useManageStore,
+  selectDefaultOrphanNames,
 } from "../stores/manage";
 
 type LatestModInfo = {
@@ -213,9 +212,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
                   );
                   if (url) callRemote("open_url", url);
                 }}
-                title={_i18n.t(
-                  "左键打开所选来源，右键打开另一个来源"
-                )}
+                title={_i18n.t("左键打开所选来源，右键打开另一个来源")}
               >
                 <Icon name="external" />
               </button>
@@ -614,10 +611,8 @@ export const Manage = () => {
   const { installedMods } = useInstalledMods();
   const {
     profiles,
-    setProfiles,
     setProfilesCallback,
     currentProfileName,
-    setCurrentProfileName,
     currentProfile,
     setCurrentProfile,
   } = useCurrentBlacklistProfile();
@@ -673,8 +668,10 @@ export const Manage = () => {
   const deleteOrphansByDefault = useAppStore(
     (state) => state.deleteOrphansByDefault
   );
+  const orphanActionTypes = useAppStore((state) => state.orphanActionTypes);
   const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
   const cacheTtl = useAppStore((state) => state.modCacheTtlHours);
+  const profileEnabled = useAppStore((state) => state.profileEnabled);
 
   const { metaByName, fullByName } = useMemo(
     () => catalogMaps(catalog),
@@ -683,21 +680,8 @@ export const Manage = () => {
 
   useEffect(() => {
     if (!gamePath) return;
-    void callRemote<string>("get_current_profile", gamePath)
-      .then(setCurrentProfileName)
-      .catch(console.error);
-    callRemote("get_blacklist_profiles", gamePath, (data: string) =>
-      setProfiles(JSON.parse(data))
-    );
-  }, [gamePath]);
-
-  useEffect(() => {
-    setCurrentProfile(
-      profiles.find((profile) => profile.name === currentProfileName) ??
-        profiles[0] ??
-        null
-    );
-  }, [currentProfileName, profiles]);
+    void reloadBlacklistState(gamePath).catch(console.error);
+  }, [gamePath, profileEnabled]);
 
   useEffect(() => {
     loadModCatalog(cacheTtl).then(setCatalog).catch(console.error);
@@ -916,11 +900,18 @@ export const Manage = () => {
           nodes,
           includeDependencies: recursive && autoToggleDependencies,
           includeOptional: autoToggleOptionalDependencies,
+          autoDisableTypes: orphanActionTypes,
         }),
         enabled
       );
     },
-    [autoToggleDependencies, autoToggleOptionalDependencies, batchSwitch, nodes]
+    [
+      orphanActionTypes,
+      autoToggleDependencies,
+      autoToggleOptionalDependencies,
+      batchSwitch,
+      nodes,
+    ]
   );
 
   const reloadMods = useCallback(
@@ -988,6 +979,9 @@ export const Manage = () => {
     (name: string) => {
       const node = nodes[name];
       if (!node) return;
+      const nodeIsAlwaysOn = alwaysOnMods.some(
+        (alwaysOnName) => nodes[alwaysOnName]?.file === node.file
+      );
       const orphaned: string[] = [];
       const visited = new Set<string>();
       const visit = (nodeName: string) => {
@@ -1009,7 +1003,14 @@ export const Manage = () => {
       createPopup(() => {
         const popup = useContext(PopupContext);
         const [selected, setSelected] = useState<string[]>(
-          deleteOrphansByDefault ? orphaned : []
+          deleteOrphansByDefault
+            ? selectDefaultOrphanNames({
+                names: orphaned,
+                nodes,
+                allowedTypes: orphanActionTypes,
+                alwaysOnMods,
+              })
+            : []
         );
         return (
           <div className="delete-mod-popup">
@@ -1017,7 +1018,10 @@ export const Manage = () => {
             <div className="delete-target">
               <strong>{name}</strong>
               <span>
-                {node.version} · {node.file}
+                {node.version} · {node.file} ·{" "}
+                {node.meta?.category ?? _i18n.t("未知类型")} ·{" "}
+                {_i18n.t(node.enabled ? "已启用" : "已禁用")}
+                {` · ${_i18n.t(nodeIsAlwaysOn ? "始终开启" : "非始终开启")}`}
               </span>
             </div>
             {node.dependedBy.length > 0 && (
@@ -1030,22 +1034,53 @@ export const Manage = () => {
               <div className="orphan-section">
                 <strong>{_i18n.t("同时删除不再被依赖的 Mod")}</strong>
                 <div className="orphan-list">
-                  {orphaned.map((orphan) => (
-                    <label key={orphan}>
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(orphan)}
-                        onChange={(event) =>
-                          setSelected(
-                            event.target.checked
-                              ? [...selected, orphan]
-                              : selected.filter((value) => value !== orphan)
-                          )
-                        }
-                      />
-                      <span>{orphan}</span>
-                    </label>
-                  ))}
+                  {orphaned.map((orphan) => {
+                    const orphanNode = nodes[orphan];
+                    const orphanIsAlwaysOn = alwaysOnMods.some(
+                      (alwaysOnName) =>
+                        nodes[alwaysOnName]?.file === orphanNode?.file
+                    );
+                    return (
+                      <label key={orphan}>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(orphan)}
+                          onChange={(event) =>
+                            setSelected(
+                              event.target.checked
+                                ? [...selected, orphan]
+                                : selected.filter((value) => value !== orphan)
+                            )
+                          }
+                        />
+                        <span className="orphan-mod-info">
+                          <strong>{orphan}</strong>
+                          <small>
+                            <span>
+                              {orphanNode?.meta?.category ??
+                                _i18n.t("未知类型")}
+                            </span>
+                            <span
+                              className={
+                                orphanNode?.enabled ? "enabled" : "disabled"
+                              }
+                            >
+                              {_i18n.t(
+                                orphanNode?.enabled ? "已启用" : "已禁用"
+                              )}
+                            </span>
+                            <span
+                              className={orphanIsAlwaysOn ? "always-on" : ""}
+                            >
+                              {_i18n.t(
+                                orphanIsAlwaysOn ? "始终开启" : "非始终开启"
+                              )}
+                            </span>
+                          </small>
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1078,7 +1113,14 @@ export const Manage = () => {
         );
       });
     },
-    [deleteOrphansByDefault, modPath, nodes, reloadMods]
+    [
+      alwaysOnMods,
+      orphanActionTypes,
+      deleteOrphansByDefault,
+      modPath,
+      nodes,
+      reloadMods,
+    ]
   );
 
   const showDuplicates = useCallback(
@@ -1296,7 +1338,8 @@ export const Manage = () => {
           "set_mod_options_order",
           gamePath,
           currentProfileName,
-          JSON.stringify(order)
+          JSON.stringify(order),
+          profileEnabled
         );
       },
       checkOptional,
@@ -1314,6 +1357,7 @@ export const Manage = () => {
       fullByName,
       fullTree,
       gamePath,
+      profileEnabled,
       nodes,
       setAlwaysOnMods,
       setComments,
@@ -1348,7 +1392,7 @@ export const Manage = () => {
   if (noEverest) return noEverest;
 
   return (
-    <div className="manage-page">
+    <div className={`manage-page${profileEnabled ? "" : " profiles-disabled"}`}>
       <ManageActionsContext.Provider value={actions}>
         <section className="manage-main">
           <header className="manage-toolbar">
@@ -1638,87 +1682,93 @@ export const Manage = () => {
           </div>
         </section>
 
-        <aside className="manage-side">
-          <div className="side-section profile-section">
-            <div className="side-title">
-              <span>{_i18n.t("Profile")}</span>
-              <small>{profiles.length}</small>
-            </div>
-            <div className="profile-list">
-              {profiles.map((profile) => (
-                <button
-                  key={profile.name}
-                  className={
-                    profile.name === currentProfileName ? "selected" : ""
-                  }
-                  onClick={() => global.blacklist.switchProfile(profile.name)}
-                >
-                  <span className="profile-name">{profile.name}</span>
-                  <small>
-                    {
-                      installedMods.filter(
-                        (mod) =>
-                          !profile.mods.some(
-                            (item) =>
-                              item.name === mod.name || item.file === mod.file
-                          )
-                      ).length
+        {profileEnabled && (
+          <aside className="manage-side">
+            <div className="side-section profile-section">
+              <div className="side-title">
+                <span>{_i18n.t("Profile")}</span>
+                <small>{profiles.length}</small>
+              </div>
+              <div className="profile-list">
+                {profiles.map((profile) => (
+                  <button
+                    key={profile.name}
+                    className={
+                      profile.name === currentProfileName ? "selected" : ""
                     }
-                  </small>
-                  {profile.name !== "Default" && (
-                    <span
-                      className="profile-delete"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        void callRemote(
-                          "remove_mod_blacklist_profile",
-                          gamePath,
-                          profile.name
-                        );
-                        setProfilesCallback((items) =>
-                          items.filter((item) => item.name !== profile.name)
-                        );
-                        if (profile.name === currentProfileName)
-                          global.blacklist.switchProfile(
-                            profiles[0]?.name ?? "Default"
+                    onClick={() => global.blacklist.switchProfile(profile.name)}
+                  >
+                    <span className="profile-name">{profile.name}</span>
+                    <small>
+                      {
+                        installedMods.filter(
+                          (mod) =>
+                            !profile.mods.some(
+                              (item) =>
+                                item.name === mod.name || item.file === mod.file
+                            )
+                        ).length
+                      }
+                    </small>
+                    {profile.name !== "Default" && (
+                      <span
+                        className="profile-delete"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void callRemote(
+                            "remove_mod_blacklist_profile",
+                            gamePath,
+                            profile.name
                           );
-                      }}
-                    >
-                      <Icon name="delete" />
-                    </span>
-                  )}
+                          setProfilesCallback((items) =>
+                            items.filter((item) => item.name !== profile.name)
+                          );
+                          if (profile.name === currentProfileName)
+                            global.blacklist.switchProfile(
+                              profiles[0]?.name ?? "Default"
+                            );
+                        }}
+                      >
+                        <Icon name="delete" />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="profile-create">
+                <input
+                  value={profileNameInput}
+                  maxLength={30}
+                  onChange={(event) => setProfileNameInput(event.target.value)}
+                  placeholder={_i18n.t("新 Profile 名称")}
+                />
+                <button
+                  onClick={() => {
+                    const name = profileNameInput.trim();
+                    if (
+                      !name ||
+                      profiles.some((profile) => profile.name === name)
+                    )
+                      return;
+                    void callRemote(
+                      "new_mod_blacklist_profile",
+                      gamePath,
+                      name
+                    );
+                    setProfilesCallback((items) => [
+                      ...items,
+                      { name, mods: [], mod_options_order: [] },
+                    ]);
+                    setProfileNameInput("");
+                    global.blacklist.switchProfile(name);
+                  }}
+                >
+                  <Icon name="i-tick" />
                 </button>
-              ))}
+              </div>
             </div>
-            <div className="profile-create">
-              <input
-                value={profileNameInput}
-                maxLength={30}
-                onChange={(event) => setProfileNameInput(event.target.value)}
-                placeholder={_i18n.t("新 Profile 名称")}
-              />
-              <button
-                onClick={() => {
-                  const name = profileNameInput.trim();
-                  if (
-                    !name ||
-                    profiles.some((profile) => profile.name === name)
-                  )
-                    return;
-                  void callRemote("new_mod_blacklist_profile", gamePath, name);
-                  setProfilesCallback((items) => [
-                    ...items,
-                    { name, mods: [], mod_options_order: [] },
-                  ]);
-                  setProfileNameInput("");
-                  global.blacklist.switchProfile(name);
-                }}
-              >
-                <Icon name="i-tick" />
-              </button>
-            </div>
-          </div>
-        </aside>
+          </aside>
+        )}
       </ManageActionsContext.Provider>
     </div>
   );

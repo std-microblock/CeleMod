@@ -343,12 +343,14 @@ export const collectSwitchNames = ({
   nodes,
   includeDependencies,
   includeOptional,
+  autoDisableTypes,
 }: {
   names: string[];
   enabled: boolean;
   nodes: Record<string, ManageNode>;
   includeDependencies: boolean;
   includeOptional: boolean;
+  autoDisableTypes: string[];
 }) => {
   const result = new Set<string>();
   const visit = (name: string) => {
@@ -367,6 +369,11 @@ export const collectSwitchNames = ({
       if (enabled) {
         visit(dependency.name);
       } else {
+        if (
+          !installed.meta?.category ||
+          !autoDisableTypes.includes(installed.meta.category)
+        )
+          continue;
         const hasOtherEnabledDependent = installed.dependedBy.some(
           (dependent) =>
             dependent !== name &&
@@ -379,6 +386,33 @@ export const collectSwitchNames = ({
   };
   names.forEach(visit);
   return [...result];
+};
+
+export const selectDefaultOrphanNames = ({
+  names,
+  nodes,
+  allowedTypes,
+  alwaysOnMods,
+}: {
+  names: string[];
+  nodes: Record<string, ManageNode>;
+  allowedTypes: string[];
+  alwaysOnMods: string[];
+}) => {
+  const alwaysOnFiles = new Set(
+    alwaysOnMods.flatMap((name) => {
+      const file = nodes[name]?.file;
+      return file ? [file] : [];
+    })
+  );
+  return names.filter((name) => {
+    const node = nodes[name];
+    return Boolean(
+      node?.meta?.category &&
+        allowedTypes.includes(node.meta.category) &&
+        !alwaysOnFiles.has(node.file)
+    );
+  });
 };
 
 export const selectVisibleRootNames = ({

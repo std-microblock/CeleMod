@@ -45,6 +45,44 @@ const SettingToggle = ({
   </label>
 );
 
+const TypeSelectionSetting = ({
+  title,
+  description,
+  selectedTypes,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  selectedTypes: string[];
+  onChange: (value: string[]) => void;
+}) => (
+  <div className="hidden-types-setting">
+    <strong>{_i18n.t(title)}</strong>
+    <small>{_i18n.t(description)}</small>
+    <div className="type-chip-grid">
+      {MOD_TYPE_OPTIONS.map((type) => {
+        const selected = selectedTypes.includes(type);
+        return (
+          <button
+            type="button"
+            key={type}
+            className={selected ? "selected" : ""}
+            onClick={() =>
+              onChange(
+                selected
+                  ? selectedTypes.filter((value) => value !== type)
+                  : [...selectedTypes, type]
+              )
+            }
+          >
+            {type}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const FONT_SCALE_PRESETS = [100, 110, 125, 150] as const;
 
 const FontScaleSwitch = ({
@@ -166,14 +204,16 @@ export const Settings = () => {
   const setDeleteOrphansByDefault = useAppStore(
     (state) => state.setDeleteOrphansByDefault
   );
+  const orphanActionTypes = useAppStore((state) => state.orphanActionTypes);
+  const setOrphanActionTypes = useAppStore(
+    (state) => state.setOrphanActionTypes
+  );
   const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
   const setHiddenModTypes = useAppStore((state) => state.setHiddenModTypes);
   const modCacheTtlHours = useAppStore((state) => state.modCacheTtlHours);
   const setModCacheTtlHours = useAppStore((state) => state.setModCacheTtlHours);
-  const checkBlacklistSync = useAppStore((state) => state.checkBlacklistSync);
-  const setCheckBlacklistSync = useAppStore(
-    (state) => state.setCheckBlacklistSync
-  );
+  const profileEnabled = useAppStore((state) => state.profileEnabled);
+  const setProfileEnabled = useAppStore((state) => state.setProfileEnabled);
   const fontScale = useAppStore((state) => state.fontScale);
   const setFontScale = useAppStore((state) => state.setFontScale);
   const manageFontScale = useAppStore((state) => state.manageFontScale);
@@ -344,11 +384,19 @@ export const Settings = () => {
               />
             )}
             <SettingToggle
-              title={_i18n.t("删除时默认勾选孤立依赖")}
-              description={_i18n.t("自动选择删除后不再被其他 Mod 依赖的项目")}
+              title={_i18n.t("删除时如果没有引用则自动勾选一起删除")}
+              description={_i18n.t("在删除确认页中默认勾选所选类型的孤立依赖")}
               checked={deleteOrphansByDefault}
               onChange={setDeleteOrphansByDefault}
             />
+            {(autoToggleDependencies || deleteOrphansByDefault) && (
+              <TypeSelectionSetting
+                title="孤立依赖自动处理类型"
+                description="所选类型会在禁用时自动禁用，并在删除时默认勾选一起删除；始终开启的 Mod 不会默认勾选删除"
+                selectedTypes={orphanActionTypes}
+                onChange={setOrphanActionTypes}
+              />
+            )}
             <SettingToggle
               title={_i18n.t("在树中检查可选依赖")}
               description={_i18n.t("显示可选依赖的缺失、版本和循环关系")}
@@ -370,9 +418,7 @@ export const Settings = () => {
             <div className="setting-select-row">
               <span>
                 <strong>{_i18n.t("打开 Mod 页面")}</strong>
-                <small>
-                  {_i18n.t("左键打开所选来源，右键打开另一个来源")}
-                </small>
+                <small>{_i18n.t("左键打开所选来源，右键打开另一个来源")}</small>
               </span>
               <select
                 value={modPageSource}
@@ -385,39 +431,20 @@ export const Settings = () => {
               </select>
             </div>
             <SettingToggle
-              title={_i18n.t("检查 blacklist.txt 与 Profile 同步")}
+              title={_i18n.t("启用 Profile")}
               description={_i18n.t(
-                "发现 blacklist.txt 被外部修改时提示选择要保留的版本"
+                "关闭时直接使用 blacklist.txt；开启时使用 CeleMod Profile JSON"
               )}
-              checked={checkBlacklistSync}
-              onChange={setCheckBlacklistSync}
+              checked={profileEnabled}
+              onChange={setProfileEnabled}
             />
 
-            <div className="hidden-types-setting">
-              <strong>{_i18n.t("管理页默认隐藏的类型")}</strong>
-              <small>{_i18n.t("仍可在管理页筛选面板中临时显示")}</small>
-              <div className="type-chip-grid">
-                {MOD_TYPE_OPTIONS.map((type) => {
-                  const hidden = hiddenModTypes.includes(type);
-                  return (
-                    <button
-                      type="button"
-                      key={type}
-                      className={hidden ? "selected" : ""}
-                      onClick={() =>
-                        setHiddenModTypes(
-                          hidden
-                            ? hiddenModTypes.filter((value) => value !== type)
-                            : [...hiddenModTypes, type]
-                        )
-                      }
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <TypeSelectionSetting
+              title="管理页默认隐藏的类型"
+              description="仍可在管理页筛选面板中临时显示"
+              selectedTypes={hiddenModTypes}
+              onChange={setHiddenModTypes}
+            />
           </div>
         </section>
 

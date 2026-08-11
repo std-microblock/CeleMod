@@ -1,22 +1,20 @@
 import _i18n from "src/i18n";
 import { useI18N } from "src/i18n";
-import { useContext, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { GameSelector } from "../components/GameSelector";
 import { Icon } from "../components/Icon";
 import { callRemote, selectGamePath, useBlockingMask } from "../utils";
 // @ts-ignore
 import strawberry from "../resources/Celemod.png";
 import {
-  useAlwaysOnMods,
+  reloadBlacklistState,
   useAppStore,
   useCurrentBlacklistProfile,
   useGamePath,
   useInstalledMods,
   useMirror,
 } from "../states";
-import { useEffect } from "react";
 import "./Home.scss";
-import { createPopup, PopupContext } from "../components/Popup";
 import { useGlobalContext } from "src/App";
 
 export const Home = () => {
@@ -26,7 +24,7 @@ export const Home = () => {
   const [newKeyboardInputEnabled, setNewKeyboardInputEnabled] = useState<
     boolean | null
   >(null);
-  const [enablingNewKeyboardInput, setEnablingNewKeyboardInput] =
+  const [removingNewKeyboardInput, setRemovingNewKeyboardInput] =
     useState(false);
   const [newKeyboardInputError, setNewKeyboardInputError] = useState("");
   useEffect(() => {
@@ -56,234 +54,15 @@ export const Home = () => {
     return () => window.removeEventListener("focus", checkNewKeyboardInput);
   }, [gamePath]);
   const globalCtx = useGlobalContext();
-  const checkBlacklistSync = useAppStore((state) => state.checkBlacklistSync);
-  const installedModsLoaded = useAppStore(
-    (state) => state.installedModsLoaded
-  );
-
-  const {
-    profiles,
-    setProfiles,
-    currentProfileName,
-    setCurrentProfileName,
-    currentProfile,
-    setCurrentProfile,
-  } = useCurrentBlacklistProfile();
-
+  const profileEnabled = useAppStore((state) => state.profileEnabled);
+  const { profiles, currentProfileName } = useCurrentBlacklistProfile();
+  const { installedMods } = useInstalledMods();
   const mask = useBlockingMask();
 
   useEffect(() => {
     if (!gamePath) return;
-    void callRemote<string>("get_current_profile", gamePath)
-      .then(setCurrentProfileName)
-      .catch(console.error);
-    callRemote("get_blacklist_profiles", gamePath, (data: string) => {
-      setProfiles(JSON.parse(data));
-    });
-  }, [gamePath]);
-
-  useEffect(() => {
-    setCurrentProfile(
-      profiles.find((v) => v.name === currentProfileName) || null
-    );
-  }, [currentProfileName, profiles]);
-
-  const [alwaysOnMods] = useAlwaysOnMods();
-  const { installedMods } = useInstalledMods();
-  const blacklistSyncPopupRef = useRef<ReturnType<typeof createPopup> | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (
-      !installedModsLoaded ||
-      !checkBlacklistSync ||
-      !currentProfile ||
-      !gamePath ||
-      blacklistSyncPopupRef.current
-    )
-      return;
-    const checkSync = async () => {
-      const content = await callRemote<string>(
-        "get_current_blacklist_content",
-        gamePath
-      );
-      const disabledFiles: string[] = content
-        .split("\n")
-        .map((v) => v.trim())
-        .filter((v) => v && !v.startsWith("#"))
-        .sort();
-      const installedModsByName = new Map(
-        installedMods.map((mod) => [mod.name, mod])
-      );
-      const alwaysOnFiles = new Set(
-        installedMods
-          .filter((mod) => alwaysOnMods.includes(mod.name))
-          .map((mod) => mod.file)
-      );
-      const expectedDisabledFiles = [
-        ...new Set(
-          currentProfile.mods.flatMap((profileMod) => {
-            const installedMod = installedModsByName.get(profileMod.name);
-            if (!installedMod || alwaysOnFiles.has(installedMod.file)) return [];
-            return [installedMod.file];
-          })
-        ),
-      ].sort();
-      const onlyInProfile = [
-        ...new Set<string>(
-          expectedDisabledFiles.filter((file) => !disabledFiles.includes(file))
-        ),
-      ];
-      const onlyInFile = [
-        ...new Set<string>(
-          disabledFiles.filter((file) => !expectedDisabledFiles.includes(file))
-        ),
-      ];
-      if (
-        (onlyInProfile.length > 0 || onlyInFile.length > 0) &&
-        !blacklistSyncPopupRef.current
-      ) {
-        const popup = createPopup(() => {
-          const { hide } = useContext(PopupContext);
-          const [error, setError] = useState("");
-
-          const refreshProfiles = async (selectedProfileName?: string) => {
-            const nextProfiles = await new Promise<typeof profiles>(
-              (resolve, reject) => {
-                void callRemote(
-                  "get_blacklist_profiles",
-                  gamePath,
-                  (data: string) => {
-                    try {
-                      resolve(JSON.parse(data));
-                    } catch (error) {
-                      reject(error);
-                    }
-                  }
-                ).catch(reject);
-              }
-            );
-            const nextProfileName = selectedProfileName ?? currentProfileName;
-            setProfiles(nextProfiles);
-            setCurrentProfileName(nextProfileName);
-            setCurrentProfile(
-              nextProfiles.find((profile) => profile.name === nextProfileName) ??
-                nextProfiles[0] ??
-                null
-            );
-          };
-
-          return (
-            <div className="popup-content blacklist-sync-popup">
-              <div className="title">{_i18n.t("同步黑名单 Mod 列表")}</div>
-              <div className="content">
-                {_i18n.t(
-                  "blacklist.txt 与当前 CeleMod Profile 不一致。请选择要保留的版本。"
-                )}
-              </div>
-              <div className="blacklist-diff-list">
-                {onlyInProfile.length > 0 && (
-                  <section>
-                    <div className="diff-title">
-                      <span>{_i18n.t("仅 CeleMod Profile 中禁用")}</span>
-                      <span className="diff-count">{onlyInProfile.length}</span>
-                    </div>
-                    {onlyInProfile.map((file) => (
-                      <div
-                        className="diff-item profile-only"
-                        key={`profile-${file}`}
-                        title={file}
-                      >
-                        <span className="diff-source">C</span>
-                        <span className="diff-file">{file}</span>
-                      </div>
-                    ))}
-                  </section>
-                )}
-                {onlyInFile.length > 0 && (
-                  <section>
-                    <div className="diff-title">
-                      <span>{_i18n.t("仅 blacklist.txt 中禁用")}</span>
-                      <span className="diff-count">{onlyInFile.length}</span>
-                    </div>
-                    {onlyInFile.map((file) => (
-                      <div
-                        className="diff-item file-only"
-                        key={`file-${file}`}
-                        title={file}
-                      >
-                        <span className="diff-source">F</span>
-                        <span className="diff-file">{file}</span>
-                      </div>
-                    ))}
-                  </section>
-                )}
-              </div>
-              <div className="blacklist-sync-note">
-                {_i18n.t("注意，该功能不支持通配符等")}
-              </div>
-              {error && <div className="blacklist-sync-error">{error}</div>}
-              <div className="buttons">
-                <button
-                  onClick={async () => {
-                    try {
-                      await globalCtx.blacklist.switchProfile(currentProfileName);
-                      await refreshProfiles(currentProfileName);
-                      hide();
-                    } catch (error) {
-                      setError(error instanceof Error ? error.message : String(error));
-                    }
-                  }}
-                >
-                  {_i18n.t("使用 CeleMod Profile")}
-                </button>
-                <button
-                  onClick={async () => {
-                    const importedProfileName = await callRemote<string>(
-                      "import_blacklist_file_as_profile",
-                      gamePath,
-                      JSON.stringify(alwaysOnMods)
-                    );
-                    if (importedProfileName.startsWith("Failed")) {
-                      setError(importedProfileName);
-                      return;
-                    }
-                    try {
-                      await refreshProfiles(importedProfileName);
-                      hide();
-                    } catch (error) {
-                      setError(error instanceof Error ? error.message : String(error));
-                    }
-                  }}
-                >
-                  {_i18n.t("将文件保存为新 Profile")}
-                </button>
-                <button onClick={() => hide()}>{_i18n.t("忽略")}</button>
-              </div>
-            </div>
-          );
-        });
-        const hide = popup.hide;
-        popup.hide = () => {
-          if (blacklistSyncPopupRef.current === popup) {
-            blacklistSyncPopupRef.current = null;
-          }
-          hide();
-        };
-        blacklistSyncPopupRef.current = popup;
-      }
-    };
-    void checkSync().catch(console.error);
-  }, [
-    checkBlacklistSync,
-    currentProfile,
-    gamePath,
-    installedModsLoaded,
-    alwaysOnMods,
-    installedMods,
-    currentProfileName,
-  ]);
+    void reloadBlacklistState(gamePath).catch(console.error);
+  }, [gamePath, profileEnabled]);
 
   const [, setMirror] = useMirror();
 
@@ -314,14 +93,14 @@ export const Home = () => {
         </label>
       </header>
 
-      {gamePath && newKeyboardInputEnabled === false ? (
+      {gamePath && newKeyboardInputEnabled === true ? (
         <aside className="home-keyboard-input-banner">
           <Icon name="warn" />
           <div>
-            <strong>{_i18n.t("建议启用 Everest 新键盘输入")}</strong>
+            <strong>{_i18n.t("建议删除 Everest 新键盘输入配置")}</strong>
             <span>
               {_i18n.t(
-                "在 everest-env.txt 中添加以下配置，可避免使用中文输入法时的输入延迟："
+                "EVEREST_NEW_KEYBOARD_INPUT=1 会导致群服聊天输入异常，请从 everest-env.txt 中删除此配置："
               )}
             </span>
             {newKeyboardInputError ? (
@@ -333,17 +112,17 @@ export const Home = () => {
           <div className="home-keyboard-input-actions">
             <code>EVEREST_NEW_KEYBOARD_INPUT=1</code>
             <button
-              disabled={enablingNewKeyboardInput}
+              disabled={removingNewKeyboardInput}
               onClick={() => {
-                setEnablingNewKeyboardInput(true);
+                setRemovingNewKeyboardInput(true);
                 setNewKeyboardInputError("");
-                void callRemote("enable_new_keyboard_input", gamePath)
-                  .then(() => setNewKeyboardInputEnabled(true))
+                void callRemote("remove_new_keyboard_input", gamePath)
+                  .then(() => setNewKeyboardInputEnabled(false))
                   .catch((error) => setNewKeyboardInputError(String(error)))
-                  .finally(() => setEnablingNewKeyboardInput(false));
+                  .finally(() => setRemovingNewKeyboardInput(false));
               }}
             >
-              {_i18n.t("立即启用")}
+              {_i18n.t("立即删除")}
             </button>
           </div>
         </aside>
@@ -394,36 +173,38 @@ export const Home = () => {
         )}
       </section>
 
-      <section className="home-section home-profiles-section">
-        <div className="home-section-heading">
-          <Icon name="file" />
-          <h2>{_i18n.t("Profile 选择")}</h2>
-        </div>
-        <div className="profiles">
-          {profiles.map((v) => (
-            <div
-              key={v.name}
-              className={`profile ${
-                v.name === currentProfileName && "selected"
-              }`}
-              onClick={() => {
-                globalCtx.blacklist.switchProfile(v.name);
-              }}
-            >
-              <div className="profile-main">
-                <div className="name">{v.name}</div>
-                <div className="profile-meta">
-                  <span>
-                    {_i18n.t("启用 {count} 个 Mod", {
-                      count: installedMods.length - v.mods.length,
-                    })}
-                  </span>
+      {profileEnabled && (
+        <section className="home-section home-profiles-section">
+          <div className="home-section-heading">
+            <Icon name="file" />
+            <h2>{_i18n.t("Profile 选择")}</h2>
+          </div>
+          <div className="profiles">
+            {profiles.map((v) => (
+              <div
+                key={v.name}
+                className={`profile ${
+                  v.name === currentProfileName && "selected"
+                }`}
+                onClick={() => {
+                  globalCtx.blacklist.switchProfile(v.name);
+                }}
+              >
+                <div className="profile-main">
+                  <div className="name">{v.name}</div>
+                  <div className="profile-meta">
+                    <span>
+                      {_i18n.t("启用 {count} 个 Mod", {
+                        count: installedMods.length - v.mods.length,
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

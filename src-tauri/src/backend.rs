@@ -2084,18 +2084,38 @@ fn download_and_install_crash_mod_fix_impl(
 fn disable_installed_local_mods(
     game_path: &String,
     installed_mods: &[(String, String)],
+    profile_enabled: bool,
+    current_profile_name: &str,
+    always_on_mods: &[String],
 ) -> anyhow::Result<()> {
+    let installed_mods = installed_mods
+        .iter()
+        .filter(|(name, _)| !always_on_mods.contains(name))
+        .collect::<Vec<_>>();
     if installed_mods.is_empty() {
         return Ok(());
     }
-    let mods: Vec<(&String, &String)> = installed_mods
+    if !profile_enabled {
+        let files = installed_mods
+            .iter()
+            .map(|installed| installed.1.clone())
+            .collect::<Vec<_>>();
+        return blacklist::switch_direct_blacklist(game_path, &files, false);
+    }
+
+    let mods = installed_mods
         .iter()
-        .map(|(name, file)| (name, file))
-        .collect();
+        .map(|installed| (&installed.0, &installed.1))
+        .collect::<Vec<_>>();
     for profile in blacklist::get_mod_blacklist_profiles(game_path) {
         blacklist::switch_mod_blacklist_profile(game_path, &profile.name, mods.clone(), false)?;
     }
-    Ok(())
+    let current_profile_name = if current_profile_name.is_empty() {
+        blacklist::get_current_profile(game_path)?
+    } else {
+        current_profile_name.to_string()
+    };
+    blacklist::apply_mod_blacklist_profile(game_path, &current_profile_name, always_on_mods)
 }
 
 #[cfg(test)]
@@ -3154,6 +3174,64 @@ fn get_blacklist_profiles(game_path: String, on_event: Channel<IpcEvent>) {
 }
 
 #[tauri::command]
+fn get_blacklist_profile_count(game_path: String) -> usize {
+    let game_path = normalize_game_path_impl(&game_path);
+    blacklist::get_blacklist_profile_count(&game_path)
+}
+
+#[tauri::command]
+fn get_direct_blacklist_profile(game_path: String, on_event: Channel<IpcEvent>) {
+    std::thread::spawn(move || {
+        let game_path = normalize_game_path_impl(&game_path);
+        let profile = blacklist::get_direct_blacklist_profile(&game_path);
+        let payload = profile
+            .and_then(|profile| serde_json::to_string(&profile).map_err(Into::into))
+            .unwrap_or_default();
+        send_event(&on_event, vec![serde_json::json!(payload)]);
+    });
+}
+
+#[tauri::command]
+fn switch_direct_blacklist(game_path: String, mod_files: String, enabled: bool) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let mod_files: Vec<String> = match serde_json::from_str(&mod_files) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse Mod files: {error}"),
+    };
+    match blacklist::switch_direct_blacklist(&game_path, &mod_files, enabled) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => format!("Failed to update blacklist.txt: {error}"),
+    }
+}
+
+#[tauri::command]
+fn update_blacklist_mod_file(
+    game_path: String,
+    mod_name: String,
+    old_file: String,
+    new_file: String,
+    profile_enabled: bool,
+    always_on_mods: String,
+) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
+    };
+    match blacklist::update_mod_blacklist_file(
+        &game_path,
+        &mod_name,
+        &old_file,
+        &new_file,
+        profile_enabled,
+        &always_on_mods,
+    ) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => format!("Failed to update blacklist Mod file: {error}"),
+    }
+}
+
+#[tauri::command]
 fn apply_blacklist_profile(
     game_path: String,
     profile_name: String,
@@ -3220,32 +3298,25 @@ fn remove_mod_blacklist_profile(game_path: String, profile_name: String) -> Stri
 }
 
 #[tauri::command]
-fn get_current_blacklist_content(game_path: String) -> String {
-    let game_path = normalize_game_path_impl(&game_path);
-    blacklist::get_current_blacklist_content(&game_path).unwrap_or_default()
-}
-
-#[tauri::command]
-fn import_blacklist_file_as_profile(game_path: String, always_on_mods: String) -> String {
-    let game_path = normalize_game_path_impl(&game_path);
-    let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
-        Ok(value) => value,
-        Err(error) => return format!("Failed to parse always-on mods: {error}"),
-    };
-    blacklist::import_blacklist_file_as_profile(&game_path, &always_on_mods)
-        .unwrap_or_else(|error| format!("Failed to import blacklist profile: {error}"))
-}
-
-#[tauri::command]
-fn set_mod_options_order(game_path: String, profile_name: String, order_json: String) -> String {
+fn set_mod_options_order(
+    game_path: String,
+    profile_name: String,
+    order_json: String,
+    profile_enabled: bool,
+) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     let order = match serde_json::from_str(&order_json) {
         Ok(value) => value,
         Err(error) => return format!("Failed to parse order: {error}"),
     };
-    match blacklist::set_mod_options_order(&game_path, &profile_name, order) {
+    let result = if profile_enabled {
+        blacklist::set_mod_options_order(&game_path, &profile_name, order)
+    } else {
+        blacklist::write_mod_options_order(&game_path, &order)
+    };
+    match result {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to set mod options order: {error}"),
+        Err(error) => format!("Failed to set Mod options order: {error}"),
     }
 }
 
@@ -3366,31 +3437,22 @@ fn new_keyboard_input_enabled(content: &str) -> bool {
     })
 }
 
-fn with_new_keyboard_input_enabled(content: &str) -> String {
-    let mut found = false;
-    let mut lines = content
+fn without_new_keyboard_input_enabled(content: &str) -> String {
+    let lines = content
         .lines()
-        .map(|line| {
+        .filter(|line| {
             let trimmed = line.trim();
-            if !trimmed.starts_with('#')
-                && trimmed
+            trimmed.starts_with('#')
+                || !trimmed
                     .split_once('=')
                     .is_some_and(|(key, _)| key.trim() == "EVEREST_NEW_KEYBOARD_INPUT")
-            {
-                found = true;
-                "EVEREST_NEW_KEYBOARD_INPUT=1".to_string()
-            } else {
-                line.to_string()
-            }
         })
         .collect::<Vec<_>>();
-    if !found {
-        if lines.last().is_some_and(|line| !line.trim().is_empty()) {
-            lines.push(String::new());
-        }
-        lines.push("EVEREST_NEW_KEYBOARD_INPUT=1".to_string());
+    if lines.is_empty() {
+        String::new()
+    } else {
+        format!("{}\n", lines.join("\n"))
     }
-    format!("{}\n", lines.join("\n"))
 }
 
 #[tauri::command]
@@ -3401,15 +3463,15 @@ fn has_new_keyboard_input_enabled(game_path: String) -> bool {
 }
 
 #[tauri::command]
-fn enable_new_keyboard_input(game_path: String) -> Result<(), String> {
+fn remove_new_keyboard_input(game_path: String) -> Result<(), String> {
     let game_path = normalize_game_path_impl(&game_path);
     let path = Path::new(&game_path).join("everest-env.txt");
     let content = match fs::read_to_string(&path) {
         Ok(content) => content,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(error.to_string()),
     };
-    fs::write(path, with_new_keyboard_input_enabled(&content)).map_err(|error| error.to_string())
+    fs::write(path, without_new_keyboard_input_enabled(&content)).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -3502,9 +3564,13 @@ fn install_local_packages(
     game_path: String,
     package_paths: String,
     auto_disable_new_mods: bool,
+    profile_enabled: bool,
+    current_profile_name: String,
+    always_on_mods: String,
     on_event: Channel<IpcEvent>,
 ) {
     std::thread::spawn(move || {
+        let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap_or_default();
         let paths: Vec<String> = match serde_json::from_str(&package_paths) {
             Ok(paths) => paths,
             Err(error) => {
@@ -3624,7 +3690,13 @@ fn install_local_packages(
             });
         }
         if auto_disable_new_mods {
-            if let Err(error) = disable_installed_local_mods(&game_path, &installed_mods) {
+            if let Err(error) = disable_installed_local_mods(
+                &game_path,
+                &installed_mods,
+                profile_enabled,
+                &current_profile_name,
+                &always_on_mods,
+            ) {
                 eprintln!("Failed to auto-disable dropped Mods: {error:#}");
             }
         }
@@ -3644,12 +3716,16 @@ fn download_mod(
     url: String,
     mods_dir: String,
     download_type_defaults: String,
+    profile_enabled: bool,
+    current_profile_name: String,
+    always_on_mods: String,
     on_event: Channel<IpcEvent>,
     use_cn_proxy: bool,
     multi_thread: bool,
 ) {
     let _ = use_cn_proxy;
     std::thread::spawn(move || {
+        let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap_or_default();
         let download_type_defaults =
             serde_json::from_str::<HashMap<String, bool>>(&download_type_defaults)
                 .unwrap_or_default();
@@ -3727,20 +3803,17 @@ fn download_mod(
                     installed
                         .iter()
                         .find(|item| item.name == task.name)
-                        .map(|item| (&item.name, &item.file))
+                        .map(|item| (item.name.clone(), item.file.clone()))
                 })
                 .collect::<Vec<_>>();
-            if !completed.is_empty() {
-                for profile in blacklist::get_mod_blacklist_profiles(&game_path) {
-                    if let Err(error) = blacklist::switch_mod_blacklist_profile(
-                        &game_path,
-                        &profile.name,
-                        completed.clone(),
-                        false,
-                    ) {
-                        eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
-                    }
-                }
+            if let Err(error) = disable_installed_local_mods(
+                &game_path,
+                &completed,
+                profile_enabled,
+                &current_profile_name,
+                &always_on_mods,
+            ) {
+                eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
             }
         }
         emit_download_tasks(
@@ -3817,7 +3890,7 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
 }
 #[cfg(test)]
 mod keyboard_input_tests {
-    use super::{new_keyboard_input_enabled, with_new_keyboard_input_enabled};
+    use super::{new_keyboard_input_enabled, without_new_keyboard_input_enabled};
 
     #[test]
     fn parses_new_keyboard_input_environment_setting() {
@@ -3833,15 +3906,19 @@ mod keyboard_input_tests {
     }
 
     #[test]
-    fn enables_new_keyboard_input_without_duplicate_active_values() {
-        let updated = with_new_keyboard_input_enabled(
-            "# Everest settings\nEVEREST_NEW_KEYBOARD_INPUT=0\nOTHER=1\n",
+    fn removes_new_keyboard_input_without_touching_comments() {
+        let updated = without_new_keyboard_input_enabled(
+            "# Everest settings\nEVEREST_NEW_KEYBOARD_INPUT=1\n# EVEREST_NEW_KEYBOARD_INPUT=1\nEVEREST_NEW_KEYBOARD_INPUT=0\nOTHER=1\n",
         );
-        assert!(new_keyboard_input_enabled(&updated));
-        assert_eq!(updated.matches("EVEREST_NEW_KEYBOARD_INPUT=1").count(), 1);
-
-        let appended = with_new_keyboard_input_enabled("OTHER=1\n");
-        assert!(new_keyboard_input_enabled(&appended));
+        assert!(!new_keyboard_input_enabled(&updated));
+        assert_eq!(
+            updated,
+            "# Everest settings\n# EVEREST_NEW_KEYBOARD_INPUT=1\nOTHER=1\n"
+        );
+        assert_eq!(
+            without_new_keyboard_input_enabled("EVEREST_NEW_KEYBOARD_INPUT=1\n"),
+            ""
+        );
     }
 }
 
@@ -3932,6 +4009,10 @@ pub fn run() {
             start_loenn,
             open_url,
             get_blacklist_profiles,
+            get_blacklist_profile_count,
+            get_direct_blacklist_profile,
+            switch_direct_blacklist,
+            update_blacklist_mod_file,
             apply_blacklist_profile,
             switch_mod_blacklist_profile,
             new_mod_blacklist_profile,
@@ -3943,7 +4024,7 @@ pub fn run() {
             delete_mod_files,
             get_everest_version,
             has_new_keyboard_input_enabled,
-            enable_new_keyboard_input,
+            remove_new_keyboard_input,
             download_and_install_everest,
             download_and_install_crash_mod_fix,
             install_local_packages,
@@ -3960,8 +4041,6 @@ pub fn run() {
             normalize_game_path,
             get_mod_latest_info,
             show_log_window,
-            get_current_blacklist_content,
-            import_blacklist_file_as_profile,
             is_using_cache,
             configure_mod_cache,
             get_mod_catalog,

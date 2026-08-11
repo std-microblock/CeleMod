@@ -11,6 +11,14 @@
   overflow: hidden;
 }
 
+.manage-page.profiles-disabled {
+  grid-template-columns: minmax(0, 1fr);
+
+  .manage-main {
+    border-right: 0;
+  }
+}
+
 .manage-main {
   display: flex;
   flex-direction: column;
@@ -1038,13 +1046,18 @@
   }
 }
 .delete-target {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
   padding: 12px;
   border-radius: 9px;
   background: color.change(#ff9800, $alpha: 0.1);
+  strong,
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   span {
     color: theme.$fg3;
     font-size: calc(9px * var(--manage-font-scale, 1));
@@ -1079,12 +1092,49 @@
   margin-top: 8px;
   overflow-y: auto;
   label {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     padding: 7px 8px;
+    gap: 8px;
     border-radius: 7px;
     background: theme.$bg1;
     font-size: calc(9px * var(--manage-font-scale, 1));
+  }
+  .orphan-mod-info {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+
+    > strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    > small {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      color: theme.$fg3;
+      font-size: calc(8px * var(--manage-font-scale, 1));
+
+      > span {
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: theme.$bg2;
+
+        &.enabled {
+          color: #8cdb91;
+        }
+        &.disabled {
+          color: #ff9a9a;
+        }
+        &.always-on {
+          color: color.adjust(theme.$primary, $lightness: 18%);
+        }
+      }
+    }
   }
 }
 

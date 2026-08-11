@@ -3,8 +3,9 @@ import { Fragment, useContext, useEffect, useState } from "react";
 import { useGlobalContext } from "../App";
 import {
   initAutoDisableNewMods,
+  reloadBlacklistState,
+  useAppStore,
   useAutoDisableNewMods,
-  useCurrentBlacklistProfile,
   useGamePath,
 } from "../states";
 import { callRemote } from "../utils";
@@ -92,6 +93,11 @@ const LocalInstallPopup = ({
   const [progress, setProgress] = useState<LocalInstallProgress | null>(null);
   const [results, setResults] = useState<LocalInstallResult[] | null>(null);
   const [fatalError, setFatalError] = useState("");
+  const profileEnabled = useAppStore((state) => state.profileEnabled);
+  const currentProfileName = useAppStore(
+    (state) => state.currentProfileName
+  );
+  const alwaysOnMods = useAppStore((state) => state.alwaysOnMods);
 
   useEffect(() => {
     callRemote(
@@ -99,6 +105,9 @@ const LocalInstallPopup = ({
       gamePath,
       JSON.stringify(paths),
       autoDisableNewMods,
+      profileEnabled,
+      currentProfileName,
+      JSON.stringify(alwaysOnMods),
       (state: string, payload: string) => {
         if (state === "progress") {
           setProgress(JSON.parse(payload));
@@ -245,8 +254,6 @@ export const DropInstaller = () => {
   initAutoDisableNewMods();
   const [autoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
-  const { currentProfileName, setCurrentProfile, setProfiles } =
-    useCurrentBlacklistProfile();
   const ctx = useGlobalContext();
   const [dragging, setDragging] = useState(false);
 
@@ -287,19 +294,7 @@ export const DropInstaller = () => {
                 ) {
                   ctx.modManage.reloadMods().catch(console.error);
                   if (autoDisableNewMods) {
-                    callRemote(
-                      "get_blacklist_profiles",
-                      gamePath,
-                      (data: string) => {
-                        const profiles = JSON.parse(data);
-                        setProfiles(profiles);
-                        setCurrentProfile(
-                          profiles.find(
-                            (profile) => profile.name === currentProfileName
-                          ) ?? null
-                        );
-                      }
-                    );
+                    void reloadBlacklistState(gamePath).catch(console.error);
                   }
                 }
                 if (
@@ -321,14 +316,7 @@ export const DropInstaller = () => {
       })
       .catch(console.error);
     return () => unlisten?.();
-  }, [
-    gamePath,
-    autoDisableNewMods,
-    currentProfileName,
-    ctx,
-    setCurrentProfile,
-    setProfiles,
-  ]);
+  }, [autoDisableNewMods, gamePath, ctx]);
 
   return (
     <div className={`drop-install-overlay ${dragging ? "visible" : ""}`}>

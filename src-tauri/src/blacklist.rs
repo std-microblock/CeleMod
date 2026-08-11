@@ -120,7 +120,7 @@ pub fn apply_mod_blacklist_profile(
 }
 
 /// Write modoptionsorder.txt from the given ordered file list.
-fn write_mod_options_order(game_path: &String, order: &[String]) -> anyhow::Result<()> {
+pub fn write_mod_options_order(game_path: &String, order: &[String]) -> anyhow::Result<()> {
     let path = Path::new(game_path)
         .join("Mods")
         .join("modoptionsorder.txt");
@@ -186,65 +186,189 @@ pub fn get_current_profile(game_path: &String) -> anyhow::Result<String> {
     }
 }
 
-pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile> {
-    let mut profiles = vec![];
-    let blacklist_path = Path::new(game_path).join("celemod_blacklist_profiles");
-    if blacklist_path.exists() {
-        for entry in fs::read_dir(blacklist_path).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.extension().unwrap() == "json" {
-                let data = fs::read_to_string(path).unwrap();
-                let profile: ModBlacklistProfile = serde_json::from_str(&data).unwrap();
-                profiles.push(profile);
+pub fn get_blacklist_profile_count(game_path: &String) -> usize {
+    let path = Path::new(game_path).join("celemod_blacklist_profiles");
+    fs::read_dir(path)
+        .ok()
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "json")
+        })
+        .filter_map(|entry| fs::read_to_string(entry.path()).ok())
+        .filter_map(|data| serde_json::from_str::<ModBlacklistProfile>(&data).ok())
+        .map(|profile| profile.name)
+        .collect::<HashSet<_>>()
+        .len()
+}
+
+fn profile_from_blacklist(game_path: &String) -> anyhow::Result<ModBlacklistProfile> {
+    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
+    let data = fs::read_to_string(blacklist).unwrap_or_default();
+    let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
+    Ok(ModBlacklistProfile {
+        name: "blacklist.txt".to_string(),
+        mods: data
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+            .map(|file| {
+                let name = mods
+                    .iter()
+                    .find(|installed| installed.file.eq_ignore_ascii_case(file))
+                    .map(|installed| installed.name.clone())
+                    .unwrap_or_else(|| file.to_string());
+                ModBlacklist {
+                    name,
+                    file: file.to_string(),
+                }
+            })
+            .collect(),
+        mod_options_order: fs::read_to_string(
+            Path::new(game_path)
+                .join("Mods")
+                .join("modoptionsorder.txt"),
+        )
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(str::to_owned)
+        .collect(),
+    })
+}
+
+pub fn get_direct_blacklist_profile(game_path: &String) -> anyhow::Result<ModBlacklistProfile> {
+    profile_from_blacklist(game_path)
+}
+
+pub fn switch_direct_blacklist(
+    game_path: &String,
+    mod_files: &[String],
+    enabled: bool,
+) -> anyhow::Result<()> {
+    let path = Path::new(game_path).join("Mods").join("blacklist.txt");
+    let mut lines = fs::read_to_string(&path)
+        .unwrap_or_default()
+        .lines()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    if enabled {
+        lines.retain(|line| {
+            let file = line.trim();
+            file.is_empty()
+                || file.starts_with('#')
+                || !mod_files
+                    .iter()
+                    .any(|target| file.eq_ignore_ascii_case(target))
+        });
+    } else {
+        for file in mod_files {
+            if !lines
+                .iter()
+                .any(|line| line.trim().eq_ignore_ascii_case(file))
+            {
+                lines.push(file.clone());
             }
         }
-    } else {
-        fs::create_dir_all(&blacklist_path).unwrap();
-        // convert default blacklist to profile
-        let default_blacklist = Path::new(&game_path).join("Mods").join("blacklist.txt");
-        if default_blacklist.exists() {
-            let data = fs::read_to_string(default_blacklist).unwrap();
-            let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
-            let profile = ModBlacklistProfile {
-                name: "Default".to_string(),
-                mods: data
-                    .lines()
-                    .map(|v| v.trim())
-                    .filter(|v| !v.starts_with('#'))
-                    .map(|v| ModBlacklist {
-                        name: {
-                            if let Some(mod_name) = mods.iter().find(|m| m.file == v) {
-                                mod_name.name.clone()
-                            } else {
-                                v.to_string()
-                            }
-                        },
-                        file: v.to_string(),
-                    })
-                    .collect(),
-                mod_options_order: vec![],
-            };
+    }
+    fs::write(
+        path,
+        lines.join("\n") + if lines.is_empty() { "" } else { "\n" },
+    )?;
+    Ok(())
+}
 
-            fs::write(
-                blacklist_path.join("Default.json"),
-                serde_json::to_string_pretty(&profile).unwrap(),
-            )
-            .unwrap();
+pub fn update_mod_blacklist_file(
+    game_path: &String,
+    mod_name: &str,
+    old_file: &str,
+    new_file: &str,
+    profile_enabled: bool,
+    always_on_mod: &[String],
+) -> anyhow::Result<()> {
+    if old_file == new_file {
+        return Ok(());
+    }
+    if profile_enabled {
+        let mut profiles = get_mod_blacklist_profiles(game_path);
+        for profile in &mut profiles {
+            let mut changed = false;
+            for blacklisted in &mut profile.mods {
+                if blacklisted.name == mod_name || blacklisted.file.eq_ignore_ascii_case(old_file) {
+                    blacklisted.name = mod_name.to_string();
+                    blacklisted.file = new_file.to_string();
+                    changed = true;
+                }
+            }
+            if changed {
+                fs::write(
+                    profile_path(game_path, &profile.name)?,
+                    serde_json::to_string_pretty(profile)?,
+                )?;
+            }
+        }
+        let current = get_current_profile(game_path).unwrap_or_else(|_| "Default".to_string());
+        apply_mod_blacklist_profile(game_path, &current, always_on_mod)?;
+        return Ok(());
+    }
 
+    let path = Path::new(game_path).join("Mods").join("blacklist.txt");
+    let data = fs::read_to_string(&path).unwrap_or_default();
+    let mut has_new_file = data.lines().any(|line| {
+        line.trim().eq_ignore_ascii_case(new_file) && !line.trim().eq_ignore_ascii_case(old_file)
+    });
+    let lines = data
+        .lines()
+        .filter_map(|line| {
+            if !line.trim().eq_ignore_ascii_case(old_file) {
+                return Some(line.to_string());
+            }
+            if has_new_file {
+                return None;
+            }
+            has_new_file = true;
+            Some(new_file.to_string())
+        })
+        .collect::<Vec<_>>();
+    fs::write(
+        path,
+        lines.join("\n") + if lines.is_empty() { "" } else { "\n" },
+    )?;
+    Ok(())
+}
+
+pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile> {
+    let blacklist_path = Path::new(game_path).join("celemod_blacklist_profiles");
+    fs::create_dir_all(&blacklist_path).unwrap();
+    let mut profiles = vec![];
+    for entry in fs::read_dir(&blacklist_path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path
+            .extension()
+            .is_some_and(|extension| extension == "json")
+        {
+            let data = fs::read_to_string(path).unwrap();
+            let profile: ModBlacklistProfile = serde_json::from_str(&data).unwrap();
             profiles.push(profile);
         }
     }
 
-    // If no profiles exist, create a default empty profile
     if profiles.is_empty() {
-        let profile = ModBlacklistProfile {
+        let profile = profile_from_blacklist(game_path).unwrap_or(ModBlacklistProfile {
             name: "Default".to_string(),
             mods: vec![],
             mod_options_order: vec![],
+        });
+        let profile = ModBlacklistProfile {
+            name: "Default".to_string(),
+            ..profile
         };
-        let blacklist_path = Path::new(game_path).join("celemod_blacklist_profiles");
-        fs::create_dir_all(&blacklist_path).unwrap();
         fs::write(
             blacklist_path.join("Default.json"),
             serde_json::to_string_pretty(&profile).unwrap(),
@@ -252,7 +376,6 @@ pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile
         .unwrap();
         profiles.push(profile);
     }
-
     profiles
 }
 
@@ -328,65 +451,6 @@ pub fn remove_mod_blacklist_profile(
     fs::remove_file(blacklist_path)?;
 
     Ok(())
-}
-
-pub fn get_current_blacklist_content(game_path: &String) -> anyhow::Result<String> {
-    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
-    if blacklist.exists() {
-        Ok(fs::read_to_string(blacklist)?)
-    } else {
-        Ok("".to_string())
-    }
-}
-
-pub fn import_blacklist_file_as_profile(
-    game_path: &String,
-    always_on_mod: &[String],
-) -> anyhow::Result<String> {
-    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
-    if !blacklist.exists() {
-        anyhow::bail!("blacklist.txt not found");
-    }
-
-    let data = fs::read_to_string(blacklist)?;
-    let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
-
-    let profiles = get_mod_blacklist_profiles(game_path);
-    let mut profile_name = "blacklist.txt".to_string();
-    let mut suffix = 2;
-    while profiles.iter().any(|profile| profile.name == profile_name) {
-        profile_name = format!("blacklist.txt ({})", suffix);
-        suffix += 1;
-    }
-
-    let profile = ModBlacklistProfile {
-        name: profile_name.clone(),
-        mods: data
-            .lines()
-            .map(|v| v.trim())
-            .filter(|v| !v.starts_with('#') && !v.is_empty())
-            .filter_map(|v| {
-                let installed_mod = mods.iter().find(|mod_| mod_.file == v)?;
-                Some(ModBlacklist {
-                    name: installed_mod.name.clone(),
-                    file: installed_mod.file.clone(),
-                })
-            })
-            .collect(),
-        mod_options_order: vec![],
-    };
-    let blacklist_path = profile_path(game_path, &profile_name)?;
-    fs::write(
-        blacklist_path,
-        serde_json::to_string_pretty(&profile).unwrap(),
-    )?;
-
-    // Make the imported profile current and rewrite the generated header. This also
-    // applies the user's always-on list, so the sync prompt does not immediately
-    // reappear for mods that CeleMod must keep enabled.
-    apply_mod_blacklist_profile(game_path, &profile_name, always_on_mod)?;
-
-    Ok(profile_name)
 }
 
 #[cfg(test)]
@@ -491,21 +555,90 @@ mod tests {
     }
 
     #[test]
-    fn importing_a_blacklist_ignores_deleted_mods() {
-        let game_path = test_game_path("import-deleted-mod");
+    fn direct_blacklist_switch_preserves_unrelated_content() {
+        let game_path = test_game_path("direct-switch");
+        let path = Path::new(&game_path).join("Mods/blacklist.txt");
+        fs::write(&path, "# managed elsewhere\nKeep.zip\n\n*.Disabled\n").unwrap();
+
+        switch_direct_blacklist(&game_path, &["New.zip".to_string()], false).unwrap();
+        switch_direct_blacklist(&game_path, &["Keep.zip".to_string()], true).unwrap();
+
+        let content = fs::read_to_string(&path).unwrap();
+        assert!(content.contains("# managed elsewhere"));
+        assert!(content.contains("*.Disabled"));
+        assert!(content.contains("New.zip"));
+        assert!(!content.contains("Keep.zip"));
+        assert!(
+            !Path::new(&game_path)
+                .join("celemod_blacklist_profiles")
+                .exists()
+        );
+
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn direct_blacklist_tracks_updated_file_names() {
+        let game_path = test_game_path("direct-rename");
+        let path = Path::new(&game_path).join("Mods/blacklist.txt");
         fs::write(
-            Path::new(&game_path).join("Mods/blacklist.txt"),
-            "# externally edited\nDeletedMod.zip\n",
+            &path,
+            "# external comment\nOld Name.zip\nNew Name.zip\nOther.zip\n",
         )
         .unwrap();
 
-        let profile_name = import_blacklist_file_as_profile(&game_path, &[]).unwrap();
-        let profile = get_mod_blacklist_profiles(&game_path)
-            .into_iter()
-            .find(|profile| profile.name == profile_name)
-            .unwrap();
-        assert!(profile.mods.is_empty());
+        update_mod_blacklist_file(
+            &game_path,
+            "Updated.Mod",
+            "Old Name.zip",
+            "New Name.zip",
+            false,
+            &[],
+        )
+        .unwrap();
 
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "# external comment\nNew Name.zip\nOther.zip\n"
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn profile_detection_does_not_create_profile_storage() {
+        let game_path = test_game_path("profile-detection");
+        assert_eq!(get_blacklist_profile_count(&game_path), 0);
+        assert!(
+            !Path::new(&game_path)
+                .join("celemod_blacklist_profiles")
+                .exists()
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn profile_detection_counts_distinct_existing_profiles() {
+        let game_path = test_game_path("profile-count");
+        let profiles_path = Path::new(&game_path).join("celemod_blacklist_profiles");
+        fs::create_dir_all(&profiles_path).unwrap();
+        for (file, name) in [
+            ("Default.json", "Default"),
+            ("Coop.json", "Coop"),
+            ("Coop-copy.json", "Coop"),
+        ] {
+            let profile = ModBlacklistProfile {
+                name: name.to_string(),
+                mods: vec![],
+                mod_options_order: vec![],
+            };
+            fs::write(
+                profiles_path.join(file),
+                serde_json::to_string(&profile).unwrap(),
+            )
+            .unwrap();
+        }
+
+        assert_eq!(get_blacklist_profile_count(&game_path), 2);
         fs::remove_dir_all(game_path).unwrap();
     }
 }

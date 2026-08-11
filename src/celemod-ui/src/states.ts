@@ -44,6 +44,23 @@ export const MOD_TYPE_OPTIONS = [
 
 export type ModTypeName = (typeof MOD_TYPE_OPTIONS)[number];
 
+export const DEFAULT_ORPHAN_ACTION_TYPES: readonly ModTypeName[] = [
+  "Helpers",
+  "Assets",
+  "Maps",
+  "UI",
+  "Dialog",
+  "Effects",
+];
+
+const normalizeModTypes = (
+  value: unknown,
+  fallback: readonly ModTypeName[] = []
+): string[] => {
+  const selected = Array.isArray(value) ? value : fallback;
+  return MOD_TYPE_OPTIONS.filter((type) => selected.includes(type));
+};
+
 const createDownloadTypeDefaults = (
   enabled: boolean
 ): Record<string, boolean> =>
@@ -81,11 +98,13 @@ interface AppState {
   autoToggleDependencies: boolean;
   autoToggleOptionalDependencies: boolean;
   deleteOrphansByDefault: boolean;
+  orphanActionTypes: string[];
   hiddenModTypes: string[];
   modCacheTtlHours: number;
   modComments: Record<string, string>;
   enableAcrylic: boolean;
-  checkBlacklistSync: boolean;
+  profileEnabled: boolean;
+  profileModeInitialized: boolean;
   enablePageTransitions: boolean;
   fontScale: FontScale;
   manageFontScale: FontScale;
@@ -119,11 +138,13 @@ interface AppState {
   setAutoToggleDependencies: (value: boolean) => void;
   setAutoToggleOptionalDependencies: (value: boolean) => void;
   setDeleteOrphansByDefault: (value: boolean) => void;
+  setOrphanActionTypes: (value: string[]) => void;
   setHiddenModTypes: (value: string[]) => void;
   setModCacheTtlHours: (value: number) => void;
   setModComments: (value: Record<string, string>) => void;
   setEnableAcrylic: (value: boolean) => void;
-  setCheckBlacklistSync: (value: boolean) => void;
+  setProfileEnabled: (value: boolean) => void;
+  initializeProfileMode: (value: boolean) => void;
   setEnablePageTransitions: (value: boolean) => void;
   setFontScale: (value: FontScale) => void;
   setManageFontScale: (value: FontScale) => void;
@@ -172,11 +193,11 @@ const setters = {
   setAutoToggleDependencies: "autoToggleDependencies",
   setAutoToggleOptionalDependencies: "autoToggleOptionalDependencies",
   setDeleteOrphansByDefault: "deleteOrphansByDefault",
+  setOrphanActionTypes: "orphanActionTypes",
   setHiddenModTypes: "hiddenModTypes",
   setModCacheTtlHours: "modCacheTtlHours",
   setModComments: "modComments",
   setEnableAcrylic: "enableAcrylic",
-  setCheckBlacklistSync: "checkBlacklistSync",
   setEnablePageTransitions: "enablePageTransitions",
   setFontScale: "fontScale",
   setManageFontScale: "manageFontScale",
@@ -226,10 +247,12 @@ export const useAppStore = create<AppState>()(
         autoToggleDependencies: true,
         autoToggleOptionalDependencies: false,
         deleteOrphansByDefault: true,
+        orphanActionTypes: [...DEFAULT_ORPHAN_ACTION_TYPES],
         hiddenModTypes: [],
         modCacheTtlHours: 24,
         enableAcrylic: true,
-        checkBlacklistSync: true,
+        profileEnabled: false,
+        profileModeInitialized: false,
         enablePageTransitions: true,
         fontScale: 100,
         manageFontScale: 100,
@@ -238,6 +261,17 @@ export const useAppStore = create<AppState>()(
         page: "Home",
         downloadMenuOpen: false,
         ...actions,
+        setProfileEnabled: (value) =>
+          set((state) => {
+            state.profileEnabled = value;
+            state.profileModeInitialized = true;
+          }),
+        initializeProfileMode: (value) =>
+          set((state) => {
+            if (state.profileModeInitialized) return;
+            state.profileEnabled = value;
+            state.profileModeInitialized = true;
+          }),
         setGamePath: (value) =>
           set((state) => {
             if (state.gamePath === value) return;
@@ -275,14 +309,30 @@ export const useAppStore = create<AppState>()(
       name: "celemod-preferences",
       storage: createJSONStorage(() => localStorage),
       merge: (persistedState, currentState) => {
-        const persisted = (persistedState ?? {}) as Partial<AppState>;
+        const persisted = (persistedState ?? {}) as Partial<AppState> & {
+          checkBlacklistSync?: unknown;
+          autoDisableOrphanTypes?: unknown;
+          deleteOrphanTypes?: unknown;
+        };
+        const {
+          checkBlacklistSync: _obsolete,
+          autoDisableOrphanTypes: obsoleteAutoDisableTypes,
+          deleteOrphanTypes: obsoleteDeleteTypes,
+          ...cleanPersisted
+        } = persisted;
         return {
           ...currentState,
-          ...persisted,
+          ...cleanPersisted,
           fontScale: normalizeFontScale(persisted.fontScale),
           manageFontScale: normalizeFontScale(persisted.manageFontScale),
           keyBindingsFontScale: normalizeFontScale(
             persisted.keyBindingsFontScale
+          ),
+          orphanActionTypes: normalizeModTypes(
+            persisted.orphanActionTypes ??
+              obsoleteAutoDisableTypes ??
+              obsoleteDeleteTypes,
+            DEFAULT_ORPHAN_ACTION_TYPES
           ),
         };
       },
@@ -303,11 +353,13 @@ export const useAppStore = create<AppState>()(
         autoToggleDependencies,
         autoToggleOptionalDependencies,
         deleteOrphansByDefault,
+        orphanActionTypes,
         hiddenModTypes,
         modCacheTtlHours,
         modComments,
         enableAcrylic,
-        checkBlacklistSync,
+        profileEnabled,
+        profileModeInitialized,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -331,11 +383,13 @@ export const useAppStore = create<AppState>()(
         autoToggleDependencies,
         autoToggleOptionalDependencies,
         deleteOrphansByDefault,
+        orphanActionTypes,
         hiddenModTypes,
         modCacheTtlHours,
         modComments,
         enableAcrylic,
-        checkBlacklistSync,
+        profileEnabled,
+        profileModeInitialized,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -347,6 +401,82 @@ export const useAppStore = create<AppState>()(
   )
 );
 
+let blacklistLoadRequest = 0;
+
+const loadProfiles = (gamePath: string) =>
+  new Promise<ModBlacklistProfile[]>((resolve, reject) => {
+    void callRemote("get_blacklist_profiles", gamePath, (data: string) => {
+      try {
+        resolve(JSON.parse(data));
+      } catch (error) {
+        reject(error);
+      }
+    }).catch(reject);
+  });
+
+const loadDirectBlacklist = (gamePath: string) =>
+  new Promise<ModBlacklistProfile>((resolve, reject) => {
+    void callRemote(
+      "get_direct_blacklist_profile",
+      gamePath,
+      (data: string) => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (error) {
+          reject(error);
+        }
+      }
+    ).catch(reject);
+  });
+
+export const reloadBlacklistState = async (gamePath: string) => {
+  if (!gamePath) throw new Error("game path not set");
+  const request = ++blacklistLoadRequest;
+  let state = useAppStore.getState();
+  if (!state.profileModeInitialized) {
+    const profileCount = await callRemote<number>(
+      "get_blacklist_profile_count",
+      gamePath
+    );
+    state.initializeProfileMode(profileCount > 1);
+    state = useAppStore.getState();
+  }
+
+  if (state.profileEnabled) {
+    let profiles = await loadProfiles(gamePath);
+    const storedProfileName = await callRemote<string>(
+      "get_current_profile",
+      gamePath
+    );
+    const currentProfileName =
+      profiles.find((profile) => profile.name === storedProfileName)?.name ??
+      profiles[0]?.name ??
+      "";
+    if (currentProfileName) {
+      const result = await callRemote<string>(
+        "apply_blacklist_profile",
+        gamePath,
+        currentProfileName,
+        JSON.stringify(state.alwaysOnMods)
+      );
+      if (result !== "Success") throw new Error(result);
+      profiles = await loadProfiles(gamePath);
+    }
+    if (request !== blacklistLoadRequest) return;
+    const currentProfile =
+      profiles.find((profile) => profile.name === currentProfileName) ?? null;
+    state.setProfiles(profiles);
+    state.setCurrentProfileName(currentProfile?.name ?? "");
+    state.setCurrentProfile(currentProfile);
+    return;
+  }
+  const direct = await loadDirectBlacklist(gamePath);
+  if (request !== blacklistLoadRequest) return;
+  state.setProfiles([direct]);
+  state.setCurrentProfileName(direct.name);
+  state.setCurrentProfile(direct);
+};
+
 let installedModsReloadRequest = 0;
 let installedModsAppliedRequest = 0;
 
@@ -355,19 +485,21 @@ export const reloadInstalledMods = async (
 ): Promise<BackendModInfo[]> => {
   if (!gamePath) throw new Error("game path not set");
   const request = ++installedModsReloadRequest;
-  const installedMods = await new Promise<BackendModInfo[]>((resolve, reject) => {
-    void callRemote(
-      "get_installed_mods",
-      `${gamePath}/Mods`,
-      (data: string) => {
-        try {
-          resolve(JSON.parse(data) as BackendModInfo[]);
-        } catch (error) {
-          reject(error);
+  const installedMods = await new Promise<BackendModInfo[]>(
+    (resolve, reject) => {
+      void callRemote(
+        "get_installed_mods",
+        `${gamePath}/Mods`,
+        (data: string) => {
+          try {
+            resolve(JSON.parse(data) as BackendModInfo[]);
+          } catch (error) {
+            reject(error);
+          }
         }
-      }
-    ).catch(reject);
-  });
+      ).catch(reject);
+    }
+  );
   if (
     request > installedModsAppliedRequest &&
     useAppStore.getState().gamePath === gamePath

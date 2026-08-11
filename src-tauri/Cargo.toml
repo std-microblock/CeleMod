@@ -23,6 +23,7 @@ tauri-plugin-window-controls = "0.1"
 game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 lazy_static = "1"
 anyhow = "1"
+parking_lot = "0.12"
 zip = "4"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9.25"

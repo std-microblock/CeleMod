@@ -693,14 +693,19 @@ export const CrashAssistant = () => {
     let checking = false;
 
     const check = async () => {
-      if (!active || checking || crashPopupOpen) return;
+      if (!active || checking) return;
       checking = true;
       try {
         const analysis = await callRemote<CrashAnalysis | null>(
           "check_everest_crash",
           gamePath
         );
-        if (active && analysis && !hasSeenCrash(gamePath, analysis)) {
+        if (
+          active &&
+          analysis &&
+          !crashPopupOpen &&
+          !hasSeenCrash(gamePath, analysis)
+        ) {
           showCrashPopup(analysis, gamePath);
         }
       } catch (error) {
