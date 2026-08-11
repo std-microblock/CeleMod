@@ -1,52 +1,98 @@
 @use "../styles/theme" as theme;
 
 .update-prompt {
-  background: theme.$bg;
+  display: flex;
+  width: min(620px, calc(100vw - 56px));
+  height: min(520px, calc(100vh - 80px));
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  flex-direction: column;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px #00000040;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.26);
-
-  width: 500px;
-  height: 340px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  background: theme.$bg;
+  box-shadow: 0 2px 5px #00000040;
 
   .title {
+    flex: 0 0 auto;
+    margin-bottom: 14px;
     font-size: 24px;
     font-weight: 500;
-    margin-bottom: 20px;
-  }
-
-  position: relative;
-
-  .force {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    opacity: 0.6;
   }
 
   .info {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+
     .vernum {
+      flex: 0 0 auto;
+      margin-bottom: 5px;
       font-size: 20px;
       font-weight: 700;
-      margin-bottom: 5px;
     }
 
     .detail-text {
+      flex: 0 0 auto;
+      margin-bottom: 10px;
       font-size: 14px;
       opacity: 0.6;
-      margin-bottom: 20px;
+    }
+
+    pre {
+      min-height: 0;
+      flex: 1 1 auto;
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      border-radius: 8px;
+      background: theme.$bg1;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+      user-select: text;
+      white-space: pre-wrap;
     }
   }
 
+  .update-footer {
+    display: flex;
+    min-width: 0;
+    flex: 0 0 auto;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .force {
+    margin-right: auto;
+    line-height: 1.45;
+    opacity: 0.65;
+  }
+
   .updateOptions {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+    text-align: right;
+
+    > div {
+      overflow-wrap: anywhere;
+    }
 
     .download {
-      cursor: pointer;
       display: inline-block;
+      cursor: pointer;
 
       &:hover {
         opacity: 0.8;
@@ -55,27 +101,52 @@
   }
 
   .downloadProgress {
-    position: absolute;
-    bottom: 20px;
-    right: 0;
-    width: 110px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    gap: 14px;
 
     span {
-      margin-right: 60px;
       display: block;
+      white-space: nowrap;
     }
   }
 
   .downloadFailed {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    min-width: 0;
     text-align: right;
+
     div {
       color: #ef596f;
+    }
+
+    span {
+      display: block;
+      max-width: min(420px, 70vw);
+      overflow-wrap: anywhere;
+      user-select: text;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .update-prompt {
+    width: calc(100vw - 36px);
+    height: calc(100vh - 64px);
+    padding: 16px;
+
+    .update-footer {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .force {
+      margin-right: 0;
+    }
+
+    .updateOptions,
+    .downloadFailed {
+      text-align: left;
     }
   }
 }

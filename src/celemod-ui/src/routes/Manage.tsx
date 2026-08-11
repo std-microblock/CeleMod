@@ -1013,7 +1013,7 @@ export const Manage = () => {
             : []
         );
         return (
-          <div className="delete-mod-popup">
+          <div className="popup-content delete-mod-popup">
             <div className="title">{_i18n.t("删除 Mod")}</div>
             <div className="delete-target">
               <strong>{name}</strong>

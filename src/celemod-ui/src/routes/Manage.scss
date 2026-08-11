@@ -936,9 +936,9 @@
   }
 }
 
-.delete-mod-popup,
+.popup-content.delete-mod-popup,
 .duplicate-mod-popup,
-.full-mod-check-popup {
+.popup-content.full-mod-check-popup {
   width: min(520px, 82vw);
   padding: 20px;
   text-align: left;
@@ -969,14 +969,17 @@
   box-sizing: border-box;
 }
 
-.full-mod-check-popup {
+.popup-content.full-mod-check-popup {
   display: flex;
   width: min(620px, 100%);
+  height: min(560px, 100%);
+  min-height: 0;
   max-width: none;
-  max-height: min(560px, 100%);
+  max-height: 100%;
   flex-direction: column;
   padding: 0;
   overflow: hidden;
+  box-sizing: border-box;
 
   > .title {
     flex: 0 0 auto;
