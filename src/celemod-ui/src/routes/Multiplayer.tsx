@@ -140,6 +140,7 @@ export const Multiplayer = () => {
   const [draggedEmoteIndex, setDraggedEmoteIndex] = useState<number | null>(null);
   const [dragOverEmoteIndex, setDragOverEmoteIndex] = useState<number | null>(null);
   const [emoteDragOffset, setEmoteDragOffset] = useState({ x: 0, y: 0 });
+  const [settling, setSettling] = useState(false);
   const emotePreviewRequest = useRef(0);
   const draggedEmoteIndexRef = useRef<number | null>(null);
   const dragOverEmoteIndexRef = useRef<number | null>(null);
@@ -463,6 +464,8 @@ export const Multiplayer = () => {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    setSettling(true);
+    clearEmoteDrag();
     if (commit && sourceIndex !== null && targetIndex !== null) {
       reorderEmote(sourceIndex, targetIndex);
     }
@@ -491,11 +494,13 @@ export const Multiplayer = () => {
             },
             { transform: "translate3d(0, 0, 0) scale(1)" },
           ],
-          { duration: 160, easing: "ease-out" }
+          { duration: 170, easing: "cubic-bezier(0.2, 0.75, 0.25, 1)" }
         );
+        setSettling(false);
       });
+      return;
     }
-    clearEmoteDrag();
+    requestAnimationFrame(() => setSettling(false));
   };
 
   const removeEmote = (index: number) => {
@@ -817,7 +822,11 @@ export const Multiplayer = () => {
               </span>
             </header>
 
-            <div className="multiplayer-emote-grid">
+            <div
+              className={`multiplayer-emote-grid${
+                settling ? " settling" : ""
+              }`}
+            >
               {miaoNetSettings.emotes.length === 0 && (
                 <div className="multiplayer-emote-empty">
                   {_i18n.t("当前没有表情")}
@@ -829,7 +838,7 @@ export const Multiplayer = () => {
                   <article
                     className={`multiplayer-emote-card${
                       draggedEmoteIndex === index ? " dragging" : ""
-                    }${dragOverEmoteIndex === index ? " drag-over" : ""}`}
+                    }`}
                     data-emote-index={index}
                     key={emoteRenderKeys[index]}
                     style={getEmoteDragStyle(index)}
