@@ -57,6 +57,8 @@ mod crash_analysis;
 mod everest;
 #[path = "keybindings.rs"]
 mod keybindings;
+#[path = "miaonet_atlas.rs"]
+mod miaonet_atlas;
 #[path = "ureq.rs"]
 mod ureq;
 #[path = "wegfan.rs"]
@@ -72,6 +74,58 @@ struct MiaoNetLocalState {
     installed: bool,
     authenticated: bool,
     last_name: Option<String>,
+}
+
+const MIAONET_DEFAULT_EMOTES: [&str; 8] = [
+    "i:collectables/heartgem/0/spin",
+    "i:collectables/strawberry",
+    "Hi!",
+    "Too slow!",
+    "p:madeline/normal04",
+    "p:ghost/scoff03",
+    "p:theo/yolo0 3 2 1 2 !",
+    "p:granny/laugh",
+];
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MiaoNetSettings {
+    connect_on_game_start: bool,
+    show_avatar: bool,
+    show_own_name: bool,
+    player_light: bool,
+    player_interactions: bool,
+    enable_emote_wheel: bool,
+    player_presence_messages: bool,
+    player_opacity: u8,
+    player_name_opacity: u8,
+    off_screen_player_name_opacity: u8,
+    self_name_opacity: u8,
+    distance_based_opacity: bool,
+    min_player_opacity_multiplier: u8,
+    emote_opacity: u8,
+    emotes: Vec<String>,
+    default_emotes: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MiaoNetSettingsUpdate {
+    connect_on_game_start: bool,
+    show_avatar: bool,
+    show_own_name: bool,
+    player_light: bool,
+    player_interactions: bool,
+    enable_emote_wheel: bool,
+    player_presence_messages: bool,
+    player_opacity: u8,
+    player_name_opacity: u8,
+    off_screen_player_name_opacity: u8,
+    self_name_opacity: u8,
+    distance_based_opacity: bool,
+    min_player_opacity_multiplier: u8,
+    emote_opacity: u8,
+    emotes: Vec<String>,
 }
 
 fn miaonet_settings_directories(game_path: &Path) -> Vec<PathBuf> {
@@ -111,17 +165,238 @@ fn miaonet_settings_directories(game_path: &Path) -> Vec<PathBuf> {
     directories
 }
 
-fn yaml_string_property(value: &serde_yaml::Value, name: &str) -> Option<String> {
+fn yaml_property<'a>(value: &'a serde_yaml::Value, name: &str) -> Option<&'a serde_yaml::Value> {
     let serde_yaml::Value::Mapping(mapping) = value else {
         return None;
     };
     mapping.iter().find_map(|(key, value)| {
-        let key = key.as_str()?;
-        if !key.eq_ignore_ascii_case(name) {
-            return None;
-        }
-        value.as_str().map(str::to_owned)
+        key.as_str()
+            .is_some_and(|key| key.eq_ignore_ascii_case(name))
+            .then_some(value)
     })
+}
+
+fn yaml_string_property(value: &serde_yaml::Value, name: &str) -> Option<String> {
+    yaml_property(value, name)?.as_str().map(str::to_owned)
+}
+
+fn miaonet_settings_path(game_path: &Path) -> Result<PathBuf, String> {
+    let directories = miaonet_settings_directories(game_path);
+    directories
+        .iter()
+        .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
+        .find(|path| path.is_file())
+        .or_else(|| {
+            directories
+                .first()
+                .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
+        })
+        .ok_or_else(|| "找不到 Celeste 的设置目录。".to_string())
+}
+
+fn read_miaonet_settings_document(path: &Path) -> Result<serde_yaml::Value, String> {
+    if !path.is_file() {
+        return Ok(serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+    }
+    let content =
+        fs::read_to_string(path).map_err(|error| format!("读取 MiaoNet 设置失败：{error}"))?;
+    if content.trim().is_empty() {
+        return Ok(serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
+    }
+    serde_yaml::from_str(&content).map_err(|error| format!("解析 MiaoNet 设置失败：{error}"))
+}
+
+fn miaonet_settings_from_document(document: &serde_yaml::Value) -> Result<MiaoNetSettings, String> {
+    if !matches!(document, serde_yaml::Value::Mapping(_)) {
+        return Err("MiaoNet 设置文件格式不正确。".to_string());
+    }
+    let emotes = match yaml_property(document, "Emotes") {
+        None => MIAONET_DEFAULT_EMOTES
+            .iter()
+            .map(|emote| (*emote).to_string())
+            .collect(),
+        Some(serde_yaml::Value::Null) => Vec::new(),
+        Some(serde_yaml::Value::Sequence(values)) => values
+            .iter()
+            .map(|value| value.as_str().unwrap_or_default().to_string())
+            .collect(),
+        Some(_) => return Err("MiaoNet 的 Emotes 设置不是列表。".to_string()),
+    };
+    let opacity = |name: &str, default: u8, min: u8, max: u8| {
+        yaml_property(document, name)
+            .and_then(serde_yaml::Value::as_i64)
+            .and_then(|value| u8::try_from(value).ok())
+            .filter(|value| (min..=max).contains(value))
+            .unwrap_or(default)
+    };
+
+    Ok(MiaoNetSettings {
+        connect_on_game_start: yaml_property(document, "ConnectOnGameStart")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(false),
+        show_avatar: yaml_property(document, "ShowAvatar")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(true),
+        show_own_name: yaml_property(document, "ShowOwnName")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(true),
+        player_light: yaml_property(document, "PlayerLight")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(false),
+        player_interactions: yaml_property(document, "PlayerInteractions")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(true),
+        enable_emote_wheel: yaml_property(document, "EnableEmoteWheel")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(true),
+        player_presence_messages: yaml_property(document, "PlayerPresenceMessages")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(true),
+        player_opacity: opacity("PlayerOpacity", 8, 1, 10),
+        player_name_opacity: opacity("PlayerNameOpacity", 8, 1, 10),
+        off_screen_player_name_opacity: opacity("OffScreenPlayerNameOpacity", 4, 0, 10),
+        self_name_opacity: opacity("SelfNameOpacity", 8, 1, 10),
+        distance_based_opacity: yaml_property(document, "DistanceBasedOpacity")
+            .and_then(serde_yaml::Value::as_bool)
+            .unwrap_or(false),
+        min_player_opacity_multiplier: opacity("MinPlayerOpacityMultiplier", 2, 0, 9),
+        emote_opacity: opacity("EmoteOpacity", 10, 1, 10),
+        emotes,
+        default_emotes: MIAONET_DEFAULT_EMOTES
+            .iter()
+            .map(|emote| (*emote).to_string())
+            .collect(),
+    })
+}
+
+fn load_miaonet_settings(game_path: &Path) -> Result<MiaoNetSettings, String> {
+    let settings_path = miaonet_settings_path(game_path)?;
+    let document = read_miaonet_settings_document(&settings_path)?;
+    miaonet_settings_from_document(&document)
+}
+
+fn set_yaml_property(mapping: &mut serde_yaml::Mapping, name: &str, value: serde_yaml::Value) {
+    remove_yaml_property(mapping, name);
+    mapping.insert(serde_yaml::Value::String(name.to_string()), value);
+}
+
+fn apply_miaonet_settings_update(
+    document: &mut serde_yaml::Value,
+    update: &MiaoNetSettingsUpdate,
+) -> Result<(), String> {
+    if !(1..=10).contains(&update.player_opacity)
+        || !(1..=10).contains(&update.player_name_opacity)
+        || !(0..=10).contains(&update.off_screen_player_name_opacity)
+        || !(1..=10).contains(&update.self_name_opacity)
+        || !(0..=9).contains(&update.min_player_opacity_multiplier)
+        || !(1..=10).contains(&update.emote_opacity)
+    {
+        return Err("MiaoNet 透明度设置超出允许范围。".to_string());
+    }
+    let serde_yaml::Value::Mapping(mapping) = document else {
+        return Err("MiaoNet 设置文件格式不正确。".to_string());
+    };
+
+    set_yaml_property(
+        mapping,
+        "ConnectOnGameStart",
+        serde_yaml::Value::Bool(update.connect_on_game_start),
+    );
+    set_yaml_property(
+        mapping,
+        "ShowAvatar",
+        serde_yaml::Value::Bool(update.show_avatar),
+    );
+    set_yaml_property(
+        mapping,
+        "ShowOwnName",
+        serde_yaml::Value::Bool(update.show_own_name),
+    );
+    set_yaml_property(
+        mapping,
+        "PlayerLight",
+        serde_yaml::Value::Bool(update.player_light),
+    );
+    set_yaml_property(
+        mapping,
+        "PlayerInteractions",
+        serde_yaml::Value::Bool(update.player_interactions),
+    );
+    set_yaml_property(
+        mapping,
+        "EnableEmoteWheel",
+        serde_yaml::Value::Bool(update.enable_emote_wheel),
+    );
+    set_yaml_property(
+        mapping,
+        "PlayerPresenceMessages",
+        serde_yaml::Value::Bool(update.player_presence_messages),
+    );
+    set_yaml_property(
+        mapping,
+        "PlayerOpacity",
+        serde_yaml::Value::Number(u64::from(update.player_opacity).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "PlayerNameOpacity",
+        serde_yaml::Value::Number(u64::from(update.player_name_opacity).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "OffScreenPlayerNameOpacity",
+        serde_yaml::Value::Number(u64::from(update.off_screen_player_name_opacity).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "SelfNameOpacity",
+        serde_yaml::Value::Number(u64::from(update.self_name_opacity).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "DistanceBasedOpacity",
+        serde_yaml::Value::Bool(update.distance_based_opacity),
+    );
+    set_yaml_property(
+        mapping,
+        "MinPlayerOpacityMultiplier",
+        serde_yaml::Value::Number(u64::from(update.min_player_opacity_multiplier).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "EmoteOpacity",
+        serde_yaml::Value::Number(u64::from(update.emote_opacity).into()),
+    );
+    set_yaml_property(
+        mapping,
+        "Emotes",
+        serde_yaml::Value::Sequence(
+            update
+                .emotes
+                .iter()
+                .map(|emote| serde_yaml::Value::String(emote.clone()))
+                .collect(),
+        ),
+    );
+    Ok(())
+}
+
+fn save_miaonet_settings_update(
+    game_path: &Path,
+    update: &MiaoNetSettingsUpdate,
+) -> Result<MiaoNetSettings, String> {
+    let settings_path = miaonet_settings_path(game_path)?;
+    let mut document = read_miaonet_settings_document(&settings_path)?;
+    apply_miaonet_settings_update(&mut document, update)?;
+    let parent = settings_path
+        .parent()
+        .ok_or_else(|| "MiaoNet 设置路径无效。".to_string())?;
+    fs::create_dir_all(parent).map_err(|error| format!("创建 Celeste 设置目录失败：{error}"))?;
+    let serialized = serde_yaml::to_string(&document)
+        .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
+    fs::write(&settings_path, serialized)
+        .map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))?;
+    miaonet_settings_from_document(&document)
 }
 
 fn read_miaonet_auth_state(game_path: &Path) -> (bool, Option<String>) {
@@ -199,6 +474,25 @@ fn get_miaonet_local_state(game_path: String) -> MiaoNetLocalState {
         authenticated,
         last_name,
     }
+}
+
+#[tauri::command]
+fn get_miaonet_settings(game_path: String) -> Result<MiaoNetSettings, String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    load_miaonet_settings(Path::new(&game_path))
+}
+
+#[tauri::command]
+fn save_miaonet_settings(
+    game_path: String,
+    settings: MiaoNetSettingsUpdate,
+) -> Result<MiaoNetSettings, String> {
+    let game_path = normalize_game_path_impl(&game_path);
+    let game_path = Path::new(&game_path);
+    if is_celeste_running(game_path) {
+        return Err("请先退出 Celeste，再保存 MiaoNet 设置。".to_string());
+    }
+    save_miaonet_settings_update(game_path, &settings)
 }
 
 fn installed_miaonet_protocol_version(game_path: &Path) -> Result<[u16; 3], String> {
@@ -544,34 +838,8 @@ fn save_miaonet_login(
     authentication_data: &[u8],
     username: Option<&str>,
 ) -> Result<(), String> {
-    let directories = miaonet_settings_directories(game_path);
-    let settings_path = directories
-        .iter()
-        .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
-        .find(|path| path.is_file())
-        .or_else(|| {
-            directories
-                .first()
-                .map(|directory| directory.join("modsettings-MiaoNet.celeste"))
-        })
-        .ok_or_else(|| "找不到 Celeste 的设置目录。".to_string())?;
-    let parent = settings_path
-        .parent()
-        .ok_or_else(|| "MiaoNet 设置路径无效。".to_string())?;
-    fs::create_dir_all(parent).map_err(|error| format!("创建 Celeste 设置目录失败：{error}"))?;
-
-    let mut settings = if settings_path.is_file() {
-        let content = fs::read_to_string(&settings_path)
-            .map_err(|error| format!("读取 MiaoNet 设置失败：{error}"))?;
-        if content.trim().is_empty() {
-            serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
-        } else {
-            serde_yaml::from_str::<serde_yaml::Value>(&content)
-                .map_err(|error| format!("解析 MiaoNet 设置失败：{error}"))?
-        }
-    } else {
-        serde_yaml::Value::Mapping(serde_yaml::Mapping::new())
-    };
+    let settings_path = miaonet_settings_path(game_path)?;
+    let mut settings = read_miaonet_settings_document(&settings_path)?;
     let serde_yaml::Value::Mapping(mapping) = &mut settings else {
         return Err("MiaoNet 设置文件格式不正确。".to_string());
     };
@@ -3889,6 +4157,90 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
     });
 }
 #[cfg(test)]
+mod miaonet_settings_tests {
+    use super::*;
+
+    fn sample_update() -> MiaoNetSettingsUpdate {
+        MiaoNetSettingsUpdate {
+            connect_on_game_start: true,
+            show_avatar: false,
+            show_own_name: false,
+            player_light: true,
+            player_interactions: false,
+            enable_emote_wheel: false,
+            player_presence_messages: false,
+            player_opacity: 7,
+            player_name_opacity: 6,
+            off_screen_player_name_opacity: 3,
+            self_name_opacity: 9,
+            distance_based_opacity: true,
+            min_player_opacity_multiplier: 2,
+            emote_opacity: 6,
+            emotes: vec!["Hi!".to_string(), "p:granny/laugh".to_string()],
+        }
+    }
+
+    #[test]
+    fn reads_upstream_defaults_when_settings_are_missing() {
+        let document = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+        let settings =
+            miaonet_settings_from_document(&document).expect("default settings should load");
+
+        assert!(settings.show_avatar);
+        assert!(settings.show_own_name);
+        assert!(settings.player_interactions);
+        assert!(settings.enable_emote_wheel);
+        assert_eq!(settings.player_opacity, 8);
+        assert_eq!(settings.min_player_opacity_multiplier, 2);
+        assert_eq!(settings.emote_opacity, 10);
+        assert_eq!(settings.emotes, settings.default_emotes);
+        assert_eq!(settings.emotes.len(), 8);
+    }
+
+    #[test]
+    fn updates_managed_settings_without_removing_login_or_unknown_values() {
+        let mut document: serde_yaml::Value = serde_yaml::from_str(
+            "TokenDataEncrypted: secret\nLastName: Maddy\nUnknownOption: keep\nshowavatar: true\n",
+        )
+        .expect("test yaml should parse");
+
+        apply_miaonet_settings_update(&mut document, &sample_update())
+            .expect("settings update should apply");
+
+        assert_eq!(
+            yaml_string_property(&document, "TokenDataEncrypted").as_deref(),
+            Some("secret")
+        );
+        assert_eq!(
+            yaml_string_property(&document, "LastName").as_deref(),
+            Some("Maddy")
+        );
+        assert_eq!(
+            yaml_string_property(&document, "UnknownOption").as_deref(),
+            Some("keep")
+        );
+        let settings =
+            miaonet_settings_from_document(&document).expect("updated settings should load");
+        assert_eq!(settings.emotes, vec!["Hi!", "p:granny/laugh"]);
+        assert_eq!(settings.emote_opacity, 6);
+        assert_eq!(settings.player_opacity, 7);
+        assert_eq!(settings.player_name_opacity, 6);
+        assert!(settings.distance_based_opacity);
+        assert_eq!(settings.min_player_opacity_multiplier, 2);
+        assert!(!settings.show_avatar);
+        assert!(!settings.enable_emote_wheel);
+    }
+
+    #[test]
+    fn rejects_out_of_range_emote_opacity() {
+        let mut document = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
+        let mut update = sample_update();
+        update.emote_opacity = 0;
+        assert!(apply_miaonet_settings_update(&mut document, &update).is_err());
+    }
+}
+
+#[cfg(test)]
 mod keyboard_input_tests {
     use super::{new_keyboard_input_enabled, without_new_keyboard_input_enabled};
 
@@ -4049,6 +4401,11 @@ pub fn run() {
             set_mod_options_order,
             set_window_vibrancy,
             get_miaonet_local_state,
+            get_miaonet_settings,
+            save_miaonet_settings,
+            miaonet_atlas::get_miaonet_atlas_catalog,
+            miaonet_atlas::get_miaonet_atlas_previews,
+            miaonet_atlas::get_miaonet_emote_previews,
             logout_miaonet,
             start_miaonet_oauth,
             keybindings::get_key_bindings,

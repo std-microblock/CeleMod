@@ -20,7 +20,7 @@ An alternative mod manager for Celeste
 ✅ 一键解析，补全依赖  
 ✅ 一键升级 Mod  
 ✅ 按类别搜索，多种排序方式  
-✅ 国服联机 Celeste.Miao.Net 快速配置  
+✅ MiaoNet+ 完整设置、虚拟化图集选帧与可拖拽表情管理  
 ✅ Everest 镜像一键安装
 
 ### 强大
