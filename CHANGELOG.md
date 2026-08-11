@@ -1,3 +1,7 @@
+# 1.1.5
+- 修复更新弹窗与模组管理对话框的样式与交互问题。
+- 新增 MiaoNet+ 表情选择器：虚拟化图集取帧、拖拽管理表情，完善 MiaoNet+ 表情设置。
+
 # 1.1.4
 - 修复 Everest Ultra 更新后自动修复 RushHelper 的流程，并显示下载、校验和替换进度。
 - Profile 改为可选功能：默认直接使用 blacklist.txt，已有多个 Profile 时自动启用；新增 Profile 管理、孤立依赖类型选择和始终开启 Mod 处理。
