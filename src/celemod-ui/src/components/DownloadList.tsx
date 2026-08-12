@@ -23,24 +23,38 @@ const formatSpeed = (bytesPerSec: number) => {
   return `${formatBytes(bytesPerSec)}/s`;
 };
 
-const Task = ({ task }: { task: Download.TaskInfo }) => {
+export const DownloadTask = ({
+  task,
+  initialExpanded = false,
+  showFinishedSubtasks = false,
+  allowRetry = true,
+}: {
+  task: Download.TaskInfo;
+  initialExpanded?: boolean;
+  showFinishedSubtasks?: boolean;
+  allowRetry?: boolean;
+}) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const downloadMod = useDownloadStore((state) => state.downloadMod);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initialExpanded);
   const finished = task.subtasks.filter(
     (subtask) => subtask.state === "Finished"
   ).length;
   const activeSubtask = task.subtasks.find(
     (subtask) => subtask.state === "Downloading"
   );
-  const visibleSubtasks = task.subtasks.filter(
-    (subtask) => subtask.state !== "Finished" || subtask.error
-  );
+  const visibleSubtasks = showFinishedSubtasks
+    ? task.subtasks
+    : task.subtasks.filter(
+        (subtask) => subtask.state !== "Finished" || subtask.error
+      );
   const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
   const status = task.canceled
     ? { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" }
     : task.state === "failed"
     ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
+    : task.state === "finished"
+    ? { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" }
     : activeSubtask
     ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
     : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
@@ -51,7 +65,7 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
           onClick: () => cancelDownload(task.name),
           title: _i18n.t("取消"),
         }
-      : task.state === "failed" && task.source
+      : allowRetry && task.state === "failed" && task.source
       ? {
           icon: "replay",
           onClick: () => downloadMod(task.name, task.source!, { force: true }),
@@ -100,7 +114,8 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
         {activeSubtask ? (
           <>
             <span>
-              {formatBytes(activeSubtask.downloadedBytes)} / {formatBytes(activeSubtask.totalBytes)}
+              {formatBytes(activeSubtask.downloadedBytes)} /{" "}
+              {formatBytes(activeSubtask.totalBytes)}
             </span>
             <span>{formatSpeed(activeSubtask.speedBytesPerSec)}</span>
           </>
@@ -130,7 +145,8 @@ const Task = ({ task }: { task: Download.TaskInfo }) => {
               ) : (
                 <div className="download-subtask-meta">
                   <span>
-                    {formatBytes(subtask.downloadedBytes)} / {formatBytes(subtask.totalBytes)}
+                    {formatBytes(subtask.downloadedBytes)} /{" "}
+                    {formatBytes(subtask.totalBytes)}
                   </span>
                   <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
                 </div>
@@ -177,7 +193,9 @@ export const DownloadListMenu = ({
         </header>
         <div className="taskList">
           {visibleTasks.length > 0 ? (
-            visibleTasks.map((task) => <Task key={task.name} task={task} />)
+            visibleTasks.map((task) => (
+              <DownloadTask key={task.name} task={task} />
+            ))
           ) : (
             <div className="download-list-empty">
               <Icon name="download" />

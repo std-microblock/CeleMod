@@ -1,5 +1,5 @@
 import _i18n from "src/i18n";
-import { Fragment, useContext, useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useRef, useState } from "react";
 import { useGlobalContext } from "../App";
 import {
   initAutoDisableNewMods,
@@ -254,9 +254,12 @@ export const DropInstaller = () => {
   const [autoDisableNewMods] = useAutoDisableNewMods();
   const [gamePath] = useGamePath();
   const ctx = useGlobalContext();
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
+    let disposed = false;
     let unlisten: (() => void) | undefined;
     void getCurrentWindow()
       .onDragDropEvent((event) => {
@@ -279,9 +282,14 @@ export const DropInstaller = () => {
             showMissingGamePopup();
             return;
           }
+          localInstallRunning = true;
           void installProfileFile(gamePath, profilePath, () => {
-            void ctx.modManage.reloadMods();
-          }).catch(console.error);
+            void ctxRef.current.modManage.reloadMods();
+          })
+            .catch(console.error)
+            .finally(() => {
+              localInstallRunning = false;
+            });
           return;
         }
         if (!gamePath) {
@@ -302,7 +310,7 @@ export const DropInstaller = () => {
                     (result) => result.success && result.packageType === "mod"
                   )
                 ) {
-                  ctx.modManage.reloadMods().catch(console.error);
+                  ctxRef.current.modManage.reloadMods().catch(console.error);
                   if (autoDisableNewMods) {
                     void reloadBlacklistState(gamePath).catch(console.error);
                   }
@@ -313,7 +321,7 @@ export const DropInstaller = () => {
                       result.success && result.packageType === "everest"
                   )
                 ) {
-                  ctx.everest.updateEverestVersion();
+                  ctxRef.current.everest.updateEverestVersion();
                 }
               }}
             />
@@ -322,11 +330,15 @@ export const DropInstaller = () => {
         );
       })
       .then((dispose) => {
-        unlisten = dispose;
+        if (disposed) dispose();
+        else unlisten = dispose;
       })
       .catch(console.error);
-    return () => unlisten?.();
-  }, [autoDisableNewMods, gamePath, ctx]);
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [autoDisableNewMods, gamePath]);
 
   return (
     <div className={`drop-install-overlay ${dragging ? "visible" : ""}`}>

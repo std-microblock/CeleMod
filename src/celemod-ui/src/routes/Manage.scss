@@ -817,14 +817,61 @@
   display: flex;
 }
 
-.profile-import-progress-popup .content,
-.profile-install-progress-popup .content {
+.profile-import-progress-popup .content {
   display: flex;
   min-width: 260px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   gap: 12px;
+}
+
+.profile-install-progress-popup {
+  width: min(620px, calc(100vw - 64px));
+  padding: 22px;
+  text-align: left;
+
+  > .content {
+    display: grid;
+    max-height: min(560px, calc(100vh - 190px));
+    margin-bottom: 16px;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  > .buttons {
+    justify-content: flex-end;
+  }
+}
+
+.profile-install-progress-summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    flex: 0 0 auto;
+    color: theme.$fg3;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.profile-install-task-list {
+  min-height: 80px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-radius: 9px;
+  background: color.change(theme.$bg2, $alpha: 0.42);
 }
 
 .profile-install-confirm-popup {

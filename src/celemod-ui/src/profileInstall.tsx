@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import _i18n from "./i18n";
 import { PopupContext, createPopup } from "./components/Popup";
-import { ProgressIndicator } from "./components/Progress";
+import { DownloadTask } from "./components/DownloadList";
 import { loadModCatalog, type CatalogMod } from "./api/modCatalog";
 import type { ModBlacklistProfile, ProfileImportResult } from "./ipc/blacklist";
 import { useDownloadStore, type Download } from "./stores/download";
@@ -19,6 +19,7 @@ export interface ProfileImportProgress {
   current: string;
   progress: number;
   discovered: string[];
+  tasks: Download.TaskInfo[];
 }
 
 export interface ProfileImportPlan {
@@ -42,6 +43,10 @@ const normalizedKey = (value: string) =>
     .replace(/\.[^.]+$/, "")
     .replace(/[^a-z0-9]/gi, "")
     .toLocaleLowerCase();
+const BUILT_IN_DEPENDENCIES = new Set(["celeste", "everest", "everestcore"]);
+const pendingProfileFiles = new Map<string, Promise<boolean>>();
+const isBuiltInDependency = (name: string) =>
+  BUILT_IN_DEPENDENCIES.has(name.trim().toLocaleLowerCase());
 
 export const previewProfileFile = async (
   gamePath: string,
@@ -103,9 +108,9 @@ export const resolveProfileImportPlan = async (
   }
   const profiles = result.profiles.map((profile) => ({
     ...profile,
-    enabled_mods: profile.enabled_mods.map(
-      (name) => olympusAliases.get(name.toLocaleLowerCase()) ?? name
-    ),
+    enabled_mods: profile.enabled_mods
+      .map((name) => olympusAliases.get(name.toLocaleLowerCase()) ?? name)
+      .filter((name) => !isBuiltInDependency(name)),
   }));
   const requestedMods = [
     ...new Set(profiles.flatMap((profile) => profile.enabled_mods)),
@@ -113,6 +118,7 @@ export const resolveProfileImportPlan = async (
   const unresolvedMods: string[] = [];
   const downloadsByName = new Map<string, CatalogMod>();
   for (const missing of result.missing_mods) {
+    if (isBuiltInDependency(missing)) continue;
     const mod =
       catalogByName.get(missing.toLocaleLowerCase()) ??
       catalogByFile.get(normalizedKey(missing));
@@ -152,14 +158,24 @@ const downloadPlannedMods = async (
   const roots = plan.downloads.map((mod) => mod.name);
   const taskSnapshots = new Map<string, Download.TaskInfo>();
   const discovered = new Set<string>();
+  for (const [index, mod] of plan.downloads.entries()) {
+    taskSnapshots.set(mod.name, {
+      name: mod.name,
+      subtasks: [],
+      source: sourceForMod(mod),
+      ownerId: `profile-install-${index}`,
+      mod: { name: mod.name },
+      state: "pending",
+      progress: 0,
+      canceled: false,
+      attemptId: -1 - index,
+    });
+  }
   const report = (current: string) => {
-    const allSubtasks = [...taskSnapshots.values()].flatMap(
-      (task) => task.subtasks
-    );
+    const tasks = [...taskSnapshots.values()];
+    const allSubtasks = tasks.flatMap((task) => task.subtasks);
     for (const subtask of allSubtasks) {
-      if (!roots.some((root) => root === subtask.name)) {
-        discovered.add(subtask.name);
-      }
+      if (!roots.includes(subtask.name)) discovered.add(subtask.name);
     }
     const finished = allSubtasks.filter(
       (subtask) => subtask.state === "Finished"
@@ -177,6 +193,7 @@ const downloadPlannedMods = async (
       current: active?.name ?? current,
       progress: active?.progress ?? 0,
       discovered: [...discovered],
+      tasks,
     });
   };
   report("");
@@ -215,7 +232,6 @@ const downloadPlannedMods = async (
         })
     )
   );
-  return [...discovered];
 };
 const commitProfiles = async (
   gamePath: string,
@@ -247,9 +263,11 @@ export const executeProfileImport = async (
 const ProfileInstallProgress = ({
   plan,
   onDone,
+  onSettled,
 }: {
   plan: ProfileImportPlan;
   onDone: () => void;
+  onSettled: (success: boolean) => void;
 }) => {
   const popup = useContext(PopupContext);
   const gamePath = useAppStore((state) => state.gamePath);
@@ -260,6 +278,7 @@ const ProfileInstallProgress = ({
     current: "",
     progress: 0,
     discovered: [],
+    tasks: [],
   });
   const [error, setError] = useState("");
 
@@ -267,47 +286,55 @@ const ProfileInstallProgress = ({
     void executeProfileImport(gamePath, plan, setProgress)
       .then(() => {
         onDone();
+        onSettled(true);
         popup.hide();
       })
-      .catch((reason) => setError(String(reason)));
+      .catch((reason) => {
+        setError(String(reason));
+        onSettled(false);
+      });
   }, []);
 
-  const value =
-    progress.finished +
-    progress.failed +
-    Math.max(0, Math.min(100, progress.progress)) / 100;
+  const running = progress.tasks.some((task) => task.state === "pending");
   return (
     <div className="popup-content profile-install-progress-popup">
       <div className="title">{_i18n.t("正在安装 Profile")}</div>
       <div className="content">
-        {error ? (
-          <div className="fatal-error">{error}</div>
-        ) : (
-          <>
-            <ProgressIndicator
-              size={78}
-              lineWidth={5}
-              {...(progress.total
-                ? { value, max: progress.total }
-                : { value: 1, max: 1 })}
-            />
-            <strong>{progress.current || _i18n.t("正在完成 Profile")}</strong>
-            <span>
-              {progress.finished} / {progress.total}
-            </span>
-            {progress.discovered.length > 0 && (
-              <div className="profile-install-discovered">
-                {_i18n.t("已发现依赖")}：{progress.discovered.join(", ")}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-      {error && (
-        <div className="buttons">
-          <button onClick={popup.hide}>{_i18n.t("确认")}</button>
+        <div className="profile-install-progress-summary">
+          <strong>{progress.current || _i18n.t("准备下载")}</strong>
+          <span>
+            {progress.finished} / {progress.total}
+          </span>
         </div>
-      )}
+        <div className="profile-install-task-list">
+          {progress.tasks.map((task) => (
+            <DownloadTask
+              key={`${task.name}-${task.attemptId}`}
+              task={task}
+              initialExpanded
+              showFinishedSubtasks
+              allowRetry={false}
+            />
+          ))}
+        </div>
+        {error && <div className="fatal-error">{error}</div>}
+      </div>
+      <div className="buttons">
+        {running && (
+          <button
+            onClick={() => {
+              for (const task of progress.tasks) {
+                if (task.state === "pending") {
+                  useDownloadStore.getState().cancelDownload(task.name);
+                }
+              }
+            }}
+          >
+            {_i18n.t("取消")}
+          </button>
+        )}
+        {error && <button onClick={popup.hide}>{_i18n.t("确认")}</button>}
+      </div>
     </div>
   );
 };
@@ -391,29 +418,40 @@ const waitForProfileConfirmation = (plan: ProfileImportPlan) =>
       { cancelable: false }
     );
   });
-
 const installProfilePlan = async (
   plan: ProfileImportPlan,
   onDone: () => void = () => undefined
 ) => {
   if (!(await waitForProfileConfirmation(plan))) return false;
-  createPopup(() => <ProfileInstallProgress plan={plan} onDone={onDone} />, {
-    cancelable: false,
+  return new Promise<boolean>((resolve) => {
+    createPopup(
+      () => (
+        <ProfileInstallProgress
+          plan={plan}
+          onDone={onDone}
+          onSettled={resolve}
+        />
+      ),
+      { cancelable: false }
+    );
   });
-  return true;
 };
 
-export const installProfileFile = async (
+export const installProfileFile = (
   gamePath: string,
   sourcePath: string,
   onDone?: () => void
-) =>
-  installProfilePlan(
-    await resolveProfileImportPlan(
-      await previewProfileFile(gamePath, sourcePath)
-    ),
-    onDone
-  );
+) => {
+  const key = `${gamePath}\0${sourcePath}`.toLocaleLowerCase();
+  const pending = pendingProfileFiles.get(key);
+  if (pending) return pending;
+  const task = previewProfileFile(gamePath, sourcePath)
+    .then(resolveProfileImportPlan)
+    .then((plan) => installProfilePlan(plan, onDone))
+    .finally(() => pendingProfileFiles.delete(key));
+  pendingProfileFiles.set(key, task);
+  return task;
+};
 
 export const installProfileJson = async (
   gamePath: string,
@@ -455,108 +493,63 @@ export const installOlympusProfiles = async (
 export const installSingleMod = async (
   mod: CatalogMod,
   onDone: () => void = () => undefined
-) =>
-  new Promise<boolean>((resolve) => {
-    let settled = false;
-    const settle = (value: boolean) => {
-      if (settled) return;
-      settled = true;
-      resolve(value);
-    };
-    const plan: ProfileImportPlan = {
-      profiles: [],
-      requestedMods: [mod.name],
-      missingMods: [mod.name],
-      unresolvedMods: [],
-      downloads: [mod],
-    };
-    createPopup(
-      () => {
-        const popup = useContext(PopupContext);
-        const [progress, setProgress] = useState<ProfileImportProgress | null>(
-          null
-        );
-        const [error, setError] = useState("");
-        const [installing, setInstalling] = useState(false);
-        return (
-          <div className="popup-content profile-install-confirm-popup">
-            <div className="title">
-              {installing ? _i18n.t("正在安装 Mod") : _i18n.t("确认安装 Mod")}
+) => {
+  const confirmed = await new Promise<boolean>((resolve) => {
+    const popup = createPopup(
+      () => (
+        <div className="popup-content profile-install-confirm-popup">
+          <div className="title">{_i18n.t("确认安装 Mod")}</div>
+          <div className="content">
+            <div className="profile-install-summary">
+              <strong>{mod.name}</strong>
+              <span>{mod.version}</span>
             </div>
-            <div className="content">
-              {error ? (
-                <div className="fatal-error">{error}</div>
-              ) : installing ? (
-                <>
-                  <ProgressIndicator
-                    size={78}
-                    lineWidth={5}
-                    value={
-                      (progress?.finished ?? 0) +
-                      Math.max(0, Math.min(100, progress?.progress ?? 0)) / 100
-                    }
-                    max={Math.max(1, progress?.total ?? 1)}
-                  />
-                  <strong>{progress?.current || mod.name}</strong>
-                  {progress?.discovered.length ? (
-                    <div>
-                      {_i18n.t("将补全")}：{progress.discovered.join(", ")}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="profile-install-summary">
-                    <strong>{mod.name}</strong>
-                    <span>{mod.version}</span>
-                  </div>
-                  <section>
-                    <h4>{_i18n.t("依赖")}</h4>
-                    <div>{_i18n.t("安装过程中发现的必需依赖会自动补全")}</div>
-                  </section>
-                </>
-              )}
-            </div>
-            <div className="buttons">
-              {!installing && !error && (
-                <button
-                  onClick={() => {
-                    settle(false);
-                    popup.hide();
-                  }}
-                >
-                  {_i18n.t("取消")}
-                </button>
-              )}
-              {error ? (
-                <button
-                  onClick={() => {
-                    settle(false);
-                    popup.hide();
-                  }}
-                >
-                  {_i18n.t("确认")}
-                </button>
-              ) : !installing ? (
-                <button
-                  onClick={() => {
-                    setInstalling(true);
-                    void downloadPlannedMods(plan, setProgress)
-                      .then(() => {
-                        onDone();
-                        settle(true);
-                        popup.hide();
-                      })
-                      .catch((reason) => setError(String(reason)));
-                  }}
-                >
-                  {_i18n.t("开始安装")}
-                </button>
-              ) : null}
-            </div>
+            <section>
+              <h4>{_i18n.t("依赖")}</h4>
+              <div>{_i18n.t("安装过程中发现的必需依赖会自动补全")}</div>
+            </section>
           </div>
-        );
-      },
+          <div className="buttons">
+            <button
+              onClick={() => {
+                resolve(false);
+                popup.hide();
+              }}
+            >
+              {_i18n.t("取消")}
+            </button>
+            <button
+              onClick={() => {
+                resolve(true);
+                popup.hide();
+              }}
+            >
+              {_i18n.t("开始安装")}
+            </button>
+          </div>
+        </div>
+      ),
       { cancelable: false }
     );
   });
+  if (!confirmed) return false;
+  const plan: ProfileImportPlan = {
+    profiles: [],
+    requestedMods: [mod.name],
+    missingMods: [mod.name],
+    unresolvedMods: [],
+    downloads: [mod],
+  };
+  return new Promise<boolean>((resolve) => {
+    createPopup(
+      () => (
+        <ProfileInstallProgress
+          plan={plan}
+          onDone={onDone}
+          onSettled={resolve}
+        />
+      ),
+      { cancelable: false }
+    );
+  });
+};

@@ -292,7 +292,10 @@ fn expand_installed_dependencies(
                 .iter()
                 .filter(|dependency| {
                     !dependency.optional
-                        && !matches!(dependency.name.as_str(), "Everest" | "EverestCore")
+                        && !matches!(
+                            dependency.name.to_ascii_lowercase().as_str(),
+                            "celeste" | "everest" | "everestcore"
+                        )
                 })
                 .map(|dependency| dependency.name.clone()),
         );
@@ -1068,6 +1071,11 @@ mod tests {
                 super::super::ModDependency {
                     name: "EverestCore".to_string(),
                     version: "1.0.0".to_string(),
+                    optional: false,
+                },
+                super::super::ModDependency {
+                    name: "Celeste".to_string(),
+                    version: "1.4.0".to_string(),
                     optional: false,
                 },
             ],
