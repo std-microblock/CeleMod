@@ -256,6 +256,8 @@
   "下载中…": "Downloading…",
   "点击切换；右键设为始终开启": "Click to toggle; right-click to set always on",
   "点击编辑备注": "Click to edit note",
+  "自动使用 GameBanana 提交名作为备注名": "Use the GameBanana submission name as the note automatically",
+  "没有备注名且提交名与 Mod 名不同时，在管理页优先显示提交名": "When there is no note and the submission name differs from the Mod name, show the submission name first on the management page",
   "依赖缺失": "Missing dependencies",
   "依赖未启用": "Dependency not enabled",
   "版本不匹配": "Version mismatch",

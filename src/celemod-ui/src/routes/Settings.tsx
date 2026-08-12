@@ -184,6 +184,12 @@ export const Settings = () => {
   const setShowUpdate = useAppStore((state) => state.setShowUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
   const setShowDetailed = useAppStore((state) => state.setShowDetailed);
+  const autoUseSubmissionNameAsComment = useAppStore(
+    (state) => state.autoUseSubmissionNameAsComment
+  );
+  const setAutoUseSubmissionNameAsComment = useAppStore(
+    (state) => state.setAutoUseSubmissionNameAsComment
+  );
   const modPageSource = useAppStore((state) => state.modPageSource);
   const setModPageSource = useAppStore((state) => state.setModPageSource);
   const autoToggleDependencies = useAppStore(
@@ -414,6 +420,14 @@ export const Settings = () => {
               description={_i18n.t("在 Mod 行中显示压缩包名称与大小")}
               checked={showDetailed}
               onChange={setShowDetailed}
+            />
+            <SettingToggle
+              title={_i18n.t("自动使用 GameBanana 提交名作为备注名")}
+              description={_i18n.t(
+                "没有备注名且提交名与 Mod 名不同时，在管理页优先显示提交名"
+              )}
+              checked={autoUseSubmissionNameAsComment}
+              onChange={setAutoUseSubmissionNameAsComment}
             />
             <div className="setting-select-row">
               <span>

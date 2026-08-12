@@ -18,6 +18,29 @@ export interface ManageCatalogMeta {
   updatedAt: string;
   gameBananaId: number | null;
 }
+export interface ManageDisplayNames {
+  primaryName: string;
+  secondaryName: string | null;
+}
+
+export const resolveManageDisplayNames = (
+  modName: string,
+  comment: string | undefined,
+  submissionName: string | undefined,
+  autoUseSubmissionName: boolean
+): ManageDisplayNames => {
+  const normalizedComment = comment?.trim() ?? "";
+  const normalizedSubmissionName = submissionName?.trim() ?? "";
+  const remarkName =
+    normalizedComment ||
+    (autoUseSubmissionName && normalizedSubmissionName !== modName.trim()
+      ? normalizedSubmissionName
+      : "");
+  return remarkName
+    ? { primaryName: remarkName, secondaryName: modName }
+    : { primaryName: modName, secondaryName: null };
+};
+
 
 export interface ManageDependency {
   name: string;
@@ -422,6 +445,7 @@ export const selectVisibleRootNames = ({
   includeOptional,
   hiddenTypes,
   updateNames,
+  displayNames,
 }: {
   nodes: Record<string, ManageNode>;
   filters: ManageFilters;
@@ -429,6 +453,7 @@ export const selectVisibleRootNames = ({
   includeOptional: boolean;
   hiddenTypes: string[];
   updateNames: Set<string>;
+  displayNames?: Record<string, ManageDisplayNames>;
 }) => {
   const query = filters.query.trim().toLocaleLowerCase();
   const matches = (node: ManageNode) => {
@@ -456,6 +481,8 @@ export const selectVisibleRootNames = ({
     if (query) {
       const text = [
         node.name,
+        displayNames?.[node.name]?.primaryName,
+        displayNames?.[node.name]?.secondaryName,
         node.version,
         node.file,
         node.meta?.submissionName,

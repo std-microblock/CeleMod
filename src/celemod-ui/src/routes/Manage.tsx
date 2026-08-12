@@ -47,6 +47,7 @@ import {
   excludedDependencyNames,
   getDependencyHealth,
   selectVisibleRootNames,
+  resolveManageDisplayNames,
   useManageStore,
   selectDefaultOrphanNames,
 } from "../stores/manage";
@@ -662,6 +663,7 @@ interface ManageActions {
   updateStates: Record<string, string>;
   alwaysOnMods: string[];
   comments: Record<string, string>;
+  autoUseSubmissionNameAsComment: boolean;
   setComment: (name: string, comment: string) => void;
   isPinned: (name: string) => boolean;
   togglePinned: (name: string) => void;
@@ -761,6 +763,12 @@ const ManageTreeNode = ({
   const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
   const menuOpen = openMenuName === name;
+  const displayNames = resolveManageDisplayNames(
+    name,
+    actions.comments[name],
+    node.meta?.submissionName,
+    actions.autoUseSubmissionNameAsComment
+  );
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -837,12 +845,14 @@ const ManageTreeNode = ({
                 onClick={() => setEditingComment(true)}
                 title={_i18n.t("点击编辑备注")}
               >
-                {name}
+                {displayNames.primaryName}
               </button>
             )}
             <span className="tree-version">{node.version}</span>
-            {actions.comments[name] && !editingComment && (
-              <span className="tree-comment">{actions.comments[name]}</span>
+            {displayNames.secondaryName && !editingComment && (
+              <span className="tree-mod-name" title={name}>
+                {displayNames.secondaryName}
+              </span>
             )}
           </div>
           <div className="tree-secondary-line">
@@ -1039,6 +1049,9 @@ export const Manage = () => {
   const setFullTree = useAppStore((state) => state.setFullTree);
   const showUpdate = useAppStore((state) => state.showUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
+  const autoUseSubmissionNameAsComment = useAppStore(
+    (state) => state.autoUseSubmissionNameAsComment
+  );
   const autoToggleDependencies = useAppStore(
     (state) => state.autoToggleDependencies
   );
@@ -1056,6 +1069,21 @@ export const Manage = () => {
   const { metaByName, fullByName } = useMemo(
     () => catalogMaps(catalog),
     [catalog]
+  );
+  const displayNamesByMod = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.values(nodes).map((node) => [
+          node.name,
+          resolveManageDisplayNames(
+            node.name,
+            comments[node.name],
+            node.meta?.submissionName,
+            autoUseSubmissionNameAsComment
+          ),
+        ])
+      ),
+    [autoUseSubmissionNameAsComment, comments, nodes]
   );
 
   useEffect(() => {
@@ -1150,8 +1178,17 @@ export const Manage = () => {
         includeOptional: checkOptional,
         hiddenTypes: hiddenModTypes,
         updateNames,
+        displayNames: displayNamesByMod,
       }),
-    [nodes, filters, rootOnly, checkOptional, hiddenModTypes, updateNames]
+    [
+      nodes,
+      filters,
+      rootOnly,
+      checkOptional,
+      hiddenModTypes,
+      updateNames,
+      displayNamesByMod,
+    ]
   );
 
   const keywordOnlyFilters = useMemo(
@@ -1174,8 +1211,16 @@ export const Manage = () => {
         includeOptional: checkOptional,
         hiddenTypes: hiddenModTypes,
         updateNames,
+        displayNames: displayNamesByMod,
       }),
-    [nodes, keywordOnlyFilters, checkOptional, hiddenModTypes, updateNames]
+    [
+      nodes,
+      keywordOnlyFilters,
+      checkOptional,
+      hiddenModTypes,
+      updateNames,
+      displayNamesByMod,
+    ]
   );
   const hasSearchQuery = filters.query.trim().length > 0;
   const hiddenKeywordMatchCount = hasSearchQuery
@@ -1709,6 +1754,7 @@ export const Manage = () => {
       updateStates,
       alwaysOnMods,
       comments,
+      autoUseSubmissionNameAsComment,
       setComment(name, comment) {
         setComments({ ...comments, [name]: comment });
       },
@@ -1721,6 +1767,7 @@ export const Manage = () => {
       showDetailed,
     }),
     [
+      autoUseSubmissionNameAsComment,
       alwaysOnMods,
       checkOptional,
       comments,

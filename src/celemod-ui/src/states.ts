@@ -96,6 +96,7 @@ interface AppState {
   fullTree: boolean;
   showUpdate: boolean;
   showDetailed: boolean;
+  autoUseSubmissionNameAsComment: boolean;
   autoToggleDependencies: boolean;
   autoToggleOptionalDependencies: boolean;
   deleteOrphansByDefault: boolean;
@@ -137,6 +138,7 @@ interface AppState {
   setFullTree: (value: boolean) => void;
   setShowUpdate: (value: boolean) => void;
   setShowDetailed: (value: boolean) => void;
+  setAutoUseSubmissionNameAsComment: (value: boolean) => void;
   setAutoToggleDependencies: (value: boolean) => void;
   setAutoToggleOptionalDependencies: (value: boolean) => void;
   setDeleteOrphansByDefault: (value: boolean) => void;
@@ -193,6 +195,7 @@ const setters = {
   setFullTree: "fullTree",
   setShowUpdate: "showUpdate",
   setShowDetailed: "showDetailed",
+  setAutoUseSubmissionNameAsComment: "autoUseSubmissionNameAsComment",
   setAutoToggleDependencies: "autoToggleDependencies",
   setAutoToggleOptionalDependencies: "autoToggleOptionalDependencies",
   setDeleteOrphansByDefault: "deleteOrphansByDefault",
@@ -247,6 +250,7 @@ export const useAppStore = create<AppState>()(
         fullTree: false,
         showUpdate: true,
         showDetailed: false,
+        autoUseSubmissionNameAsComment: true,
         modComments: {},
         autoToggleDependencies: true,
         autoToggleOptionalDependencies: false,
@@ -354,6 +358,7 @@ export const useAppStore = create<AppState>()(
         fullTree,
         showUpdate,
         showDetailed,
+        autoUseSubmissionNameAsComment,
         autoToggleDependencies,
         autoToggleOptionalDependencies,
         deleteOrphansByDefault,
@@ -384,6 +389,7 @@ export const useAppStore = create<AppState>()(
         fullTree,
         showUpdate,
         showDetailed,
+        autoUseSubmissionNameAsComment,
         autoToggleDependencies,
         autoToggleOptionalDependencies,
         deleteOrphansByDefault,

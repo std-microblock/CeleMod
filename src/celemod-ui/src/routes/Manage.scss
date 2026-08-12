@@ -514,7 +514,7 @@
   font-size: calc(8px * var(--manage-font-scale, 1));
   white-space: nowrap;
 }
-.tree-comment {
+.tree-mod-name {
   max-width: 190px;
   overflow: hidden;
   color: color.change(theme.$fg, $alpha: 0.52);
