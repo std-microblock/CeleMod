@@ -842,14 +842,23 @@ export const Manage = () => {
         .map((name) => nodes[name]?.file)
         .filter(Boolean) as string[];
       if (effectiveNames.length === 0) return;
-      void callRemote(
-        "switch_mod_blacklist_profile",
-        gamePath,
-        currentProfileName,
-        JSON.stringify(effectiveNames),
-        JSON.stringify(files),
-        enabled
-      );
+      if (profileEnabled) {
+        void callRemote(
+          "switch_mod_blacklist_profile",
+          gamePath,
+          currentProfileName,
+          JSON.stringify(effectiveNames),
+          JSON.stringify(files),
+          enabled
+        );
+      } else {
+        void callRemote(
+          "switch_direct_blacklist",
+          gamePath,
+          JSON.stringify(files),
+          enabled
+        );
+      }
       let nextMods = currentProfile.mods;
       const effectiveFiles = new Set(files);
       if (enabled) {
@@ -875,7 +884,7 @@ export const Manage = () => {
         )
       );
       setNodesEnabled(effectiveNames, enabled);
-      applyProfileSoon();
+      if (profileEnabled) applyProfileSoon();
     },
     [
       alwaysOnMods,
@@ -883,6 +892,7 @@ export const Manage = () => {
       currentProfile,
       currentProfileName,
       gamePath,
+      profileEnabled,
       nodes,
       setCurrentProfile,
       setProfilesCallback,
