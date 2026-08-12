@@ -75,6 +75,7 @@ const normalizeFontScale = (value: unknown): FontScale => {
 
 interface AppState {
   currentProfileName: string;
+  activeProfileNames: string[];
   profiles: ModBlacklistProfile[];
   currentProfile: ModBlacklistProfile | null;
   installedMods: BackendModInfo[];
@@ -113,6 +114,7 @@ interface AppState {
   page: string;
   downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
+  setActiveProfileNames: (value: string[]) => void;
   setProfiles: (value: ModBlacklistProfile[]) => void;
   setProfilesCallback: (
     setter: (profiles: ModBlacklistProfile[]) => ModBlacklistProfile[]
@@ -174,6 +176,7 @@ const saveAutoDisableNewMods = (value: boolean) => {
 
 const setters = {
   setCurrentProfileName: "currentProfileName",
+  setActiveProfileNames: "activeProfileNames",
   setProfiles: "profiles",
   setCurrentProfile: "currentProfile",
   setInstalledMods: "installedMods",
@@ -221,6 +224,7 @@ export const useAppStore = create<AppState>()(
       ) as unknown as Pick<AppState, keyof typeof setters>;
       return {
         currentProfileName: "",
+        activeProfileNames: [],
         profiles: [],
         currentProfile: null,
         installedMods: [],
@@ -434,48 +438,55 @@ export const reloadBlacklistState = async (gamePath: string) => {
   const request = ++blacklistLoadRequest;
   let state = useAppStore.getState();
   if (!state.profileModeInitialized) {
-    const profileCount = await callRemote<number>(
-      "get_blacklist_profile_count",
-      gamePath
-    );
-    state.initializeProfileMode(profileCount > 1);
+    // Reading profiles converts legacy v1 files before choosing the default mode.
+    const profiles = await loadProfiles(gamePath);
+    state.initializeProfileMode(profiles.length > 1);
     state = useAppStore.getState();
   }
 
   if (state.profileEnabled) {
-    let profiles = await loadProfiles(gamePath);
-    const storedProfileName = await callRemote<string>(
-      "get_current_profile",
-      gamePath
-    );
-    const currentProfileName =
-      profiles.find((profile) => profile.name === storedProfileName)?.name ??
-      profiles[0]?.name ??
-      "";
-    if (currentProfileName) {
-      const result = await callRemote<string>(
-        "apply_blacklist_profile",
-        gamePath,
-        currentProfileName,
-        JSON.stringify(state.alwaysOnMods)
-      );
-      if (result !== "Success") throw new Error(result);
-      profiles = await loadProfiles(gamePath);
-    }
+    const profiles = await loadProfiles(gamePath);
     if (request !== blacklistLoadRequest) return;
+    if (profiles.length === 0) {
+      state.setProfiles([]);
+      state.setActiveProfileNames([]);
+      state.setCurrentProfileName("");
+      state.setCurrentProfile(null);
+      return;
+    }
+    const requestedNames = JSON.parse(
+      await callRemote<string>("get_current_profiles", gamePath)
+    ) as string[];
+    const activeProfileNames = requestedNames.filter((name) =>
+      profiles.some((profile) => profile.name === name)
+    );
+    const selectedNames =
+      activeProfileNames.length > 0 ? activeProfileNames : [profiles[0].name];
+    const result = await callRemote<string>(
+      "apply_mod_profiles",
+      gamePath,
+      JSON.stringify(selectedNames),
+      JSON.stringify(state.alwaysOnMods)
+    );
+    if (result !== "Success") throw new Error(result);
+    if (request !== blacklistLoadRequest) return;
+    const currentProfileName = selectedNames[0];
     const currentProfile =
       profiles.find((profile) => profile.name === currentProfileName) ?? null;
     state.setProfiles(profiles);
+    state.setActiveProfileNames(selectedNames);
     state.setCurrentProfileName(currentProfile?.name ?? "");
     state.setCurrentProfile(currentProfile);
     return;
   }
+
   const direct = await loadDirectBlacklist(gamePath);
   if (request !== blacklistLoadRequest) return;
   state.setProfiles([direct]);
+  state.setActiveProfileNames([direct.name]);
   state.setCurrentProfileName(direct.name);
   state.setCurrentProfile(direct);
-};
+}
 
 let installedModsReloadRequest = 0;
 let installedModsAppliedRequest = 0;
@@ -537,6 +548,11 @@ export async function initializeAppStore() {
       }
     }
     if (gamePath) {
+      // Loading Profile files performs the on-disk v1 → v2 migration before
+      // any profile-mode decision or blacklist application.
+      await loadProfiles(gamePath);
+    }
+    if (gamePath) {
       await callRemote("cleanup_mod_download_temp_files", gamePath);
     }
   } catch (error) {
@@ -558,6 +574,9 @@ const objectHook =
     );
 
 export const useCurrentBlacklistProfile = objectHook([
+  "activeProfileNames",
+  "setActiveProfileNames",
+
   "currentProfileName",
   "setCurrentProfileName",
   "profiles",

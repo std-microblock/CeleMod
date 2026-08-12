@@ -9,8 +9,12 @@ import {
 import { callRemote } from "src/utils";
 
 export const createBlacklistContext = () => {
-  const { setProfiles, setCurrentProfileName, setCurrentProfile } =
-    useCurrentBlacklistProfile();
+  const {
+    setProfiles,
+    setCurrentProfileName,
+    setCurrentProfile,
+    setActiveProfileNames,
+  } = useCurrentBlacklistProfile();
 
   initAlwaysOnMods();
   const [alwaysOnMods] = useAlwaysOnMods();
@@ -18,14 +22,24 @@ export const createBlacklistContext = () => {
 
   const ctx = {
     switchProfile: async (name: string) => {
-      console.log("switch to profile", name);
       const result = await callRemote<string>(
-        "apply_blacklist_profile",
+        "apply_mod_profiles",
         gamePath,
-        name,
+        JSON.stringify([name]),
         JSON.stringify(alwaysOnMods)
       );
       if (result !== "Success") throw new Error(result);
+      await reloadBlacklistState(gamePath);
+    },
+    setActiveProfiles: async (names: string[]) => {
+      const result = await callRemote<string>(
+        "apply_mod_profiles",
+        gamePath,
+        JSON.stringify(names),
+        JSON.stringify(alwaysOnMods)
+      );
+      if (result !== "Success") throw new Error(result);
+      setActiveProfileNames(names);
       await reloadBlacklistState(gamePath);
     },
     setModsEnabled: async (
@@ -51,90 +65,48 @@ export const createBlacklistContext = () => {
         if (result !== "Success") throw new Error(result);
         const directProfile = state.currentProfile ?? {
           name: "blacklist.txt",
-          mods: [],
-          mod_options_order: [],
+          enabled_mods: [],
         };
-        const files = new Set(effectiveMods.map((mod) => mod.file));
         const names = new Set(effectiveMods.map((mod) => mod.name));
-        const nextMods = enabled
-          ? directProfile.mods.filter(
-              (mod) => !files.has(mod.file) && !names.has(mod.name)
-            )
-          : [
-              ...directProfile.mods,
-              ...effectiveMods.filter(
-                (mod) =>
-                  !directProfile.mods.some(
-                    (current) =>
-                      current.file === mod.file || current.name === mod.name
-                  )
-              ),
-            ];
-        const nextProfile = { ...directProfile, mods: nextMods };
+        const nextProfile = {
+          ...directProfile,
+          enabled_mods: enabled
+            ? [...new Set([...directProfile.enabled_mods, ...names])]
+            : directProfile.enabled_mods.filter((name) => !names.has(name)),
+        };
         setCurrentProfileName(nextProfile.name);
         setCurrentProfile(nextProfile);
         setProfiles([nextProfile]);
         return;
       }
 
-      let targetProfileName = state.currentProfileName;
-      if (!targetProfileName) {
-        targetProfileName = await callRemote<string>(
-          "get_current_profile",
-          targetGamePath
-        );
-      }
-      let targetProfiles = state.profiles;
-      let targetProfile =
-        targetProfiles.find((profile) => profile.name === targetProfileName) ||
-        null;
-      if (!targetProfile) {
-        targetProfiles = await new Promise<typeof state.profiles>(
-          (resolve, reject) => {
-            callRemote(
-              "get_blacklist_profiles",
-              targetGamePath,
-              (data: string) => {
-                try {
-                  resolve(JSON.parse(data));
-                } catch (error) {
-                  reject(error);
-                }
-              }
-            ).catch(reject);
-          }
-        );
-        targetProfile =
-          targetProfiles.find(
-            (profile) => profile.name === targetProfileName
-          ) ||
-          targetProfiles[0] ||
-          null;
-      }
+      const targetProfile =
+        state.profiles.find(
+          (profile) => profile.name === state.currentProfileName
+        ) ?? state.profiles[0];
       if (!targetProfile) throw new Error("No CeleMod Profile is available");
-
-
       const result = await callRemote<string>(
-        "switch_mod_blacklist_profile",
+        "switch_mod_profile_mods",
         targetGamePath,
         targetProfile.name,
         JSON.stringify(effectiveMods.map((mod) => mod.name)),
-        JSON.stringify(effectiveMods.map((mod) => mod.file)),
         enabled
       );
       if (result !== "Success") throw new Error(result);
 
+      const activeNames = state.activeProfileNames.length
+        ? state.activeProfileNames
+        : [targetProfile.name];
       const applyResult = await callRemote<string>(
-        "apply_blacklist_profile",
+        "apply_mod_profiles",
         targetGamePath,
-        targetProfile.name,
+        JSON.stringify(activeNames),
         JSON.stringify(targetAlwaysOnMods)
       );
       if (applyResult !== "Success") throw new Error(applyResult);
-
       await reloadBlacklistState(targetGamePath);
     },
   };
 
   return ctx;
-};
+}

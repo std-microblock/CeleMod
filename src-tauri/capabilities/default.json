@@ -12,6 +12,7 @@
     "core:webview:allow-set-webview-zoom",
     "window-controls:default",
     "dialog:allow-open",
+    "dialog:allow-save",
     {
       "identifier": "http:default",
       "allow": [

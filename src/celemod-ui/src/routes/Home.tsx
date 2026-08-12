@@ -55,8 +55,8 @@ export const Home = () => {
   }, [gamePath]);
   const globalCtx = useGlobalContext();
   const profileEnabled = useAppStore((state) => state.profileEnabled);
-  const { profiles, currentProfileName } = useCurrentBlacklistProfile();
-  const { installedMods } = useInstalledMods();
+  const { profiles, activeProfileNames } = useCurrentBlacklistProfile();
+  const alwaysOnMods = useAppStore((state) => state.alwaysOnMods);
   const mask = useBlockingMask();
 
   useEffect(() => {
@@ -66,6 +66,28 @@ export const Home = () => {
 
   const [, setMirror] = useMirror();
 
+  const [activeMods, setActiveMods] = useState<string[]>([]);
+  useEffect(() => {
+    if (!gamePath || !profileEnabled) {
+      setActiveMods([]);
+      return;
+    }
+    void callRemote<string>(
+      "get_active_profile_mods",
+      gamePath,
+      JSON.stringify(alwaysOnMods)
+    )
+      .then((data) => setActiveMods(JSON.parse(data) as string[]))
+      .catch(console.error);
+  }, [activeProfileNames, alwaysOnMods, gamePath, profileEnabled]);
+
+  const toggleProfile = (name: string) => {
+    const nextNames = activeProfileNames.includes(name)
+      ? activeProfileNames.filter((profileName) => profileName !== name)
+      : [...activeProfileNames, name];
+    if (nextNames.length === 0) return;
+    void globalCtx.blacklist.setActiveProfiles(nextNames).catch(console.error);
+  };
   return (
     <div className="home home-page">
       <header className="home-header">
@@ -181,27 +203,42 @@ export const Home = () => {
           </div>
           <div className="profiles">
             {profiles.map((v) => (
-              <div
+              <button
+                type="button"
                 key={v.name}
                 className={`profile ${
-                  v.name === currentProfileName && "selected"
+                  activeProfileNames.includes(v.name) ? "selected" : ""
                 }`}
-                onClick={() => {
-                  globalCtx.blacklist.switchProfile(v.name);
-                }}
+                onClick={() => toggleProfile(v.name)}
+                aria-pressed={activeProfileNames.includes(v.name)}
               >
                 <div className="profile-main">
                   <div className="name">{v.name}</div>
                   <div className="profile-meta">
                     <span>
                       {_i18n.t("启用 {count} 个 Mod", {
-                        count: installedMods.length - v.mods.length,
+                        count: v.enabled_mods.length,
                       })}
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
+          </div>
+          <div className="home-active-mods">
+            <div className="home-active-mods-heading">
+              <Icon name="list" />
+              <strong>
+                {_i18n.t("当前实际启用 {count} 个 Mod", {
+                  count: activeMods.length,
+                })}
+              </strong>
+            </div>
+            <div className="home-active-mod-list">
+              {activeMods.map((name) => (
+                <span key={name}>{name}</span>
+              ))}
+            </div>
           </div>
         </section>
       )}

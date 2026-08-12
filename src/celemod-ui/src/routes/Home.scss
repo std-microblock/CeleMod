@@ -197,7 +197,9 @@
   border: 1px solid color.change(theme.$fg, $alpha: 0.07);
   border-radius: 10px;
   background: color.change(theme.$bg1, $alpha: 0.36);
+  box-shadow: none;
   cursor: pointer;
+  text-align: left;
   transition: background 120ms ease, border-color 120ms ease;
 
   &:hover {
@@ -222,6 +224,39 @@
   .profile-meta {
     margin-top: 7px;
     color: theme.$fg3;
+    font-size: 8px;
+  }
+}
+
+.home-active-mods {
+  margin: 14px 8px 0;
+  padding: 11px 12px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  border-radius: 9px;
+  background: color.change(theme.$bg1, $alpha: 0.35);
+}
+
+.home-active-mods-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: theme.$fg2;
+  font-size: 10px;
+}
+
+.home-active-mod-list {
+  display: flex;
+  flex-wrap: wrap;
+  max-height: 124px;
+  margin-top: 9px;
+  overflow-y: auto;
+  gap: 5px;
+
+  span {
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: theme.$fg3;
+    background: theme.$bg2;
     font-size: 8px;
   }
 }

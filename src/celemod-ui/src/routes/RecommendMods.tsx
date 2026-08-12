@@ -371,15 +371,28 @@ export const RecommendMods = () => {
     other: string,
     category: string,
     downloadKey?: string
-  ): ModInfo => ({
-    name,
-    downloadKey: downloadKey ?? (modNameFromUrl(downloadUrl) || name),
-    downloadUrl: () => resolveDownloadSource(downloadUrl),
-    previewUrl,
-    author,
-    other,
-    category,
-  });
+  ): ModInfo => {
+    const modKey = downloadKey ?? (modNameFromUrl(downloadUrl) || name);
+    return {
+      name,
+      downloadKey: modKey,
+      downloadUrl: () =>
+        resolveDownloadSource(downloadUrl).then((source) => [
+          {
+            name: modKey,
+            url: source.startsWith("http") ? source : downloadUrl,
+            id: source.startsWith("http") ? "-1" : source,
+            size: "-",
+            isPrimary: true,
+            isInstalled: isInstalled(downloadUrl, modKey),
+          },
+        ]),
+      previewUrl,
+      author,
+      other,
+      category,
+    };
+  };
 
   return (
     <div className="recommend-mods-page">

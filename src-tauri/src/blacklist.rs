@@ -1,24 +1,38 @@
-use std::collections::HashSet;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    path::{Path, PathBuf},
+};
 
-use anyhow::Context;
+use anyhow::{Context, bail};
 use serde::{Deserialize, Serialize};
 
 use super::get_installed_mods_sync;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ModBlacklist {
-    name: String,
-    file: String,
-}
+const PROFILE_DIRECTORY: &str = "celemod_blacklist_profiles";
+const PROFILE_FORMAT: &str = "celemod-profile";
+const PROFILE_VERSION: u8 = 2;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ModBlacklistProfile {
     pub name: String,
-    pub mods: Vec<ModBlacklist>,
     #[serde(default)]
-    pub mod_options_order: Vec<String>,
+    pub enabled_mods: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProfileImportResult {
+    pub profiles: Vec<ModBlacklistProfile>,
+    pub missing_mods: Vec<String>,
+    pub missing_files: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct ExportedProfile<'a> {
+    format: &'static str,
+    version: u8,
+    #[serde(flatten)]
+    profile: &'a ModBlacklistProfile,
 }
 
 fn validate_profile_name(profile_name: &str) -> anyhow::Result<()> {
@@ -35,219 +49,339 @@ fn validate_profile_name(profile_name: &str) -> anyhow::Result<()> {
             .chars()
             .any(|character| invalid_windows_chars.contains(&character))
     {
-        anyhow::bail!("Invalid profile name");
+        bail!("Invalid profile name");
     }
     Ok(())
+}
+
+fn profiles_directory(game_path: &str) -> PathBuf {
+    Path::new(game_path).join(PROFILE_DIRECTORY)
 }
 
 fn profile_path(game_path: &str, profile_name: &str) -> anyhow::Result<PathBuf> {
     validate_profile_name(profile_name)?;
-    Ok(Path::new(game_path)
-        .join("celemod_blacklist_profiles")
-        .join(format!("{profile_name}.json")))
+    Ok(profiles_directory(game_path).join(format!("{profile_name}.json")))
 }
 
-pub fn apply_mod_blacklist_profile(
-    game_path: &String,
-    profile_name: &String,
-    always_on_mod: &[String],
-) -> anyhow::Result<()> {
-    validate_profile_name(profile_name)?;
-    let mut profile = get_mod_blacklist_profiles(game_path)
+fn normalize_names(names: impl IntoIterator<Item = String>) -> Vec<String> {
+    let mut names = names
         .into_iter()
-        .find(|v| &v.name == profile_name)
-        .context("Profile not found")?;
+        .map(|name| name.trim().to_owned())
+        .filter(|name| !name.is_empty())
+        .collect::<Vec<_>>();
+    names.sort_unstable_by_key(|name| name.to_ascii_lowercase());
+    names.dedup_by(|left, right| left.eq_ignore_ascii_case(right));
+    names
+}
 
-    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
+fn installed_mod_names(game_path: &str) -> Vec<String> {
+    normalize_names(
+        get_installed_mods_sync(format!("{game_path}/Mods"))
+            .into_iter()
+            .map(|mod_info| mod_info.name),
+    )
+}
 
-    let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
-    let mut profile_changed = false;
-    profile.mods.retain(|blacklisted_mod| {
-        let is_installed = mods.iter().any(|item| item.name == blacklisted_mod.name);
-        if !is_installed {
-            profile_changed = true;
+fn direct_blacklisted_files(game_path: &str) -> HashSet<String> {
+    fs::read_to_string(Path::new(game_path).join("Mods").join("blacklist.txt"))
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .map(|line| line.to_ascii_lowercase())
+        .collect()
+}
+
+fn profile_from_legacy_value(
+    value: &serde_json::Value,
+    installed: &[super::LocalMod],
+) -> anyhow::Result<ModBlacklistProfile> {
+    let object = value.as_object().context("Profile must be a JSON object")?;
+    let name = object
+        .get("name")
+        .and_then(serde_json::Value::as_str)
+        .context("Profile is missing a name")?
+        .to_owned();
+    validate_profile_name(&name)?;
+
+    if let Some(enabled_mods) = object
+        .get("enabled_mods")
+        .or_else(|| object.get("enabledMods"))
+        .and_then(serde_json::Value::as_array)
+    {
+        return Ok(ModBlacklistProfile {
+            name,
+            enabled_mods: normalize_names(
+                enabled_mods
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .map(str::to_owned),
+            ),
+        });
+    }
+
+    // v1 stored disabled `{ name, file }` entries. Convert it once using the
+    // installed set, then persist only the selected Mod IDs.
+    let disabled_names = object
+        .get("mods")
+        .and_then(serde_json::Value::as_array)
+        .map(|mods| {
+            mods.iter()
+                .filter_map(serde_json::Value::as_object)
+                .filter_map(|mod_info| mod_info.get("name").and_then(serde_json::Value::as_str))
+                .map(|name| name.to_ascii_lowercase())
+                .collect::<HashSet<_>>()
+        })
+        .unwrap_or_default();
+    let disabled_files = object
+        .get("mods")
+        .and_then(serde_json::Value::as_array)
+        .map(|mods| {
+            mods.iter()
+                .filter_map(serde_json::Value::as_object)
+                .filter_map(|mod_info| mod_info.get("file").and_then(serde_json::Value::as_str))
+                .map(|file| file.to_ascii_lowercase())
+                .collect::<HashSet<_>>()
+        })
+        .unwrap_or_default();
+
+    Ok(ModBlacklistProfile {
+        name,
+        enabled_mods: normalize_names(
+            installed
+                .iter()
+                .filter(|mod_info| {
+                    !disabled_names.contains(&mod_info.name.to_ascii_lowercase())
+                        && !disabled_files.contains(&mod_info.file.to_ascii_lowercase())
+                })
+                .map(|mod_info| mod_info.name.clone()),
+        ),
+    })
+}
+
+fn write_profile(game_path: &str, profile: &ModBlacklistProfile) -> anyhow::Result<()> {
+    validate_profile_name(&profile.name)?;
+    fs::create_dir_all(profiles_directory(game_path))?;
+    let profile = ModBlacklistProfile {
+        name: profile.name.clone(),
+        enabled_mods: normalize_names(profile.enabled_mods.clone()),
+    };
+    fs::write(
+        profile_path(game_path, &profile.name)?,
+        serde_json::to_string_pretty(&ExportedProfile {
+            format: PROFILE_FORMAT,
+            version: PROFILE_VERSION,
+            profile: &profile,
+        })?,
+    )?;
+    Ok(())
+}
+
+/// Loads profile files and rewrites every pre-v2 JSON profile in the v2 format.
+/// This makes migration happen during the first profile load at startup.
+pub fn get_mod_blacklist_profiles(game_path: &str) -> Vec<ModBlacklistProfile> {
+    let directory = profiles_directory(game_path);
+    if fs::create_dir_all(&directory).is_err() {
+        return Vec::new();
+    }
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let mut profiles = Vec::new();
+    let mut names = HashSet::new();
+    let entries = match fs::read_dir(&directory) {
+        Ok(entries) => entries,
+        Err(_) => return profiles,
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_none_or(|extension| extension != "json") {
+            continue;
         }
-        is_installed
-    });
-    for blacklisted_mod in &mut profile.mods {
-        let Some(installed_mod) = mods.iter().find(|item| item.name == blacklisted_mod.name) else {
+        let Ok(content) = fs::read_to_string(&path) else {
             continue;
         };
-        if blacklisted_mod.file != installed_mod.file {
-            blacklisted_mod.file = installed_mod.file.clone();
-            profile_changed = true;
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) else {
+            continue;
+        };
+        let Ok(profile) = profile_from_legacy_value(&value, &installed) else {
+            continue;
+        };
+        if !names.insert(profile.name.to_ascii_lowercase()) {
+            continue;
         }
-    }
-
-    if profile_changed {
-        fs::write(
-            profile_path(game_path, profile_name)?,
-            serde_json::to_string_pretty(&profile)?,
-        )?;
-    }
-
-    let always_on_files = mods
-        .iter()
-        .filter(|installed| always_on_mod.contains(&installed.name))
-        .map(|installed| installed.file.as_str())
-        .collect::<HashSet<_>>();
-    let mut seen_files = HashSet::new();
-    let blacklist_files = profile
-        .mods
-        .iter()
-        .filter_map(|blacklisted| {
-            let installed = mods.iter().find(|item| item.name == blacklisted.name)?;
-            if always_on_files.contains(installed.file.as_str())
-                || !seen_files.insert(installed.file.clone())
-            {
-                return None;
+        let is_v2 = value.get("format").and_then(serde_json::Value::as_str) == Some(PROFILE_FORMAT)
+            && value.get("version").and_then(serde_json::Value::as_u64)
+                == Some(PROFILE_VERSION.into());
+        if !is_v2 {
+            let _ = write_profile(game_path, &profile);
+            if path != profile_path(game_path, &profile.name).unwrap_or_default() {
+                let _ = fs::remove_file(path);
             }
-            Some(installed.file.clone())
-        })
-        .collect::<Vec<_>>();
-
-    fs::write(
-        blacklist,
-        format!(
-            "# Profile: {}\n# This file is generated by CeleMod\n\n\n",
-            profile_name
-        ) + &blacklist_files.join("\n"),
-    )?;
-
-    write_mod_options_order(game_path, &profile.mod_options_order)?;
-
-    Ok(())
-}
-
-/// Write modoptionsorder.txt from the given ordered file list.
-pub fn write_mod_options_order(game_path: &String, order: &[String]) -> anyhow::Result<()> {
-    let path = Path::new(game_path)
-        .join("Mods")
-        .join("modoptionsorder.txt");
-    if order.is_empty() {
-        // If no order specified, remove the file so Everest uses alphabetical order
-        if path.exists() {
-            fs::remove_file(&path)?;
         }
-        return Ok(());
+        profiles.push(profile);
     }
-    let content = format!(
-        "# Mod Options order\n# This file is generated by CeleMod\n\n{}\n",
-        order.join("\n")
-    );
-    fs::write(path, content)?;
-    Ok(())
+
+    profiles.sort_unstable_by_key(|profile| profile.name.to_ascii_lowercase());
+    profiles
 }
 
-/// Update the mod_options_order in a profile and immediately apply it to modoptionsorder.txt.
-pub fn set_mod_options_order(
-    game_path: &String,
-    profile_name: &String,
-    order: Vec<String>,
-) -> anyhow::Result<()> {
-    let mut profile = get_mod_blacklist_profiles(game_path)
-        .into_iter()
-        .find(|v| &v.name == profile_name)
-        .context("Profile not found")?;
-
-    profile.mod_options_order = order;
-
-    let profile_path = profile_path(game_path, profile_name)?;
-    fs::write(
-        &profile_path,
-        serde_json::to_string_pretty(&profile).unwrap(),
-    )?;
-
-    write_mod_options_order(game_path, &profile.mod_options_order)?;
-
-    Ok(())
-}
-
-pub fn get_current_profile(game_path: &String) -> anyhow::Result<String> {
-    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
-    let profiles = get_mod_blacklist_profiles(game_path);
-
-    if blacklist.exists() {
-        let data = fs::read_to_string(blacklist).unwrap();
-        let profile_name = data
-            .lines()
-            .next()
-            .map(|line| line.replace("# Profile: ", ""))
-            .unwrap_or("Default".to_string());
-        let current_profile = profiles.iter().find(|v| v.name == profile_name);
-
-        if let Some(current_profile) = current_profile {
-            Ok(current_profile.name.clone())
-        } else {
-            Ok("Default".to_string())
-        }
-    } else {
-        Ok("Default".to_string())
-    }
-}
-
-pub fn get_blacklist_profile_count(game_path: &String) -> usize {
-    let path = Path::new(game_path).join("celemod_blacklist_profiles");
-    fs::read_dir(path)
-        .ok()
-        .into_iter()
+pub fn get_blacklist_profile_count(game_path: &str) -> usize {
+    let directory = profiles_directory(game_path);
+    let Ok(entries) = fs::read_dir(directory) else {
+        return 0;
+    };
+    entries
         .flatten()
-        .filter_map(Result::ok)
         .filter(|entry| {
             entry
                 .path()
                 .extension()
                 .is_some_and(|extension| extension == "json")
         })
-        .filter_map(|entry| fs::read_to_string(entry.path()).ok())
-        .filter_map(|data| serde_json::from_str::<ModBlacklistProfile>(&data).ok())
-        .map(|profile| profile.name)
-        .collect::<HashSet<_>>()
-        .len()
+        .count()
 }
 
-fn profile_from_blacklist(game_path: &String) -> anyhow::Result<ModBlacklistProfile> {
-    let blacklist = Path::new(game_path).join("Mods").join("blacklist.txt");
-    let data = fs::read_to_string(blacklist).unwrap_or_default();
-    let mods = get_installed_mods_sync(game_path.clone() + "/Mods");
+fn resolve_selected_names(
+    installed: &[super::LocalMod],
+    selected_names: impl IntoIterator<Item = String>,
+) -> HashSet<String> {
+    let requested = selected_names
+        .into_iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    let selected_files = installed
+        .iter()
+        .filter(|mod_info| requested.contains(&mod_info.name.to_ascii_lowercase()))
+        .map(|mod_info| mod_info.file.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    installed
+        .iter()
+        .filter(|mod_info| selected_files.contains(&mod_info.file.to_ascii_lowercase()))
+        .map(|mod_info| mod_info.name.clone())
+        .collect()
+}
+
+pub fn apply_mod_blacklist_profiles(
+    game_path: &str,
+    profile_names: &[String],
+    always_on_mods: &[String],
+) -> anyhow::Result<Vec<String>> {
+    let profiles = get_mod_blacklist_profiles(game_path);
+    let requested_names = normalize_names(profile_names.iter().cloned());
+    let requested = requested_names
+        .iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    if requested.len() != requested_names.len()
+        || !requested.iter().all(|name| {
+            profiles
+                .iter()
+                .any(|profile| profile.name.eq_ignore_ascii_case(name))
+        })
+    {
+        bail!("Profile not found");
+    }
+
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let profile_enabled = profiles
+        .iter()
+        .filter(|profile| requested.contains(&profile.name.to_ascii_lowercase()))
+        .flat_map(|profile| profile.enabled_mods.iter().cloned());
+    let enabled_names = resolve_selected_names(
+        &installed,
+        profile_enabled.chain(always_on_mods.iter().cloned()),
+    );
+    let enabled_files = installed
+        .iter()
+        .filter(|mod_info| enabled_names.contains(&mod_info.name))
+        .map(|mod_info| mod_info.file.clone())
+        .collect::<HashSet<_>>();
+    let blacklist_files = installed
+        .iter()
+        .map(|mod_info| mod_info.file.clone())
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .filter(|file| !enabled_files.contains(file))
+        .collect::<Vec<_>>();
+
+    let header = serde_json::to_string(&requested_names)?;
+    fs::write(
+        Path::new(game_path).join("Mods").join("blacklist.txt"),
+        format!(
+            "# Profiles: {header}\n# This file is generated by CeleMod\n\n{}\n",
+            blacklist_files.join("\n")
+        ),
+    )?;
+    Ok(normalize_names(enabled_names))
+}
+
+pub fn get_current_profiles(game_path: &str) -> Vec<String> {
+    let profiles = get_mod_blacklist_profiles(game_path);
+    let profile_names = fs::read_to_string(Path::new(game_path).join("Mods").join("blacklist.txt"))
+        .ok()
+        .and_then(|contents| {
+            let header = contents.lines().next()?.trim();
+            if let Some(value) = header.strip_prefix("# Profiles: ") {
+                serde_json::from_str::<Vec<String>>(value).ok()
+            } else {
+                header
+                    .strip_prefix("# Profile: ")
+                    .map(|name| vec![name.to_owned()])
+            }
+        })
+        .unwrap_or_default();
+    let valid_names = profile_names
+        .into_iter()
+        .filter(|name| profiles.iter().any(|profile| profile.name == *name))
+        .collect::<Vec<_>>();
+    if valid_names.is_empty() {
+        profiles
+            .first()
+            .map(|profile| vec![profile.name.clone()])
+            .unwrap_or_default()
+    } else {
+        valid_names
+    }
+}
+
+pub fn get_current_profile(game_path: &str) -> anyhow::Result<String> {
+    Ok(get_current_profiles(game_path)
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| "Default".to_string()))
+}
+
+pub fn get_active_profile_mods(game_path: &str, always_on_mods: &[String]) -> Vec<String> {
+    let profiles = get_current_profiles(game_path);
+    let all_profiles = get_mod_blacklist_profiles(game_path);
+    let selected = all_profiles
+        .iter()
+        .filter(|profile| profiles.contains(&profile.name))
+        .flat_map(|profile| profile.enabled_mods.iter().cloned())
+        .chain(always_on_mods.iter().cloned());
+    resolve_selected_names(
+        &get_installed_mods_sync(format!("{game_path}/Mods")),
+        selected,
+    )
+    .into_iter()
+    .collect()
+}
+
+pub fn get_direct_blacklist_profile(game_path: &str) -> anyhow::Result<ModBlacklistProfile> {
+    let blacklisted = direct_blacklisted_files(game_path);
     Ok(ModBlacklistProfile {
         name: "blacklist.txt".to_string(),
-        mods: data
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty() && !line.starts_with('#'))
-            .map(|file| {
-                let name = mods
-                    .iter()
-                    .find(|installed| installed.file.eq_ignore_ascii_case(file))
-                    .map(|installed| installed.name.clone())
-                    .unwrap_or_else(|| file.to_string());
-                ModBlacklist {
-                    name,
-                    file: file.to_string(),
-                }
-            })
-            .collect(),
-        mod_options_order: fs::read_to_string(
-            Path::new(game_path)
-                .join("Mods")
-                .join("modoptionsorder.txt"),
-        )
-        .unwrap_or_default()
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(str::to_owned)
-        .collect(),
+        enabled_mods: normalize_names(
+            get_installed_mods_sync(format!("{game_path}/Mods"))
+                .into_iter()
+                .filter(|mod_info| !blacklisted.contains(&mod_info.file.to_ascii_lowercase()))
+                .map(|mod_info| mod_info.name),
+        ),
     })
 }
 
-pub fn get_direct_blacklist_profile(game_path: &String) -> anyhow::Result<ModBlacklistProfile> {
-    profile_from_blacklist(game_path)
-}
-
 pub fn switch_direct_blacklist(
-    game_path: &String,
+    game_path: &str,
     mod_files: &[String],
     enabled: bool,
 ) -> anyhow::Result<()> {
@@ -283,56 +417,83 @@ pub fn switch_direct_blacklist(
     Ok(())
 }
 
-pub fn update_mod_blacklist_file(
-    game_path: &String,
-    mod_name: &str,
+pub fn switch_mod_profile_mods(
+    game_path: &str,
+    profile_name: &str,
+    mod_names: &[String],
+    enabled: bool,
+) -> anyhow::Result<()> {
+    let mut profile = get_mod_blacklist_profiles(game_path)
+        .into_iter()
+        .find(|profile| profile.name == profile_name)
+        .context("Profile not found")?;
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let package_names = resolve_selected_names(&installed, mod_names.iter().cloned());
+    if enabled {
+        profile.enabled_mods =
+            normalize_names(profile.enabled_mods.into_iter().chain(package_names));
+    } else {
+        profile
+            .enabled_mods
+            .retain(|name| !package_names.contains(name));
+    }
+    write_profile(game_path, &profile)
+}
+
+pub fn new_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
+    validate_profile_name(profile_name)?;
+    if get_mod_blacklist_profiles(game_path)
+        .iter()
+        .any(|profile| profile.name.eq_ignore_ascii_case(profile_name))
+    {
+        bail!("Profile already exists");
+    }
+    write_profile(
+        game_path,
+        &ModBlacklistProfile {
+            name: profile_name.to_owned(),
+            enabled_mods: Vec::new(),
+        },
+    )
+}
+
+pub fn remove_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
+    fs::remove_file(profile_path(game_path, profile_name)?)?;
+    Ok(())
+}
+
+/// Replacing an archive never changes v2 profile files because they store only
+/// stable Mod names. The active profile is re-applied to discover its new file.
+pub fn update_blacklist_mod_file(
+    game_path: &str,
+    _mod_name: &str,
     old_file: &str,
     new_file: &str,
     profile_enabled: bool,
-    always_on_mod: &[String],
+    always_on_mods: &[String],
 ) -> anyhow::Result<()> {
-    if old_file == new_file {
-        return Ok(());
-    }
-    if profile_enabled {
-        let mut profiles = get_mod_blacklist_profiles(game_path);
-        for profile in &mut profiles {
-            let mut changed = false;
-            for blacklisted in &mut profile.mods {
-                if blacklisted.name == mod_name || blacklisted.file.eq_ignore_ascii_case(old_file) {
-                    blacklisted.name = mod_name.to_string();
-                    blacklisted.file = new_file.to_string();
-                    changed = true;
-                }
-            }
-            if changed {
-                fs::write(
-                    profile_path(game_path, &profile.name)?,
-                    serde_json::to_string_pretty(profile)?,
-                )?;
-            }
+    if old_file == new_file || profile_enabled {
+        if profile_enabled {
+            let profiles = get_current_profiles(game_path);
+            apply_mod_blacklist_profiles(game_path, &profiles, always_on_mods)?;
         }
-        let current = get_current_profile(game_path).unwrap_or_else(|_| "Default".to_string());
-        apply_mod_blacklist_profile(game_path, &current, always_on_mod)?;
         return Ok(());
     }
-
     let path = Path::new(game_path).join("Mods").join("blacklist.txt");
-    let data = fs::read_to_string(&path).unwrap_or_default();
-    let mut has_new_file = data.lines().any(|line| {
-        line.trim().eq_ignore_ascii_case(new_file) && !line.trim().eq_ignore_ascii_case(old_file)
-    });
-    let lines = data
+    let contents = fs::read_to_string(&path).unwrap_or_default();
+    let mut seen_new_file = false;
+    let lines = contents
         .lines()
         .filter_map(|line| {
             if !line.trim().eq_ignore_ascii_case(old_file) {
-                return Some(line.to_string());
+                return Some(line.to_owned());
             }
-            if has_new_file {
-                return None;
+            if seen_new_file {
+                None
+            } else {
+                seen_new_file = true;
+                Some(new_file.to_owned())
             }
-            has_new_file = true;
-            Some(new_file.to_string())
         })
         .collect::<Vec<_>>();
     fs::write(
@@ -342,114 +503,182 @@ pub fn update_mod_blacklist_file(
     Ok(())
 }
 
-pub fn get_mod_blacklist_profiles(game_path: &String) -> Vec<ModBlacklistProfile> {
-    let blacklist_path = Path::new(game_path).join("celemod_blacklist_profiles");
-    fs::create_dir_all(&blacklist_path).unwrap();
-    let mut profiles = vec![];
-    for entry in fs::read_dir(&blacklist_path).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path
-            .extension()
-            .is_some_and(|extension| extension == "json")
-        {
-            let data = fs::read_to_string(path).unwrap();
-            let profile: ModBlacklistProfile = serde_json::from_str(&data).unwrap();
-            profiles.push(profile);
+fn parse_olympus_presets(
+    game_path: &str,
+    contents: &str,
+) -> anyhow::Result<(Vec<ModBlacklistProfile>, Vec<String>)> {
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let mut names_by_file: HashMap<String, Vec<String>> = HashMap::new();
+    for mod_info in installed {
+        names_by_file
+            .entry(mod_info.file.to_ascii_lowercase())
+            .or_default()
+            .push(mod_info.name);
+    }
+    let mut profiles = Vec::new();
+    let mut missing_files = Vec::new();
+    let mut current_name: Option<String> = None;
+    let mut current_files = Vec::new();
+    let finish = |name: Option<String>,
+                  files: &mut Vec<String>,
+                  profiles: &mut Vec<ModBlacklistProfile>,
+                  missing: &mut Vec<String>|
+     -> anyhow::Result<()> {
+        let Some(name) = name else { return Ok(()) };
+        validate_profile_name(&name)?;
+        let mut enabled_mods = Vec::new();
+        for file in files.drain(..) {
+            if let Some(names) = names_by_file.get(&file.to_ascii_lowercase()) {
+                enabled_mods.extend(names.iter().cloned());
+            } else {
+                missing.push(file);
+            }
+        }
+        profiles.push(ModBlacklistProfile {
+            name,
+            enabled_mods: normalize_names(enabled_mods),
+        });
+        Ok(())
+    };
+    for line in contents.lines() {
+        if let Some(name) = line.strip_prefix("**") {
+            finish(
+                current_name.take(),
+                &mut current_files,
+                &mut profiles,
+                &mut missing_files,
+            )?;
+            current_name = Some(name.trim().to_owned());
+        } else if current_name.is_some() {
+            let file = line.trim();
+            if !file.is_empty() && !file.starts_with('#') {
+                current_files.push(file.to_owned());
+            }
         }
     }
-
+    finish(
+        current_name,
+        &mut current_files,
+        &mut profiles,
+        &mut missing_files,
+    )?;
     if profiles.is_empty() {
-        let profile = profile_from_blacklist(game_path).unwrap_or(ModBlacklistProfile {
-            name: "Default".to_string(),
-            mods: vec![],
-            mod_options_order: vec![],
-        });
-        let profile = ModBlacklistProfile {
-            name: "Default".to_string(),
-            ..profile
-        };
-        fs::write(
-            blacklist_path.join("Default.json"),
-            serde_json::to_string_pretty(&profile).unwrap(),
-        )
-        .unwrap();
-        profiles.push(profile);
+        bail!("No Olympus presets found");
     }
-    profiles
+    Ok((profiles, normalize_names(missing_files)))
 }
 
-pub fn switch_mod_blacklist_profile(
-    game_path: &String,
-    profile_name: &String,
-    mods: Vec<(&String, &String)>,
-    enabled: bool,
+pub fn get_olympus_presets(game_path: &str) -> anyhow::Result<Vec<ModBlacklistProfile>> {
+    let path = Path::new(game_path).join("Mods").join("modpresets.txt");
+    let contents = fs::read_to_string(path).context("Olympus modpresets.txt was not found")?;
+    Ok(parse_olympus_presets(game_path, &contents)?.0)
+}
+
+pub fn import_olympus_presets(
+    game_path: &str,
+    selected_names: &[String],
+) -> anyhow::Result<ProfileImportResult> {
+    let path = Path::new(game_path).join("Mods").join("modpresets.txt");
+    let contents = fs::read_to_string(path).context("Olympus modpresets.txt was not found")?;
+    let (profiles, missing_files) = parse_olympus_presets(game_path, &contents)?;
+    let selected = selected_names
+        .iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    let profiles = profiles
+        .into_iter()
+        .filter(|profile| selected.contains(&profile.name.to_ascii_lowercase()))
+        .collect::<Vec<_>>();
+    if profiles.is_empty() {
+        bail!("No Olympus presets were selected");
+    }
+    let imported_names = profiles
+        .iter()
+        .flat_map(|profile| profile.enabled_mods.iter().cloned())
+        .collect::<Vec<_>>();
+    for profile in &profiles {
+        write_profile(game_path, profile)?;
+    }
+    let installed_names = installed_mod_names(game_path)
+        .into_iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    Ok(ProfileImportResult {
+        profiles,
+        missing_mods: normalize_names(imported_names)
+            .into_iter()
+            .filter(|name| !installed_names.contains(&name.to_ascii_lowercase()))
+            .collect(),
+        missing_files,
+    })
+}
+
+pub fn import_mod_profiles(
+    game_path: &str,
+    source_path: &str,
+) -> anyhow::Result<ProfileImportResult> {
+    let contents = fs::read_to_string(source_path).context("Failed to read profile file")?;
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let trimmed = contents.trim_start();
+    let (profiles, missing_files) =
+        if trimmed.starts_with("**") || source_path.ends_with("modpresets.txt") {
+            parse_olympus_presets(game_path, &contents)?
+        } else {
+            let value: serde_json::Value =
+                serde_json::from_str(&contents).context("Invalid profile JSON")?;
+            let values = value
+                .get("profiles")
+                .and_then(serde_json::Value::as_array)
+                .cloned()
+                .or_else(|| value.as_array().cloned())
+                .unwrap_or_else(|| vec![value]);
+            let profiles = values
+                .iter()
+                .map(|value| profile_from_legacy_value(value, &installed))
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            if profiles.is_empty() {
+                bail!("No profiles found");
+            }
+            (profiles, Vec::new())
+        };
+    let imported_names = profiles
+        .iter()
+        .flat_map(|profile| profile.enabled_mods.iter().cloned())
+        .collect::<Vec<_>>();
+    for profile in &profiles {
+        write_profile(game_path, profile)?;
+    }
+    let installed_names = installed_mod_names(game_path)
+        .into_iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    Ok(ProfileImportResult {
+        profiles,
+        missing_mods: normalize_names(imported_names)
+            .into_iter()
+            .filter(|name| !installed_names.contains(&name.to_ascii_lowercase()))
+            .collect(),
+        missing_files,
+    })
+}
+
+pub fn export_mod_profile(
+    game_path: &str,
+    profile_name: &str,
+    destination: &str,
 ) -> anyhow::Result<()> {
-    validate_profile_name(profile_name)?;
     let profile = get_mod_blacklist_profiles(game_path)
         .into_iter()
-        .find(|v| &v.name == profile_name)
+        .find(|profile| profile.name == profile_name)
         .context("Profile not found")?;
-
-    // remove mod_name from profile or add it
-    let mut new_profile = profile;
-
-    if !enabled {
-        for (mod_name, mod_file) in mods {
-            if new_profile
-                .mods
-                .iter()
-                .any(|v| &v.name == mod_name || &v.file == mod_file)
-            {
-                continue;
-            }
-            new_profile.mods.push(ModBlacklist {
-                name: mod_name.clone(),
-                file: mod_file.clone(),
-            });
-        }
-    } else {
-        new_profile.mods.retain(|v| {
-            !mods
-                .iter()
-                .any(|(mod_name, mod_file)| &&v.name == mod_name || &&v.file == mod_file)
-        });
-    }
-
-    let blacklist_path = profile_path(game_path, &new_profile.name)?;
-
     fs::write(
-        blacklist_path,
-        serde_json::to_string_pretty(&new_profile).unwrap(),
+        destination,
+        serde_json::to_string_pretty(&ExportedProfile {
+            format: PROFILE_FORMAT,
+            version: PROFILE_VERSION,
+            profile: &profile,
+        })?,
     )?;
-
-    Ok(())
-}
-
-pub fn new_mod_blacklist_profile(game_path: &String, profile_name: &String) -> anyhow::Result<()> {
-    let blacklist_path = profile_path(game_path, profile_name)?;
-
-    fs::write(
-        blacklist_path,
-        serde_json::to_string_pretty(&ModBlacklistProfile {
-            name: profile_name.clone(),
-            mods: vec![],
-            mod_options_order: vec![],
-        })
-        .unwrap(),
-    )?;
-
-    Ok(())
-}
-
-pub fn remove_mod_blacklist_profile(
-    game_path: &String,
-    profile_name: &String,
-) -> anyhow::Result<()> {
-    let blacklist_path = profile_path(game_path, profile_name)?;
-
-    fs::remove_file(blacklist_path)?;
-
     Ok(())
 }
 
@@ -464,7 +693,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "celemod-blacklist-{name}-{}-{unique}",
+            "celemod-profile-{name}-{}-{unique}",
             std::process::id()
         ));
         fs::create_dir_all(path.join("Mods")).unwrap();
@@ -475,7 +704,6 @@ mod tests {
     fn accepts_human_readable_profile_names() {
         assert!(validate_profile_name("Default").is_ok());
         assert!(validate_profile_name("周末联机 (2)").is_ok());
-        assert!(validate_profile_name("blacklist.txt").is_ok());
     }
 
     #[test]
@@ -495,150 +723,104 @@ mod tests {
     }
 
     #[test]
-    fn treats_multiple_metadata_names_in_one_archive_as_one_switchable_package() {
-        let game_path = test_game_path("multi-metadata");
-        let profile_name = "Default".to_string();
-        get_mod_blacklist_profiles(&game_path);
-
-        let main_name = "Bundle.Main".to_string();
-        let extra_name = "Bundle.Extra".to_string();
-        let file = "Bundle.zip".to_string();
-        switch_mod_blacklist_profile(
-            &game_path,
-            &profile_name,
-            vec![(&main_name, &file), (&extra_name, &file)],
-            false,
-        )
-        .unwrap();
-
-        let profile = get_mod_blacklist_profiles(&game_path)
-            .into_iter()
-            .find(|profile| profile.name == profile_name)
-            .unwrap();
-        assert_eq!(profile.mods.len(), 1);
-        assert_eq!(profile.mods[0].file, file);
-
-        switch_mod_blacklist_profile(&game_path, &profile_name, vec![(&extra_name, &file)], true)
-            .unwrap();
-        let profile = get_mod_blacklist_profiles(&game_path)
-            .into_iter()
-            .find(|profile| profile.name == profile_name)
-            .unwrap();
-        assert!(profile.mods.is_empty());
-
+    fn permits_deleting_the_final_profile() {
+        let game_path = test_game_path("delete-final");
+        new_mod_blacklist_profile(&game_path, "Only").unwrap();
+        remove_mod_blacklist_profile(&game_path, "Only").unwrap();
+        assert!(get_mod_blacklist_profiles(&game_path).is_empty());
         fs::remove_dir_all(game_path).unwrap();
     }
 
     #[test]
-    fn applying_a_profile_removes_deleted_mods() {
-        let game_path = test_game_path("deleted-mod");
-        let profile_name = "Default".to_string();
-        get_mod_blacklist_profiles(&game_path);
-
-        let mod_name = "Deleted.Mod".to_string();
-        let file = "DeletedMod.zip".to_string();
-        switch_mod_blacklist_profile(&game_path, &profile_name, vec![(&mod_name, &file)], false)
-            .unwrap();
-
-        apply_mod_blacklist_profile(&game_path, &profile_name, &[]).unwrap();
-
-        let profile = get_mod_blacklist_profiles(&game_path)
-            .into_iter()
-            .find(|profile| profile.name == profile_name)
-            .unwrap();
-        assert!(profile.mods.is_empty());
-        let blacklist =
-            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
-        assert!(!blacklist.contains(&file));
-
-        fs::remove_dir_all(game_path).unwrap();
-    }
-
-    #[test]
-    fn direct_blacklist_switch_preserves_unrelated_content() {
-        let game_path = test_game_path("direct-switch");
-        let path = Path::new(&game_path).join("Mods/blacklist.txt");
-        fs::write(&path, "# managed elsewhere\nKeep.zip\n\n*.Disabled\n").unwrap();
-
-        switch_direct_blacklist(&game_path, &["New.zip".to_string()], false).unwrap();
-        switch_direct_blacklist(&game_path, &["Keep.zip".to_string()], true).unwrap();
-
-        let content = fs::read_to_string(&path).unwrap();
-        assert!(content.contains("# managed elsewhere"));
-        assert!(content.contains("*.Disabled"));
-        assert!(content.contains("New.zip"));
-        assert!(!content.contains("Keep.zip"));
-        assert!(
-            !Path::new(&game_path)
-                .join("celemod_blacklist_profiles")
-                .exists()
-        );
-
-        fs::remove_dir_all(game_path).unwrap();
-    }
-
-    #[test]
-    fn direct_blacklist_tracks_updated_file_names() {
-        let game_path = test_game_path("direct-rename");
-        let path = Path::new(&game_path).join("Mods/blacklist.txt");
+    fn migration_rewrites_legacy_profile_as_enabled_names() {
+        let game_path = test_game_path("migration");
+        let directory = profiles_directory(&game_path);
+        fs::create_dir_all(&directory).unwrap();
         fs::write(
-            &path,
-            "# external comment\nOld Name.zip\nNew Name.zip\nOther.zip\n",
+            directory.join("Legacy.json"),
+            r#"{"name":"Legacy","mods":[{"name":"Disabled.Mod","file":"Disabled.zip"}],"mod_options_order":["Disabled.zip"]}"#,
+        ).unwrap();
+        let profiles = get_mod_blacklist_profiles(&game_path);
+        assert_eq!(profiles[0].name, "Legacy");
+        assert!(profiles[0].enabled_mods.is_empty());
+        let rewritten: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(directory.join("Legacy.json")).unwrap())
+                .unwrap();
+        assert_eq!(rewritten["version"], PROFILE_VERSION);
+        assert!(rewritten.get("mods").is_none());
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn imports_only_selected_olympus_presets() {
+        let game_path = test_game_path("olympus-selection");
+        fs::write(
+            Path::new(&game_path).join("Mods/modpresets.txt"),
+            "**First\nMissingOne.zip\n**Second\nMissingTwo.zip\n",
         )
         .unwrap();
+        let imported = import_olympus_presets(&game_path, &["Second".to_string()]).unwrap();
+        assert_eq!(imported.profiles.len(), 1);
+        assert_eq!(imported.profiles[0].name, "Second");
+        assert!(profiles_directory(&game_path).join("Second.json").is_file());
+        assert!(!profiles_directory(&game_path).join("First.json").exists());
+        fs::remove_dir_all(game_path).unwrap();
+    }
 
-        update_mod_blacklist_file(
+    #[test]
+    fn applying_multiple_profiles_records_all_selected_profiles() {
+        let game_path = test_game_path("union");
+        let first = ModBlacklistProfile {
+            name: "First".to_string(),
+            enabled_mods: vec!["One".to_string()],
+        };
+        let second = ModBlacklistProfile {
+            name: "Second".to_string(),
+            enabled_mods: vec!["Two".to_string()],
+        };
+        write_profile(&game_path, &first).unwrap();
+        write_profile(&game_path, &second).unwrap();
+        let enabled = apply_mod_blacklist_profiles(
             &game_path,
-            "Updated.Mod",
-            "Old Name.zip",
-            "New Name.zip",
-            false,
+            &["First".to_string(), "Second".to_string()],
             &[],
         )
         .unwrap();
-
-        assert_eq!(
-            fs::read_to_string(&path).unwrap(),
-            "# external comment\nNew Name.zip\nOther.zip\n"
-        );
+        assert!(enabled.is_empty());
+        let blacklist =
+            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
+        assert!(blacklist.starts_with("# Profiles: [\"First\",\"Second\"]"));
         fs::remove_dir_all(game_path).unwrap();
     }
 
     #[test]
-    fn profile_detection_does_not_create_profile_storage() {
-        let game_path = test_game_path("profile-detection");
-        assert_eq!(get_blacklist_profile_count(&game_path), 0);
-        assert!(
-            !Path::new(&game_path)
-                .join("celemod_blacklist_profiles")
-                .exists()
-        );
+    fn imports_and_exports_v2_profiles() {
+        let game_path = test_game_path("transfer");
+        let source = Path::new(&game_path).join("source.json");
+        fs::write(
+            &source,
+            r#"{"format":"celemod-profile","version":2,"name":"Imported","enabled_mods":["Missing.Mod"]}"#,
+        )
+        .unwrap();
+        let imported = import_mod_profiles(&game_path, source.to_str().unwrap()).unwrap();
+        assert_eq!(imported.profiles[0].name, "Imported");
+        assert_eq!(imported.missing_mods, ["Missing.Mod"]);
+
+        let destination = Path::new(&game_path).join("exported.json");
+        export_mod_profile(&game_path, "Imported", destination.to_str().unwrap()).unwrap();
+        let exported: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(destination).unwrap()).unwrap();
+        assert_eq!(exported["format"], PROFILE_FORMAT);
+        assert_eq!(exported["enabled_mods"], serde_json::json!(["Missing.Mod"]));
         fs::remove_dir_all(game_path).unwrap();
     }
-
     #[test]
-    fn profile_detection_counts_distinct_existing_profiles() {
-        let game_path = test_game_path("profile-count");
-        let profiles_path = Path::new(&game_path).join("celemod_blacklist_profiles");
-        fs::create_dir_all(&profiles_path).unwrap();
-        for (file, name) in [
-            ("Default.json", "Default"),
-            ("Coop.json", "Coop"),
-            ("Coop-copy.json", "Coop"),
-        ] {
-            let profile = ModBlacklistProfile {
-                name: name.to_string(),
-                mods: vec![],
-                mod_options_order: vec![],
-            };
-            fs::write(
-                profiles_path.join(file),
-                serde_json::to_string(&profile).unwrap(),
-            )
-            .unwrap();
-        }
-
-        assert_eq!(get_blacklist_profile_count(&game_path), 2);
+    fn olympus_parser_reports_unknown_files() {
+        let game_path = test_game_path("olympus");
+        let (profiles, missing) =
+            parse_olympus_presets(&game_path, "**Test\nMissing.zip\n").unwrap();
+        assert_eq!(profiles[0].name, "Test");
+        assert_eq!(missing, ["Missing.zip"]);
         fs::remove_dir_all(game_path).unwrap();
     }
 }

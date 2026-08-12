@@ -2371,19 +2371,20 @@ fn disable_installed_local_mods(
         return blacklist::switch_direct_blacklist(game_path, &files, false);
     }
 
-    let mods = installed_mods
+    let names = installed_mods
         .iter()
-        .map(|installed| (&installed.0, &installed.1))
+        .map(|(name, _)| (*name).clone())
         .collect::<Vec<_>>();
     for profile in blacklist::get_mod_blacklist_profiles(game_path) {
-        blacklist::switch_mod_blacklist_profile(game_path, &profile.name, mods.clone(), false)?;
+        blacklist::switch_mod_profile_mods(game_path, &profile.name, &names, false)?;
     }
-    let current_profile_name = if current_profile_name.is_empty() {
-        blacklist::get_current_profile(game_path)?
+    let profiles = if current_profile_name.is_empty() {
+        blacklist::get_current_profiles(game_path)
     } else {
-        current_profile_name.to_string()
+        vec![current_profile_name.to_string()]
     };
-    blacklist::apply_mod_blacklist_profile(game_path, &current_profile_name, always_on_mods)
+    blacklist::apply_mod_blacklist_profiles(game_path, &profiles, always_on_mods)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -3486,7 +3487,7 @@ fn update_blacklist_mod_file(
         Ok(value) => value,
         Err(error) => return format!("Failed to parse always-on Mods: {error}"),
     };
-    match blacklist::update_mod_blacklist_file(
+    match blacklist::update_blacklist_mod_file(
         &game_path,
         &mod_name,
         &old_file,
@@ -3500,28 +3501,41 @@ fn update_blacklist_mod_file(
 }
 
 #[tauri::command]
-fn apply_blacklist_profile(
-    game_path: String,
-    profile_name: String,
-    always_on_mods: String,
-) -> String {
+fn apply_mod_profiles(game_path: String, profile_names: String, always_on_mods: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
+    let profile_names: Vec<String> = match serde_json::from_str(&profile_names) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse profile names: {error}"),
+    };
     let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse always-on mods: {error}"),
+        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
     };
-    match blacklist::apply_mod_blacklist_profile(&game_path, &profile_name, &always_on_mods) {
-        Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to apply blacklist profile: {error}"),
+    match blacklist::apply_mod_blacklist_profiles(&game_path, &profile_names, &always_on_mods) {
+        Ok(_) => "Success".to_string(),
+        Err(error) => format!("Failed to apply profiles: {error}"),
     }
 }
 
 #[tauri::command]
-fn switch_mod_blacklist_profile(
+fn get_active_profile_mods(game_path: String, always_on_mods: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
+    };
+    serde_json::to_string(&blacklist::get_active_profile_mods(
+        &game_path,
+        &always_on_mods,
+    ))
+    .unwrap_or_else(|_| "[]".to_string())
+}
+
+#[tauri::command]
+fn switch_mod_profile_mods(
     game_path: String,
     profile_name: String,
     mod_names: String,
-    mod_files: String,
     enabled: bool,
 ) -> String {
     let game_path = normalize_game_path_impl(&game_path);
@@ -3529,14 +3543,56 @@ fn switch_mod_blacklist_profile(
         Ok(value) => value,
         Err(error) => return format!("Failed to parse Mod names: {error}"),
     };
-    let mod_files: Vec<String> = match serde_json::from_str(&mod_files) {
-        Ok(value) => value,
-        Err(error) => return format!("Failed to parse Mod files: {error}"),
-    };
-    let mods = mod_names.iter().zip(mod_files.iter()).collect();
-    match blacklist::switch_mod_blacklist_profile(&game_path, &profile_name, mods, enabled) {
+    match blacklist::switch_mod_profile_mods(&game_path, &profile_name, &mod_names, enabled) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to switch blacklist profile: {error}"),
+        Err(error) => format!("Failed to update profile: {error}"),
+    }
+}
+
+#[tauri::command]
+fn get_current_profiles(game_path: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    serde_json::to_string(&blacklist::get_current_profiles(&game_path))
+        .unwrap_or_else(|_| "[]".to_string())
+}
+
+#[tauri::command]
+fn get_olympus_presets(game_path: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::get_olympus_presets(&game_path) {
+        Ok(profiles) => serde_json::to_string(&profiles).unwrap_or_else(|_| "[]".to_string()),
+        Err(_) => "[]".to_string(),
+    }
+}
+
+#[tauri::command]
+fn import_olympus_presets(game_path: String, profile_names: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let profile_names: Vec<String> = match serde_json::from_str(&profile_names) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse Olympus profile names: {error}"),
+    };
+    match blacklist::import_olympus_presets(&game_path, &profile_names) {
+        Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
+        Err(error) => format!("Failed to import Olympus presets: {error}"),
+    }
+}
+
+#[tauri::command]
+fn import_mod_profiles(game_path: String, source_path: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::import_mod_profiles(&game_path, &source_path) {
+        Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
+        Err(error) => format!("Failed to import profiles: {error}"),
+    }
+}
+
+#[tauri::command]
+fn export_mod_profile(game_path: String, profile_name: String, destination: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::export_mod_profile(&game_path, &profile_name, &destination) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => format!("Failed to export profile: {error}"),
     }
 }
 
@@ -3561,30 +3617,7 @@ fn remove_mod_blacklist_profile(game_path: String, profile_name: String) -> Stri
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::remove_mod_blacklist_profile(&game_path, &profile_name) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to remove blacklist profile: {error}"),
-    }
-}
-
-#[tauri::command]
-fn set_mod_options_order(
-    game_path: String,
-    profile_name: String,
-    order_json: String,
-    profile_enabled: bool,
-) -> String {
-    let game_path = normalize_game_path_impl(&game_path);
-    let order = match serde_json::from_str(&order_json) {
-        Ok(value) => value,
-        Err(error) => return format!("Failed to parse order: {error}"),
-    };
-    let result = if profile_enabled {
-        blacklist::set_mod_options_order(&game_path, &profile_name, order)
-    } else {
-        blacklist::write_mod_options_order(&game_path, &order)
-    };
-    match result {
-        Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to set Mod options order: {error}"),
+        Err(error) => format!("Failed to remove profile: {error}"),
     }
 }
 
@@ -4365,8 +4398,14 @@ pub fn run() {
             get_direct_blacklist_profile,
             switch_direct_blacklist,
             update_blacklist_mod_file,
-            apply_blacklist_profile,
-            switch_mod_blacklist_profile,
+            apply_mod_profiles,
+            get_active_profile_mods,
+            switch_mod_profile_mods,
+            get_current_profiles,
+            get_olympus_presets,
+            import_olympus_presets,
+            import_mod_profiles,
+            export_mod_profile,
             new_mod_blacklist_profile,
             get_current_profile,
             remove_mod_blacklist_profile,
@@ -4398,12 +4437,10 @@ pub fn run() {
             get_mod_catalog,
             get_mod_cache_status,
             get_database_path,
-            set_mod_options_order,
             set_window_vibrancy,
             get_miaonet_local_state,
             get_miaonet_settings,
             save_miaonet_settings,
-            miaonet_atlas::get_miaonet_atlas_catalog,
             miaonet_atlas::get_miaonet_atlas_previews,
             miaonet_atlas::get_miaonet_emote_previews,
             logout_miaonet,

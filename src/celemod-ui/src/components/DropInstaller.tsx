@@ -14,6 +14,7 @@ import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./DropInstaller.scss";
+import { importProfileFile } from "../profileImport";
 
 interface LocalInstallProgress {
   current: number;
@@ -274,6 +275,17 @@ export const DropInstaller = () => {
         const paths = event.payload.paths;
         setDragging(false);
         if (localInstallRunning || paths.length === 0) return;
+        const profilePath = paths.find((path) => /\.json$/i.test(path));
+        if (profilePath) {
+          if (!gamePath) {
+            showMissingGamePopup();
+            return;
+          }
+          void importProfileFile(gamePath, profilePath)
+            .then(() => ctx.modManage.reloadMods())
+            .catch((error) => console.error("Failed to import profile", error));
+          return;
+        }
         if (!gamePath) {
           showMissingGamePopup();
           return;

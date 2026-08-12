@@ -702,7 +702,25 @@ export const ModList = (props: {
         downloadUrl: () => {
           const dedup = new Set();
           if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
-            return mod2.files[0]?.url ? mod2.files[0].url : [];
+            const file = mod2.files[0];
+            if (!file?.url) return [];
+            return [
+              {
+                id:
+                  file.gameBananaId > 0 ? file.gameBananaId.toString() : "-1",
+                name: file.mods[0]?.name ?? mod2.name,
+                size: formatSize(file.size),
+                url: file.url,
+                isPrimary: true,
+                isInstalled:
+                  file.mods.length > 0 &&
+                  file.mods.every((fileMod) =>
+                    installedModVersions
+                      .get(fileMod.name.toLocaleLowerCase())
+                      ?.has(fileMod.version)
+                  ),
+              },
+            ];
           }
           const files = mod2.files.filter((file) => {
             if (file.mods.length === 0) return false;
@@ -725,11 +743,7 @@ export const ModList = (props: {
           return Promise.resolve(
             files.map((file, index) => ({
               id: file.gameBananaId.toString(),
-              name: `${
-                file.description.includes(file.mods[0].version)
-                  ? ""
-                  : file.mods[0].version + "-"
-              }${file.description}-${file.mods[0].name}`,
+              name: file.mods[0].name,
               size: formatSize(file.size),
               url: file.url,
               isPrimary: index === primaryIndex,

@@ -21,6 +21,8 @@ import {
   useModComments,
 } from "../states";
 import { callRemote, compareVersion } from "../utils";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { importOlympusProfiles, importProfileFile } from "../profileImport";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
 import { useGlobalContext } from "../App";
@@ -613,6 +615,8 @@ export const Manage = () => {
     profiles,
     setProfilesCallback,
     currentProfileName,
+    activeProfileNames,
+    setCurrentProfileName,
     currentProfile,
     setCurrentProfile,
   } = useCurrentBlacklistProfile();
@@ -627,6 +631,8 @@ export const Manage = () => {
   const activeUpdates = useRef(new Set<string>());
   const [fullCheckRunning, setFullCheckRunning] = useState(false);
   const [fixingDependencies, setFixingDependencies] = useState(false);
+  const [olympusProfiles, setOlympusProfiles] = useState<string[]>([]);
+  const [profileImportOpen, setProfileImportOpen] = useState(false);
   const [filtersSuspended, setFiltersSuspended] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   const filterWrapRef = useRef<HTMLDivElement>(null);
@@ -691,10 +697,27 @@ export const Manage = () => {
   }, [cacheTtl]);
 
   useEffect(() => {
+    if (!gamePath || !profileEnabled) {
+      setOlympusProfiles([]);
+      return;
+    }
+    void callRemote<string>("get_olympus_presets", gamePath)
+      .then((data) =>
+        setOlympusProfiles(
+          (JSON.parse(data) as { name: string }[]).map((profile) => profile.name)
+        )
+      )
+      .catch(console.error);
+  }, [gamePath, profileEnabled]);
+
+  useEffect(() => {
+    const enabledNames = new Set(currentProfile?.enabled_mods ?? []);
     hydrate({
       installedMods,
-      disabledNames: currentProfile?.mods.map((mod) => mod.name) ?? [],
-      disabledFiles: currentProfile?.mods.map((mod) => mod.file) ?? [],
+      disabledNames: installedMods
+        .filter((mod) => !enabledNames.has(mod.name))
+        .map((mod) => mod.name),
+      disabledFiles: [],
       catalogByName: metaByName,
     });
   }, [installedMods, currentProfile, metaByName]);
@@ -785,10 +808,6 @@ export const Manage = () => {
   const visibleRoots =
     filtersSuspended && hasSearchQuery ? keywordRoots : filteredRoots;
 
-  useEffect(() => {
-    if (!hasSearchQuery) setFiltersSuspended(false);
-  }, [hasSearchQuery]);
-
   const missingDependencies = useMemo(() => {
     const missing = new Map<string, string>();
     for (const node of Object.values(nodes)) {
@@ -806,29 +825,27 @@ export const Manage = () => {
     const request = Date.now();
     lastApplyRequest = request;
     window.setTimeout(() => {
-      if (lastApplyRequest === request && currentProfileName) {
-        void callRemote(
-          "apply_blacklist_profile",
-          gamePath,
-          currentProfileName,
-          JSON.stringify(alwaysOnMods)
-        );
-      }
+      const names = activeProfileNames.length
+        ? activeProfileNames
+        : currentProfileName
+        ? [currentProfileName]
+        : [];
+      if (lastApplyRequest !== request || names.length === 0) return;
+      void callRemote(
+        "apply_mod_profiles",
+        gamePath,
+        JSON.stringify(names),
+        JSON.stringify(alwaysOnMods)
+      );
     }, 350);
-  }, [alwaysOnMods, currentProfileName, gamePath]);
+  }, [activeProfileNames, alwaysOnMods, currentProfileName, gamePath]);
 
   const batchSwitch = useCallback(
     (names: string[], enabled: boolean) => {
       if (!currentProfile || names.length === 0) return;
       const requestedNames = new Set(names);
-      const requestedFiles = new Set(
-        names.map((name) => nodes[name]?.file).filter(Boolean) as string[]
-      );
       const packageNames = Object.values(nodes)
-        .filter(
-          (node) =>
-            requestedNames.has(node.name) || requestedFiles.has(node.file)
-        )
+        .filter((node) => requestedNames.has(node.name))
         .map((node) => node.name);
       const alwaysOnFiles = new Set(
         alwaysOnMods
@@ -844,11 +861,10 @@ export const Manage = () => {
       if (effectiveNames.length === 0) return;
       if (profileEnabled) {
         void callRemote(
-          "switch_mod_blacklist_profile",
+          "switch_mod_profile_mods",
           gamePath,
           currentProfileName,
           JSON.stringify(effectiveNames),
-          JSON.stringify(files),
           enabled
         );
       } else {
@@ -859,24 +875,15 @@ export const Manage = () => {
           enabled
         );
       }
-      let nextMods = currentProfile.mods;
-      const effectiveFiles = new Set(files);
-      if (enabled) {
-        nextMods = nextMods.filter(
-          (item) =>
-            !effectiveNames.includes(item.name) &&
-            !effectiveFiles.has(item.file)
-        );
-      } else {
-        const additions = effectiveNames
-          .filter((name, index) => files.indexOf(nodes[name].file) === index)
-          .filter(
-            (name) => !nextMods.some((item) => item.file === nodes[name].file)
-          )
-          .map((name) => ({ name, file: nodes[name].file }));
-        nextMods = [...nextMods, ...additions];
-      }
-      const nextProfile = { ...currentProfile, mods: nextMods };
+      const switchedNames = new Set(effectiveNames);
+      const nextProfile = {
+        ...currentProfile,
+        enabled_mods: enabled
+          ? [...new Set([...currentProfile.enabled_mods, ...effectiveNames])]
+          : currentProfile.enabled_mods.filter(
+              (name) => !switchedNames.has(name)
+            ),
+      };
       setCurrentProfile(nextProfile);
       setProfilesCallback((items) =>
         items.map((profile) =>
@@ -1329,29 +1336,10 @@ export const Manage = () => {
       setComment(name, comment) {
         setComments({ ...comments, [name]: comment });
       },
-      isPinned(name) {
-        return currentProfile?.mod_options_order?.[0] === nodes[name]?.file;
+      isPinned() {
+        return false;
       },
-      togglePinned(name) {
-        if (!currentProfile || !nodes[name]) return;
-        const pinned =
-          currentProfile.mod_options_order?.[0] === nodes[name].file;
-        const order = pinned ? [] : [nodes[name].file];
-        const nextProfile = { ...currentProfile, mod_options_order: order };
-        setCurrentProfile(nextProfile);
-        setProfilesCallback((items) =>
-          items.map((profile) =>
-            profile.name === currentProfile.name ? nextProfile : profile
-          )
-        );
-        void callRemote(
-          "set_mod_options_order",
-          gamePath,
-          currentProfileName,
-          JSON.stringify(order),
-          profileEnabled
-        );
-      },
+      togglePinned() {},
       checkOptional,
       fullTree,
       showDetailed,
@@ -1697,52 +1685,190 @@ export const Manage = () => {
             <div className="side-section profile-section">
               <div className="side-title">
                 <span>{_i18n.t("Profile")}</span>
-                <small>{profiles.length}</small>
+                <div className="profile-title-actions">
+                  <small>{profiles.length}</small>
+                  <button
+                    type="button"
+                    className="profile-folder"
+                    title={_i18n.t("打开预设文件夹")}
+                    onClick={() =>
+                      void callRemote(
+                        "open_url",
+                        `${gamePath}/celemod_blacklist_profiles`
+                      )
+                    }
+                  >
+                    <Icon name="folder" />
+                  </button>
+                  <div className="profile-import-wrap">
+                    <button
+                      type="button"
+                      className="profile-import"
+                      title={_i18n.t("导入预设")}
+                      onClick={() => setProfileImportOpen((value) => !value)}
+                    >
+                      <Icon name="import" />
+                    </button>
+                    {profileImportOpen && (
+                      <div className="profile-import-menu">
+                        <button
+                          onClick={() => {
+                            void open({
+                              multiple: false,
+                              filters: [
+                                {
+                                  name: "CeleMod Profile",
+                                  extensions: ["json"],
+                                },
+                              ],
+                            })
+                              .then((source) => {
+                                if (typeof source !== "string") return;
+                                return importProfileFile(gamePath, source);
+                              })
+                              .then(() => setProfileImportOpen(false))
+                              .catch(console.error);
+                          }}
+                        >
+                          {_i18n.t("导入 CeleMod 预设")}
+                        </button>
+                        {olympusProfiles.length > 0 && (
+                          <button
+                            onClick={() => {
+                              createPopup(() => {
+                                const popup = useContext(PopupContext);
+                                const [selected, setSelected] = useState<string[]>(
+                                  olympusProfiles
+                                );
+                                return (
+                                  <div className="popup-content olympus-import-popup">
+                                    <div className="title">
+                                      {_i18n.t("导入 Olympus 预设")}
+                                    </div>
+                                    <div className="content">
+                                      {olympusProfiles.map((name) => (
+                                        <label key={name}>
+                                          <input
+                                            type="checkbox"
+                                            checked={selected.includes(name)}
+                                            onChange={() =>
+                                              setSelected((names) =>
+                                                names.includes(name)
+                                                  ? names.filter(
+                                                      (item) => item !== name
+                                                    )
+                                                  : [...names, name]
+                                              )
+                                            }
+                                          />
+                                          {name}
+                                        </label>
+                                      ))}
+                                    </div>
+                                    <div className="buttons">
+                                      <button onClick={popup.hide}>
+                                        {_i18n.t("取消")}
+                                      </button>
+                                      <button
+                                        disabled={selected.length === 0}
+                                        onClick={() => {
+                                          void importOlympusProfiles(
+                                            gamePath,
+                                            selected
+                                          )
+                                            .then(() => {
+                                              setProfileImportOpen(false);
+                                              popup.hide();
+                                            })
+                                            .catch(console.error);
+                                        }}
+                                      >
+                                        {_i18n.t("导入")}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            }}
+                          >
+                            {_i18n.t("导入 Olympus 预设")}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="profile-list">
                 {profiles.map((profile) => (
-                  <button
+                  <div
                     key={profile.name}
-                    className={
+                    className={`profile-row ${
                       profile.name === currentProfileName ? "selected" : ""
-                    }
-                    onClick={() => global.blacklist.switchProfile(profile.name)}
+                    }`}
                   >
-                    <span className="profile-name">{profile.name}</span>
-                    <small>
-                      {
-                        installedMods.filter(
-                          (mod) =>
-                            !profile.mods.some(
-                              (item) =>
-                                item.name === mod.name || item.file === mod.file
-                            )
-                        ).length
-                      }
-                    </small>
-                    {profile.name !== "Default" && (
-                      <span
-                        className="profile-delete"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void callRemote(
-                            "remove_mod_blacklist_profile",
-                            gamePath,
-                            profile.name
-                          );
-                          setProfilesCallback((items) =>
-                            items.filter((item) => item.name !== profile.name)
-                          );
-                          if (profile.name === currentProfileName)
-                            global.blacklist.switchProfile(
-                              profiles[0]?.name ?? "Default"
+                    <button
+                      type="button"
+                      className="profile-select"
+                      onClick={() => {
+                        setCurrentProfileName(profile.name);
+                        setCurrentProfile(profile);
+                      }}
+                    >
+                      <span className="profile-name">{profile.name}</span>
+                      <small>{profile.enabled_mods.length}</small>
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-export"
+                      title={_i18n.t("导出预设")}
+                      onClick={() => {
+                        void save({
+                          title: _i18n.t("导出预设"),
+                          defaultPath: `${profile.name}.celemod-profile.json`,
+                          filters: [
+                            { name: "CeleMod Profile", extensions: ["json"] },
+                          ],
+                        })
+                          .then((destination) => {
+                            if (typeof destination !== "string") return;
+                            return callRemote<string>(
+                              "export_mod_profile",
+                              gamePath,
+                              profile.name,
+                              destination
                             );
-                        }}
-                      >
-                        <Icon name="delete" />
-                      </span>
-                    )}
-                  </button>
+                          })
+                          .then((result) => {
+                            if (result && result !== "Success")
+                              throw new Error(String(result));
+                          })
+                          .catch(console.error);
+                      }}
+                    >
+                      <Icon name="save" />
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-delete"
+                      title={_i18n.t("删除")}
+                      onClick={() => {
+                        void callRemote(
+                          "remove_mod_blacklist_profile",
+                          gamePath,
+                          profile.name
+                        )
+                          .then((result) => {
+                            if (String(result) !== "Success")
+                              throw new Error(String(result));
+                            return reloadBlacklistState(gamePath);
+                          })
+                          .catch(console.error);
+                      }}
+                    >
+                      <Icon name="delete" />
+                    </button>
+                  </div>
                 ))}
               </div>
               <div className="profile-create">
@@ -1764,13 +1890,17 @@ export const Manage = () => {
                       "new_mod_blacklist_profile",
                       gamePath,
                       name
-                    );
-                    setProfilesCallback((items) => [
-                      ...items,
-                      { name, mods: [], mod_options_order: [] },
-                    ]);
-                    setProfileNameInput("");
-                    global.blacklist.switchProfile(name);
+                    )
+                      .then((result) => {
+                        if (String(result) !== "Success")
+                          throw new Error(String(result));
+                        const profile = { name, enabled_mods: [] };
+                        setProfilesCallback((items) => [...items, profile]);
+                        setCurrentProfileName(name);
+                        setCurrentProfile(profile);
+                        setProfileNameInput("");
+                      })
+                      .catch(console.error);
                   }}
                 >
                   <Icon name="i-tick" />
