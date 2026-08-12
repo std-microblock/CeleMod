@@ -110,9 +110,9 @@ export const displayDate = (date_: string | Date) => {
   const date = new Date(date_);
   const pad = (v: number) => v.toString().padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate()
+    date.getDate(),
   )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-    date.getSeconds()
+    date.getSeconds(),
   )}`;
 };
 
@@ -133,7 +133,7 @@ export const compareVersion = (a: string, b: string) => {
 };
 
 export const selectGamePath = async (
-  successCallback: (path: string) => void
+  successCallback: (path: string) => void,
 ) => {
   const selected = await open({
     multiple: false,

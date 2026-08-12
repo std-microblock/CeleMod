@@ -59,7 +59,7 @@ export function WindowTitlebar() {
       <button
         className="celemod-version"
         title={_i18n.t(
-          "左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console"
+          "左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console",
         )}
         onClick={(event) => {
           if (event.shiftKey) void callRemote("show_log_window");

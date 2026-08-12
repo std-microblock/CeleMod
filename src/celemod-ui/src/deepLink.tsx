@@ -79,7 +79,7 @@ export const initializeCeleModDeepLinks = () => {
   };
 
   listening = listen<string[]>(DEEP_LINK_EVENT, (event) =>
-    enqueue(event.payload)
+    enqueue(event.payload),
   ).then(async (dispose) => {
     enqueue(await callRemote<string[]>("take_pending_deep_links"));
     return dispose;

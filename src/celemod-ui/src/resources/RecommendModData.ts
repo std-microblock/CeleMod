@@ -42,7 +42,7 @@ export const _functionalMods = () =>
     {
       name: _i18n.t("Speedrun Tool（速通辅助工具）"),
       description: _i18n.t(
-        "实时存档读档（SL）、调试地图和传送、速通计时器、一键望远镜等"
+        "实时存档读档（SL）、调试地图和传送、速通计时器、一键望远镜等",
       ),
       download_url: "https://celeste.weg.fan/api/v2/download/mods/SpeedrunTool",
     },
@@ -85,7 +85,7 @@ export const _functionalMods = () =>
     {
       name: "Golden QOL",
       description: _i18n.t(
-        "添加了一些炼金相关实用功能 (例如带金死亡后不直接重开)"
+        "添加了一些炼金相关实用功能 (例如带金死亡后不直接重开)",
       ),
       download_url: "https://celeste.weg.fan/api/v2/download/mods/Golden%20QOL",
       exclude_from_download_all: true,
@@ -324,7 +324,7 @@ export const _mapMods = () => [
   {
     name: _i18n.t("StrawberryJam Collab （草莓酱）"),
     description: _i18n.t(
-      "全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家"
+      "全蔚蓝最大的地图集，涵盖多个难度，美术优秀，地图有趣，适合新手和老玩家",
     ),
     download_url:
       "https://celeste.weg.fan/api/v2/download/mods/StrawberryJam2021",
@@ -338,7 +338,7 @@ export const _mapMods = () => [
   {
     name: _i18n.t("Gallery Collab（画游）"),
     description: _i18n.t(
-      "中国玩家制作的地图集，地图较少，美术精美，适合新手和老玩家"
+      "中国玩家制作的地图集，地图较少，美术精美，适合新手和老玩家",
     ),
     download_url:
       "https://celeste.weg.fan/api/v2/download/mods/ChineseNewYear2024Collab",

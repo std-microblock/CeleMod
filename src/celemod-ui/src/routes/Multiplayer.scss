@@ -99,7 +99,6 @@
   }
 }
 
-
 .multiplayer-state-description {
   max-width: 520px;
   color: theme.$fg2;
@@ -478,7 +477,10 @@
   user-select: none;
   -webkit-user-drag: none;
   will-change: transform;
-  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease,
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease,
     transform 170ms cubic-bezier(0.2, 0.75, 0.25, 1);
 
   &:active {
@@ -495,7 +497,10 @@
 }
 
 .multiplayer-emote-grid.settling .multiplayer-emote-card {
-  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease;
 }
 
 .multiplayer-emote-preview {
@@ -506,11 +511,16 @@
   place-items: center;
   overflow: hidden;
   background-color: rgba(255, 255, 255, 0.018);
-  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%),
     linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.025) 75%);
-  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  background-position:
+    0 0,
+    0 6px,
+    6px -6px,
+    -6px 0;
   background-size: 12px 12px;
   box-sizing: border-box;
 
@@ -582,7 +592,10 @@
   span {
     max-width: 170px;
     overflow: hidden;
-    font: 8px ui-monospace, "Cascadia Mono", monospace;
+    font:
+      8px ui-monospace,
+      "Cascadia Mono",
+      monospace;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -829,7 +842,6 @@
       width: 100%;
     }
   }
-
 
   .multiplayer-settings-footer {
     right: 24px;

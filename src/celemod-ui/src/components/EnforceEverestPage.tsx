@@ -14,7 +14,7 @@ export const enforceEverest = () => {
         <pre>
           {_i18n.t(
             "Everest 是 Celeste 的开源模组加载器和模组 API，允许您根据自己的喜好创 建自定义地图包、纹理替换和代码模组。 必须先安装 Everest 才能使用 Mod。 CeleMod 可以帮助你一键下载和安装 Everest。",
-            {}
+            {},
           )}
         </pre>
         <div>

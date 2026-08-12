@@ -130,25 +130,25 @@ const compareLooseVersion = (left: string, right: string) => {
 };
 
 const loadCrashModFix = async (
-  analysis: CrashAnalysis
+  analysis: CrashAnalysis,
 ): Promise<CrashModFix | null> => {
   const updateInfo = await getLatestUpdateInfo();
   return findCrashModFix(updateInfo.crash_mod_fixes, analysis);
 };
 
 const loadLatestEverest = async (
-  analysis: CrashAnalysis
+  analysis: CrashAnalysis,
 ): Promise<EverestUpdate | null> => {
   if (analysis.isEverestUltra) {
     const updateInfo = await getLatestUpdateInfo();
     const latest = (updateInfo.everest_ultra?.versions || [])
       .filter(
         (version) =>
-          !version.channel || version.channel.toLocaleLowerCase() === "stable"
+          !version.channel || version.channel.toLocaleLowerCase() === "stable",
       )
       .sort(
         (left, right) =>
-          versionBuild(right.version) - versionBuild(left.version)
+          versionBuild(right.version) - versionBuild(left.version),
       )[0];
     return latest
       ? {
@@ -160,7 +160,7 @@ const loadLatestEverest = async (
   }
 
   const response = await fetch(
-    "https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true"
+    "https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true",
   );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const versions = (await response.json()) as OfficialEverestVersion[];
@@ -190,7 +190,7 @@ const startReportDrag = (event: DragEvent<HTMLDivElement>, path: string) => {
   event.dataTransfer.effectAllowed = "copy";
   event.dataTransfer.setData(
     "DownloadURL",
-    `text/plain:${fileName(path)}:${uri}`
+    `text/plain:${fileName(path)}:${uri}`,
   );
   event.dataTransfer.setData("text/uri-list", uri);
   event.dataTransfer.setData("text/plain", path);
@@ -200,7 +200,7 @@ const cleanLogPrefix = (line: string) =>
   line
     .replace(
       /^\([^)]*\)\s+\[Everest\]\s+\[[^\]]+\]\s+\[[^\]]+\]\s*(?:>>\s*)?/,
-      ""
+      "",
     )
     .trim();
 
@@ -211,7 +211,7 @@ const displayException = (analysis: CrashAnalysis) => {
     .find(
       (line) =>
         /\b(?:System\.)?[\w.`+]+Exception(?::|\s)/.test(line) &&
-        !/^\s*(?:at|在)\s/.test(line)
+        !/^\s*(?:at|在)\s/.test(line),
     );
   return fromLog || analysis.exception;
 };
@@ -219,12 +219,12 @@ const displayException = (analysis: CrashAnalysis) => {
 const formatStacktrace = (analysis: CrashAnalysis, exception: string) => {
   const lines = analysis.excerpt.split(/\r?\n/);
   const markerIndex = lines.findLastIndex((line) =>
-    /critical error/i.test(line)
+    /critical error/i.test(line),
   );
   const exceptionIndex = lines.findIndex(
     (line, index) =>
       index >= Math.max(0, markerIndex) &&
-      /\b(?:System\.)?[\w.`+]+Exception(?::|\s)/.test(line)
+      /\b(?:System\.)?[\w.`+]+Exception(?::|\s)/.test(line),
   );
   const start =
     exceptionIndex >= 0 ? exceptionIndex : Math.max(0, markerIndex + 1);
@@ -234,11 +234,11 @@ const formatStacktrace = (analysis: CrashAnalysis, exception: string) => {
       line
         .replace(
           /^\([^)]*\)\s+\[Everest\]\s+\[[^\]]+\]\s+\[[^\]]+\]\s*(?:>>\s*)?/,
-          ""
+          "",
         )
         .replace(/^\s*--->\s*/, "↳ ")
         .replace(/^\s+(at|在)\s+/, "  $1 ")
-        .trimEnd()
+        .trimEnd(),
     )
     .filter((line, index) => {
       if (index === 0 && cleanLogPrefix(line) === exception.trim())
@@ -260,10 +260,10 @@ const CrashPopup = ({
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [suspects, setSuspects] = useState(analysis.suspects);
   const [selected, setSelected] = useState(
-    () => new Set(analysis.suspects.map((suspect) => suspect.name))
+    () => new Set(analysis.suspects.map((suspect) => suspect.name)),
   );
   const [latestEverest, setLatestEverest] = useState<EverestUpdate | null>(
-    null
+    null,
   );
   const [crashModFix, setCrashModFix] = useState<CrashModFix | null>(null);
   const [latestError, setLatestError] = useState("");
@@ -291,8 +291,8 @@ const CrashPopup = ({
           ([name, version, fileId, url]) => [
             name.toLocaleLowerCase(),
             { version, fileId, url },
-          ]
-        )
+          ],
+        ),
       );
       setSuspects((current) =>
         current.map((suspect) => {
@@ -306,7 +306,7 @@ const CrashPopup = ({
             updateAvailable:
               compareLooseVersion(update.version, suspect.installedVersion) > 0,
           };
-        })
+        }),
       );
     }).catch(console.error);
   }, []);
@@ -318,20 +318,20 @@ const CrashPopup = ({
 
   const selectedSuspects = useMemo(
     () => suspects.filter((suspect) => selected.has(suspect.name)),
-    [selected, suspects]
+    [selected, suspects],
   );
   const selectedUpdates = selectedSuspects.filter(
-    (suspect) => suspect.updateAvailable
+    (suspect) => suspect.updateAvailable,
   );
   const everestUpdateAvailable = Boolean(
     latestEverest &&
-      analysis.everestVersion &&
-      latestEverest.version > analysis.everestVersion
+    analysis.everestVersion &&
+    latestEverest.version > analysis.everestVersion,
   );
   const exception = useMemo(() => displayException(analysis), [analysis]);
   const stacktrace = useMemo(
     () => formatStacktrace(analysis, exception),
-    [analysis, exception]
+    [analysis, exception],
   );
 
   const runAction = async (action: () => Promise<void>) => {
@@ -353,7 +353,7 @@ const CrashPopup = ({
       setStatus(
         legacyLoader
           ? _i18n.t("正在使用 Legacy Loader 重启…")
-          : _i18n.t("正在重启…")
+          : _i18n.t("正在重启…"),
       );
       await callRemote("restart_game_with_loader", gamePath, legacyLoader);
     });
@@ -368,7 +368,7 @@ const CrashPopup = ({
           name: suspect.name,
           file: suspect.file,
         })),
-        false
+        false,
       );
       await callRemote("restart_game_with_loader", gamePath, false);
     });
@@ -384,7 +384,7 @@ const CrashPopup = ({
           name: suspect.name,
           current: index + 1,
           total: selectedUpdates.length,
-        })
+        }),
       );
       const source =
         suspect.gameBananaFileId !== undefined &&
@@ -399,7 +399,7 @@ const CrashPopup = ({
           ownerId: `crash-${analysis.fingerprint}`,
           onProgress: (_task, progress) =>
             setStatus(
-              `${_i18n.t("正在更新")} ${suspect.name} · ${progress.toFixed(0)}%`
+              `${_i18n.t("正在更新")} ${suspect.name} · ${progress.toFixed(0)}%`,
             ),
           onFinished: () => resolve(),
           onFailed: (_task, reason) =>
@@ -433,7 +433,7 @@ const CrashPopup = ({
                 typeof data === "number" ? ` · ${data.toFixed(0)}%` : "";
               setStatus(`${_i18n.t("正在更新 Everest")}${progress}`);
             }
-          }
+          },
         ).catch(reject);
       });
       setStatus(_i18n.t("Everest 更新完成，正在重启…"));
@@ -463,11 +463,11 @@ const CrashPopup = ({
                 state === "verify"
                   ? _i18n.t("正在校验修复包")
                   : state === "install"
-                  ? _i18n.t("正在替换 Mod")
-                  : _i18n.t("正在下载修复包");
+                    ? _i18n.t("正在替换 Mod")
+                    : _i18n.t("正在下载修复包");
               setStatus(`${action}${progress}`);
             }
-          }
+          },
         ).catch(reject);
       });
       setStatus(_i18n.t("修复完成，正在重启…"));
@@ -550,7 +550,7 @@ const CrashPopup = ({
                             (item) =>
                               `${item.name}${
                                 item.optional ? ` (${_i18n.t("可选")})` : ""
-                              }`
+                              }`,
                           )
                           .join(", ")}
                       </small>
@@ -698,7 +698,7 @@ export const CrashAssistant = () => {
       try {
         const analysis = await callRemote<CrashAnalysis | null>(
           "check_everest_crash",
-          gamePath
+          gamePath,
         );
         if (
           active &&

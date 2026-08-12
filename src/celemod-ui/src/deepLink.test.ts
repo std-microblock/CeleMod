@@ -22,18 +22,18 @@ test("decodes inline profile JSON", () => {
   };
   assert.deepEqual(
     parseCeleModDeepLink(
-      `celemod://add_profile/${encodeURIComponent(JSON.stringify(profile))}`
+      `celemod://add_profile/${encodeURIComponent(JSON.stringify(profile))}`,
     ),
-    { type: "add_profile", value: JSON.stringify(profile) }
+    { type: "add_profile", value: JSON.stringify(profile) },
   );
 });
 
 test("accepts literal JSON and rejects malformed links", () => {
   assert.equal(
     parseCeleModDeepLink(
-      'celemod://add_profile/{"name":"Test","enabled_mods":[]}'
+      'celemod://add_profile/{"name":"Test","enabled_mods":[]}',
     ).type,
-    "add_profile"
+    "add_profile",
   );
   assert.throws(() => parseCeleModDeepLink("https://install_mod/Test"));
   assert.throws(() => parseCeleModDeepLink("celemod://add_profile/{"));

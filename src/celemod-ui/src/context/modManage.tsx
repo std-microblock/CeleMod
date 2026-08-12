@@ -46,7 +46,7 @@ export const createModManageContext = () => {
                 <div className="content">
                   <p>
                     {_i18n.t(
-                      "以下文件不是有效的 zip，继续保留可能导致游戏崩溃："
+                      "以下文件不是有效的 zip，继续保留可能导致游戏崩溃：",
                     )}
                   </p>
                   <p>{invalidFiles.join(", ")}</p>
@@ -62,7 +62,7 @@ export const createModManageContext = () => {
                         () => {
                           ctx.reloadMods();
                           hide();
-                        }
+                        },
                       );
                     }}
                   >
@@ -72,7 +72,7 @@ export const createModManageContext = () => {
               </div>
             );
           });
-        }
+        },
       );
     },
     gamePath,
@@ -93,7 +93,7 @@ export const createModManageContext = () => {
             <span>{_i18n.t("正在加载 Mod 列表，请稍等")}</span>
           </div>
         ),
-        { cancelable: false }
+        { cancelable: false },
       );
       ctx
         .reloadMods()

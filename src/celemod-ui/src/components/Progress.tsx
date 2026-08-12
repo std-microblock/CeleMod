@@ -75,7 +75,7 @@ export const ProgressIndicator = ({
         size / 2,
         size / 2 - lineWidth * 2,
         refStart,
-        refStart + refSize
+        refStart + refSize,
       );
       ctx.stroke();
 

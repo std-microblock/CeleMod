@@ -5,7 +5,7 @@ import { executeProfileImport, type ProfileImportPlan } from "./profileInstall";
 const emptyProgress = () => undefined;
 
 const plan = (
-  overrides: Partial<ProfileImportPlan> = {}
+  overrides: Partial<ProfileImportPlan> = {},
 ): ProfileImportPlan => ({
   profiles: [],
   requestedMods: [],
@@ -20,15 +20,15 @@ test("does not commit a profile when resolution failed", async () => {
     executeProfileImport(
       "unused",
       plan({ unresolvedMods: ["Missing.Mod"] }),
-      emptyProgress
+      emptyProgress,
     ),
-    /Missing\.Mod/
+    /Missing\.Mod/,
   );
 });
 
 test("empty confirmed profile reaches commit without downloading", async () => {
   await assert.rejects(
     executeProfileImport("unused", plan(), emptyProgress),
-    /game path not set/
+    /game path not set/,
   );
 });

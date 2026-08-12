@@ -73,7 +73,7 @@ export const MiaoNetAtlasCanvas = ({
     context.putImageData(
       new ImageData(pixels, preview.width, preview.height),
       0,
-      0
+      0,
     );
   }, [preview]);
 
@@ -89,7 +89,7 @@ export const MiaoNetAtlasCanvas = ({
 const frameExpression = (
   entry: AtlasCatalogEntry,
   rangeStart: number,
-  rangeEnd: number
+  rangeEnd: number,
 ) => {
   const start = Math.min(rangeStart, rangeEnd);
   const end = Math.max(rangeStart, rangeEnd);
@@ -100,7 +100,9 @@ const frameExpression = (
   if (selectedFrames.length === 1) {
     return `${entry.category}:${selectedFrames[0]}`;
   }
-  const suffixes = selectedFrames.map((frame) => frame.slice(entry.name.length));
+  const suffixes = selectedFrames.map((frame) =>
+    frame.slice(entry.name.length),
+  );
   return `${entry.category}:${entry.name} ${suffixes.join(" ")}`;
 };
 
@@ -116,13 +118,14 @@ export const MiaoNetEmotePicker = ({
   const [catalog, setCatalog] = useState<AtlasCatalogEntry[]>([]);
   const [category, setCategory] = useState<AtlasCategory>("i");
   const [query, setQuery] = useState("");
-  const [selectedGroup, setSelectedGroup] =
-    useState<AtlasCatalogEntry | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<AtlasCatalogEntry | null>(
+    null,
+  );
   const [rangeStart, setRangeStart] = useState(0);
   const [rangeEnd, setRangeEnd] = useState(0);
-  const [previews, setPreviews] = useState<
-    Record<string, MiaoNetAtlasPreview>
-  >({});
+  const [previews, setPreviews] = useState<Record<string, MiaoNetAtlasPreview>>(
+    {},
+  );
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [previewsLoading, setPreviewsLoading] = useState(false);
   const [catalogError, setCatalogError] = useState("");
@@ -180,7 +183,7 @@ export const MiaoNetEmotePicker = ({
       (entry) =>
         entry.category === category &&
         (!normalizedQuery ||
-          entry.name.toLocaleLowerCase().includes(normalizedQuery))
+          entry.name.toLocaleLowerCase().includes(normalizedQuery)),
     );
   }, [catalog, category, query]);
 
@@ -204,7 +207,7 @@ export const MiaoNetEmotePicker = ({
 
   const columns = Math.max(
     1,
-    Math.floor((gridWidth + CARD_GAP) / (CARD_SIZE + CARD_GAP))
+    Math.floor((gridWidth + CARD_GAP) / (CARD_SIZE + CARD_GAP)),
   );
   const rowCount = Math.ceil(tiles.length / columns);
   const rowVirtualizer = useVirtualizer({
@@ -222,8 +225,8 @@ export const MiaoNetEmotePicker = ({
   const visibleTiles = virtualRows.flatMap((virtualRow) =>
     tiles.slice(
       virtualRow.index * columns,
-      Math.min((virtualRow.index + 1) * columns, tiles.length)
-    )
+      Math.min((virtualRow.index + 1) * columns, tiles.length),
+    ),
   );
   const visibleNamesKey = visibleTiles
     .map((tile) => tile.previewName)
@@ -257,7 +260,7 @@ export const MiaoNetEmotePicker = ({
               loadedPreviews.map((preview) => [
                 `${previewCategory}:${preview.name}`,
                 preview,
-              ])
+              ]),
             ),
           }));
         })
@@ -285,227 +288,227 @@ export const MiaoNetEmotePicker = ({
 
   return (
     <section
-        className="miaonet-atlas-picker"
-        role="dialog"
-        aria-modal="true"
-        aria-label={_i18n.t("选择 Celeste 贴图")}
-      >
-        <header>
-          <div className="miaonet-atlas-picker-title">
-            {selectedGroup && (
-              <button
-                type="button"
-                title={_i18n.t("返回贴图列表")}
-                onClick={() => setSelectedGroup(null)}
-              >
-                <FaArrowLeft />
-              </button>
-            )}
-            <div>
-              <h2>
-                {selectedGroup
-                  ? _i18n.t("选择帧范围")
-                  : _i18n.t("选择 Celeste 贴图")}
-              </h2>
-              {selectedGroup && <p>{selectedGroup.name}</p>}
-            </div>
-          </div>
-          <button type="button" title={_i18n.t("关闭")} onClick={onClose}>
-            <FaXmark />
-          </button>
-        </header>
-
-        {selectedGroup ? (
-          <div className="miaonet-atlas-range-toolbar">
-            <label>
-              <span>{_i18n.t("起始帧")}</span>
-              <select
-                value={rangeStart}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  setRangeStart(next);
-                  if (next > rangeEnd) setRangeEnd(next);
-                }}
-              >
-                {selectedGroup.frames.map((frame, index) => (
-                  <option value={index} key={frame}>
-                    {frame.slice(selectedGroup.name.length) || frame}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>{_i18n.t("结束帧")}</span>
-              <select
-                value={rangeEnd}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  setRangeEnd(next);
-                  if (next < rangeStart) setRangeStart(next);
-                }}
-              >
-                {selectedGroup.frames.map((frame, index) => (
-                  <option value={index} key={frame}>
-                    {frame.slice(selectedGroup.name.length) || frame}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <span>
-              {_i18n.t("已选择 {count} 帧", {
-                count: Math.abs(rangeEnd - rangeStart) + 1,
-              })}
-            </span>
-          </div>
-        ) : (
-          <div className="miaonet-atlas-picker-toolbar">
-            <div className="miaonet-atlas-category-tabs">
-              {categoryOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={category === option.value ? "active" : ""}
-                  onClick={() => setCategory(option.value)}
-                >
-                  {_i18n.t(option.label)}
-                </button>
-              ))}
-            </div>
-            <label className="miaonet-atlas-search">
-              <FaMagnifyingGlass />
-              <input
-                type="search"
-                value={query}
-                placeholder={_i18n.t("搜索贴图路径")}
-                autoFocus
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-          </div>
-        )}
-
-        <div className="miaonet-atlas-picker-status">
-          <span>
-            {selectedGroup
-              ? _i18n.t("共 {count} 帧", { count: selectedGroup.frames.length })
-              : _i18n.t("找到 {count} 种贴图", {
-                  count: filteredEntries.length,
-                })}
-          </span>
-          <span className={previewError ? "error" : ""}>
-            {previewError || (previewsLoading && _i18n.t("正在加载预览…"))}
-          </span>
-        </div>
-
-        <div className="miaonet-atlas-grid-scroll" ref={scrollRef}>
-          {catalogLoading && (
-            <div className="miaonet-atlas-empty">
-              <ProgressIndicator infinite />
-              {_i18n.t("正在读取 Celeste 图集…")}
-            </div>
-          )}
-          {!catalogLoading && catalogError && (
-            <div className="miaonet-atlas-empty error">{catalogError}</div>
-          )}
-          {!catalogLoading && !catalogError && tiles.length === 0 && (
-            <div className="miaonet-atlas-empty">
-              {_i18n.t("没有符合条件的贴图")}
-            </div>
-          )}
-          {!catalogLoading && !catalogError && tiles.length > 0 && (
-            <div
-              className="miaonet-atlas-virtual-grid"
-              style={{ height: rowVirtualizer.getTotalSize() }}
-            >
-              {virtualRows.map((virtualRow) => {
-                const rowTiles = tiles.slice(
-                  virtualRow.index * columns,
-                  Math.min((virtualRow.index + 1) * columns, tiles.length)
-                );
-                return (
-                  <div
-                    className="miaonet-atlas-virtual-row"
-                    key={virtualRow.key}
-                    style={{
-                      height: CARD_SIZE,
-                      transform: `translateY(${virtualRow.start}px)`,
-                      gridTemplateColumns: `repeat(${columns}, ${CARD_SIZE}px)`,
-                    }}
-                  >
-                    {rowTiles.map((tile) => {
-                      const frameSelected =
-                        tile.frameIndex !== undefined &&
-                        tile.frameIndex >= Math.min(rangeStart, rangeEnd) &&
-                        tile.frameIndex <= Math.max(rangeStart, rangeEnd);
-                      return (
-                        <button
-                          type="button"
-                          className={`miaonet-atlas-square${
-                            frameSelected ? " selected" : ""
-                          }`}
-                          key={tile.key}
-                          title={tile.catalogEntry.name}
-                          onClick={() => {
-                            if (tile.frameIndex !== undefined) {
-                              if (tile.frameIndex === rangeStart) {
-                                setRangeStart(rangeEnd);
-                              } else if (tile.frameIndex === rangeEnd) {
-                                setRangeEnd(rangeStart);
-                              } else if (tile.frameIndex < rangeStart) {
-                                setRangeStart(tile.frameIndex);
-                              } else if (tile.frameIndex > rangeEnd) {
-                                setRangeEnd(tile.frameIndex);
-                              }
-                            } else {
-                              openFrameRange(tile.catalogEntry);
-                            }
-                          }}
-                        >
-                          <span className="miaonet-atlas-square-preview">
-                            <MiaoNetAtlasCanvas
-                              preview={
-                                previews[
-                                  `${tile.catalogEntry.category}:${tile.previewName}`
-                                ]
-                              }
-                            />
-                          </span>
-                          <span>{tile.label}</span>
-                          {tile.catalogEntry.frames.length > 1 &&
-                            tile.frameIndex === undefined && (
-                              <small>
-                                {_i18n.t("{count} 帧", {
-                                  count: tile.catalogEntry.frames.length,
-                                })}
-                              </small>
-                            )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {selectedGroup && (
-          <footer className="miaonet-atlas-range-footer">
-            <button type="button" onClick={() => setSelectedGroup(null)}>
-              {_i18n.t("取消")}
-            </button>
+      className="miaonet-atlas-picker"
+      role="dialog"
+      aria-modal="true"
+      aria-label={_i18n.t("选择 Celeste 贴图")}
+    >
+      <header>
+        <div className="miaonet-atlas-picker-title">
+          {selectedGroup && (
             <button
               type="button"
-              className="primary"
-              onClick={() =>
-                onSelect(frameExpression(selectedGroup, rangeStart, rangeEnd))
-              }
+              title={_i18n.t("返回贴图列表")}
+              onClick={() => setSelectedGroup(null)}
             >
-              <FaCheck />
-              {_i18n.t("使用所选帧")}
+              <FaArrowLeft />
             </button>
-          </footer>
+          )}
+          <div>
+            <h2>
+              {selectedGroup
+                ? _i18n.t("选择帧范围")
+                : _i18n.t("选择 Celeste 贴图")}
+            </h2>
+            {selectedGroup && <p>{selectedGroup.name}</p>}
+          </div>
+        </div>
+        <button type="button" title={_i18n.t("关闭")} onClick={onClose}>
+          <FaXmark />
+        </button>
+      </header>
+
+      {selectedGroup ? (
+        <div className="miaonet-atlas-range-toolbar">
+          <label>
+            <span>{_i18n.t("起始帧")}</span>
+            <select
+              value={rangeStart}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                setRangeStart(next);
+                if (next > rangeEnd) setRangeEnd(next);
+              }}
+            >
+              {selectedGroup.frames.map((frame, index) => (
+                <option value={index} key={frame}>
+                  {frame.slice(selectedGroup.name.length) || frame}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>{_i18n.t("结束帧")}</span>
+            <select
+              value={rangeEnd}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                setRangeEnd(next);
+                if (next < rangeStart) setRangeStart(next);
+              }}
+            >
+              {selectedGroup.frames.map((frame, index) => (
+                <option value={index} key={frame}>
+                  {frame.slice(selectedGroup.name.length) || frame}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span>
+            {_i18n.t("已选择 {count} 帧", {
+              count: Math.abs(rangeEnd - rangeStart) + 1,
+            })}
+          </span>
+        </div>
+      ) : (
+        <div className="miaonet-atlas-picker-toolbar">
+          <div className="miaonet-atlas-category-tabs">
+            {categoryOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={category === option.value ? "active" : ""}
+                onClick={() => setCategory(option.value)}
+              >
+                {_i18n.t(option.label)}
+              </button>
+            ))}
+          </div>
+          <label className="miaonet-atlas-search">
+            <FaMagnifyingGlass />
+            <input
+              type="search"
+              value={query}
+              placeholder={_i18n.t("搜索贴图路径")}
+              autoFocus
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        </div>
+      )}
+
+      <div className="miaonet-atlas-picker-status">
+        <span>
+          {selectedGroup
+            ? _i18n.t("共 {count} 帧", { count: selectedGroup.frames.length })
+            : _i18n.t("找到 {count} 种贴图", {
+                count: filteredEntries.length,
+              })}
+        </span>
+        <span className={previewError ? "error" : ""}>
+          {previewError || (previewsLoading && _i18n.t("正在加载预览…"))}
+        </span>
+      </div>
+
+      <div className="miaonet-atlas-grid-scroll" ref={scrollRef}>
+        {catalogLoading && (
+          <div className="miaonet-atlas-empty">
+            <ProgressIndicator infinite />
+            {_i18n.t("正在读取 Celeste 图集…")}
+          </div>
         )}
+        {!catalogLoading && catalogError && (
+          <div className="miaonet-atlas-empty error">{catalogError}</div>
+        )}
+        {!catalogLoading && !catalogError && tiles.length === 0 && (
+          <div className="miaonet-atlas-empty">
+            {_i18n.t("没有符合条件的贴图")}
+          </div>
+        )}
+        {!catalogLoading && !catalogError && tiles.length > 0 && (
+          <div
+            className="miaonet-atlas-virtual-grid"
+            style={{ height: rowVirtualizer.getTotalSize() }}
+          >
+            {virtualRows.map((virtualRow) => {
+              const rowTiles = tiles.slice(
+                virtualRow.index * columns,
+                Math.min((virtualRow.index + 1) * columns, tiles.length),
+              );
+              return (
+                <div
+                  className="miaonet-atlas-virtual-row"
+                  key={virtualRow.key}
+                  style={{
+                    height: CARD_SIZE,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    gridTemplateColumns: `repeat(${columns}, ${CARD_SIZE}px)`,
+                  }}
+                >
+                  {rowTiles.map((tile) => {
+                    const frameSelected =
+                      tile.frameIndex !== undefined &&
+                      tile.frameIndex >= Math.min(rangeStart, rangeEnd) &&
+                      tile.frameIndex <= Math.max(rangeStart, rangeEnd);
+                    return (
+                      <button
+                        type="button"
+                        className={`miaonet-atlas-square${
+                          frameSelected ? " selected" : ""
+                        }`}
+                        key={tile.key}
+                        title={tile.catalogEntry.name}
+                        onClick={() => {
+                          if (tile.frameIndex !== undefined) {
+                            if (tile.frameIndex === rangeStart) {
+                              setRangeStart(rangeEnd);
+                            } else if (tile.frameIndex === rangeEnd) {
+                              setRangeEnd(rangeStart);
+                            } else if (tile.frameIndex < rangeStart) {
+                              setRangeStart(tile.frameIndex);
+                            } else if (tile.frameIndex > rangeEnd) {
+                              setRangeEnd(tile.frameIndex);
+                            }
+                          } else {
+                            openFrameRange(tile.catalogEntry);
+                          }
+                        }}
+                      >
+                        <span className="miaonet-atlas-square-preview">
+                          <MiaoNetAtlasCanvas
+                            preview={
+                              previews[
+                                `${tile.catalogEntry.category}:${tile.previewName}`
+                              ]
+                            }
+                          />
+                        </span>
+                        <span>{tile.label}</span>
+                        {tile.catalogEntry.frames.length > 1 &&
+                          tile.frameIndex === undefined && (
+                            <small>
+                              {_i18n.t("{count} 帧", {
+                                count: tile.catalogEntry.frames.length,
+                              })}
+                            </small>
+                          )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {selectedGroup && (
+        <footer className="miaonet-atlas-range-footer">
+          <button type="button" onClick={() => setSelectedGroup(null)}>
+            {_i18n.t("取消")}
+          </button>
+          <button
+            type="button"
+            className="primary"
+            onClick={() =>
+              onSelect(frameExpression(selectedGroup, rangeStart, rangeEnd))
+            }
+          >
+            <FaCheck />
+            {_i18n.t("使用所选帧")}
+          </button>
+        </footer>
+      )}
     </section>
   );
 };

@@ -88,7 +88,7 @@ const parseUpdateInfo = (text: string) =>
     text
       .split("\n")
       .filter((line) => !line.trim().startsWith("//"))
-      .join("\n")
+      .join("\n"),
   ) as UpdateInfo;
 
 export const getLatestUpdateInfo = (forceRefresh = false) => {
@@ -97,7 +97,7 @@ export const getLatestUpdateInfo = (forceRefresh = false) => {
       .then((response) => {
         if (!response.ok)
           throw new Error(
-            `Failed to load update info: HTTP ${response.status}`
+            `Failed to load update info: HTTP ${response.status}`,
           );
         return response.text();
       })
@@ -112,7 +112,7 @@ export const getLatestUpdateInfo = (forceRefresh = false) => {
 
 export const featureVisible = (
   feature: { enabled: boolean; only_zh_cn?: boolean } | null | undefined,
-  currentLang: string
+  currentLang: string,
 ) =>
   Boolean(feature?.enabled && (!feature.only_zh_cn || currentLang === "zh-CN"));
 

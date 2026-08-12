@@ -75,7 +75,7 @@ export const Home = () => {
     void callRemote<string>(
       "get_active_profile_mods",
       gamePath,
-      JSON.stringify(alwaysOnMods)
+      JSON.stringify(alwaysOnMods),
     )
       .then((data) => setActiveMods(JSON.parse(data) as string[]))
       .catch(console.error);
@@ -122,7 +122,7 @@ export const Home = () => {
             <strong>{_i18n.t("建议删除 Everest 新键盘输入配置")}</strong>
             <span>
               {_i18n.t(
-                "EVEREST_NEW_KEYBOARD_INPUT=1 会导致群服聊天输入异常，请从 everest-env.txt 中删除此配置："
+                "EVEREST_NEW_KEYBOARD_INPUT=1 会导致群服聊天输入异常，请从 everest-env.txt 中删除此配置：",
               )}
             </span>
             {newKeyboardInputError ? (
@@ -173,7 +173,7 @@ export const Home = () => {
               callRemote(
                 "start_game_directly",
                 gamePath || gamePaths[0],
-                v === "origin"
+                v === "origin",
               );
               setTimeout(() => {
                 mask.setMaskEnabled(false);
@@ -185,7 +185,7 @@ export const Home = () => {
             <Icon name="warn" />
             <span>
               {_i18n.t(
-                "未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或"
+                "未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或",
               )}
             </span>
             <button onClick={() => selectGamePath(setGamePath)}>

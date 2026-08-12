@@ -18,7 +18,7 @@ An alternative mod manager for Celeste
 ✅ One-click upgrade Mod  
 ✅ Search by category, multiple sorting methods  
 ✅ Everest mirror one-click installation
-✅ Complete MiaoNet+ settings, virtualized atlas frame picking, and draggable emote management  
+✅ Complete MiaoNet+ settings, virtualized atlas frame picking, and draggable emote management
 
 ### Powerful
 

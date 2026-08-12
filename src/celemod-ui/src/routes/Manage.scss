@@ -978,7 +978,11 @@
     line-height: 24px;
     white-space: pre;
     color: theme.$fg;
-    font: 12px/24px ui-monospace, SFMono-Regular, Consolas, monospace;
+    font:
+      12px/24px ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
   }
 }
 
@@ -1168,7 +1172,11 @@
     outline: 0;
     background: transparent;
     color: theme.$fg2;
-    font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+    font:
+      11px/1.55 ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
   }
 }
 

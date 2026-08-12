@@ -50,34 +50,34 @@ const isBuiltInDependency = (name: string) =>
 
 export const previewProfileFile = async (
   gamePath: string,
-  sourcePath: string
+  sourcePath: string,
 ) =>
   parseProfileImportResult(
-    await callRemote<string>("preview_mod_profiles", gamePath, sourcePath)
+    await callRemote<string>("preview_mod_profiles", gamePath, sourcePath),
   );
 
 export const previewProfileJson = async (gamePath: string, contents: string) =>
   parseProfileImportResult(
-    await callRemote<string>("preview_mod_profiles_json", gamePath, contents)
+    await callRemote<string>("preview_mod_profiles_json", gamePath, contents),
   );
 
 export const previewOlympusProfiles = async (
   gamePath: string,
-  profileNames: string[]
+  profileNames: string[],
 ) =>
   parseProfileImportResult(
     await callRemote<string>(
       "preview_olympus_profiles",
       gamePath,
-      JSON.stringify(profileNames)
-    )
+      JSON.stringify(profileNames),
+    ),
   );
 
 export const previewProfileModList = (
   gamePath: string,
   name: string,
   modNames: string[],
-  autoDeps: boolean
+  autoDeps: boolean,
 ) =>
   previewProfileJson(
     gamePath,
@@ -87,18 +87,18 @@ export const previewProfileModList = (
       ...(autoDeps ? { auto_deps: true } : {}),
       name,
       enabled_mods: modNames,
-    })
+    }),
   );
 
 export const resolveProfileImportPlan = async (
-  result: ProfileImportResult
+  result: ProfileImportResult,
 ): Promise<ProfileImportPlan> => {
   const catalog = await loadModCatalog();
   const catalogByName = new Map(
-    catalog.map((mod) => [mod.name.toLocaleLowerCase(), mod])
+    catalog.map((mod) => [mod.name.toLocaleLowerCase(), mod]),
   );
   const catalogByFile = new Map(
-    catalog.map((mod) => [normalizedKey(mod.name), mod])
+    catalog.map((mod) => [normalizedKey(mod.name), mod]),
   );
   const missingFileKeys = new Set(result.missing_files.map(normalizedKey));
   const olympusAliases = new Map<string, string>();
@@ -130,7 +130,7 @@ export const resolveProfileImportPlan = async (
     if (mod) downloadsByName.set(mod.name.toLocaleLowerCase(), mod);
     else {
       const file = result.missing_files.find(
-        (candidate) => normalizedKey(candidate) === fileKey
+        (candidate) => normalizedKey(candidate) === fileKey,
       );
       if (file) unresolvedMods.push(file);
     }
@@ -153,7 +153,7 @@ const sourceForMod = (mod: CatalogMod) => {
 
 const downloadPlannedMods = async (
   plan: ProfileImportPlan,
-  onProgress: (progress: ProfileImportProgress) => void
+  onProgress: (progress: ProfileImportProgress) => void,
 ) => {
   const roots = plan.downloads.map((mod) => mod.name);
   const taskSnapshots = new Map<string, Download.TaskInfo>();
@@ -178,13 +178,13 @@ const downloadPlannedMods = async (
       if (!roots.includes(subtask.name)) discovered.add(subtask.name);
     }
     const finished = allSubtasks.filter(
-      (subtask) => subtask.state === "Finished"
+      (subtask) => subtask.state === "Finished",
     ).length;
     const failed = allSubtasks.filter(
-      (subtask) => subtask.state === "Failed"
+      (subtask) => subtask.state === "Failed",
     ).length;
     const active = allSubtasks.find(
-      (subtask) => subtask.state === "Downloading"
+      (subtask) => subtask.state === "Downloading",
     );
     onProgress({
       total: Math.max(plan.downloads.length, allSubtasks.length),
@@ -229,19 +229,19 @@ const downloadPlannedMods = async (
               reject(new Error(`${mod.name}: ${error}`));
             },
           });
-        })
-    )
+        }),
+    ),
   );
 };
 const commitProfiles = async (
   gamePath: string,
-  profiles: ModBlacklistProfile[]
+  profiles: ModBlacklistProfile[],
 ) => {
   await reloadInstalledMods();
   const raw = await callRemote<string>(
     "commit_mod_profiles",
     gamePath,
-    JSON.stringify(profiles)
+    JSON.stringify(profiles),
   );
   const result = parseProfileImportResult(raw);
   await reloadBlacklistState(gamePath);
@@ -251,7 +251,7 @@ const commitProfiles = async (
 export const executeProfileImport = async (
   gamePath: string,
   plan: ProfileImportPlan,
-  onProgress: (progress: ProfileImportProgress) => void
+  onProgress: (progress: ProfileImportProgress) => void,
 ) => {
   if (plan.unresolvedMods.length > 0) {
     throw new Error(`找不到 Mod：${plan.unresolvedMods.join(", ")}`);
@@ -415,12 +415,12 @@ const waitForProfileConfirmation = (plan: ProfileImportPlan) =>
           }}
         />
       ),
-      { cancelable: false }
+      { cancelable: false },
     );
   });
 const installProfilePlan = async (
   plan: ProfileImportPlan,
-  onDone: () => void = () => undefined
+  onDone: () => void = () => undefined,
 ) => {
   if (!(await waitForProfileConfirmation(plan))) return false;
   return new Promise<boolean>((resolve) => {
@@ -432,7 +432,7 @@ const installProfilePlan = async (
           onSettled={resolve}
         />
       ),
-      { cancelable: false }
+      { cancelable: false },
     );
   });
 };
@@ -440,7 +440,7 @@ const installProfilePlan = async (
 export const installProfileFile = (
   gamePath: string,
   sourcePath: string,
-  onDone?: () => void
+  onDone?: () => void,
 ) => {
   const key = `${gamePath}\0${sourcePath}`.toLocaleLowerCase();
   const pending = pendingProfileFiles.get(key);
@@ -456,13 +456,13 @@ export const installProfileFile = (
 export const installProfileJson = async (
   gamePath: string,
   contents: string,
-  onDone?: () => void
+  onDone?: () => void,
 ) =>
   installProfilePlan(
     await resolveProfileImportPlan(
-      await previewProfileJson(gamePath, contents)
+      await previewProfileJson(gamePath, contents),
     ),
-    onDone
+    onDone,
   );
 
 export const installProfileModList = async (
@@ -470,29 +470,29 @@ export const installProfileModList = async (
   name: string,
   modNames: string[],
   autoDeps: boolean,
-  onDone?: () => void
+  onDone?: () => void,
 ) =>
   installProfilePlan(
     await resolveProfileImportPlan(
-      await previewProfileModList(gamePath, name, modNames, autoDeps)
+      await previewProfileModList(gamePath, name, modNames, autoDeps),
     ),
-    onDone
+    onDone,
   );
 
 export const installOlympusProfiles = async (
   gamePath: string,
   profileNames: string[],
-  onDone?: () => void
+  onDone?: () => void,
 ) =>
   installProfilePlan(
     await resolveProfileImportPlan(
-      await previewOlympusProfiles(gamePath, profileNames)
+      await previewOlympusProfiles(gamePath, profileNames),
     ),
-    onDone
+    onDone,
   );
 export const installSingleMod = async (
   mod: CatalogMod,
-  onDone: () => void = () => undefined
+  onDone: () => void = () => undefined,
 ) => {
   const confirmed = await new Promise<boolean>((resolve) => {
     const popup = createPopup(
@@ -529,7 +529,7 @@ export const installSingleMod = async (
           </div>
         </div>
       ),
-      { cancelable: false }
+      { cancelable: false },
     );
   });
   if (!confirmed) return false;
@@ -549,7 +549,7 @@ export const installSingleMod = async (
           onSettled={resolve}
         />
       ),
-      { cancelable: false }
+      { cancelable: false },
     );
   });
 };

@@ -9,7 +9,7 @@ export const createPopup = (
     cancelable = true,
     backgroundMask = "rgba(0, 0, 0, 0.5)",
     className = "",
-  }: { cancelable?: boolean; backgroundMask?: string; className?: string } = {}
+  }: { cancelable?: boolean; backgroundMask?: string; className?: string } = {},
 ) => {
   const container = document.createElement("div");
   container.className = ["popup-container", className]
@@ -41,7 +41,7 @@ export const createPopup = (
   root.render(
     <PopupContext.Provider value={controls}>
       {createElement(Content)}
-    </PopupContext.Provider>
+    </PopupContext.Provider>,
   );
   return controls;
 };

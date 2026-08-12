@@ -13,7 +13,9 @@
   box-sizing: border-box;
   background: linear-gradient(155deg, theme.$bg2, theme.$bg1 62%);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
   $mask-start-height: 150px;
 
   .mod-media {
@@ -31,7 +33,9 @@
       object-fit: cover;
       object-position: center;
       transform: scale(1.01);
-      transition: transform 280ms ease, filter 280ms ease;
+      transition:
+        transform 280ms ease,
+        filter 280ms ease;
     }
   }
 
@@ -175,8 +179,8 @@
       min-width: 0;
       gap: 9px;
       overflow: hidden;
-      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
-        monospace;
+      font-family:
+        ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-variant-numeric: tabular-nums;
       font-weight: 500;
       letter-spacing: -0.02em;
@@ -186,8 +190,8 @@
         align-items: center;
         min-width: 0;
         gap: 4px;
-        font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono",
-          monospace;
+        font-family:
+          ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
@@ -651,7 +655,9 @@
     cursor: pointer;
     gap: 10px;
     text-align: left;
-    transition: border-color 150ms ease, background 150ms ease;
+    transition:
+      border-color 150ms ease,
+      background 150ms ease;
 
     + .file {
       margin-top: 2px;
@@ -764,7 +770,9 @@
       border-radius: 7px;
       color: theme.$fg2;
       background: color.change(theme.$fg, $alpha: 0.045);
-      transition: color 150ms ease, background 150ms ease;
+      transition:
+        color 150ms ease,
+        background 150ms ease;
 
       .icon {
         width: 12px;

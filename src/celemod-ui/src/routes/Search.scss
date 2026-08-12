@@ -50,7 +50,9 @@
     outline: none;
     background: color.change(theme.$bg1, $alpha: 0.9);
     font-size: 13px;
-    transition: border-color 150ms ease, background 150ms ease,
+    transition:
+      border-color 150ms ease,
+      background 150ms ease,
       box-shadow 150ms ease;
 
     &:hover {

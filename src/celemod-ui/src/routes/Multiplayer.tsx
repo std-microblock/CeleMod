@@ -71,7 +71,6 @@ const toMiaoNetSettingsUpdate = ({
   ...settings
 }: MiaoNetSettings): MiaoNetSettingsUpdate => settings;
 
-
 type AuthorizationState =
   | "idle"
   | "starting"
@@ -137,8 +136,12 @@ export const Multiplayer = () => {
   >({});
   const [editingTextIndex, setEditingTextIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [draggedEmoteIndex, setDraggedEmoteIndex] = useState<number | null>(null);
-  const [dragOverEmoteIndex, setDragOverEmoteIndex] = useState<number | null>(null);
+  const [draggedEmoteIndex, setDraggedEmoteIndex] = useState<number | null>(
+    null,
+  );
+  const [dragOverEmoteIndex, setDragOverEmoteIndex] = useState<number | null>(
+    null,
+  );
   const [emoteDragOffset, setEmoteDragOffset] = useState({ x: 0, y: 0 });
   const [settling, setSettling] = useState(false);
   const emotePreviewRequest = useRef(0);
@@ -168,7 +171,7 @@ export const Multiplayer = () => {
     try {
       const settings = await invokeCommand<MiaoNetSettings>(
         "get_miaonet_settings",
-        { gamePath }
+        { gamePath },
       );
       setMiaoNetSettings(cloneMiaoNetSettings(settings));
       setSavedMiaoNetSettings(cloneMiaoNetSettings(settings));
@@ -208,15 +211,19 @@ export const Multiplayer = () => {
         {
           gamePath,
           emotes,
-        }
+        },
       )
         .then((loaded) => {
           if (request !== emotePreviewRequest.current) return;
           setEmotePreviews(
-            Object.fromEntries(loaded.map((preview) => [preview.index, preview]))
+            Object.fromEntries(
+              loaded.map((preview) => [preview.index, preview]),
+            ),
           );
         })
-        .catch((error) => console.error("Failed to load MiaoNet emotes", error));
+        .catch((error) =>
+          console.error("Failed to load MiaoNet emotes", error),
+        );
     }, 180);
     return () => window.clearTimeout(timer);
   }, [gamePath, miaoNetSettings?.emotes]);
@@ -252,7 +259,7 @@ export const Multiplayer = () => {
           if (nextState === "failed") {
             setAuthorizationState("failed");
             setAuthorizationError(
-              String(detail || _i18n.t("授权未完成，请重试。"))
+              String(detail || _i18n.t("授权未完成，请重试。")),
             );
             return;
           }
@@ -263,7 +270,7 @@ export const Multiplayer = () => {
           ) {
             setAuthorizationState(nextState);
           }
-        }
+        },
       );
     } catch (error) {
       setAuthorizationState("failed");
@@ -285,7 +292,7 @@ export const Multiplayer = () => {
               authenticated: false,
               lastName: null,
             }
-          : state
+          : state,
       );
       await refreshLocalState();
     } catch (error) {
@@ -295,12 +302,12 @@ export const Multiplayer = () => {
     }
   }, [gamePath, refreshLocalState]);
 
-  const updateMiaoNetSetting = <K extends keyof MiaoNetSettingsUpdate,>(
+  const updateMiaoNetSetting = <K extends keyof MiaoNetSettingsUpdate>(
     key: K,
-    value: MiaoNetSettingsUpdate[K]
+    value: MiaoNetSettingsUpdate[K],
   ) => {
     setMiaoNetSettings((current) =>
-      current ? { ...current, [key]: value } : current
+      current ? { ...current, [key]: value } : current,
     );
     setSettingsNotice("");
   };
@@ -327,7 +334,7 @@ export const Multiplayer = () => {
               setMiaoNetSettings((current) =>
                 current
                   ? { ...current, emotes: [...current.emotes, expression] }
-                  : current
+                  : current,
               );
               setSettingsNotice("");
             } else {
@@ -361,14 +368,14 @@ export const Multiplayer = () => {
           index === sourceIndex
             ? targetIndex
             : sourceIndex < targetIndex &&
-              index > sourceIndex &&
-              index <= targetIndex
-            ? index - 1
-            : sourceIndex > targetIndex &&
-              index >= targetIndex &&
-              index < sourceIndex
-            ? index + 1
-            : index;
+                index > sourceIndex &&
+                index <= targetIndex
+              ? index - 1
+              : sourceIndex > targetIndex &&
+                  index >= targetIndex &&
+                  index < sourceIndex
+                ? index + 1
+                : index;
         reordered[nextIndex] = preview;
       }
       return reordered;
@@ -401,14 +408,14 @@ export const Multiplayer = () => {
         event.clientX < rect.left
           ? rect.left - event.clientX
           : event.clientX > rect.right
-          ? event.clientX - rect.right
-          : 0;
+            ? event.clientX - rect.right
+            : 0;
       const distanceY =
         event.clientY < rect.top
           ? rect.top - event.clientY
           : event.clientY > rect.bottom
-          ? event.clientY - rect.bottom
-          : 0;
+            ? event.clientY - rect.bottom
+            : 0;
       const distance = distanceX * distanceX + distanceY * distanceY;
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -455,7 +462,7 @@ export const Multiplayer = () => {
 
   const finishEmoteDrag = (
     event: ReactPointerEvent<HTMLElement>,
-    commit: boolean
+    commit: boolean,
   ) => {
     const sourceIndex = draggedEmoteIndexRef.current;
     const targetIndex = dragOverEmoteIndexRef.current;
@@ -481,7 +488,7 @@ export const Multiplayer = () => {
         (event.clientY - emoteDragStartRef.current.y);
       requestAnimationFrame(() => {
         const node = grid?.querySelector<HTMLElement>(
-          `.multiplayer-emote-card[data-emote-index="${targetIndex}"]`
+          `.multiplayer-emote-card[data-emote-index="${targetIndex}"]`,
         );
         if (!node) return;
         const toRect = node.getBoundingClientRect();
@@ -494,7 +501,7 @@ export const Multiplayer = () => {
             },
             { transform: "translate3d(0, 0, 0) scale(1)" },
           ],
-          { duration: 170, easing: "cubic-bezier(0.2, 0.75, 0.25, 1)" }
+          { duration: 170, easing: "cubic-bezier(0.2, 0.75, 0.25, 1)" },
         );
         setSettling(false);
       });
@@ -508,9 +515,11 @@ export const Multiplayer = () => {
       current
         ? {
             ...current,
-            emotes: current.emotes.filter((_, emoteIndex) => emoteIndex !== index),
+            emotes: current.emotes.filter(
+              (_, emoteIndex) => emoteIndex !== index,
+            ),
           }
-        : current
+        : current,
     );
     setEditingTextIndex(null);
     clearEmoteDrag();
@@ -525,7 +534,7 @@ export const Multiplayer = () => {
       const settings = toMiaoNetSettingsUpdate(miaoNetSettings);
       const saved = await invokeCommand<MiaoNetSettings>(
         "save_miaonet_settings",
-        { gamePath, settings }
+        { gamePath, settings },
       );
       setMiaoNetSettings(cloneMiaoNetSettings(saved));
       setSavedMiaoNetSettings(cloneMiaoNetSettings(saved));
@@ -539,9 +548,9 @@ export const Multiplayer = () => {
 
   const settingsDirty = Boolean(
     miaoNetSettings &&
-      savedMiaoNetSettings &&
-      JSON.stringify(toMiaoNetSettingsUpdate(miaoNetSettings)) !==
-        JSON.stringify(toMiaoNetSettingsUpdate(savedMiaoNetSettings))
+    savedMiaoNetSettings &&
+    JSON.stringify(toMiaoNetSettingsUpdate(miaoNetSettings)) !==
+      JSON.stringify(toMiaoNetSettingsUpdate(savedMiaoNetSettings)),
   );
 
   if (noEverest) return noEverest;
@@ -567,16 +576,16 @@ export const Multiplayer = () => {
           {failed
             ? _i18n.t("MiaoNet+ 下载失败")
             : downloading
-            ? _i18n.t("正在安装 MiaoNet+")
-            : _i18n.t("需要安装 MiaoNet+")}
+              ? _i18n.t("正在安装 MiaoNet+")
+              : _i18n.t("需要安装 MiaoNet+")}
         </strong>
         <span className="multiplayer-state-description">
           {failed
             ? downloadTask?.error ||
               _i18n.t("安装未完成，请检查网络连接后重试。")
             : downloading
-            ? _i18n.t("正在下载并安装到当前 Celeste 的 Mods 文件夹。")
-            : _i18n.t("点击下方按钮后才会开始下载联机组件。")}
+              ? _i18n.t("正在下载并安装到当前 Celeste 的 Mods 文件夹。")
+              : _i18n.t("点击下方按钮后才会开始下载联机组件。")}
         </span>
         {downloading && (
           <div className="multiplayer-download-progress">
@@ -747,7 +756,9 @@ export const Multiplayer = () => {
           </section>
 
           {logoutError && (
-            <div className="multiplayer-settings-message error">{logoutError}</div>
+            <div className="multiplayer-settings-message error">
+              {logoutError}
+            </div>
           )}
 
           <section className="multiplayer-settings-card">
@@ -799,7 +810,7 @@ export const Multiplayer = () => {
                       onChange={(event) =>
                         updateMiaoNetSetting(
                           option.key,
-                          Number(event.target.value)
+                          Number(event.target.value),
                         )
                       }
                     />
@@ -823,9 +834,7 @@ export const Multiplayer = () => {
             </header>
 
             <div
-              className={`multiplayer-emote-grid${
-                settling ? " settling" : ""
-              }`}
+              className={`multiplayer-emote-grid${settling ? " settling" : ""}`}
             >
               {miaoNetSettings.emotes.length === 0 && (
                 <div className="multiplayer-emote-empty">
@@ -847,7 +856,9 @@ export const Multiplayer = () => {
                         event.button !== 0 ||
                         editingTextIndex === index ||
                         (event.target instanceof Element &&
-                          event.target.closest("button, textarea, input, select, a"))
+                          event.target.closest(
+                            "button, textarea, input, select, a",
+                          ))
                       ) {
                         return;
                       }
@@ -857,8 +868,8 @@ export const Multiplayer = () => {
                       };
                       emoteCardRectsRef.current = Array.from(
                         event.currentTarget.parentElement?.querySelectorAll<HTMLElement>(
-                          ".multiplayer-emote-card"
-                        ) ?? []
+                          ".multiplayer-emote-card",
+                        ) ?? [],
                       ).map((card) => card.getBoundingClientRect());
                       draggedEmoteIndexRef.current = index;
                       dragOverEmoteIndexRef.current = index;
@@ -872,20 +883,27 @@ export const Multiplayer = () => {
                     onPointerCancel={(event) => finishEmoteDrag(event, false)}
                   >
                     <div className="multiplayer-emote-preview">
-                      <span className="multiplayer-emote-index">{index + 1}</span>
+                      <span className="multiplayer-emote-index">
+                        {index + 1}
+                      </span>
                       {editingTextIndex === index ? (
                         <textarea
                           autoFocus
                           value={editingText}
                           placeholder={_i18n.t("输入表情文本")}
                           onFocus={(event) => event.currentTarget.select()}
-                          onChange={(event) => setEditingText(event.target.value)}
+                          onChange={(event) =>
+                            setEditingText(event.target.value)
+                          }
                           onBlur={() => {
                             updateEmote(index, editingText);
                             setEditingTextIndex(null);
                           }}
                           onKeyDown={(event) => {
-                            if (event.key === "Escape" || (event.ctrlKey && event.key === "Enter")) {
+                            if (
+                              event.key === "Escape" ||
+                              (event.ctrlKey && event.key === "Enter")
+                            ) {
                               event.currentTarget.blur();
                             }
                           }}
@@ -942,7 +960,7 @@ export const Multiplayer = () => {
                   setMiaoNetSettings((current) =>
                     current
                       ? { ...current, emotes: [...current.emotes, ""] }
-                      : current
+                      : current,
                   );
                   setEditingTextIndex(index);
                   setSettingsNotice("");
@@ -951,10 +969,7 @@ export const Multiplayer = () => {
                 <FaPlus />
                 {_i18n.t("添加文本")}
               </button>
-              <button
-                type="button"
-                onClick={() => openEmotePicker("append")}
-              >
+              <button type="button" onClick={() => openEmotePicker("append")}>
                 <FaImage />
                 {_i18n.t("添加图片")}
               </button>
@@ -964,7 +979,7 @@ export const Multiplayer = () => {
                   setMiaoNetSettings((current) =>
                     current
                       ? { ...current, emotes: [...current.defaultEmotes] }
-                      : current
+                      : current,
                   );
                   setEditingTextIndex(null);
                   setSettingsNotice("");
@@ -1022,7 +1037,7 @@ export const Multiplayer = () => {
       <strong>{_i18n.t("在浏览器中完成授权")}</strong>
       <span className="multiplayer-state-description multiplayer-auth-description">
         {_i18n.t(
-          "点击下方按钮后会打开论坛授权页面。请在页面中完成注册/登录和授权。"
+          "点击下方按钮后会打开论坛授权页面。请在页面中完成注册/登录和授权。",
         )}
       </span>
       <button
@@ -1037,14 +1052,14 @@ export const Multiplayer = () => {
         {authorizationState === "starting"
           ? _i18n.t("正在准备授权…")
           : authorizationState === "waiting_browser"
-          ? _i18n.t("等待浏览器授权…")
-          : authorizationState === "exchanging_code"
-          ? _i18n.t("正在验证账号…")
-          : authorizationState === "saving_token"
-          ? _i18n.t("正在保存登录信息…")
-          : authorizationState === "failed"
-          ? _i18n.t("重新开始授权")
-          : _i18n.t("打开系统浏览器授权")}
+            ? _i18n.t("等待浏览器授权…")
+            : authorizationState === "exchanging_code"
+              ? _i18n.t("正在验证账号…")
+              : authorizationState === "saving_token"
+                ? _i18n.t("正在保存登录信息…")
+                : authorizationState === "failed"
+                  ? _i18n.t("重新开始授权")
+                  : _i18n.t("打开系统浏览器授权")}
       </button>
       {authorizationState !== "idle" && authorizationState !== "failed" && (
         <span className="multiplayer-waiting">

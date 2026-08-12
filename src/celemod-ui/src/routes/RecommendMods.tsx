@@ -120,7 +120,7 @@ const recommendedMaps = () => [
       _i18n.t("最为经典的地图集，于 2023 年推出"),
       _i18n.t("质量极高，每张图都有自己的特色；背景音乐与环境制作精良"),
       _i18n.t(
-        "分为五个难度（即酱一至酱五），从刚入门的新手到千小时的老鸟都可以打~"
+        "分为五个难度（即酱一至酱五），从刚入门的新手到千小时的老鸟都可以打~",
       ),
     ],
   },
@@ -137,7 +137,7 @@ const recommendedMaps = () => [
       _i18n.t("包含超过20张地图和一个极其漂亮的大厅"),
       _i18n.t("涵盖酱一至酱五所有难度，数种与众不同的新机制等待玩家去探索"),
       _i18n.t(
-        "国人原创图，国风浓厚，难度偏高，美术优美，音乐好听，非常推荐安装尝试"
+        "国人原创图，国风浓厚，难度偏高，美术优美，音乐好听，非常推荐安装尝试",
       ),
     ],
   },
@@ -153,7 +153,7 @@ const recommendedMaps = () => [
     recommendations: [
       _i18n.t("包含80+地图，5个章节，数十种新机制"),
       _i18n.t(
-        "Spring Collab 有 5 个大厅供您探索，里面装满了社区制作的地图。地图的难度从早期的原版内容到一些现存最难的 Celeste 地图均有覆盖"
+        "Spring Collab 有 5 个大厅供您探索，里面装满了社区制作的地图。地图的难度从早期的原版内容到一些现存最难的 Celeste 地图均有覆盖",
       ),
       _i18n.t("老牌地图，比草莓酱简单，还行"),
     ],
@@ -212,7 +212,7 @@ const recommendedMaps = () => [
     recommendations: [
       _i18n.t("单图，美术和音乐都很好"),
       _i18n.t(
-        "MB 自己很喜欢的一张图，有 20-30 面，感觉很平和（中文名是自己翻译的）"
+        "MB 自己很喜欢的一张图，有 20-30 面，感觉很平和（中文名是自己翻译的）",
       ),
       _i18n.t("A 面难度在 5A - 6A，B面/C面有一些技巧，难度在 7B 的样子"),
     ],
@@ -242,7 +242,7 @@ const HelperModRow = ({
   const task = useDownloadStore(
     (store) =>
       Object.values(store.tasks).find((item) => item.ownerId === installName) ??
-      store.tasks[installName]
+      store.tasks[installName],
   );
   const downloadActive = task?.state === "pending" && !task.canceled;
   const progress = Math.max(0, Math.min(100, Number(task?.progress ?? 0)));
@@ -284,10 +284,7 @@ const HelperModRow = ({
         <div className="helper-mod-name">
           <span>{name}</span>
           {includedInDownloadAll ? (
-            <span
-              className="helper-mod-one-click"
-              title={_i18n.t("下载推荐")}
-            >
+            <span className="helper-mod-one-click" title={_i18n.t("下载推荐")}>
               <Icon name="star" />
             </span>
           ) : null}
@@ -301,15 +298,15 @@ const HelperModRow = ({
           isInstalled
             ? _i18n.t("已安装")
             : downloadActive
-            ? `${Math.round(progress)}%`
-            : _i18n.t("下载")
+              ? `${Math.round(progress)}%`
+              : _i18n.t("下载")
         }
         aria-label={
           isInstalled
             ? _i18n.t("已安装")
             : downloadActive
-            ? `${Math.round(progress)}%`
-            : _i18n.t("下载")
+              ? `${Math.round(progress)}%`
+              : _i18n.t("下载")
         }
         onClick={() => {
           void startDownload();
@@ -348,12 +345,12 @@ export const RecommendMods = () => {
   const skinMods = _skinMods();
   const mapMods = recommendedMaps();
   const visibleFunctionalMods = functionalMods.filter(
-    (mod) => !mod.visible || mod.visible(_i18n.currentLang)
+    (mod) => !mod.visible || mod.visible(_i18n.currentLang),
   );
   const handlers = useRef<Record<string, DownloadHandler>>({});
   const installedNames = useMemo(
     () => new Set(installedMods.map((mod) => mod.name)),
-    [installedMods]
+    [installedMods],
   );
   const modsFolder = `${gamePath}/Mods`;
   const noEverest = enforceEverest();
@@ -370,7 +367,7 @@ export const RecommendMods = () => {
     author: string,
     other: string,
     category: string,
-    downloadKey?: string
+    downloadKey?: string,
   ): ModInfo => {
     const modKey = downloadKey ?? (modNameFromUrl(downloadUrl) || name);
     return {
@@ -474,7 +471,7 @@ export const RecommendMods = () => {
                       map.alias,
                       map.meta,
                       _i18n.t("地图"),
-                      map.installName
+                      map.installName,
                     )}
                     modFolder={modsFolder}
                     isInstalled={isInstalled(map.downloadUrl, map.installName)}
@@ -507,7 +504,7 @@ export const RecommendMods = () => {
                   skinPreviewUrls[mod.name],
                   mod.description,
                   _i18n.t("皮肤"),
-                  _i18n.t("皮肤")
+                  _i18n.t("皮肤"),
                 )}
                 modFolder={modsFolder}
                 isInstalled={isInstalled(mod.download_url)}

@@ -23,7 +23,7 @@ export const checkUpdate = async () => {
     createPopup(
       () => {
         const [updateProgress, setUpdateProgress] = useState<null | number>(
-          null
+          null,
         );
         const [failReason, setFailReason] = useState<string | null>(null);
 
@@ -86,10 +86,10 @@ export const checkUpdate = async () => {
                                   setFailReason(
                                     typeof data === "string"
                                       ? data
-                                      : String(data)
+                                      : String(data),
                                   );
                                 }
-                              }
+                              },
                             );
                           }}
                         >
@@ -127,7 +127,7 @@ export const checkUpdate = async () => {
       },
       {
         cancelable: !applyForce,
-      }
+      },
     );
   }
 };

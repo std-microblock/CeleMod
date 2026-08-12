@@ -69,8 +69,7 @@ const getInstallTip = (state: string | null) => {
   if (state?.startsWith("[1/3]")) return _i18n.t("正在下载");
   if (state?.startsWith("[2/3]")) return _i18n.t("正在解压");
   if (state?.startsWith("[4/4] download")) return _i18n.t("正在下载");
-  if (state?.startsWith("[4/4] verify"))
-    return _i18n.t("正在校验修复包");
+  if (state?.startsWith("[4/4] verify")) return _i18n.t("正在校验修复包");
   if (state?.startsWith("[4/4] install")) return _i18n.t("正在替换 Mod");
   return _i18n.t("正在安装");
 };
@@ -159,7 +158,7 @@ const OfficialChannel = ({
               ? `https://celeste.weg.fan/api/v2/download/everest/${version.version}`
               : version.mainDownload,
         })),
-    [branch, mirror, versions]
+    [branch, mirror, versions],
   );
 
   return (
@@ -191,7 +190,7 @@ const UltraChannel = ({
         versions={versions
           .filter(
             (version) =>
-              !version.channel || version.channel.toLowerCase() === "stable"
+              !version.channel || version.channel.toLowerCase() === "stable",
           )
           .map((version) => ({
             key: `ultra-stable-${version.version}-${
@@ -242,7 +241,7 @@ export const Everest = () => {
     setActiveTab(
       ultra?.default_tab === "ultra-stable" && showUltra
         ? "ultra-stable"
-        : "stable"
+        : "stable",
     );
     cloudDefaultApplied.current = true;
   }, [showUltra, ultra?.default_tab, updateInfo]);
@@ -253,7 +252,7 @@ export const Everest = () => {
 
   useEffect(() => {
     fetch(
-      "https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true"
+      "https://maddie480.ovh/celeste/everest-versions?supportsNativeBuilds=true",
     )
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -268,9 +267,9 @@ export const Everest = () => {
       url,
       activeTab === "ultra-stable"
         ? (updateInfo?.crash_mod_fixes || []).filter(
-            (fix) => fix.mod_name.toLocaleLowerCase() === "rushhelper"
+            (fix) => fix.mod_name.toLocaleLowerCase() === "rushhelper",
           )
-        : []
+        : [],
     );
   };
 
@@ -278,7 +277,7 @@ export const Everest = () => {
     createPopup(() => {
       const { hide } = useContext(PopupContext);
       const [manualVersion, setManualVersion] = useState(
-        currentEverestVersion || ""
+        currentEverestVersion || "",
       );
       return (
         <div className="popup-content manual-everest-popup">
@@ -286,12 +285,12 @@ export const Everest = () => {
           <div className="content">
             <p>
               {_i18n.t(
-                "如果你已经安装了 Everest，但 CeleMod 没有正确识别，可以在这里手动填写版本号。"
+                "如果你已经安装了 Everest，但 CeleMod 没有正确识别，可以在这里手动填写版本号。",
               )}
             </p>
             <p>
               {_i18n.t(
-                "注意：如果实际上没有安装 Everest，就无法通过 Mod 方式启动游戏。"
+                "注意：如果实际上没有安装 Everest，就无法通过 Mod 方式启动游戏。",
               )}
             </p>
             <input

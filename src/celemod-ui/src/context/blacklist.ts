@@ -26,7 +26,7 @@ export const createBlacklistContext = () => {
         "apply_mod_profiles",
         gamePath,
         JSON.stringify([name]),
-        JSON.stringify(alwaysOnMods)
+        JSON.stringify(alwaysOnMods),
       );
       if (result !== "Success") throw new Error(result);
       await reloadBlacklistState(gamePath);
@@ -36,7 +36,7 @@ export const createBlacklistContext = () => {
         "apply_mod_profiles",
         gamePath,
         JSON.stringify(names),
-        JSON.stringify(alwaysOnMods)
+        JSON.stringify(alwaysOnMods),
       );
       if (result !== "Success") throw new Error(result);
       setActiveProfileNames(names);
@@ -44,7 +44,7 @@ export const createBlacklistContext = () => {
     },
     setModsEnabled: async (
       mods: { name: string; file: string }[],
-      enabled: boolean
+      enabled: boolean,
     ) => {
       if (mods.length === 0) return;
       const state = useAppStore.getState();
@@ -60,7 +60,7 @@ export const createBlacklistContext = () => {
           "switch_direct_blacklist",
           targetGamePath,
           JSON.stringify(effectiveMods.map((mod) => mod.file)),
-          enabled
+          enabled,
         );
         if (result !== "Success") throw new Error(result);
         const directProfile = state.currentProfile ?? {
@@ -82,7 +82,7 @@ export const createBlacklistContext = () => {
 
       const targetProfile =
         state.profiles.find(
-          (profile) => profile.name === state.currentProfileName
+          (profile) => profile.name === state.currentProfileName,
         ) ?? state.profiles[0];
       if (!targetProfile) throw new Error("No CeleMod Profile is available");
       const result = await callRemote<string>(
@@ -90,7 +90,7 @@ export const createBlacklistContext = () => {
         targetGamePath,
         targetProfile.name,
         JSON.stringify(effectiveMods.map((mod) => mod.name)),
-        enabled
+        enabled,
       );
       if (result !== "Success") throw new Error(result);
 
@@ -101,7 +101,7 @@ export const createBlacklistContext = () => {
         "apply_mod_profiles",
         targetGamePath,
         JSON.stringify(activeNames),
-        JSON.stringify(targetAlwaysOnMods)
+        JSON.stringify(targetAlwaysOnMods),
       );
       if (applyResult !== "Success") throw new Error(applyResult);
       await reloadBlacklistState(targetGamePath);
@@ -109,4 +109,4 @@ export const createBlacklistContext = () => {
   };
 
   return ctx;
-}
+};

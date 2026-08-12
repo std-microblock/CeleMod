@@ -26,10 +26,7 @@ import { useDownloadStore } from "../stores/download";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
-import {
-  getAvailableModPageUrl,
-  getOtherModPageSource,
-} from "../modPage";
+import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
 // @ts-ignore
 import celemodIcon from "../resources/Celemod.png";
 
@@ -45,7 +42,7 @@ const formatShortDate = (dateValue: string | Date) => {
   if (Number.isNaN(date.getTime())) return "--";
   const pad = (value: number) => value.toString().padStart(2, "0");
   return `${date.getFullYear().toString().slice(-2)}/${pad(
-    date.getMonth() + 1
+    date.getMonth() + 1,
   )}/${pad(date.getDate())}`;
 };
 
@@ -87,7 +84,7 @@ const BackgroundEle = memo(
         <img src={preview + "?w=560"} alt="" loading="lazy" decoding="async" />
       </div>
     </Fragment>
-  )
+  ),
 );
 
 const CARD_HEIGHT = 242;
@@ -160,14 +157,14 @@ export const Mod = memo(
     const downloadTask = useDownloadStore(
       (state) =>
         Object.values(state.tasks).find(
-          (task) => task.ownerId === downloadOwnerId
-        ) ?? state.tasks[mod.name]
+          (task) => task.ownerId === downloadOwnerId,
+        ) ?? state.tasks[mod.name],
     );
     const downloadActive =
       downloadTask?.state === "pending" && !downloadTask.canceled;
     const downloadProgress = Math.max(
       0,
-      Math.min(100, Number(downloadTask?.progress ?? 0))
+      Math.min(100, Number(downloadTask?.progress ?? 0)),
     );
 
     return (
@@ -196,15 +193,15 @@ export const Mod = memo(
               downloadActive
                 ? `${Math.round(downloadProgress)}%`
                 : props.isInstalled
-                ? _i18n.t("已安装")
-                : _i18n.t("下载")
+                  ? _i18n.t("已安装")
+                  : _i18n.t("下载")
             }
             aria-label={
               downloadActive
                 ? `${Math.round(downloadProgress)}%`
                 : props.isInstalled
-                ? _i18n.t("已安装")
-                : _i18n.t("下载")
+                  ? _i18n.t("已安装")
+                  : _i18n.t("下载")
             }
             onClick={async (event) => {
               event.stopPropagation();
@@ -300,7 +297,7 @@ export const Mod = memo(
                               onClick={() => {
                                 down(
                                   file.name,
-                                  parseInt(file.id) === -1 ? file.url : file.id
+                                  parseInt(file.id) === -1 ? file.url : file.id,
                                 );
                                 popupCtx.hide();
                               }}
@@ -394,10 +391,10 @@ export const Mod = memo(
                 createPopup(
                   () => {
                     const [data, setData] = useState<ModDetailInfo | null>(
-                      null
+                      null,
                     );
                     const modPageSource = useAppStore(
-                      (state) => state.modPageSource
+                      (state) => state.modPageSource,
                     );
                     const ctx = useContext(PopupContext);
                     useEffect(() => {
@@ -411,7 +408,7 @@ export const Mod = memo(
                       // horizontal scroll
                       refImages.current.addEventListener(
                         "mousewheel",
-                        horizontalScrollMouseWheelHandler()
+                        horizontalScrollMouseWheelHandler(),
                       );
                     }, [data]);
 
@@ -419,13 +416,13 @@ export const Mod = memo(
                       if (!refContent.current) return;
                       refContent.current.innerHTML = "";
                       refContent.current.appendChild(
-                        sanitizeDescriptionHtml(data?.description ?? "")
+                        sanitizeDescriptionHtml(data?.description ?? ""),
                       );
 
                       // Keep external links going through the native opener.
                       // @ts-ignore
                       for (const a of refContent.current.querySelectorAll(
-                        "a"
+                        "a",
                       )) {
                         const url = a.getAttribute("href");
                         if (!url) continue;
@@ -439,7 +436,7 @@ export const Mod = memo(
 
                       // @ts-ignore
                       for (const img of refContent.current.querySelectorAll(
-                        "img"
+                        "img",
                       ))
                         img.style.maxWidth = "300px";
                     }, [data]);
@@ -469,7 +466,7 @@ export const Mod = memo(
                                   submissionId: data.submissionId,
                                   gameBananaUrl: data.externalUrl,
                                 },
-                                modPageSource
+                                modPageSource,
                               );
                               if (url) callRemote("open_url", url);
                             }}
@@ -480,12 +477,12 @@ export const Mod = memo(
                                   submissionId: data.submissionId,
                                   gameBananaUrl: data.externalUrl,
                                 },
-                                getOtherModPageSource(modPageSource)
+                                getOtherModPageSource(modPageSource),
                               );
                               if (url) callRemote("open_url", url);
                             }}
                             title={_i18n.t(
-                              "左键打开所选来源，右键打开另一个来源"
+                              "左键打开所选来源，右键打开另一个来源",
                             )}
                           >
                             <Icon name="external" />
@@ -534,7 +531,7 @@ export const Mod = memo(
                   },
                   {
                     backgroundMask: "#131313",
-                  }
+                  },
                 );
               }}
             >
@@ -583,7 +580,7 @@ export const Mod = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 export const ModList = (props: {
   mods: Content[];
@@ -612,7 +609,7 @@ export const ModList = (props: {
       installedMods === null
         ? null
         : new Set(installedMods.map((item) => item.game_banana_id.toString())),
-    [installedMods]
+    [installedMods],
   );
   const installedModVersions = useMemo(() => {
     const versions = new Map<string, Set<string>>();
@@ -646,7 +643,7 @@ export const ModList = (props: {
     const available = Math.max(0, listWidth - GRID_PADDING * 2);
     return Math.max(
       1,
-      Math.floor((available + GRID_GAP) / (CARD_MIN_WIDTH + GRID_GAP))
+      Math.floor((available + GRID_GAP) / (CARD_MIN_WIDTH + GRID_GAP)),
     );
   }, [listWidth, viewMode]);
 
@@ -706,8 +703,7 @@ export const ModList = (props: {
             if (!file?.url) return [];
             return [
               {
-                id:
-                  file.gameBananaId > 0 ? file.gameBananaId.toString() : "-1",
+                id: file.gameBananaId > 0 ? file.gameBananaId.toString() : "-1",
                 name: file.mods[0]?.name ?? mod2.name,
                 size: formatSize(file.size),
                 url: file.url,
@@ -717,7 +713,7 @@ export const ModList = (props: {
                   file.mods.every((fileMod) =>
                     installedModVersions
                       .get(fileMod.name.toLocaleLowerCase())
-                      ?.has(fileMod.version)
+                      ?.has(fileMod.version),
                   ),
               },
             ];
@@ -735,9 +731,9 @@ export const ModList = (props: {
             0,
             files.findIndex((file) =>
               file.mods.some(
-                (fileMod) => normalizeName(fileMod.name) === submissionName
-              )
-            )
+                (fileMod) => normalizeName(fileMod.name) === submissionName,
+              ),
+            ),
           );
 
           return Promise.resolve(
@@ -750,9 +746,9 @@ export const ModList = (props: {
               isInstalled: file.mods.every((fileMod) =>
                 installedModVersions
                   .get(fileMod.name.toLocaleLowerCase())
-                  ?.has(fileMod.version)
+                  ?.has(fileMod.version),
               ),
-            }))
+            })),
           );
         },
         previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
@@ -760,7 +756,7 @@ export const ModList = (props: {
         isInstalled:
           installedModIDs?.has(mod2.gameBananaId?.toString()) ?? false,
         other: `${mod2.likes} · ${processLargeNum(
-          mod2.views
+          mod2.views,
         )} · ${processLargeNum(mod2.downloads)}`,
         category: getCategoryLabel(mod2.categoryName),
         stats: {
@@ -790,7 +786,7 @@ export const ModList = (props: {
       };
       return mod;
     },
-    [installedModIDs, installedModVersions]
+    [installedModIDs, installedModVersions],
   );
 
   return (
@@ -805,7 +801,7 @@ export const ModList = (props: {
               const startIndex = virtualRow.index * columnCount;
               const rowMods = props.mods.slice(
                 startIndex,
-                startIndex + columnCount
+                startIndex + columnCount,
               );
 
               return (

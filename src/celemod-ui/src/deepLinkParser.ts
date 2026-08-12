@@ -21,7 +21,7 @@ export const parseCeleModDeepLink = (raw: string): CeleModDeepLink => {
 
   if (command.toLocaleLowerCase().startsWith(INSTALL_MOD_PREFIX)) {
     const value = decodePayload(
-      command.slice(INSTALL_MOD_PREFIX.length)
+      command.slice(INSTALL_MOD_PREFIX.length),
     ).trim();
     if (!value) throw new Error("安装链接缺少 Mod 标识");
     return { type: "install_mod", value };
@@ -29,7 +29,7 @@ export const parseCeleModDeepLink = (raw: string): CeleModDeepLink => {
 
   if (command.toLocaleLowerCase().startsWith(ADD_PROFILE_PREFIX)) {
     const value = decodePayload(
-      command.slice(ADD_PROFILE_PREFIX.length)
+      command.slice(ADD_PROFILE_PREFIX.length),
     ).trim();
     if (!value) throw new Error("配置链接缺少 Profile JSON");
     JSON.parse(value);

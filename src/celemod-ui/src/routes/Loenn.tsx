@@ -82,7 +82,7 @@ export const Loenn = () => {
     () =>
       config?.versions?.find((item) => item.version === selectedVersion) ||
       config?.versions?.[0],
-    [config, selectedVersion]
+    [config, selectedVersion],
   );
   const selectedPackage: LoennPackage | undefined =
     platform && version ? version.packages[platform] : undefined;
@@ -113,7 +113,7 @@ export const Loenn = () => {
           setInstallProgress(value);
         }
         if (state === "success") void refreshLocalState(installRoot);
-      }
+      },
     ).catch((error) => {
       setInstallState("failed");
       setFailedReason(String(error));
@@ -123,7 +123,7 @@ export const Loenn = () => {
   const launch = () => {
     setLaunchError(null);
     callRemote("start_loenn", installRoot).catch((error) =>
-      setLaunchError(String(error))
+      setLaunchError(String(error)),
     );
   };
 

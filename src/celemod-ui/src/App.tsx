@@ -76,10 +76,10 @@ export default function App() {
   const fontScale = useAppStore((state) => state.fontScale);
   const manageFontScale = useAppStore((state) => state.manageFontScale);
   const keyBindingsFontScale = useAppStore(
-    (state) => state.keyBindingsFontScale
+    (state) => state.keyBindingsFontScale,
   );
   const enablePageTransitions = useAppStore(
-    (state) => state.enablePageTransitions
+    (state) => state.enablePageTransitions,
   );
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
@@ -106,7 +106,7 @@ export default function App() {
     setSidebarFade((current) =>
       current.top === top && current.bottom === bottom
         ? current
-        : { top, bottom }
+        : { top, bottom },
     );
   }, []);
 
@@ -139,11 +139,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--manage-font-scale",
-      String(manageFontScale / 100)
+      String(manageFontScale / 100),
     );
     document.documentElement.style.setProperty(
       "--keybindings-font-scale",
-      String(keyBindingsFontScale / 100)
+      String(keyBindingsFontScale / 100),
     );
   }, [keyBindingsFontScale, manageFontScale]);
 
@@ -260,11 +260,7 @@ export default function App() {
                 </Fragment>
               )}
               {showLoenn && (
-                <SidebarButton
-                  icon="edit"
-                  name="Loenn"
-                  title="Loenn"
-                />
+                <SidebarButton icon="edit" name="Loenn" title="Loenn" />
               )}
               <SidebarButton
                 icon="settings"

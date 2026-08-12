@@ -7,7 +7,7 @@ import { initializeCeleModDeepLinks } from "./deepLink";
 
 initializeWindowChrome();
 void initializeCeleModDeepLinks().catch((error) =>
-  console.error("Failed to initialize CeleMod deep links", error)
+  console.error("Failed to initialize CeleMod deep links", error),
 );
 
 createRoot(document.getElementById("root")!).render(<App />);

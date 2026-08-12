@@ -135,7 +135,7 @@ export const Search = () => {
         size: 25,
         includeExclusiveSubmissions: currentMirror() === "wegfan",
       }),
-    [cloudType, search, sort]
+    [cloudType, search, sort],
   );
 
   useEffect(() => {
@@ -189,7 +189,7 @@ export const Search = () => {
 
   const catalogOptions = useMemo(
     () => getLocalCatalogOptions(catalogMods),
-    [catalogMods]
+    [catalogMods],
   );
   const localResults = useMemo(
     () =>
@@ -197,7 +197,7 @@ export const Search = () => {
         ...localFilters,
         search,
       }),
-    [catalogMods, localFilters, search]
+    [catalogMods, localFilters, search],
   );
   const visibleMods =
     mode === "local" ? localResults.slice(0, localVisibleCount) : cloudMods;

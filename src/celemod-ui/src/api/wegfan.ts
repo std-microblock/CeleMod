@@ -147,7 +147,7 @@ export const searchSubmission = async ({
   if (includeExclusiveSubmissions)
     params.set(
       "includeExclusiveSubmissions",
-      includeExclusiveSubmissions.toString()
+      includeExclusiveSubmissions.toString(),
     );
   const url = `https://celeste.weg.fan/api/v2/submission/search?${params.toString()}`;
   console.log("Search URL:", url);

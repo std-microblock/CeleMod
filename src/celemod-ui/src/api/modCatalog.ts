@@ -82,7 +82,7 @@ let catalogPromise: Promise<CatalogMod[]> | null = null;
 
 export const loadModCatalog = async (
   ttlHours = 24,
-  forceRefresh = false
+  forceRefresh = false,
 ): Promise<CatalogMod[]> => {
   await callRemote("configure_mod_cache", Math.max(0, ttlHours) * 60 * 60);
   if (catalog && !forceRefresh) return catalog;
@@ -108,7 +108,7 @@ export const clearInMemoryModCatalog = () => {
 const numberInRange = (
   value: number,
   minimum: number | null,
-  maximum: number | null
+  maximum: number | null,
 ) =>
   (minimum === null || value >= minimum) &&
   (maximum === null || value <= maximum);
@@ -124,7 +124,7 @@ const dateInRange = (value: string, after: string, before: string) => {
 };
 
 export const getLocalCatalogOptions = (
-  mods: CatalogMod[]
+  mods: CatalogMod[],
 ): LocalCatalogOptions => {
   const categories = new Set<string>();
   const subCategories = new Set<string>();
@@ -148,7 +148,7 @@ export const getLocalCatalogOptions = (
 
 export const queryLocalCatalog = (
   mods: CatalogMod[],
-  filters: LocalCatalogFilters
+  filters: LocalCatalogFilters,
 ): LocalSubmission[] => {
   type MutableSubmission = LocalSubmission & {
     fileMap: Map<string, SubmissionFile>;
@@ -186,7 +186,7 @@ export const queryLocalCatalog = (
       !dateInRange(
         submission.updateTime,
         filters.updatedAfter,
-        filters.updatedBefore
+        filters.updatedBefore,
       )
     )
       continue;
@@ -282,7 +282,7 @@ export const queryLocalCatalog = (
   }
 
   const result = [...grouped.values()].map(
-    ({ fileMap: _fileMap, ...item }) => item
+    ({ fileMap: _fileMap, ...item }) => item,
   );
   const direction = filters.direction === "asc" ? 1 : -1;
   return result.sort((a, b) => {
@@ -297,8 +297,8 @@ export const queryLocalCatalog = (
         filters.sort === "created"
           ? "createTime"
           : filters.sort === "updateAdded"
-          ? "latestUpdateAddedTime"
-          : "updateTime";
+            ? "latestUpdateAddedTime"
+            : "updateTime";
       comparison = new Date(a[field]).getTime() - new Date(b[field]).getTime();
     }
     return comparison * direction;

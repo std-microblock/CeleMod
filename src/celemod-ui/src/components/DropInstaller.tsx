@@ -120,7 +120,7 @@ const LocalInstallPopup = ({
         } else {
           setFatalError(payload);
         }
-      }
+      },
     );
   }, []);
 
@@ -174,8 +174,8 @@ const LocalInstallPopup = ({
                       {result.packageType === "everest"
                         ? "Everest"
                         : result.packageType === "mod"
-                        ? "Mod"
-                        : "?"}
+                          ? "Mod"
+                          : "?"}
                     </span>
                   </div>
                   {result.error ? (
@@ -307,7 +307,7 @@ export const DropInstaller = () => {
               onInstalled={(results) => {
                 if (
                   results.some(
-                    (result) => result.success && result.packageType === "mod"
+                    (result) => result.success && result.packageType === "mod",
                   )
                 ) {
                   ctxRef.current.modManage.reloadMods().catch(console.error);
@@ -318,7 +318,7 @@ export const DropInstaller = () => {
                 if (
                   results.some(
                     (result) =>
-                      result.success && result.packageType === "everest"
+                      result.success && result.packageType === "everest",
                   )
                 ) {
                   ctxRef.current.everest.updateEverestVersion();
@@ -326,7 +326,7 @@ export const DropInstaller = () => {
               }}
             />
           ),
-          { cancelable: false }
+          { cancelable: false },
         );
       })
       .then((dispose) => {

@@ -22,7 +22,8 @@ let locale = "zh-CN";
 const i18n = {
   t(key: string, slots: Record<string, string | number> = {}) {
     const activeLocale = useAppStore.getState().currentLang || locale;
-    let translated = locales[activeLocale]?.[key] ?? locales["en-US"]?.[key] ?? key;
+    let translated =
+      locales[activeLocale]?.[key] ?? locales["en-US"]?.[key] ?? key;
     if (translated === "&&") translated = key;
     for (const [slot, value] of Object.entries(slots)) {
       translated = translated.replaceAll(`{${slot}}`, String(value));
@@ -49,7 +50,7 @@ export const createI18NContext = () => {
       },
       currentLang,
     }),
-    [currentLang, setCurrentLang]
+    [currentLang, setCurrentLang],
   );
 
   useEffect(() => {

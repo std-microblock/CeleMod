@@ -38,7 +38,7 @@ export const useEverestCtx = () => {
   const { setCurrentEverestIsUltra } = useCurrentEverestUltra();
   const [gamePath] = useGamePath();
   const setEverestInstallState = useEverestInstallState(
-    (state) => state.setEverestInstallState
+    (state) => state.setEverestInstallState,
   );
 
   const ctx = {
@@ -50,12 +50,12 @@ export const useEverestCtx = () => {
           console.log("Everest version", ver, isUltra ? "Ultra" : "Official");
           setCurrentEverestVersion(ver);
           setCurrentEverestIsUltra(isUltra);
-        }
+        },
       );
     },
     downloadAndInstallEverest(
       url: string,
-      postInstallFixes: CrashModFix[] = []
+      postInstallFixes: CrashModFix[] = [],
     ) {
       if (useEverestInstallState.getState().everestInstallState.installingUrl)
         return;
@@ -82,7 +82,7 @@ export const useEverestCtx = () => {
               const installedMods = await reloadInstalledMods(gamePath);
               const fix = findInstalledCrashModFix(
                 postInstallFixes,
-                installedMods
+                installedMods,
               );
 
               if (fix) {
@@ -113,11 +113,10 @@ export const useEverestCtx = () => {
                       setEverestInstallState({
                         installingUrl: url,
                         status: `[4/4] ${fixStatus} ${fix.mod_name} fix`,
-                        progress:
-                          typeof fixData === "number" ? fixData : null,
+                        progress: typeof fixData === "number" ? fixData : null,
                         failedReason: null,
                       });
-                    }
+                    },
                   ).catch(reject);
                 });
                 try {
@@ -145,8 +144,7 @@ export const useEverestCtx = () => {
             return;
           }
 
-          const current =
-            useEverestInstallState.getState().everestInstallState;
+          const current = useEverestInstallState.getState().everestInstallState;
           setEverestInstallState({
             ...current,
             status,
@@ -154,7 +152,7 @@ export const useEverestCtx = () => {
             failedReason: status === "Failed" ? String(data) : null,
           });
           if (status === "Success") ctx.updateEverestVersion();
-        }
+        },
       ).catch((error) => {
         const current = useEverestInstallState.getState().everestInstallState;
         setEverestInstallState({

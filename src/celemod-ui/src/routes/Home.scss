@@ -200,7 +200,9 @@
   box-shadow: none;
   cursor: pointer;
   text-align: left;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
 
   &:hover {
     background: theme.$bg2;
@@ -260,7 +262,6 @@
     font-size: 8px;
   }
 }
-
 
 @media (max-width: 720px) {
   .home-brand p {

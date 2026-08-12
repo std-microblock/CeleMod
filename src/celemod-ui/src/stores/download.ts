@@ -63,7 +63,7 @@ interface DownloadStore {
   downloadMod: (
     name: string,
     gbFileIdOrUrl: string,
-    options?: DownloadOptions
+    options?: DownloadOptions,
   ) => Download.TaskInfo;
 }
 
@@ -71,7 +71,7 @@ let nextAttemptId = 1;
 
 const replaceTask = (
   tasks: Record<string, Download.TaskInfo>,
-  task: Download.TaskInfo
+  task: Download.TaskInfo,
 ) => ({ ...tasks, [task.name]: task });
 
 export const useDownloadStore = create<DownloadStore>((set, get) => ({
@@ -122,7 +122,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     }
 
     const replacingInstalledMod = appState.installedMods.find(
-      (mod) => mod.name === name
+      (mod) => mod.name === name,
     );
     if (replacingInstalledMod && !force) {
       const task: Download.TaskInfo = {
@@ -171,7 +171,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
 
     const onDownloadEvent = (
       _subtasks: string,
-      state: "pending" | "failed" | "finished"
+      state: "pending" | "failed" | "finished",
     ) => {
       const currentTask = get().tasks[name];
       if (!currentTask || currentTask.attemptId !== attemptId) return;
@@ -183,8 +183,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           subtask.status === "Downloading"
             ? Number.parseFloat(subtask.data)
             : subtask.status === "Finished"
-            ? 100
-            : 0,
+              ? 100
+              : 0,
         from: subtask.url,
         to: subtask.dest,
         error: subtask.status === "Failed" ? subtask.data : undefined,
@@ -202,12 +202,12 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         state === "pending"
           ? Number.parseFloat(
               backendSubtasks.find(
-                (subtask) => subtask.status === "Downloading"
-              )?.data || "0"
+                (subtask) => subtask.status === "Downloading",
+              )?.data || "0",
             )
           : state === "finished"
-          ? 100
-          : currentTask.progress;
+            ? 100
+            : currentTask.progress;
       const nextTask: Download.TaskInfo = {
         ...currentTask,
         subtasks,
@@ -218,8 +218,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           state === "finished"
             ? false
             : error === "Download canceled"
-            ? true
-            : currentTask.canceled,
+              ? true
+              : currentTask.canceled,
       };
 
       set((store) => ({ tasks: replaceTask(store.tasks, nextTask) }));
@@ -240,14 +240,14 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
                 replacingInstalledMod.file,
                 installedMod.file,
                 appState.profileEnabled,
-                JSON.stringify(appState.alwaysOnMods)
+                JSON.stringify(appState.alwaysOnMods),
               );
               if (result !== "Success") throw new Error(result);
             }
             await reloadBlacklistState(appState.gamePath);
           })
           .catch((error) =>
-            console.error("Failed to refresh installed Mods", error)
+            console.error("Failed to refresh installed Mods", error),
           )
           .finally(() => onFinished?.(nextTask));
       } else if (state === "failed") {
@@ -272,7 +272,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         JSON.stringify(appState.alwaysOnMods),
         onDownloadEvent,
         false,
-        appState.useMultiThread
+        appState.useMultiThread,
       );
     })().catch((error) => {
       const currentTask = get().tasks[name];

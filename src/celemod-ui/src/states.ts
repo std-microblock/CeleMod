@@ -55,14 +55,14 @@ export const DEFAULT_ORPHAN_ACTION_TYPES: readonly ModTypeName[] = [
 
 const normalizeModTypes = (
   value: unknown,
-  fallback: readonly ModTypeName[] = []
+  fallback: readonly ModTypeName[] = [],
 ): string[] => {
   const selected = Array.isArray(value) ? value : fallback;
   return MOD_TYPE_OPTIONS.filter((type) => selected.includes(type));
 };
 
 const createDownloadTypeDefaults = (
-  enabled: boolean
+  enabled: boolean,
 ): Record<string, boolean> =>
   Object.fromEntries(MOD_TYPE_OPTIONS.map((type) => [type, enabled]));
 
@@ -118,7 +118,7 @@ interface AppState {
   setActiveProfileNames: (value: string[]) => void;
   setProfiles: (value: ModBlacklistProfile[]) => void;
   setProfilesCallback: (
-    setter: (profiles: ModBlacklistProfile[]) => ModBlacklistProfile[]
+    setter: (profiles: ModBlacklistProfile[]) => ModBlacklistProfile[],
   ) => void;
   setCurrentProfile: (value: ModBlacklistProfile | null) => void;
   setInstalledMods: (value: BackendModInfo[]) => void;
@@ -223,7 +223,7 @@ export const useAppStore = create<AppState>()(
             set((state) => {
               (state as unknown as Record<string, unknown>)[key] = value;
             }),
-        ])
+        ]),
       ) as unknown as Pick<AppState, keyof typeof setters>;
       return {
         currentProfileName: "",
@@ -243,7 +243,7 @@ export const useAppStore = create<AppState>()(
         autoDisableNewMods: loadAutoDisableNewMods(),
         downloadDefaultEnabled: !loadAutoDisableNewMods(),
         downloadTypeDefaults: createDownloadTypeDefaults(
-          !loadAutoDisableNewMods()
+          !loadAutoDisableNewMods(),
         ),
         checkOptionalDep: false,
         excludeDependents: true,
@@ -334,13 +334,13 @@ export const useAppStore = create<AppState>()(
           fontScale: normalizeFontScale(persisted.fontScale),
           manageFontScale: normalizeFontScale(persisted.manageFontScale),
           keyBindingsFontScale: normalizeFontScale(
-            persisted.keyBindingsFontScale
+            persisted.keyBindingsFontScale,
           ),
           orphanActionTypes: normalizeModTypes(
             persisted.orphanActionTypes ??
               obsoleteAutoDisableTypes ??
               obsoleteDeleteTypes,
-            DEFAULT_ORPHAN_ACTION_TYPES
+            DEFAULT_ORPHAN_ACTION_TYPES,
           ),
         };
       },
@@ -407,8 +407,8 @@ export const useAppStore = create<AppState>()(
         modPageSource,
         currentLang,
       }),
-    }
-  )
+    },
+  ),
 );
 
 let blacklistLoadRequest = 0;
@@ -435,7 +435,7 @@ const loadDirectBlacklist = (gamePath: string) =>
         } catch (error) {
           reject(error);
         }
-      }
+      },
     ).catch(reject);
   });
 
@@ -461,10 +461,10 @@ export const reloadBlacklistState = async (gamePath: string) => {
       return;
     }
     const requestedNames = JSON.parse(
-      await callRemote<string>("get_current_profiles", gamePath)
+      await callRemote<string>("get_current_profiles", gamePath),
     ) as string[];
     const activeProfileNames = requestedNames.filter((name) =>
-      profiles.some((profile) => profile.name === name)
+      profiles.some((profile) => profile.name === name),
     );
     const selectedNames =
       activeProfileNames.length > 0 ? activeProfileNames : [profiles[0].name];
@@ -472,7 +472,7 @@ export const reloadBlacklistState = async (gamePath: string) => {
       "apply_mod_profiles",
       gamePath,
       JSON.stringify(selectedNames),
-      JSON.stringify(state.alwaysOnMods)
+      JSON.stringify(state.alwaysOnMods),
     );
     if (result !== "Success") throw new Error(result);
     if (request !== blacklistLoadRequest) return;
@@ -492,13 +492,13 @@ export const reloadBlacklistState = async (gamePath: string) => {
   state.setActiveProfileNames([direct.name]);
   state.setCurrentProfileName(direct.name);
   state.setCurrentProfile(direct);
-}
+};
 
 let installedModsReloadRequest = 0;
 let installedModsAppliedRequest = 0;
 
 export const reloadInstalledMods = async (
-  gamePath = useAppStore.getState().gamePath
+  gamePath = useAppStore.getState().gamePath,
 ): Promise<BackendModInfo[]> => {
   if (!gamePath) throw new Error("game path not set");
   const request = ++installedModsReloadRequest;
@@ -513,9 +513,9 @@ export const reloadInstalledMods = async (
           } catch (error) {
             reject(error);
           }
-        }
+        },
       ).catch(reject);
-    }
+    },
   );
   if (
     request > installedModsAppliedRequest &&
@@ -535,13 +535,13 @@ export async function initializeAppStore() {
   try {
     await callRemote(
       "configure_mod_cache",
-      Math.max(0, state.modCacheTtlHours) * 60 * 60
+      Math.max(0, state.modCacheTtlHours) * 60 * 60,
     );
     let gamePath = state.gamePath;
     if (state.gamePath) {
       gamePath = await callRemote<string>(
         "normalize_game_path",
-        state.gamePath
+        state.gamePath,
       );
       state.setGamePath(gamePath);
     } else {
@@ -575,8 +575,8 @@ const objectHook =
           Object.fromEntries(keys.map((key) => [key, state[key]])) as Pick<
             AppState,
             K
-          >
-      )
+          >,
+      ),
     );
 
 export const useCurrentBlacklistProfile = objectHook([
@@ -614,63 +614,63 @@ export const useEnableAcrylic = objectHook([
 
 function tupleHook<K extends keyof AppState, S extends keyof AppState>(
   value: K,
-  setter: S
+  setter: S,
 ) {
   return () =>
     useAppStore(
       useShallow(
-        (state) => [state[value], state[setter]] as [AppState[K], AppState[S]]
-      )
+        (state) => [state[value], state[setter]] as [AppState[K], AppState[S]],
+      ),
     );
 }
 
 export const useMirror = tupleHook("mirror", "setMirror") as () => [
   string,
-  (value: string) => void
+  (value: string) => void,
 ];
 export const useGamePath = tupleHook("gamePath", "setGamePath") as () => [
   string,
-  (value: string) => void
+  (value: string) => void,
 ];
 export const useUseMultiThread = tupleHook(
   "useMultiThread",
-  "setUseMultiThread"
+  "setUseMultiThread",
 ) as () => [boolean, (value: boolean) => void];
 export const useAlwaysOnMods = tupleHook(
   "alwaysOnMods",
-  "setAlwaysOnMods"
+  "setAlwaysOnMods",
 ) as () => [string[], (value: string[]) => void];
 export const useSearchSort = tupleHook("searchSort", "setSearchSort") as () => [
   SearchSort,
-  (value: SearchSort) => void
+  (value: SearchSort) => void,
 ];
 export const useAutoDisableNewMods = tupleHook(
   "autoDisableNewMods",
-  "setAutoDisableNewMods"
+  "setAutoDisableNewMods",
 ) as () => [boolean, (value: boolean) => void];
 export const useCheckOptionalDep = tupleHook(
   "checkOptionalDep",
-  "setCheckOptionalDep"
+  "setCheckOptionalDep",
 ) as () => [boolean, (value: boolean) => void];
 export const useExcludeDependents = tupleHook(
   "excludeDependents",
-  "setExcludeDependents"
+  "setExcludeDependents",
 ) as () => [boolean, (value: boolean) => void];
 export const useFullTree = tupleHook("fullTree", "setFullTree") as () => [
   boolean,
-  (value: boolean) => void
+  (value: boolean) => void,
 ];
 export const useShowUpdate = tupleHook("showUpdate", "setShowUpdate") as () => [
   boolean,
-  (value: boolean) => void
+  (value: boolean) => void,
 ];
 export const useShowDetailed = tupleHook(
   "showDetailed",
-  "setShowDetailed"
+  "setShowDetailed",
 ) as () => [boolean, (value: boolean) => void];
 export const useModComments = tupleHook(
   "modComments",
-  "setModComments"
+  "setModComments",
 ) as () => [Record<string, string>, (value: Record<string, string>) => void];
 
 export const currentMirror = () => useAppStore.getState().mirror;

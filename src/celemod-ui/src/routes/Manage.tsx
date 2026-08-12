@@ -92,7 +92,7 @@ const ProfileModListImportPopup = ({
 
   const catalogByName = useMemo(
     () => new Map(catalog.map((mod) => [mod.name.toLocaleLowerCase(), mod])),
-    [catalog]
+    [catalog],
   );
   const lineChecks = useMemo<(ModListCheck | null)[]>(
     () =>
@@ -112,11 +112,11 @@ const ProfileModListImportPopup = ({
           status: !mod
             ? "missing"
             : versionMatches
-            ? "found"
-            : "version-mismatch",
+              ? "found"
+              : "version-mismatch",
         };
       }),
-    [catalogByName, text]
+    [catalogByName, text],
   );
   const syncInlineChecks = useCallback(() => {
     const textarea = editorRef.current;
@@ -137,7 +137,7 @@ const ProfileModListImportPopup = ({
 
   useEffect(() => syncInlineChecks(), [lineChecks, syncInlineChecks]);
   const checks = lineChecks.filter(
-    (item): item is ModListCheck => item !== null
+    (item): item is ModListCheck => item !== null,
   );
   const invalidCount = checks.filter((item) => item.status !== "found").length;
 
@@ -187,10 +187,10 @@ const ProfileModListImportPopup = ({
                       item.status === "missing"
                         ? _i18n.t("目录中未找到")
                         : item.requestedVersion
-                        ? `${item.catalogVersion} / ${item.operator || "=="} ${
-                            item.requestedVersion
-                          }`
-                        : item.catalogVersion
+                          ? `${item.catalogVersion} / ${item.operator || "=="} ${
+                              item.requestedVersion
+                            }`
+                          : item.catalogVersion
                     }
                   >
                     <Icon
@@ -198,19 +198,19 @@ const ProfileModListImportPopup = ({
                         item.status === "found"
                           ? "i-tick"
                           : item.status === "missing"
-                          ? "fail"
-                          : "warn"
+                            ? "fail"
+                            : "warn"
                       }
                     />
                     <span>
                       {item.status === "missing"
                         ? _i18n.t("未找到")
                         : item.status === "version-mismatch"
-                        ? _i18n.t("版本不匹配")
-                        : item.catalogVersion}
+                          ? _i18n.t("版本不匹配")
+                          : item.catalogVersion}
                     </span>
                   </div>
-                ) : null
+                ) : null,
               )}
             </div>
           </div>
@@ -245,7 +245,7 @@ const ProfileModListImportPopup = ({
               name.trim(),
               checks.map((item) => item.name),
               autoDeps,
-              onImported
+              onImported,
             )
               .then((started) => {
                 if (started) popup.hide();
@@ -279,7 +279,7 @@ const ProfileExportPopup = ({
     const node = nodes[name];
     if (!node) return true;
     return !node.dependedBy.some((dependent) =>
-      profile.enabled_mods.includes(dependent)
+      profile.enabled_mods.includes(dependent),
     );
   });
   const modNames = autoDeps ? topLevelMods : profile.enabled_mods;
@@ -295,11 +295,11 @@ const ProfileExportPopup = ({
     .map((name) =>
       includeVersions && nodes[name]?.version
         ? `${name} >= ${nodes[name].version}`
-        : name
+        : name,
     )
     .join("\n");
   const link = `celemod://add_profile/${encodeURIComponent(
-    JSON.stringify(profileValue)
+    JSON.stringify(profileValue),
   )}`;
   const preview = format === "json" ? json : format === "text" ? text : link;
   const markdown = `[安装 ${profile.name} Profile](${link})`;
@@ -320,8 +320,8 @@ const ProfileExportPopup = ({
         format === "json"
           ? "celemod-profile.json"
           : format === "link"
-          ? "celemod-link.txt"
-          : "txt"
+            ? "celemod-link.txt"
+            : "txt"
       }`,
       filters: [
         {
@@ -391,8 +391,8 @@ const ProfileExportPopup = ({
               {format === "json"
                 ? "profile.json"
                 : format === "text"
-                ? "mods.txt"
-                : "celemod://add_profile"}
+                  ? "mods.txt"
+                  : "celemod://add_profile"}
             </span>
             <button onClick={() => copy(preview, "preview")}>
               {copied === "preview" ? _i18n.t("已复制") : _i18n.t("复制")}
@@ -442,7 +442,7 @@ const formatSize = (size: number) => {
   const units = ["B", "KB", "MB", "GB", "TB"];
   const index = Math.min(
     units.length - 1,
-    Math.floor(Math.log(size) / Math.log(1024))
+    Math.floor(Math.log(size) / Math.log(1024)),
   );
   return `${(size / 1024 ** index).toFixed(index === 0 ? 0 : 2)} ${
     units[index]
@@ -523,8 +523,8 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
           .then((result) => {
             setCloud(
               result.content.find(
-                (item) => item.gameBananaId === submission.gameBananaId
-              ) ?? null
+                (item) => item.gameBananaId === submission.gameBananaId,
+              ) ?? null,
             );
           })
           .catch(console.error)
@@ -535,10 +535,10 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
         if (!descriptionRef.current || !cloud) return;
         descriptionRef.current.innerHTML = "";
         descriptionRef.current.appendChild(
-          sanitizeDescriptionHtml(cloud.description || "")
+          sanitizeDescriptionHtml(cloud.description || ""),
         );
         for (const link of Array.from(
-          descriptionRef.current.querySelectorAll("a")
+          descriptionRef.current.querySelectorAll("a"),
         )) {
           const url = link.getAttribute("href");
           if (!url) continue;
@@ -574,7 +574,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
                       submissionId: meta.submissionId,
                       gameBananaUrl: meta.pageUrl,
                     },
-                    modPageSource
+                    modPageSource,
                   );
                   if (url) callRemote("open_url", url);
                 }}
@@ -585,7 +585,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
                       submissionId: meta.submissionId,
                       gameBananaUrl: meta.pageUrl,
                     },
-                    getOtherModPageSource(modPageSource)
+                    getOtherModPageSource(modPageSource),
                   );
                   if (url) callRemote("open_url", url);
                 }}
@@ -629,7 +629,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
           ) : (
             <div className="detail-description detail-local-only">
               {_i18n.t(
-                "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。"
+                "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。",
               )}
             </div>
           )}
@@ -642,7 +642,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
         </div>
       );
     },
-    { backgroundMask: "#111318" }
+    { backgroundMask: "#111318" },
   );
 };
 
@@ -650,7 +650,7 @@ interface ManageActions {
   switchNodes: (
     names: string | string[],
     enabled: boolean,
-    recursive?: boolean
+    recursive?: boolean,
   ) => void;
   deleteNode: (name: string) => void;
   showDuplicates: (name: string) => void;
@@ -721,8 +721,8 @@ const MissingDependencyRow = ({
         {downloading
           ? _i18n.t("下载中…")
           : failed
-          ? _i18n.t("重试")
-          : _i18n.t("下载")}
+            ? _i18n.t("重试")
+            : _i18n.t("下载")}
       </button>
     </div>
   );
@@ -752,13 +752,13 @@ const ManageTreeNode = ({
   const visibleDependencies = node.dependencies.filter(
     (dependency) =>
       !excludedDependencyNames.has(dependency.name) &&
-      (actions.checkOptional || !dependency.optional)
+      (actions.checkOptional || !dependency.optional),
   );
   const hasDependencies = visibleDependencies.length > 0;
   const cycle = path.includes(name);
   const health = getDependencyHealth(name, nodes, actions.checkOptional);
   const isAlwaysOn = actions.alwaysOnMods.some(
-    (alwaysOnName) => nodes[alwaysOnName]?.file === node.file
+    (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
   );
   const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
@@ -767,7 +767,7 @@ const ManageTreeNode = ({
     name,
     actions.comments[name],
     node.meta?.submissionName,
-    actions.autoUseSubmissionNameAsComment
+    actions.autoUseSubmissionNameAsComment,
   );
 
   useEffect(() => {
@@ -822,8 +822,8 @@ const ManageTreeNode = ({
               {isAlwaysOn
                 ? _i18n.t("始终开启")
                 : node.enabled
-                ? _i18n.t("已启用")
-                : _i18n.t("已禁用")}
+                  ? _i18n.t("已启用")
+                  : _i18n.t("已禁用")}
             </button>
             {editingComment ? (
               <input
@@ -886,7 +886,7 @@ const ManageTreeNode = ({
               <Badge tone="info" title={node.dependedBy.join(", ")}>
                 {_i18n.t("{count} 个启用项依赖", {
                   count: node.dependedBy.filter(
-                    (dependent) => nodes[dependent]?.enabled
+                    (dependent) => nodes[dependent]?.enabled,
                   ).length,
                 })}
               </Badge>
@@ -979,7 +979,7 @@ const ManageTreeNode = ({
                 dependency={dependency}
                 depth={depth + 1}
               />
-            )
+            ),
           )}
         </div>
       )}
@@ -1036,7 +1036,7 @@ export const Manage = () => {
   const toggleType = useManageStore((state) => state.toggleType);
   const setUpdateOnly = useManageStore((state) => state.setUpdateOnly);
   const setShowHiddenTypes = useManageStore(
-    (state) => state.setShowHiddenTypes
+    (state) => state.setShowHiddenTypes,
   );
   const resetFilters = useManageStore((state) => state.resetFilters);
   const collapseAll = useManageStore((state) => state.collapseAll);
@@ -1050,16 +1050,16 @@ export const Manage = () => {
   const showUpdate = useAppStore((state) => state.showUpdate);
   const showDetailed = useAppStore((state) => state.showDetailed);
   const autoUseSubmissionNameAsComment = useAppStore(
-    (state) => state.autoUseSubmissionNameAsComment
+    (state) => state.autoUseSubmissionNameAsComment,
   );
   const autoToggleDependencies = useAppStore(
-    (state) => state.autoToggleDependencies
+    (state) => state.autoToggleDependencies,
   );
   const autoToggleOptionalDependencies = useAppStore(
-    (state) => state.autoToggleOptionalDependencies
+    (state) => state.autoToggleOptionalDependencies,
   );
   const deleteOrphansByDefault = useAppStore(
-    (state) => state.deleteOrphansByDefault
+    (state) => state.deleteOrphansByDefault,
   );
   const orphanActionTypes = useAppStore((state) => state.orphanActionTypes);
   const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
@@ -1068,7 +1068,7 @@ export const Manage = () => {
 
   const { metaByName, fullByName } = useMemo(
     () => catalogMaps(catalog),
-    [catalog]
+    [catalog],
   );
   const displayNamesByMod = useMemo(
     () =>
@@ -1079,11 +1079,11 @@ export const Manage = () => {
             node.name,
             comments[node.name],
             node.meta?.submissionName,
-            autoUseSubmissionNameAsComment
+            autoUseSubmissionNameAsComment,
           ),
-        ])
+        ]),
       ),
-    [autoUseSubmissionNameAsComment, comments, nodes]
+    [autoUseSubmissionNameAsComment, comments, nodes],
   );
 
   useEffect(() => {
@@ -1094,7 +1094,7 @@ export const Manage = () => {
   useEffect(() => {
     loadModCatalog(cacheTtl).then(setCatalog).catch(console.error);
     callRemote("get_mod_latest_info", (data: string) =>
-      setLatestRaw(JSON.parse(data))
+      setLatestRaw(JSON.parse(data)),
     );
   }, [cacheTtl]);
 
@@ -1107,9 +1107,9 @@ export const Manage = () => {
       .then((data) =>
         setOlympusProfiles(
           (JSON.parse(data) as { name: string }[]).map(
-            (profile) => profile.name
-          )
-        )
+            (profile) => profile.name,
+          ),
+        ),
       )
       .catch(console.error);
   }, [gamePath, profileEnabled]);
@@ -1155,18 +1155,18 @@ export const Manage = () => {
           },
         ];
       }),
-    [nodes, latestRaw]
+    [nodes, latestRaw],
   );
   const updateNames = useMemo(
     () => new Set(updates.map((update) => update.name)),
-    [updates]
+    [updates],
   );
   const updateVersions = useMemo(
     () =>
       Object.fromEntries(
-        updates.map((update) => [update.name, update.version])
+        updates.map((update) => [update.name, update.version]),
       ),
-    [updates]
+    [updates],
   );
 
   const filteredRoots = useMemo(
@@ -1188,7 +1188,7 @@ export const Manage = () => {
       hiddenModTypes,
       updateNames,
       displayNamesByMod,
-    ]
+    ],
   );
 
   const keywordOnlyFilters = useMemo(
@@ -1200,7 +1200,7 @@ export const Manage = () => {
       updateOnly: false,
       showHiddenTypes: true,
     }),
-    [filters]
+    [filters],
   );
   const keywordRoots = useMemo(
     () =>
@@ -1220,7 +1220,7 @@ export const Manage = () => {
       hiddenModTypes,
       updateNames,
       displayNamesByMod,
-    ]
+    ],
   );
   const hasSearchQuery = filters.query.trim().length > 0;
   const hiddenKeywordMatchCount = hasSearchQuery
@@ -1249,14 +1249,14 @@ export const Manage = () => {
       const names = activeProfileNames.length
         ? activeProfileNames
         : currentProfileName
-        ? [currentProfileName]
-        : [];
+          ? [currentProfileName]
+          : [];
       if (lastApplyRequest !== request || names.length === 0) return;
       void callRemote(
         "apply_mod_profiles",
         gamePath,
         JSON.stringify(names),
-        JSON.stringify(alwaysOnMods)
+        JSON.stringify(alwaysOnMods),
       );
     }, 350);
   }, [activeProfileNames, alwaysOnMods, currentProfileName, gamePath]);
@@ -1271,7 +1271,7 @@ export const Manage = () => {
       const alwaysOnFiles = new Set(
         alwaysOnMods
           .map((name) => nodes[name]?.file)
-          .filter(Boolean) as string[]
+          .filter(Boolean) as string[],
       );
       const effectiveNames = enabled
         ? packageNames
@@ -1286,14 +1286,14 @@ export const Manage = () => {
           gamePath,
           currentProfileName,
           JSON.stringify(effectiveNames),
-          enabled
+          enabled,
         );
       } else {
         void callRemote(
           "switch_direct_blacklist",
           gamePath,
           JSON.stringify(files),
-          enabled
+          enabled,
         );
       }
       const switchedNames = new Set(effectiveNames);
@@ -1302,14 +1302,14 @@ export const Manage = () => {
         enabled_mods: enabled
           ? [...new Set([...currentProfile.enabled_mods, ...effectiveNames])]
           : currentProfile.enabled_mods.filter(
-              (name) => !switchedNames.has(name)
+              (name) => !switchedNames.has(name),
             ),
       };
       setCurrentProfile(nextProfile);
       setProfilesCallback((items) =>
         items.map((profile) =>
-          profile.name === currentProfile.name ? nextProfile : profile
-        )
+          profile.name === currentProfile.name ? nextProfile : profile,
+        ),
       );
       setNodesEnabled(effectiveNames, enabled);
       if (profileEnabled) applyProfileSoon();
@@ -1325,7 +1325,7 @@ export const Manage = () => {
       setCurrentProfile,
       setProfilesCallback,
       setNodesEnabled,
-    ]
+    ],
   );
 
   const switchNodes = useCallback(
@@ -1340,7 +1340,7 @@ export const Manage = () => {
           includeOptional: autoToggleOptionalDependencies,
           autoDisableTypes: orphanActionTypes,
         }),
-        enabled
+        enabled,
       );
     },
     [
@@ -1349,12 +1349,12 @@ export const Manage = () => {
       autoToggleOptionalDependencies,
       batchSwitch,
       nodes,
-    ]
+    ],
   );
 
   const reloadMods = useCallback(
     () => reloadInstalledMods(gamePath),
-    [gamePath]
+    [gamePath],
   );
 
   const downloadMissing = useCallback(
@@ -1373,7 +1373,7 @@ export const Manage = () => {
         }).catch(() => resolve(false));
       });
     },
-    [downloadMod]
+    [downloadMod],
   );
 
   const updateNode = useCallback(
@@ -1410,7 +1410,7 @@ export const Manage = () => {
         });
       });
     },
-    [downloadMod, updates]
+    [downloadMod, updates],
   );
 
   const deleteNode = useCallback(
@@ -1418,7 +1418,7 @@ export const Manage = () => {
       const node = nodes[name];
       if (!node) return;
       const nodeIsAlwaysOn = alwaysOnMods.some(
-        (alwaysOnName) => nodes[alwaysOnName]?.file === node.file
+        (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
       );
       const orphaned: string[] = [];
       const visited = new Set<string>();
@@ -1429,7 +1429,7 @@ export const Manage = () => {
           const dependencyNode = nodes[dependency.name];
           if (!dependencyNode) continue;
           const remaining = dependencyNode.dependedBy.filter(
-            (dependent) => dependent !== name && !orphaned.includes(dependent)
+            (dependent) => dependent !== name && !orphaned.includes(dependent),
           );
           if (remaining.length === 0 && !orphaned.includes(dependency.name)) {
             orphaned.push(dependency.name);
@@ -1448,7 +1448,7 @@ export const Manage = () => {
                 allowedTypes: orphanActionTypes,
                 alwaysOnMods,
               })
-            : []
+            : [],
         );
         return (
           <div className="popup-content delete-mod-popup">
@@ -1476,7 +1476,7 @@ export const Manage = () => {
                     const orphanNode = nodes[orphan];
                     const orphanIsAlwaysOn = alwaysOnMods.some(
                       (alwaysOnName) =>
-                        nodes[alwaysOnName]?.file === orphanNode?.file
+                        nodes[alwaysOnName]?.file === orphanNode?.file,
                     );
                     return (
                       <label key={orphan}>
@@ -1487,7 +1487,7 @@ export const Manage = () => {
                             setSelected(
                               event.target.checked
                                 ? [...selected, orphan]
-                                : selected.filter((value) => value !== orphan)
+                                : selected.filter((value) => value !== orphan),
                             )
                           }
                         />
@@ -1504,14 +1504,14 @@ export const Manage = () => {
                               }
                             >
                               {_i18n.t(
-                                orphanNode?.enabled ? "已启用" : "已禁用"
+                                orphanNode?.enabled ? "已启用" : "已禁用",
                               )}
                             </span>
                             <span
                               className={orphanIsAlwaysOn ? "always-on" : ""}
                             >
                               {_i18n.t(
-                                orphanIsAlwaysOn ? "始终开启" : "非始终开启"
+                                orphanIsAlwaysOn ? "始终开启" : "非始终开启",
                               )}
                             </span>
                           </small>
@@ -1530,8 +1530,8 @@ export const Manage = () => {
                   const files = [name, ...selected].flatMap(
                     (selectedName) =>
                       nodes[selectedName]?.duplicateFiles.map(
-                        (item) => item.file
-                      ) ?? []
+                        (item) => item.file,
+                      ) ?? [],
                   );
                   callRemote(
                     "delete_mod_files",
@@ -1540,7 +1540,7 @@ export const Manage = () => {
                     () => {
                       reloadMods();
                       popup.hide();
-                    }
+                    },
                   );
                 }}
               >
@@ -1558,7 +1558,7 @@ export const Manage = () => {
       modPath,
       nodes,
       reloadMods,
-    ]
+    ],
   );
 
   const showDuplicates = useCallback(
@@ -1575,7 +1575,7 @@ export const Manage = () => {
         const [selected, setSelected] = useState<string[]>(
           files
             .filter((item) => item.file !== latestFile)
-            .map((item) => item.file)
+            .map((item) => item.file),
         );
         return (
           <div className="duplicate-mod-popup">
@@ -1595,7 +1595,7 @@ export const Manage = () => {
                         setSelected(
                           event.target.checked
                             ? [...selected, item.file]
-                            : selected.filter((value) => value !== item.file)
+                            : selected.filter((value) => value !== item.file),
                         )
                       }
                     />
@@ -1623,7 +1623,7 @@ export const Manage = () => {
                     () => {
                       reloadMods();
                       popup.hide();
-                    }
+                    },
                   );
                 }}
               >
@@ -1634,7 +1634,7 @@ export const Manage = () => {
         );
       });
     },
-    [modPath, nodes, reloadMods]
+    [modPath, nodes, reloadMods],
   );
 
   const startFullCheck = () => {
@@ -1702,12 +1702,12 @@ export const Manage = () => {
                       "delete_mod_files",
                       modPath,
                       JSON.stringify(
-                        progress.issues.map((issue) => issue.file)
+                        progress.issues.map((issue) => issue.file),
                       ),
                       () => {
                         reloadMods();
                         popup.hide();
-                      }
+                      },
                     )
                   }
                 >
@@ -1721,7 +1721,7 @@ export const Manage = () => {
           </div>
         );
       },
-      { cancelable: false, className: "full-mod-check-overlay" }
+      { cancelable: false, className: "full-mod-check-overlay" },
     );
   };
 
@@ -1741,12 +1741,12 @@ export const Manage = () => {
         const file = nodes[name]?.file;
         if (!file) return;
         const packageIsAlwaysOn = alwaysOnMods.some(
-          (value) => nodes[value]?.file === file
+          (value) => nodes[value]?.file === file,
         );
         setAlwaysOnMods(
           packageIsAlwaysOn
             ? alwaysOnMods.filter((value) => nodes[value]?.file !== file)
-            : [...alwaysOnMods, name]
+            : [...alwaysOnMods, name],
         );
       },
       updateNames: showUpdate ? updateNames : new Set<string>(),
@@ -1792,7 +1792,7 @@ export const Manage = () => {
       updateNode,
       updateStates,
       updateVersions,
-    ]
+    ],
   );
 
   const activeFilterCount =
@@ -1863,7 +1863,7 @@ export const Manage = () => {
                       value={filters.enabled}
                       onChange={(event) =>
                         setEnabledFilter(
-                          event.target.value as typeof filters.enabled
+                          event.target.value as typeof filters.enabled,
                         )
                       }
                     >
@@ -1878,7 +1878,7 @@ export const Manage = () => {
                       value={filters.health}
                       onChange={(event) =>
                         setHealthFilter(
-                          event.target.value as typeof filters.health
+                          event.target.value as typeof filters.health,
                         )
                       }
                     >
@@ -1947,7 +1947,7 @@ export const Manage = () => {
                         Object.values(nodes)
                           .filter((node) => node.enabled)
                           .map((node) => node.name),
-                        true
+                        true,
                       )
                     }
                   >
@@ -1984,10 +1984,10 @@ export const Manage = () => {
                         setUpdateStates((state) =>
                           Object.fromEntries(
                             Object.entries(state).filter(
-                              ([name]) => !names.includes(name)
-                            )
-                          )
-                        )
+                              ([name]) => !names.includes(name),
+                            ),
+                          ),
+                        ),
                       );
                   }}
                 >
@@ -2001,8 +2001,8 @@ export const Manage = () => {
                     setFixingDependencies(true);
                     void Promise.all(
                       missingDependencies.map((dependency) =>
-                        downloadMissing(dependency.name)
-                      )
+                        downloadMissing(dependency.name),
+                      ),
                     )
                       .then(() => reloadMods())
                       .finally(() => setFixingDependencies(false));
@@ -2062,7 +2062,7 @@ export const Manage = () => {
                     onClick={() =>
                       void callRemote(
                         "open_url",
-                        `${gamePath}/celemod_blacklist_profiles`
+                        `${gamePath}/celemod_blacklist_profiles`,
                       )
                     }
                   >
@@ -2114,7 +2114,7 @@ export const Manage = () => {
                                   () => {
                                     setProfileImportOpen(false);
                                     void reloadBlacklistState(gamePath);
-                                  }
+                                  },
                                 );
                               })
                               .catch(console.error);
@@ -2144,9 +2144,9 @@ export const Manage = () => {
                                               setSelected((names) =>
                                                 names.includes(name)
                                                   ? names.filter(
-                                                      (item) => item !== name
+                                                      (item) => item !== name,
                                                     )
-                                                  : [...names, name]
+                                                  : [...names, name],
                                               )
                                             }
                                           />
@@ -2168,9 +2168,9 @@ export const Manage = () => {
                                               setProfileImportOpen(false);
                                               popup.hide();
                                               void reloadBlacklistState(
-                                                gamePath
+                                                gamePath,
                                               );
-                                            }
+                                            },
                                           ).catch(console.error);
                                         }}
                                       >
@@ -2234,7 +2234,7 @@ export const Manage = () => {
                         void callRemote(
                           "remove_mod_blacklist_profile",
                           gamePath,
-                          profile.name
+                          profile.name,
                         )
                           .then((result) => {
                             if (String(result) !== "Success")

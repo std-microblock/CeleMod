@@ -28,7 +28,7 @@ export const getMods = (
     category?: string;
     search?: string;
     sort?: "desc" | "asc";
-  }
+  },
 ) => {
   const params = new URLSearchParams();
   params.set("modPages", page.toString());
@@ -38,7 +38,7 @@ export const getMods = (
 
   params.set("modSort", filters.sort ?? "desc");
   return fetch(
-    `https://celesteback.centralteam.cn/everest/searchMod?${params.toString()}`
+    `https://celesteback.centralteam.cn/everest/searchMod?${params.toString()}`,
   )
     .then((v) => v.json())
     .then((v) => v as SearchModResp);
@@ -46,7 +46,7 @@ export const getMods = (
 
 export const getModFileId = (id: number) => {
   return fetch(
-    `https://celesteback.centralteam.cn/everest/getModFileID?modID=${id}`
+    `https://celesteback.centralteam.cn/everest/getModFileID?modID=${id}`,
   )
     .then((v) => v.json())
     .then((v) => v.data as number);

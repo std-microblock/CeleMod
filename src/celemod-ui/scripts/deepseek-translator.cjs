@@ -12,7 +12,7 @@ const MAX_SNIPPET_LENGTH = 600;
 const API_KEY = process.env.DEEPSEEK_API_KEY;
 if (!API_KEY) {
   throw new Error(
-    "DEEPSEEK_API_KEY is required. Set it before running pnpm translate."
+    "DEEPSEEK_API_KEY is required. Set it before running pnpm translate.",
   );
 }
 
@@ -138,16 +138,16 @@ function createSourceContextMap(sourceRoot = path.join(process.cwd(), "src")) {
     const scriptKind = filePath.endsWith(".tsx")
       ? ts.ScriptKind.TSX
       : filePath.endsWith(".jsx")
-      ? ts.ScriptKind.JSX
-      : filePath.endsWith(".js")
-      ? ts.ScriptKind.JS
-      : ts.ScriptKind.TS;
+        ? ts.ScriptKind.JSX
+        : filePath.endsWith(".js")
+          ? ts.ScriptKind.JS
+          : ts.ScriptKind.TS;
     const sourceFile = ts.createSourceFile(
       filePath,
       code,
       ts.ScriptTarget.Latest,
       true,
-      scriptKind
+      scriptKind,
     );
 
     function visit(node) {
@@ -160,7 +160,7 @@ function createSourceContextMap(sourceRoot = path.join(process.cwd(), "src")) {
 
       if (text) {
         const start = sourceFile.getLineAndCharacterOfPosition(
-          node.getStart(sourceFile)
+          node.getStart(sourceFile),
         );
         let snippetNode = node;
         let current = node.parent;
@@ -193,7 +193,7 @@ function createSourceContextMap(sourceRoot = path.join(process.cwd(), "src")) {
 
 function publicContexts(contexts) {
   return (contexts || []).map(
-    ({ signature: _signature, ...context }) => context
+    ({ signature: _signature, ...context }) => context,
   );
 }
 
@@ -213,14 +213,14 @@ function assertProtectedTokens(source, translation) {
   for (const [token, count] of expected) {
     if (actual.get(token) !== count) {
       throw new Error(
-        `DeepSeek translation changed protected token ${JSON.stringify(token)}`
+        `DeepSeek translation changed protected token ${JSON.stringify(token)}`,
       );
     }
   }
   for (const [token, count] of actual) {
     if (expected.get(token) !== count) {
       throw new Error(
-        `DeepSeek translation added protected token ${JSON.stringify(token)}`
+        `DeepSeek translation added protected token ${JSON.stringify(token)}`,
       );
     }
   }
@@ -339,10 +339,10 @@ async function requestDeepSeek({
             targetLang,
             contexts,
             correction,
-          })
+          }),
         ),
         signal: controller.signal,
-      }
+      },
     );
 
     const rawBody = await response.text();
@@ -372,19 +372,19 @@ async function requestDeepSeek({
       result = JSON.parse(content);
     } catch {
       throw new Error(
-        `DeepSeek returned invalid JSON: ${content.slice(0, 200)}`
+        `DeepSeek returned invalid JSON: ${content.slice(0, 200)}`,
       );
     }
     if (typeof result.translation !== "string" || !result.translation.trim()) {
       throw new Error(
-        "DeepSeek JSON response has no non-empty translation field"
+        "DeepSeek JSON response has no non-empty translation field",
       );
     }
     return result.translation;
   } catch (error) {
     if (error.name === "AbortError") {
       const timeoutError = new Error(
-        `DeepSeek API timed out after ${timeoutMs} ms`
+        `DeepSeek API timed out after ${timeoutMs} ms`,
       );
       timeoutError.retryable = true;
       throw timeoutError;
@@ -412,7 +412,7 @@ async function requestWithRetry(options) {
 const sourceContextMap = createSourceContextMap();
 const concurrency = parsePositiveInteger(
   process.env.DEEPSEEK_CONCURRENCY,
-  DEFAULT_CONCURRENCY
+  DEFAULT_CONCURRENCY,
 );
 const withSemaphore = createSemaphore(concurrency);
 const translationCache = new Map();
@@ -428,7 +428,7 @@ async function translateByDeepSeek(text, targetLang) {
       model: process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
       timeoutMs: parsePositiveInteger(
         process.env.DEEPSEEK_TIMEOUT_MS,
-        DEFAULT_TIMEOUT_MS
+        DEFAULT_TIMEOUT_MS,
       ),
       text,
       targetLang,

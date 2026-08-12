@@ -38,26 +38,26 @@ export const DownloadTask = ({
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(initialExpanded);
   const finished = task.subtasks.filter(
-    (subtask) => subtask.state === "Finished"
+    (subtask) => subtask.state === "Finished",
   ).length;
   const activeSubtask = task.subtasks.find(
-    (subtask) => subtask.state === "Downloading"
+    (subtask) => subtask.state === "Downloading",
   );
   const visibleSubtasks = showFinishedSubtasks
     ? task.subtasks
     : task.subtasks.filter(
-        (subtask) => subtask.state !== "Finished" || subtask.error
+        (subtask) => subtask.state !== "Finished" || subtask.error,
       );
   const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
   const status = task.canceled
     ? { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" }
     : task.state === "failed"
-    ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
-    : task.state === "finished"
-    ? { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" }
-    : activeSubtask
-    ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
-    : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
+      ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
+      : task.state === "finished"
+        ? { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" }
+        : activeSubtask
+          ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
+          : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
   const action =
     task.state === "pending" && !task.canceled
       ? {
@@ -66,12 +66,13 @@ export const DownloadTask = ({
           title: _i18n.t("取消"),
         }
       : allowRetry && task.state === "failed" && task.source
-      ? {
-          icon: "replay",
-          onClick: () => downloadMod(task.name, task.source!, { force: true }),
-          title: _i18n.t("重试"),
-        }
-      : null;
+        ? {
+            icon: "replay",
+            onClick: () =>
+              downloadMod(task.name, task.source!, { force: true }),
+            title: _i18n.t("重试"),
+          }
+        : null;
 
   return (
     <article className={`download-task download-task-${status.tone}`}>
@@ -168,7 +169,7 @@ export const DownloadListMenu = ({
 }) => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
   const visibleTasks = Object.values(downloadTasks).filter(
-    (task) => task.state !== "finished" || task.canceled
+    (task) => task.state !== "finished" || task.canceled,
   );
 
   if (!open) return null;

@@ -131,7 +131,7 @@ export async function callRemote<T = unknown>(
   if (!names) throw new Error(`Unknown Tauri command: ${name}`);
   if (!isTauriRuntime()) {
     throw new Error(
-      `Tauri command "${name}" is unavailable in a browser preview`
+      `Tauri command "${name}" is unavailable in a browser preview`,
     );
   }
 
@@ -156,11 +156,11 @@ export async function callRemote<T = unknown>(
 
 export async function invokeCommand<T>(
   name: string,
-  args?: Record<string, unknown>
+  args?: Record<string, unknown>,
 ): Promise<T> {
   if (!isTauriRuntime()) {
     throw new Error(
-      `Tauri command "${name}" is unavailable in a browser preview`
+      `Tauri command "${name}" is unavailable in a browser preview`,
     );
   }
   return invoke<T>(name, args);
