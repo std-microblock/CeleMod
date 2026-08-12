@@ -1,6 +1,7 @@
 export interface ModBlacklistProfile {
   name: string;
   enabled_mods: string[];
+  auto_deps?: boolean;
 }
 
 export interface ProfileImportResult {

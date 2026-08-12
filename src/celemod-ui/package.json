@@ -11,13 +11,15 @@
     "tauri": "node scripts/tauri.mjs",
     "typecheck": "tsc --noEmit",
     "translate": "di18n sync",
-    "test:i18n": "node --test scripts/deepseek-translator.test.cjs"
+    "test:i18n": "node --test scripts/deepseek-translator.test.cjs",
+    "test:deep-link": "node --import tsx --test src/deepLink.test.ts"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.3.2",
     "@tauri-apps/plugin-http": "^2.5.2",
+    "@tauri-apps/plugin-deep-link": "^2.4.9",
     "immer": "^10.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -33,6 +35,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "di18n-cli": "^0.1.29",
     "sass": "^1.83.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.7.2",
     "vite": "^6.1.0"
   },

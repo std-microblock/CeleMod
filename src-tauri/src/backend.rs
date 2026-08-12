@@ -7,6 +7,7 @@ use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
 use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
+use parking_lot::Mutex as ParkingMutex;
 use pbkdf2::pbkdf2_hmac;
 use rand::RngCore;
 use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
@@ -47,6 +48,7 @@ extern crate lazy_static;
 lazy_static::lazy_static! {
     static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_DESTINATION_LOCKS: Mutex<HashMap<String, Arc<Mutex<()>>>> = Mutex::new(HashMap::new());
+    static ref PENDING_DEEP_LINKS: ParkingMutex<Vec<String>> = ParkingMutex::new(Vec::new());
 }
 
 #[path = "blacklist.rs"]
@@ -65,6 +67,37 @@ mod ureq;
 mod wegfan;
 
 use tauri::ipc::Channel;
+use tauri::{Emitter, Manager};
+use tauri_plugin_deep_link::DeepLinkExt;
+
+const DEEP_LINK_EVENT: &str = "celemod://open";
+
+fn emit_deep_links(app: &tauri::AppHandle, urls: impl IntoIterator<Item = url::Url>) {
+    let urls = urls
+        .into_iter()
+        .filter(|url| url.scheme() == "celemod")
+        .map(|url| url.to_string())
+        .collect::<Vec<_>>();
+    if urls.is_empty() {
+        return;
+    }
+    PENDING_DEEP_LINKS.lock().extend(urls.clone());
+    let _ = app.emit(DEEP_LINK_EVENT, &urls);
+}
+
+#[tauri::command]
+fn take_pending_deep_links() -> Vec<String> {
+    std::mem::take(&mut *PENDING_DEEP_LINKS.lock())
+}
+
+#[cfg(desktop)]
+fn focus_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
 
 type IpcEvent = serde_json::Value;
 
@@ -2387,6 +2420,49 @@ fn disable_installed_local_mods(
     Ok(())
 }
 
+/// Enables freshly downloaded Mods in the active profile (or removes them from
+/// the direct blacklist). The UI re-applies profiles after every download, and
+/// `apply_mod_blacklist_profiles` rebuilds blacklist.txt as a whitelist: a Mod
+/// that is never added to `enabled_mods` would be blacklisted on the very next
+/// reload, defeating the "enable by default" download setting.
+fn enable_installed_local_mods(
+    game_path: &String,
+    installed_mods: &[(String, String)],
+    profile_enabled: bool,
+    current_profile_name: &str,
+    always_on_mods: &[String],
+) -> anyhow::Result<()> {
+    let installed_mods = installed_mods
+        .iter()
+        .filter(|(name, _)| !always_on_mods.contains(name))
+        .collect::<Vec<_>>();
+    if installed_mods.is_empty() {
+        return Ok(());
+    }
+    if !profile_enabled {
+        let files = installed_mods
+            .iter()
+            .map(|installed| installed.1.clone())
+            .collect::<Vec<_>>();
+        return blacklist::switch_direct_blacklist(game_path, &files, true);
+    }
+
+    let names = installed_mods
+        .iter()
+        .map(|(name, _)| (*name).clone())
+        .collect::<Vec<_>>();
+    let profiles = if current_profile_name.is_empty() {
+        blacklist::get_current_profiles(game_path)
+    } else {
+        vec![current_profile_name.to_string()]
+    };
+    for profile_name in &profiles {
+        blacklist::switch_mod_profile_mods(game_path, profile_name, &names, true)?;
+    }
+    blacklist::apply_mod_blacklist_profiles(game_path, &profiles, always_on_mods)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod local_package_tests {
     use super::*;
@@ -2748,6 +2824,139 @@ mod local_package_tests {
             );
             assert_eq!(tasks.len(), 1);
         }
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn enable_downloaded_mod_adds_it_to_active_profile() {
+        let root = test_dir("download-default-enable-profile");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        blacklist::new_mod_blacklist_profile(&game_path_string, "Default").unwrap();
+        blacklist::apply_mod_blacklist_profiles(&game_path_string, &["Default".into()], &[])
+            .unwrap();
+
+        let package = root.join("New Mod.zip");
+        write_zip(
+            &package,
+            &[("everest.yaml", b"- Name: NewMod\n  Version: 1.0.0\n")],
+        );
+        let installed = install_local_mod(&game_path, &package).unwrap();
+
+        enable_installed_local_mods(
+            &game_path_string,
+            &[installed.clone()],
+            true,
+            "Default",
+            &[],
+        )
+        .unwrap();
+
+        let profiles = blacklist::get_mod_blacklist_profiles(&game_path_string);
+        let default_profile = profiles
+            .iter()
+            .find(|profile| profile.name == "Default")
+            .unwrap();
+        assert!(
+            default_profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == &installed.0),
+            "downloaded Mod should be enabled in the active profile"
+        );
+        let blacklist = fs::read_to_string(game_path.join("Mods").join("blacklist.txt")).unwrap();
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case(&installed.1)),
+            "enabled Mod must not be blacklisted"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn disable_downloaded_mod_blacklists_it_in_profile_mode() {
+        let root = test_dir("download-default-disable-profile");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        blacklist::new_mod_blacklist_profile(&game_path_string, "Default").unwrap();
+        blacklist::apply_mod_blacklist_profiles(&game_path_string, &["Default".into()], &[])
+            .unwrap();
+
+        let package = root.join("New Mod.zip");
+        write_zip(
+            &package,
+            &[("everest.yaml", b"- Name: NewMod\n  Version: 1.0.0\n")],
+        );
+        let installed = install_local_mod(&game_path, &package).unwrap();
+
+        disable_installed_local_mods(
+            &game_path_string,
+            &[installed.clone()],
+            true,
+            "Default",
+            &[],
+        )
+        .unwrap();
+
+        let blacklist = fs::read_to_string(game_path.join("Mods").join("blacklist.txt")).unwrap();
+        assert!(
+            blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case(&installed.1)),
+            "disabled Mod must be blacklisted"
+        );
+        let profiles = blacklist::get_mod_blacklist_profiles(&game_path_string);
+        let default_profile = profiles
+            .iter()
+            .find(|profile| profile.name == "Default")
+            .unwrap();
+        assert!(
+            !default_profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == &installed.0),
+            "disabled Mod must leave the active profile"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn enable_downloaded_mod_removes_direct_blacklist_entry() {
+        let root = test_dir("download-default-enable-direct");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        let package = root.join("New Mod.zip");
+        write_zip(
+            &package,
+            &[("everest.yaml", b"- Name: NewMod\n  Version: 1.0.0\n")],
+        );
+        let installed = install_local_mod(&game_path, &package).unwrap();
+        fs::write(
+            game_path.join("Mods").join("blacklist.txt"),
+            format!("{}\n", installed.1),
+        )
+        .unwrap();
+
+        enable_installed_local_mods(&game_path_string, &[installed.clone()], false, "", &[])
+            .unwrap();
+
+        let blacklist = fs::read_to_string(game_path.join("Mods").join("blacklist.txt")).unwrap();
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case(&installed.1)),
+            "enabled Mod must be removed from the direct blacklist"
+        );
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -3243,6 +3452,11 @@ fn open_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn write_text_file(path: String, contents: String) -> Result<(), String> {
+    fs::write(path, contents).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn verify_celeste_install(path: String) -> bool {
     if is_test_mode() && path == get_test_game_path().to_string_lossy() {
         return true;
@@ -3566,33 +3780,83 @@ fn get_olympus_presets(game_path: String) -> String {
 }
 
 #[tauri::command]
-fn import_olympus_presets(game_path: String, profile_names: String) -> String {
+fn preview_olympus_profiles(game_path: String, profile_names: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     let profile_names: Vec<String> = match serde_json::from_str(&profile_names) {
         Ok(value) => value,
         Err(error) => return format!("Failed to parse Olympus profile names: {error}"),
     };
-    match blacklist::import_olympus_presets(&game_path, &profile_names) {
+    match blacklist::preview_olympus_profiles(&game_path, &profile_names) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
-        Err(error) => format!("Failed to import Olympus presets: {error}"),
+        Err(error) => format!("Failed to preview Olympus presets: {error}"),
     }
 }
 
 #[tauri::command]
-fn import_mod_profiles(game_path: String, source_path: String) -> String {
+fn preview_mod_profiles_json(game_path: String, contents: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
-    match blacklist::import_mod_profiles(&game_path, &source_path) {
+    match blacklist::preview_mod_profiles_json(&game_path, &contents) {
+        Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
+        Err(error) => format!("Failed to preview profiles: {error}"),
+    }
+}
+
+#[tauri::command]
+fn preview_mod_profiles(game_path: String, source_path: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::preview_mod_profiles(&game_path, &source_path) {
+        Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
+        Err(error) => format!("Failed to preview profiles: {error}"),
+    }
+}
+
+#[tauri::command]
+fn commit_mod_profiles(game_path: String, profiles: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let profiles = match serde_json::from_str::<Vec<blacklist::ModBlacklistProfile>>(&profiles) {
+        Ok(value) => value,
+        Err(error) => return format!("Failed to parse profiles: {error}"),
+    };
+    match blacklist::commit_profile_import(&game_path, profiles) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
         Err(error) => format!("Failed to import profiles: {error}"),
     }
 }
 
 #[tauri::command]
-fn export_mod_profile(game_path: String, profile_name: String, destination: String) -> String {
+fn export_mod_profile(
+    game_path: String,
+    profile_name: String,
+    destination: String,
+    enabled_mods: Option<String>,
+    auto_deps: bool,
+) -> String {
     let game_path = normalize_game_path_impl(&game_path);
-    match blacklist::export_mod_profile(&game_path, &profile_name, &destination) {
+    let enabled_mods = match enabled_mods {
+        Some(value) => match serde_json::from_str::<Vec<String>>(&value) {
+            Ok(value) => Some(value),
+            Err(error) => return format!("Failed to parse exported Mod names: {error}"),
+        },
+        None => None,
+    };
+    match blacklist::export_mod_profile(
+        &game_path,
+        &profile_name,
+        &destination,
+        enabled_mods,
+        auto_deps,
+    ) {
         Ok(()) => "Success".to_string(),
         Err(error) => format!("Failed to export profile: {error}"),
+    }
+}
+
+#[tauri::command]
+fn expand_mod_profile_dependencies(game_path: String, profile_name: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::expand_mod_profile_dependencies(&game_path, &profile_name) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => format!("Failed to expand profile dependencies: {error}"),
     }
 }
 
@@ -4091,30 +4355,42 @@ fn download_mod(
                 .to_string_lossy()
                 .to_string();
             let installed = get_installed_mods_sync(mods_dir.clone());
-            let completed = tasks
+            let mut to_disable = Vec::new();
+            let mut to_enable = Vec::new();
+            for task in tasks
                 .iter()
                 .filter(|task| task.status == DownloadStatus::Finished)
-                .filter(|task| {
-                    let enabled = everest::get_mod_category(&task.name)
-                        .and_then(|category| download_type_defaults.get(&category).copied())
-                        .unwrap_or(default_enabled);
-                    !enabled
-                })
-                .filter_map(|task| {
-                    installed
-                        .iter()
-                        .find(|item| item.name == task.name)
-                        .map(|item| (item.name.clone(), item.file.clone()))
-                })
-                .collect::<Vec<_>>();
+            {
+                let enabled = everest::get_mod_category(&task.name)
+                    .and_then(|category| download_type_defaults.get(&category).copied())
+                    .unwrap_or(default_enabled);
+                let Some(item) = installed.iter().find(|item| item.name == task.name) else {
+                    continue;
+                };
+                let entry = (item.name.clone(), item.file.clone());
+                if enabled {
+                    to_enable.push(entry);
+                } else {
+                    to_disable.push(entry);
+                }
+            }
             if let Err(error) = disable_installed_local_mods(
                 &game_path,
-                &completed,
+                &to_disable,
                 profile_enabled,
                 &current_profile_name,
                 &always_on_mods,
             ) {
                 eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
+            }
+            if let Err(error) = enable_installed_local_mods(
+                &game_path,
+                &to_enable,
+                profile_enabled,
+                &current_profile_name,
+                &always_on_mods,
+            ) {
+                eprintln!("Failed to enable downloaded Mods: {error:#}");
             }
         }
         emit_download_tasks(
@@ -4356,13 +4632,31 @@ pub fn run() {
             }
         }
     }
-    tauri::Builder::default()
-        .setup(|_app| {
+    let mut builder = tauri::Builder::default();
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            focus_main_window(app);
+        }));
+    }
+    builder
+        .plugin(tauri_plugin_deep_link::init())
+        .setup(|app| {
+            #[cfg(any(windows, target_os = "linux"))]
+            app.deep_link().register_all()?;
+
+            if let Some(urls) = app.deep_link().get_current()? {
+                emit_deep_links(app.handle(), urls);
+            }
+            let app_handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                focus_main_window(&app_handle);
+                emit_deep_links(&app_handle, event.urls());
+            });
+
             #[cfg(target_os = "macos")]
             {
-                use tauri::Manager;
-
-                let window = _app.get_webview_window("main").ok_or_else(|| {
+                let window = app.get_webview_window("main").ok_or_else(|| {
                     std::io::Error::new(
                         std::io::ErrorKind::NotFound,
                         "main webview window was not created",
@@ -4378,6 +4672,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            take_pending_deep_links,
             download_mod,
             cancel_download_mod,
             cleanup_mod_download_temp_files,
@@ -4403,14 +4698,18 @@ pub fn run() {
             switch_mod_profile_mods,
             get_current_profiles,
             get_olympus_presets,
-            import_olympus_presets,
-            import_mod_profiles,
+            write_text_file,
+            preview_olympus_profiles,
+            preview_mod_profiles,
+            preview_mod_profiles_json,
+            commit_mod_profiles,
             export_mod_profile,
             new_mod_blacklist_profile,
             get_current_profile,
             remove_mod_blacklist_profile,
             get_mod_update,
             rm_mod,
+            expand_mod_profile_dependencies,
             delete_mods,
             delete_mod_files,
             get_everest_version,

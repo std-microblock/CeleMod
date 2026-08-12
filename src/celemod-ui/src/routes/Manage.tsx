@@ -1,5 +1,6 @@
 import _i18n from "src/i18n";
 import {
+  type CSSProperties,
   createContext,
   useCallback,
   useContext,
@@ -21,8 +22,12 @@ import {
   useModComments,
 } from "../states";
 import { callRemote, compareVersion } from "../utils";
+import {
+  installOlympusProfiles,
+  installProfileFile,
+  installProfileModList,
+} from "../profileInstall";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { importOlympusProfiles, importProfileFile } from "../profileImport";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
 import { useGlobalContext } from "../App";
@@ -45,6 +50,375 @@ import {
   useManageStore,
   selectDefaultOrphanNames,
 } from "../stores/manage";
+
+type ModListCheck = {
+  raw: string;
+  name: string;
+  operator: "@" | ">=" | "==" | "";
+  requestedVersion: string;
+  catalogVersion: string;
+  status: "found" | "missing" | "version-mismatch";
+};
+
+const parseModListLine = (line: string) => {
+  const raw = line.trim();
+  if (!raw || raw.startsWith("#")) return null;
+  const match = raw.match(/^(.+?)\s*(?:(@|>=|==)\s*([^\s]+))?$/);
+  return {
+    raw,
+    name: match?.[1]?.trim() || raw,
+    operator: (match?.[2] || "") as ModListCheck["operator"],
+    requestedVersion: match?.[3]?.trim() || "",
+  };
+};
+
+const ProfileModListImportPopup = ({
+  gamePath,
+  catalog,
+  onImported,
+}: {
+  gamePath: string;
+  catalog: CatalogMod[];
+  onImported: () => void;
+}) => {
+  const popup = useContext(PopupContext);
+  const [name, setName] = useState(_i18n.t("导入列表"));
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [autoDeps, setAutoDeps] = useState(true);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const inlineChecksRef = useRef<HTMLDivElement>(null);
+
+  const catalogByName = useMemo(
+    () => new Map(catalog.map((mod) => [mod.name.toLocaleLowerCase(), mod])),
+    [catalog]
+  );
+  const lineChecks = useMemo<(ModListCheck | null)[]>(
+    () =>
+      text.split(/\r?\n/).map((line) => {
+        const item = parseModListLine(line);
+        if (!item) return null;
+        const mod = catalogByName.get(item.name.toLocaleLowerCase());
+        const versionOrder = mod
+          ? compareVersion(mod.version, item.requestedVersion)
+          : -1;
+        const versionMatches =
+          !item.requestedVersion ||
+          (item.operator === ">=" ? versionOrder >= 0 : versionOrder === 0);
+        return {
+          ...item,
+          catalogVersion: mod?.version || "",
+          status: !mod
+            ? "missing"
+            : versionMatches
+            ? "found"
+            : "version-mismatch",
+        };
+      }),
+    [catalogByName, text]
+  );
+  const syncInlineChecks = useCallback(() => {
+    const textarea = editorRef.current;
+    const overlay = inlineChecksRef.current;
+    if (!textarea || !overlay) return;
+    const style = window.getComputedStyle(textarea);
+    const measure = document.createElement("canvas").getContext("2d");
+    if (!measure) return;
+    measure.font = style.font;
+    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+    for (const child of Array.from(overlay.children)) {
+      const index = Number((child as HTMLElement).dataset.lineIndex);
+      const line = text.split(/\r?\n/)[index] ?? "";
+      const width = measure.measureText(line).width;
+      (child as HTMLElement).style.left = `${paddingLeft + width + 7}px`;
+    }
+  }, [text]);
+
+  useEffect(() => syncInlineChecks(), [lineChecks, syncInlineChecks]);
+  const checks = lineChecks.filter(
+    (item): item is ModListCheck => item !== null
+  );
+  const invalidCount = checks.filter((item) => item.status !== "found").length;
+
+  return (
+    <div className="popup-content profile-mod-list-popup">
+      <div className="title">{_i18n.t("从 Mod 列表导入 Profile")}</div>
+      <div className="content">
+        <div className="profile-editor-field">
+          <label>{_i18n.t("Profile 名称")}</label>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </div>
+        <div className="profile-editor-field profile-list-editor-field">
+          <div className="profile-editor-label-row">
+            <label>{_i18n.t("Mod 列表")}</label>
+            <span>
+              {checks.length} {_i18n.t("个 Mod")}
+              {invalidCount ? ` · ${invalidCount} ${_i18n.t("项有问题")}` : ""}
+            </span>
+          </div>
+          <div className="profile-inline-editor">
+            <textarea
+              ref={editorRef}
+              wrap="off"
+              value={text}
+              placeholder={_i18n.t("每行一个 Mod，可写 FrostHelper @ 1.68.0")}
+              onChange={(event) => setText(event.target.value)}
+              onScroll={(event) => {
+                if (inlineChecksRef.current) {
+                  inlineChecksRef.current.style.transform = `translate(${-event
+                    .currentTarget.scrollLeft}px, ${-event.currentTarget
+                    .scrollTop}px)`;
+                }
+              }}
+            />
+            <div className="profile-inline-checks" ref={inlineChecksRef}>
+              {lineChecks.map((item, index) =>
+                item ? (
+                  <div
+                    data-line-index={index}
+                    style={{ "--line-index": index } as CSSProperties}
+                    className={`profile-inline-check ${item.status}`}
+                    key={`${item.raw}-${index}`}
+                    title={
+                      item.status === "missing"
+                        ? _i18n.t("目录中未找到")
+                        : item.requestedVersion
+                        ? `${item.catalogVersion} / ${item.operator || "=="} ${
+                            item.requestedVersion
+                          }`
+                        : item.catalogVersion
+                    }
+                  >
+                    <Icon
+                      name={
+                        item.status === "found"
+                          ? "i-tick"
+                          : item.status === "missing"
+                          ? "fail"
+                          : "warn"
+                      }
+                    />
+                    <span>
+                      {item.status === "missing"
+                        ? _i18n.t("未找到")
+                        : item.status === "version-mismatch"
+                        ? _i18n.t("版本不匹配")
+                        : item.catalogVersion}
+                    </span>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </div>
+          {!checks.length && (
+            <div className="profile-editor-hint">
+              {_i18n.t("输入后会在每一行右侧实时显示 Mod 和版本检查结果")}
+            </div>
+          )}
+          <label className="profile-inline-option">
+            <input
+              type="checkbox"
+              checked={autoDeps}
+              onChange={(event) => setAutoDeps(event.target.checked)}
+            />
+            <span>
+              <strong>{_i18n.t("自动补全依赖")}</strong>
+              <small>{_i18n.t("导入后安装并启用列表内 Mod 的必需依赖")}</small>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div className="buttons">
+        <button onClick={popup.hide}>{_i18n.t("取消")}</button>
+        <button
+          disabled={
+            busy || !name.trim() || checks.length === 0 || invalidCount > 0
+          }
+          onClick={() => {
+            setBusy(true);
+            void installProfileModList(
+              gamePath,
+              name.trim(),
+              checks.map((item) => item.name),
+              autoDeps,
+              onImported
+            )
+              .then((started) => {
+                if (started) popup.hide();
+              })
+              .catch(console.error)
+              .finally(() => setBusy(false));
+          }}
+        >
+          {_i18n.t("导入")}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+type ProfileExportFormat = "json" | "text" | "link";
+
+const ProfileExportPopup = ({
+  profile,
+  nodes,
+}: {
+  profile: { name: string; enabled_mods: string[] };
+  nodes: Record<string, ManageNode>;
+}) => {
+  const popup = useContext(PopupContext);
+  const [format, setFormat] = useState<ProfileExportFormat>("json");
+  const [autoDeps, setAutoDeps] = useState(false);
+  const [includeVersions, setIncludeVersions] = useState(false);
+  const [copied, setCopied] = useState("");
+  const topLevelMods = profile.enabled_mods.filter((name) => {
+    const node = nodes[name];
+    if (!node) return true;
+    return !node.dependedBy.some((dependent) =>
+      profile.enabled_mods.includes(dependent)
+    );
+  });
+  const modNames = autoDeps ? topLevelMods : profile.enabled_mods;
+  const profileValue = {
+    format: "celemod-profile",
+    version: 2,
+    ...(autoDeps ? { auto_deps: true } : {}),
+    name: profile.name,
+    enabled_mods: modNames,
+  };
+  const json = JSON.stringify(profileValue, null, 2);
+  const text = modNames
+    .map((name) =>
+      includeVersions && nodes[name]?.version
+        ? `${name} >= ${nodes[name].version}`
+        : name
+    )
+    .join("\n");
+  const link = `celemod://add_profile/${encodeURIComponent(
+    JSON.stringify(profileValue)
+  )}`;
+  const preview = format === "json" ? json : format === "text" ? text : link;
+  const markdown = `[安装 ${profile.name} Profile](${link})`;
+  const html = `<a href="${link}">安装 ${profile.name} Profile</a>`;
+
+  const copy = (value: string, type: string) => {
+    void navigator.clipboard.writeText(value).then(() => {
+      setCopied(type);
+      window.setTimeout(() => setCopied(""), 1200);
+    });
+  };
+
+  const saveExport = async () => {
+    const extension = format === "json" ? "json" : "txt";
+    const destination = await save({
+      title: _i18n.t("导出预设"),
+      defaultPath: `${profile.name}.${
+        format === "json"
+          ? "celemod-profile.json"
+          : format === "link"
+          ? "celemod-link.txt"
+          : "txt"
+      }`,
+      filters: [
+        {
+          name: format === "json" ? "CeleMod Profile" : "Text",
+          extensions: [extension],
+        },
+      ],
+    });
+    if (typeof destination !== "string") return;
+    await callRemote("write_text_file", destination, preview);
+    popup.hide();
+  };
+
+  return (
+    <div className="popup-content profile-export-popup">
+      <header className="profile-export-header">
+        <div>
+          <div className="title">{_i18n.t("导出 Profile")}</div>
+          <span>{profile.name}</span>
+        </div>
+        <div className="profile-export-count">
+          <strong>{modNames.length}</strong>
+          <span>Mods</span>
+        </div>
+      </header>
+      <div className="content">
+        <div className="profile-export-tabs">
+          {(
+            [
+              ["json", "JSON"],
+              ["text", _i18n.t("Mod 列表")],
+              ["link", "安装链接"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              className={format === value ? "selected" : ""}
+              key={value}
+              onClick={() => setFormat(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="profile-export-options">
+          <label>
+            <input
+              type="checkbox"
+              checked={autoDeps}
+              onChange={(event) => setAutoDeps(event.target.checked)}
+            />
+            <span>{_i18n.t("只保存顶层 Mod")}</span>
+          </label>
+          {format === "text" && (
+            <label>
+              <input
+                type="checkbox"
+                checked={includeVersions}
+                onChange={(event) => setIncludeVersions(event.target.checked)}
+              />
+              <span>{_i18n.t("携带版本要求")}</span>
+            </label>
+          )}
+        </div>
+        <div className="profile-export-preview">
+          <div className="profile-export-preview-bar">
+            <span>
+              {format === "json"
+                ? "profile.json"
+                : format === "text"
+                ? "mods.txt"
+                : "celemod://add_profile"}
+            </span>
+            <button onClick={() => copy(preview, "preview")}>
+              {copied === "preview" ? _i18n.t("已复制") : _i18n.t("复制")}
+            </button>
+          </div>
+          <textarea readOnly value={preview} />
+        </div>
+        {format === "link" && (
+          <div className="profile-link-copy-row">
+            <button onClick={() => copy(markdown, "markdown")}>
+              {copied === "markdown" ? _i18n.t("已复制") : "Markdown"}
+            </button>
+            <button onClick={() => copy(html, "html")}>
+              {copied === "html" ? _i18n.t("已复制") : "HTML"}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="buttons profile-export-actions">
+        <button onClick={popup.hide}>{_i18n.t("取消")}</button>
+        <button className="primary" onClick={() => void saveExport()}>
+          {_i18n.t("保存文件")}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 type LatestModInfo = {
   name: string;
@@ -704,7 +1078,9 @@ export const Manage = () => {
     void callRemote<string>("get_olympus_presets", gamePath)
       .then((data) =>
         setOlympusProfiles(
-          (JSON.parse(data) as { name: string }[]).map((profile) => profile.name)
+          (JSON.parse(data) as { name: string }[]).map(
+            (profile) => profile.name
+          )
         )
       )
       .catch(console.error);
@@ -1469,32 +1845,6 @@ export const Manage = () => {
                     <label>
                       <input
                         type="checkbox"
-                        checked={rootOnly}
-                        onChange={(event) => setRootOnly(event.target.checked)}
-                      />
-                      {_i18n.t("只显示不被依赖的Mod")}
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={fullTree}
-                        onChange={(event) => setFullTree(event.target.checked)}
-                      />
-                      {_i18n.t("显示完整树")}
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={filters.updateOnly}
-                        onChange={(event) =>
-                          setUpdateOnly(event.target.checked)
-                        }
-                      />
-                      {_i18n.t("仅显示可更新")}
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
                         checked={filters.showHiddenTypes}
                         onChange={(event) =>
                           setShowHiddenTypes(event.target.checked)
@@ -1575,7 +1925,6 @@ export const Manage = () => {
               )}
             </div>
           </header>
-
           {(updates.length > 0 || missingDependencies.length > 0) && (
             <div className="manage-notice-bar">
               {showUpdate && updates.length > 0 && (
@@ -1592,12 +1941,10 @@ export const Manage = () => {
                             )
                           )
                         )
-                      )
-                      .catch(console.error);
+                      );
                   }}
                 >
-                  <Icon name="download" />
-                  {_i18n.t("更新全部 ({count})", { count: updates.length })}
+                  {_i18n.t("更新全部 Mod")} ({updates.length})
                 </button>
               )}
               {missingDependencies.length > 0 && (
@@ -1605,39 +1952,16 @@ export const Manage = () => {
                   disabled={fixingDependencies}
                   onClick={() => {
                     setFixingDependencies(true);
-                    let remaining = missingDependencies.length;
-                    for (const dependency of missingDependencies) {
-                      callRemote(
-                        "get_mod_update",
-                        dependency.name,
-                        (data: string) => {
-                          if (!data) {
-                            if (--remaining === 0) setFixingDependencies(false);
-                            return;
-                          }
-                          const [fileId] = JSON.parse(data);
-                          downloadMod(dependency.name, fileId, {
-                            onFinished: () => {
-                              if (--remaining === 0) {
-                                setFixingDependencies(false);
-                              }
-                            },
-                            onFailed: () => {
-                              if (--remaining === 0)
-                                setFixingDependencies(false);
-                            },
-                          });
-                        }
-                      );
-                    }
+                    void Promise.all(
+                      missingDependencies.map((dependency) =>
+                        downloadMissing(dependency.name)
+                      )
+                    )
+                      .then(() => reloadMods())
+                      .finally(() => setFixingDependencies(false));
                   }}
                 >
-                  <Icon name="warn" />
-                  {fixingDependencies
-                    ? _i18n.t("补全中…")
-                    : _i18n.t("补全缺失依赖 ({count})", {
-                        count: missingDependencies.length,
-                      })}
+                  {_i18n.t("安装缺失依赖")} ({missingDependencies.length})
                 </button>
               )}
             </div>
@@ -1646,14 +1970,11 @@ export const Manage = () => {
           {hasSearchQuery &&
             (hiddenKeywordMatchCount > 0 || filtersSuspended) && (
               <div className="manage-filter-hint">
-                <Icon name="filter" />
                 <span>
-                  {filtersSuspended
-                    ? _i18n.t("已暂时关闭筛选条件")
-                    : _i18n.t(
-                        "另有 {count} 个符合关键词的 Mod 被筛选条件隐藏",
-                        { count: hiddenKeywordMatchCount }
-                      )}
+                  {_i18n.t("部分搜索结果被筛选条件隐藏")}
+                  {hiddenKeywordMatchCount > 0
+                    ? ` (${hiddenKeywordMatchCount})`
+                    : ""}
                 </span>
                 <button onClick={() => setFiltersSuspended((value) => !value)}>
                   {filtersSuspended
@@ -1713,6 +2034,22 @@ export const Manage = () => {
                       <div className="profile-import-menu">
                         <button
                           onClick={() => {
+                            createPopup(() => (
+                              <ProfileModListImportPopup
+                                gamePath={gamePath}
+                                catalog={catalog}
+                                onImported={() => {
+                                  setProfileImportOpen(false);
+                                  void reloadBlacklistState(gamePath);
+                                }}
+                              />
+                            ));
+                          }}
+                        >
+                          {_i18n.t("粘贴 Mod 列表")}
+                        </button>
+                        <button
+                          onClick={() => {
                             void open({
                               multiple: false,
                               filters: [
@@ -1724,9 +2061,15 @@ export const Manage = () => {
                             })
                               .then((source) => {
                                 if (typeof source !== "string") return;
-                                return importProfileFile(gamePath, source);
+                                return installProfileFile(
+                                  gamePath,
+                                  source,
+                                  () => {
+                                    setProfileImportOpen(false);
+                                    void reloadBlacklistState(gamePath);
+                                  }
+                                );
                               })
-                              .then(() => setProfileImportOpen(false))
                               .catch(console.error);
                           }}
                         >
@@ -1737,9 +2080,8 @@ export const Manage = () => {
                             onClick={() => {
                               createPopup(() => {
                                 const popup = useContext(PopupContext);
-                                const [selected, setSelected] = useState<string[]>(
-                                  olympusProfiles
-                                );
+                                const [selected, setSelected] =
+                                  useState<string[]>(olympusProfiles);
                                 return (
                                   <div className="popup-content olympus-import-popup">
                                     <div className="title">
@@ -1772,15 +2114,17 @@ export const Manage = () => {
                                       <button
                                         disabled={selected.length === 0}
                                         onClick={() => {
-                                          void importOlympusProfiles(
+                                          void installOlympusProfiles(
                                             gamePath,
-                                            selected
-                                          )
-                                            .then(() => {
+                                            selected,
+                                            () => {
                                               setProfileImportOpen(false);
                                               popup.hide();
-                                            })
-                                            .catch(console.error);
+                                              void reloadBlacklistState(
+                                                gamePath
+                                              );
+                                            }
+                                          ).catch(console.error);
                                         }}
                                       >
                                         {_i18n.t("导入")}
@@ -1818,36 +2162,23 @@ export const Manage = () => {
                       <span className="profile-name">{profile.name}</span>
                       <small>{profile.enabled_mods.length}</small>
                     </button>
-                    <button
-                      type="button"
-                      className="profile-export"
-                      title={_i18n.t("导出预设")}
-                      onClick={() => {
-                        void save({
-                          title: _i18n.t("导出预设"),
-                          defaultPath: `${profile.name}.celemod-profile.json`,
-                          filters: [
-                            { name: "CeleMod Profile", extensions: ["json"] },
-                          ],
-                        })
-                          .then((destination) => {
-                            if (typeof destination !== "string") return;
-                            return callRemote<string>(
-                              "export_mod_profile",
-                              gamePath,
-                              profile.name,
-                              destination
-                            );
-                          })
-                          .then((result) => {
-                            if (result && result !== "Success")
-                              throw new Error(String(result));
-                          })
-                          .catch(console.error);
-                      }}
-                    >
-                      <Icon name="save" />
-                    </button>
+                    <div className="profile-export-wrap">
+                      <button
+                        type="button"
+                        className="profile-export"
+                        title={_i18n.t("导出预设")}
+                        onClick={() => {
+                          createPopup(() => (
+                            <ProfileExportPopup
+                              profile={profile}
+                              nodes={nodes}
+                            />
+                          ));
+                        }}
+                      >
+                        <Icon name="save" />
+                      </button>
+                    </div>
                     <button
                       type="button"
                       className="profile-delete"
@@ -1886,11 +2217,7 @@ export const Manage = () => {
                       profiles.some((profile) => profile.name === name)
                     )
                       return;
-                    void callRemote(
-                      "new_mod_blacklist_profile",
-                      gamePath,
-                      name
-                    )
+                    void callRemote("new_mod_blacklist_profile", gamePath, name)
                       .then((result) => {
                         if (String(result) !== "Success")
                           throw new Error(String(result));

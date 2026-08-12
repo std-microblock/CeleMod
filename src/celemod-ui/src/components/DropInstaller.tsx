@@ -14,7 +14,7 @@ import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./DropInstaller.scss";
-import { importProfileFile } from "../profileImport";
+import { installProfileFile } from "../profileInstall";
 
 interface LocalInstallProgress {
   current: number;
@@ -95,9 +95,7 @@ const LocalInstallPopup = ({
   const [results, setResults] = useState<LocalInstallResult[] | null>(null);
   const [fatalError, setFatalError] = useState("");
   const profileEnabled = useAppStore((state) => state.profileEnabled);
-  const currentProfileName = useAppStore(
-    (state) => state.currentProfileName
-  );
+  const currentProfileName = useAppStore((state) => state.currentProfileName);
   const alwaysOnMods = useAppStore((state) => state.alwaysOnMods);
 
   useEffect(() => {
@@ -281,9 +279,9 @@ export const DropInstaller = () => {
             showMissingGamePopup();
             return;
           }
-          void importProfileFile(gamePath, profilePath)
-            .then(() => ctx.modManage.reloadMods())
-            .catch((error) => console.error("Failed to import profile", error));
+          void installProfileFile(gamePath, profilePath, () => {
+            void ctx.modManage.reloadMods();
+          }).catch(console.error);
           return;
         }
         if (!gamePath) {

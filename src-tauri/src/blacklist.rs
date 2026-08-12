@@ -18,6 +18,8 @@ pub struct ModBlacklistProfile {
     pub name: String,
     #[serde(default)]
     pub enabled_mods: Vec<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub auto_deps: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,8 +33,14 @@ pub struct ProfileImportResult {
 struct ExportedProfile<'a> {
     format: &'static str,
     version: u8,
+    #[serde(skip_serializing_if = "is_false")]
+    auto_deps: bool,
     #[serde(flatten)]
     profile: &'a ModBlacklistProfile,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 fn validate_profile_name(profile_name: &str) -> anyhow::Result<()> {
@@ -103,6 +111,11 @@ fn profile_from_legacy_value(
         .context("Profile is missing a name")?
         .to_owned();
     validate_profile_name(&name)?;
+    let auto_deps = object
+        .get("auto_deps")
+        .or_else(|| object.get("autoDeps"))
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false);
 
     if let Some(enabled_mods) = object
         .get("enabled_mods")
@@ -117,11 +130,10 @@ fn profile_from_legacy_value(
                     .filter_map(serde_json::Value::as_str)
                     .map(str::to_owned),
             ),
+            auto_deps,
         });
     }
 
-    // v1 stored disabled `{ name, file }` entries. Convert it once using the
-    // installed set, then persist only the selected Mod IDs.
     let disabled_names = object
         .get("mods")
         .and_then(serde_json::Value::as_array)
@@ -156,6 +168,7 @@ fn profile_from_legacy_value(
                 })
                 .map(|mod_info| mod_info.name.clone()),
         ),
+        auto_deps,
     })
 }
 
@@ -165,16 +178,44 @@ fn write_profile(game_path: &str, profile: &ModBlacklistProfile) -> anyhow::Resu
     let profile = ModBlacklistProfile {
         name: profile.name.clone(),
         enabled_mods: normalize_names(profile.enabled_mods.clone()),
+        auto_deps: false,
     };
     fs::write(
         profile_path(game_path, &profile.name)?,
         serde_json::to_string_pretty(&ExportedProfile {
             format: PROFILE_FORMAT,
             version: PROFILE_VERSION,
+            auto_deps: false,
             profile: &profile,
         })?,
     )?;
     Ok(())
+}
+
+fn parse_mod_list(contents: &str) -> Vec<String> {
+    normalize_names(
+        contents
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty() && !line.starts_with('#'))
+            .map(str::to_owned),
+    )
+}
+
+fn imported_profile_from_mod_list(
+    contents: &str,
+    default_name: &str,
+) -> anyhow::Result<ModBlacklistProfile> {
+    let enabled_mods = parse_mod_list(contents);
+    if enabled_mods.is_empty() {
+        bail!("No Mods found");
+    }
+    validate_profile_name(default_name)?;
+    Ok(ModBlacklistProfile {
+        name: default_name.to_owned(),
+        enabled_mods,
+        auto_deps: false,
+    })
 }
 
 /// Loads profile files and rewrites every pre-v2 JSON profile in the v2 format.
@@ -206,6 +247,7 @@ pub fn get_mod_blacklist_profiles(game_path: &str) -> Vec<ModBlacklistProfile> {
         let Ok(profile) = profile_from_legacy_value(&value, &installed) else {
             continue;
         };
+
         if !names.insert(profile.name.to_ascii_lowercase()) {
             continue;
         }
@@ -223,6 +265,40 @@ pub fn get_mod_blacklist_profiles(game_path: &str) -> Vec<ModBlacklistProfile> {
 
     profiles.sort_unstable_by_key(|profile| profile.name.to_ascii_lowercase());
     profiles
+}
+fn expand_installed_dependencies(
+    installed: &[super::LocalMod],
+    selected_names: &[String],
+) -> Vec<String> {
+    let by_name = installed
+        .iter()
+        .map(|mod_info| (mod_info.name.to_ascii_lowercase(), mod_info))
+        .collect::<HashMap<_, _>>();
+    let mut expanded = normalize_names(selected_names.iter().cloned());
+    let mut visited = HashSet::new();
+    let mut index = 0;
+    while index < expanded.len() {
+        let name = expanded[index].clone();
+        index += 1;
+        if !visited.insert(name.to_ascii_lowercase()) {
+            continue;
+        }
+        let Some(mod_info) = by_name.get(&name.to_ascii_lowercase()) else {
+            continue;
+        };
+        expanded.extend(
+            mod_info
+                .deps
+                .iter()
+                .filter(|dependency| {
+                    !dependency.optional
+                        && !matches!(dependency.name.as_str(), "Everest" | "EverestCore")
+                })
+                .map(|dependency| dependency.name.clone()),
+        );
+        expanded = normalize_names(expanded);
+    }
+    expanded
 }
 
 pub fn get_blacklist_profile_count(game_path: &str) -> usize {
@@ -377,6 +453,7 @@ pub fn get_direct_blacklist_profile(game_path: &str) -> anyhow::Result<ModBlackl
                 .filter(|mod_info| !blacklisted.contains(&mod_info.file.to_ascii_lowercase()))
                 .map(|mod_info| mod_info.name),
         ),
+        auto_deps: false,
     })
 }
 
@@ -440,6 +517,17 @@ pub fn switch_mod_profile_mods(
     write_profile(game_path, &profile)
 }
 
+pub fn expand_mod_profile_dependencies(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let mut profile = get_mod_blacklist_profiles(game_path)
+        .into_iter()
+        .find(|profile| profile.name.eq_ignore_ascii_case(profile_name))
+        .context("Profile not found")?;
+    profile.enabled_mods = expand_installed_dependencies(&installed, &profile.enabled_mods);
+    profile.auto_deps = false;
+    write_profile(game_path, &profile)
+}
+
 pub fn new_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
     validate_profile_name(profile_name)?;
     if get_mod_blacklist_profiles(game_path)
@@ -453,6 +541,7 @@ pub fn new_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow:
         &ModBlacklistProfile {
             name: profile_name.to_owned(),
             enabled_mods: Vec::new(),
+            auto_deps: false,
         },
     )
 }
@@ -531,12 +620,14 @@ fn parse_olympus_presets(
             if let Some(names) = names_by_file.get(&file.to_ascii_lowercase()) {
                 enabled_mods.extend(names.iter().cloned());
             } else {
-                missing.push(file);
+                missing.push(file.clone());
+                enabled_mods.push(file);
             }
         }
         profiles.push(ModBlacklistProfile {
             name,
             enabled_mods: normalize_names(enabled_mods),
+            auto_deps: false,
         });
         Ok(())
     };
@@ -574,13 +665,13 @@ pub fn get_olympus_presets(game_path: &str) -> anyhow::Result<Vec<ModBlacklistPr
     Ok(parse_olympus_presets(game_path, &contents)?.0)
 }
 
-pub fn import_olympus_presets(
+pub fn preview_olympus_profiles(
     game_path: &str,
     selected_names: &[String],
 ) -> anyhow::Result<ProfileImportResult> {
     let path = Path::new(game_path).join("Mods").join("modpresets.txt");
     let contents = fs::read_to_string(path).context("Olympus modpresets.txt was not found")?;
-    let (profiles, missing_files) = parse_olympus_presets(game_path, &contents)?;
+    let (profiles, _) = parse_olympus_presets(game_path, &contents)?;
     let selected = selected_names
         .iter()
         .map(|name| name.to_ascii_lowercase())
@@ -592,13 +683,48 @@ pub fn import_olympus_presets(
     if profiles.is_empty() {
         bail!("No Olympus presets were selected");
     }
+    let missing_files = profiles
+        .iter()
+        .flat_map(|profile| profile.enabled_mods.iter().cloned())
+        .filter(|name| name.to_ascii_lowercase().ends_with(".zip"))
+        .collect::<Vec<_>>();
+    preview_profile_import(game_path, profiles, missing_files)
+}
+
+pub fn preview_mod_profiles(
+    game_path: &str,
+    source_path: &str,
+) -> anyhow::Result<ProfileImportResult> {
+    let contents = fs::read_to_string(source_path).context("Failed to read profile file")?;
+    let trimmed = contents.trim_start();
+    if trimmed.starts_with("**") || source_path.ends_with("modpresets.txt") {
+        let (profiles, missing_files) = parse_olympus_presets(game_path, &contents)?;
+        return preview_profile_import(game_path, profiles, missing_files);
+    }
+    if !trimmed.starts_with('{') && !trimmed.starts_with('[') {
+        let name = Path::new(source_path)
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .filter(|value| !value.is_empty())
+            .unwrap_or("Imported");
+        return preview_profile_import(
+            game_path,
+            vec![imported_profile_from_mod_list(&contents, name)?],
+            Vec::new(),
+        );
+    }
+    preview_mod_profiles_json(game_path, &contents)
+}
+
+fn preview_profile_import(
+    game_path: &str,
+    profiles: Vec<ModBlacklistProfile>,
+    missing_files: Vec<String>,
+) -> anyhow::Result<ProfileImportResult> {
     let imported_names = profiles
         .iter()
         .flat_map(|profile| profile.enabled_mods.iter().cloned())
         .collect::<Vec<_>>();
-    for profile in &profiles {
-        write_profile(game_path, profile)?;
-    }
     let installed_names = installed_mod_names(game_path)
         .into_iter()
         .map(|name| name.to_ascii_lowercase())
@@ -613,69 +739,100 @@ pub fn import_olympus_presets(
     })
 }
 
-pub fn import_mod_profiles(
+pub fn preview_mod_profiles_json(
     game_path: &str,
-    source_path: &str,
+    contents: &str,
 ) -> anyhow::Result<ProfileImportResult> {
-    let contents = fs::read_to_string(source_path).context("Failed to read profile file")?;
     let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
-    let trimmed = contents.trim_start();
-    let (profiles, missing_files) =
-        if trimmed.starts_with("**") || source_path.ends_with("modpresets.txt") {
-            parse_olympus_presets(game_path, &contents)?
-        } else {
-            let value: serde_json::Value =
-                serde_json::from_str(&contents).context("Invalid profile JSON")?;
-            let values = value
-                .get("profiles")
-                .and_then(serde_json::Value::as_array)
-                .cloned()
-                .or_else(|| value.as_array().cloned())
-                .unwrap_or_else(|| vec![value]);
-            let profiles = values
-                .iter()
-                .map(|value| profile_from_legacy_value(value, &installed))
-                .collect::<anyhow::Result<Vec<_>>>()?;
-            if profiles.is_empty() {
-                bail!("No profiles found");
-            }
-            (profiles, Vec::new())
-        };
-    let imported_names = profiles
+    let value: serde_json::Value =
+        serde_json::from_str(contents).context("Invalid profile JSON")?;
+    let values = value
+        .get("profiles")
+        .and_then(serde_json::Value::as_array)
+        .cloned()
+        .or_else(|| value.as_array().cloned())
+        .unwrap_or_else(|| vec![value]);
+    let mut profiles = values
         .iter()
-        .flat_map(|profile| profile.enabled_mods.iter().cloned())
-        .collect::<Vec<_>>();
-    for profile in &profiles {
-        write_profile(game_path, profile)?;
+        .map(|value| profile_from_legacy_value(value, &installed))
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    if profiles.is_empty() {
+        bail!("No profiles found");
     }
-    let installed_names = installed_mod_names(game_path)
+    for profile in &mut profiles {
+        if profile.auto_deps {
+            profile.enabled_mods = expand_installed_dependencies(&installed, &profile.enabled_mods);
+        }
+    }
+    preview_profile_import(game_path, profiles, Vec::new())
+}
+
+pub fn commit_profile_import(
+    game_path: &str,
+    profiles: Vec<ModBlacklistProfile>,
+) -> anyhow::Result<ProfileImportResult> {
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let profiles = profiles
         .into_iter()
-        .map(|name| name.to_ascii_lowercase())
-        .collect::<HashSet<_>>();
-    Ok(ProfileImportResult {
-        profiles,
-        missing_mods: normalize_names(imported_names)
-            .into_iter()
-            .filter(|name| !installed_names.contains(&name.to_ascii_lowercase()))
-            .collect(),
-        missing_files,
-    })
+        .map(|mut profile| {
+            validate_profile_name(&profile.name)?;
+            if profile.auto_deps {
+                profile.enabled_mods =
+                    expand_installed_dependencies(&installed, &profile.enabled_mods);
+            }
+            profile.enabled_mods = normalize_names(profile.enabled_mods);
+            profile.auto_deps = false;
+            Ok(profile)
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let directory = profiles_directory(game_path);
+    fs::create_dir_all(&directory)?;
+    let transaction = directory.join(format!(".import-{}", std::process::id()));
+    fs::remove_dir_all(&transaction).ok();
+    fs::create_dir_all(&transaction)?;
+    let result: anyhow::Result<()> = (|| {
+        for profile in &profiles {
+            let contents = serde_json::to_string_pretty(&ExportedProfile {
+                format: PROFILE_FORMAT,
+                version: PROFILE_VERSION,
+                auto_deps: false,
+                profile,
+            })?;
+            fs::write(transaction.join(format!("{}.json", profile.name)), contents)?;
+        }
+        for profile in &profiles {
+            let source = transaction.join(format!("{}.json", profile.name));
+            let destination = profile_path(game_path, &profile.name)?;
+            fs::rename(source, destination)?;
+        }
+        Ok(())
+    })();
+    fs::remove_dir_all(transaction).ok();
+    result?;
+    preview_profile_import(game_path, profiles, Vec::new())
 }
 
 pub fn export_mod_profile(
     game_path: &str,
     profile_name: &str,
     destination: &str,
+    enabled_mods: Option<Vec<String>>,
+    auto_deps: bool,
 ) -> anyhow::Result<()> {
-    let profile = get_mod_blacklist_profiles(game_path)
+    let mut profile = get_mod_blacklist_profiles(game_path)
         .into_iter()
         .find(|profile| profile.name == profile_name)
         .context("Profile not found")?;
+    if let Some(enabled_mods) = enabled_mods {
+        profile.enabled_mods = normalize_names(enabled_mods);
+    }
+    profile.auto_deps = false;
     fs::write(
         destination,
         serde_json::to_string_pretty(&ExportedProfile {
             format: PROFILE_FORMAT,
             version: PROFILE_VERSION,
+            auto_deps,
             profile: &profile,
         })?,
     )?;
@@ -739,7 +896,8 @@ mod tests {
         fs::write(
             directory.join("Legacy.json"),
             r#"{"name":"Legacy","mods":[{"name":"Disabled.Mod","file":"Disabled.zip"}],"mod_options_order":["Disabled.zip"]}"#,
-        ).unwrap();
+        )
+        .unwrap();
         let profiles = get_mod_blacklist_profiles(&game_path);
         assert_eq!(profiles[0].name, "Legacy");
         assert!(profiles[0].enabled_mods.is_empty());
@@ -752,18 +910,19 @@ mod tests {
     }
 
     #[test]
-    fn imports_only_selected_olympus_presets() {
+    fn previewing_selected_olympus_presets_does_not_persist_them() {
         let game_path = test_game_path("olympus-selection");
         fs::write(
             Path::new(&game_path).join("Mods/modpresets.txt"),
             "**First\nMissingOne.zip\n**Second\nMissingTwo.zip\n",
         )
         .unwrap();
-        let imported = import_olympus_presets(&game_path, &["Second".to_string()]).unwrap();
-        assert_eq!(imported.profiles.len(), 1);
-        assert_eq!(imported.profiles[0].name, "Second");
-        assert!(profiles_directory(&game_path).join("Second.json").is_file());
-        assert!(!profiles_directory(&game_path).join("First.json").exists());
+        let preview = preview_olympus_profiles(&game_path, &["Second".to_string()]).unwrap();
+        assert_eq!(preview.profiles.len(), 1);
+        assert_eq!(preview.profiles[0].name, "Second");
+        assert_eq!(preview.profiles[0].enabled_mods, ["MissingTwo.zip"]);
+        assert_eq!(preview.missing_files, ["MissingTwo.zip"]);
+        assert!(!profiles_directory(&game_path).join("Second.json").exists());
         fs::remove_dir_all(game_path).unwrap();
     }
 
@@ -773,10 +932,12 @@ mod tests {
         let first = ModBlacklistProfile {
             name: "First".to_string(),
             enabled_mods: vec!["One".to_string()],
+            auto_deps: false,
         };
         let second = ModBlacklistProfile {
             name: "Second".to_string(),
             enabled_mods: vec!["Two".to_string()],
+            auto_deps: false,
         };
         write_profile(&game_path, &first).unwrap();
         write_profile(&game_path, &second).unwrap();
@@ -794,7 +955,7 @@ mod tests {
     }
 
     #[test]
-    fn imports_and_exports_v2_profiles() {
+    fn previews_then_commits_v2_profiles() {
         let game_path = test_game_path("transfer");
         let source = Path::new(&game_path).join("source.json");
         fs::write(
@@ -802,24 +963,200 @@ mod tests {
             r#"{"format":"celemod-profile","version":2,"name":"Imported","enabled_mods":["Missing.Mod"]}"#,
         )
         .unwrap();
-        let imported = import_mod_profiles(&game_path, source.to_str().unwrap()).unwrap();
-        assert_eq!(imported.profiles[0].name, "Imported");
-        assert_eq!(imported.missing_mods, ["Missing.Mod"]);
+        let preview = preview_mod_profiles(&game_path, source.to_str().unwrap()).unwrap();
+        assert_eq!(preview.profiles[0].name, "Imported");
+        assert_eq!(preview.missing_mods, ["Missing.Mod"]);
+        assert!(
+            !profiles_directory(&game_path)
+                .join("Imported.json")
+                .exists()
+        );
+        commit_profile_import(&game_path, preview.profiles).unwrap();
 
         let destination = Path::new(&game_path).join("exported.json");
-        export_mod_profile(&game_path, "Imported", destination.to_str().unwrap()).unwrap();
+        export_mod_profile(
+            &game_path,
+            "Imported",
+            destination.to_str().unwrap(),
+            None,
+            false,
+        )
+        .unwrap();
         let exported: serde_json::Value =
             serde_json::from_str(&fs::read_to_string(destination).unwrap()).unwrap();
         assert_eq!(exported["format"], PROFILE_FORMAT);
         assert_eq!(exported["enabled_mods"], serde_json::json!(["Missing.Mod"]));
         fs::remove_dir_all(game_path).unwrap();
     }
+
+    #[test]
+    fn previewing_inline_v2_profile_json_does_not_persist_it() {
+        let game_path = test_game_path("inline-transfer");
+        let preview = preview_mod_profiles_json(
+            &game_path,
+            r#"{"format":"celemod-profile","version":2,"name":"Linked","enabled_mods":["Missing.Mod"]}"#,
+        )
+        .unwrap();
+        assert_eq!(preview.profiles[0].name, "Linked");
+        assert_eq!(preview.missing_mods, ["Missing.Mod"]);
+        assert!(!profiles_directory(&game_path).join("Linked.json").exists());
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn previews_one_mod_name_per_line() {
+        let game_path = test_game_path("mod-list");
+        let source = Path::new(&game_path).join("Quick Match.txt");
+        fs::write(&source, "# comment\nCelesteNet.Client\nFrostHelper\n\n").unwrap();
+        let preview = preview_mod_profiles(&game_path, source.to_str().unwrap()).unwrap();
+        assert_eq!(preview.profiles[0].name, "Quick Match");
+        assert_eq!(
+            preview.profiles[0].enabled_mods,
+            ["CelesteNet.Client", "FrostHelper"]
+        );
+        assert!(
+            !profiles_directory(&game_path)
+                .join("Quick Match.json")
+                .exists()
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn expands_installed_required_dependencies() {
+        let installed = vec![
+            super::super::LocalMod {
+                game_banana_id: 1,
+                name: "Root.Mod".to_string(),
+                deps: vec![super::super::ModDependency {
+                    name: "Shared.Dependency".to_string(),
+                    version: "1.0.0".to_string(),
+                    optional: false,
+                }],
+                version: "1.0.0".to_string(),
+                file: "Root.Mod.zip".to_string(),
+                size: 0,
+                modified_at: 0,
+            },
+            super::super::LocalMod {
+                game_banana_id: 2,
+                name: "Shared.Dependency".to_string(),
+                deps: Vec::new(),
+                version: "1.0.0".to_string(),
+                file: "Shared.Dependency.zip".to_string(),
+                size: 0,
+                modified_at: 0,
+            },
+        ];
+        assert_eq!(
+            expand_installed_dependencies(&installed, &["Root.Mod".to_string()]),
+            ["Root.Mod", "Shared.Dependency"]
+        );
+    }
+
+    #[test]
+    fn excludes_everest_virtual_dependencies() {
+        let installed = vec![super::super::LocalMod {
+            game_banana_id: 1,
+            name: "Root.Mod".to_string(),
+            deps: vec![
+                super::super::ModDependency {
+                    name: "Everest".to_string(),
+                    version: "1.0.0".to_string(),
+                    optional: false,
+                },
+                super::super::ModDependency {
+                    name: "EverestCore".to_string(),
+                    version: "1.0.0".to_string(),
+                    optional: false,
+                },
+            ],
+            version: "1.0.0".to_string(),
+            file: "Root.Mod.zip".to_string(),
+            size: 0,
+            modified_at: 0,
+        }];
+        assert_eq!(
+            expand_installed_dependencies(&installed, &["Root.Mod".to_string()]),
+            ["Root.Mod"]
+        );
+    }
+
+    #[test]
+    fn auto_deps_is_preserved_until_commit() {
+        let game_path = test_game_path("auto-deps");
+        let preview = preview_mod_profiles_json(
+            &game_path,
+            r#"{"format":"celemod-profile","version":2,"auto_deps":true,"name":"Linked","enabled_mods":["Root.Mod"]}"#,
+        )
+        .unwrap();
+        assert!(preview.profiles[0].auto_deps);
+        assert!(!profiles_directory(&game_path).join("Linked.json").exists());
+        commit_profile_import(&game_path, preview.profiles).unwrap();
+        let stored: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(profiles_directory(&game_path).join("Linked.json")).unwrap(),
+        )
+        .unwrap();
+        assert!(stored.get("auto_deps").is_none());
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn invalid_profile_in_batch_writes_nothing() {
+        let game_path = test_game_path("atomic-validation");
+        let result = commit_profile_import(
+            &game_path,
+            vec![
+                ModBlacklistProfile {
+                    name: "Valid".to_string(),
+                    enabled_mods: vec!["One".to_string()],
+                    auto_deps: false,
+                },
+                ModBlacklistProfile {
+                    name: "../Invalid".to_string(),
+                    enabled_mods: vec!["Two".to_string()],
+                    auto_deps: false,
+                },
+            ],
+        );
+        assert!(result.is_err());
+        assert!(!profiles_directory(&game_path).join("Valid.json").exists());
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn preview_without_commit_leaves_existing_profile_unchanged() {
+        let game_path = test_game_path("failed-download");
+        write_profile(
+            &game_path,
+            &ModBlacklistProfile {
+                name: "Existing".to_string(),
+                enabled_mods: vec!["Old.Mod".to_string()],
+                auto_deps: false,
+            },
+        )
+        .unwrap();
+        let before =
+            fs::read_to_string(profiles_directory(&game_path).join("Existing.json")).unwrap();
+        let preview = preview_mod_profiles_json(
+            &game_path,
+            r#"{"format":"celemod-profile","version":2,"name":"Existing","enabled_mods":["Missing.Mod"]}"#,
+        )
+        .unwrap();
+        assert_eq!(preview.missing_mods, ["Missing.Mod"]);
+        let after =
+            fs::read_to_string(profiles_directory(&game_path).join("Existing.json")).unwrap();
+        assert_eq!(after, before);
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
     #[test]
     fn olympus_parser_reports_unknown_files() {
         let game_path = test_game_path("olympus");
         let (profiles, missing) =
             parse_olympus_presets(&game_path, "**Test\nMissing.zip\n").unwrap();
         assert_eq!(profiles[0].name, "Test");
+        assert_eq!(profiles[0].enabled_mods, ["Missing.zip"]);
         assert_eq!(missing, ["Missing.zip"]);
         fs::remove_dir_all(game_path).unwrap();
     }

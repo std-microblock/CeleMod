@@ -747,7 +747,7 @@
 
 .profile-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 22px auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   min-height: 29px;
   padding: 0 5px 0 10px;
@@ -813,6 +813,362 @@
   color: #ff8d8a;
 }
 
+.profile-export-wrap {
+  display: flex;
+}
+
+.profile-import-progress-popup .content,
+.profile-install-progress-popup .content {
+  display: flex;
+  min-width: 260px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-install-confirm-popup {
+  width: min(560px, calc(100vw - 64px));
+  text-align: left;
+
+  > .content {
+    display: grid;
+    max-height: min(520px, calc(100vh - 220px));
+    margin-bottom: 18px;
+    gap: 12px;
+    overflow: auto;
+  }
+
+  section {
+    display: grid;
+    padding: 11px 12px;
+    gap: 5px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-radius: 9px;
+    background: color.change(theme.$bg2, $alpha: 0.72);
+    overflow-wrap: anywhere;
+
+    h4 {
+      margin: 0;
+      color: theme.$fg2;
+      font-size: 12px;
+    }
+
+    &.failed {
+      border-color: color.change(#ff8d8a, $alpha: 0.45);
+      color: #ff8d8a;
+    }
+  }
+
+  > .buttons {
+    justify-content: flex-end;
+  }
+}
+
+.profile-install-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  strong {
+    overflow-wrap: anywhere;
+  }
+
+  span {
+    flex: 0 0 auto;
+    color: theme.$fg3;
+  }
+}
+
+.profile-install-discovered {
+  max-width: 420px;
+  color: theme.$fg3;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.profile-mod-list-popup,
+.profile-export-popup {
+  width: min(720px, calc(100vw - 64px));
+
+  .content {
+    display: grid;
+    gap: 14px;
+  }
+}
+
+.profile-editor-field {
+  display: grid;
+  gap: 7px;
+
+  > label,
+  .profile-editor-label-row label {
+    color: theme.$fg2;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  input,
+  textarea {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.12);
+    border-radius: 9px;
+    background: theme.$bg2;
+    color: theme.$fg;
+  }
+
+  input {
+    height: 36px;
+    padding: 0 11px;
+  }
+
+  textarea {
+    min-height: 190px;
+    padding: 11px;
+    resize: vertical;
+    line-height: 24px;
+    white-space: pre;
+    color: theme.$fg;
+    font: 12px/24px ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+}
+
+.profile-editor-label-row,
+.profile-export-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  span,
+  small {
+    color: theme.$fg3;
+    font-size: 11px;
+  }
+}
+
+.profile-inline-editor {
+  position: relative;
+}
+
+.profile-inline-checks {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  width: 0;
+  overflow: visible;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.profile-inline-check {
+  position: absolute;
+  top: calc(var(--line-index, 0) * 24px);
+  display: inline-flex;
+  width: max-content;
+  height: 18px;
+  padding: 0 6px;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid color.change(#65c477, $alpha: 0.32);
+  border-radius: 99px;
+  background: color.change(theme.$bg1, $alpha: 0.94);
+  color: #65c477;
+  font-size: 9px;
+  line-height: 18px;
+  white-space: nowrap;
+
+  .icon {
+    width: 9px;
+    fill: currentColor;
+  }
+
+  &.missing,
+  &.version-mismatch {
+    border-color: color.change(#e8a95f, $alpha: 0.38);
+    color: #e8a95f;
+  }
+}
+
+.profile-editor-hint {
+  color: theme.$fg3;
+  font-size: 11px;
+}
+
+.profile-inline-option {
+  display: flex;
+  padding: 10px 12px;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-radius: 9px;
+  background: color.change(theme.$bg2, $alpha: 0.72);
+
+  span {
+    display: grid;
+    gap: 2px;
+  }
+
+  small {
+    color: theme.$fg3;
+  }
+}
+
+.profile-export-popup {
+  width: min(680px, calc(100vw - 64px));
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+
+  > .content {
+    display: grid;
+    margin: 0;
+    padding: 18px 22px;
+    gap: 14px;
+  }
+}
+
+.profile-export-header {
+  display: flex;
+  min-height: 74px;
+  padding: 18px 22px;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  background: linear-gradient(
+    135deg,
+    color.change(theme.$primary, $alpha: 0.15),
+    transparent 55%
+  );
+
+  .title {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+
+  span {
+    color: theme.$fg3;
+    font-size: 11px;
+  }
+}
+
+.profile-export-count {
+  display: grid;
+  min-width: 58px;
+  text-align: right;
+
+  strong {
+    color: theme.$primary;
+    font-size: 22px;
+  }
+}
+
+.profile-export-tabs {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: 9px;
+  background: theme.$bg2;
+
+  button {
+    flex: 1;
+    min-height: 32px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
+    color: theme.$fg3;
+    font-size: 11px;
+
+    &.selected {
+      background: color.change(theme.$primary, $alpha: 0.18);
+      color: theme.$fg;
+    }
+  }
+}
+
+.profile-export-options {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 18px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: theme.$fg2;
+    font-size: 11px;
+  }
+}
+
+.profile-export-preview {
+  overflow: hidden;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  border-radius: 10px;
+  background: color.change(#090909, $alpha: 0.72);
+
+  textarea {
+    width: 100%;
+    min-height: 260px;
+    max-height: 390px;
+    padding: 13px 15px;
+    box-sizing: border-box;
+    border: 0;
+    resize: vertical;
+    outline: 0;
+    background: transparent;
+    color: theme.$fg2;
+    font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+}
+
+.profile-export-preview-bar {
+  display: flex;
+  height: 34px;
+  padding: 0 8px 0 13px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  color: theme.$fg3;
+  font-size: 10px;
+
+  button {
+    min-height: 24px;
+    padding: 0 9px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: theme.$primary;
+  }
+}
+
+.profile-link-copy-row {
+  display: flex;
+  gap: 8px;
+
+  button {
+    flex: 1;
+    min-height: 32px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.09);
+    background: theme.$bg2;
+    color: theme.$fg2;
+  }
+}
+
+.profile-export-actions {
+  justify-content: flex-end !important;
+  margin: 0 !important;
+  padding: 14px 18px;
+  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+
+  .primary {
+    background: theme.$primary;
+    color: #fff;
+  }
+}
 .profile-import-wrap {
   position: relative;
   display: flex;

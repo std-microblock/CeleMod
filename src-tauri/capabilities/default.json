@@ -11,6 +11,7 @@
     "core:window:allow-toggle-maximize",
     "core:webview:allow-set-webview-zoom",
     "window-controls:default",
+    "deep-link:allow-get-current",
     "dialog:allow-open",
     "dialog:allow-save",
     {

@@ -30,6 +30,13 @@
       "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost https:"
     }
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["celemod"]
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

@@ -51,6 +51,7 @@ interface DownloadOptions {
   force?: boolean;
   autoDisableNewMods?: boolean;
   ownerId?: string;
+  deferProfileUpdate?: boolean;
   onProgress?: (task: Download.TaskInfo, progress: number) => void;
   onFinished?: (task: Download.TaskInfo) => void;
   onFailed?: (task: Download.TaskInfo, error: string) => void;
@@ -95,15 +96,18 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       onProgress,
       onFinished,
       onFailed,
+      deferProfileUpdate = false,
     } = options;
     const appState = useAppStore.getState();
-    const downloadTypeDefaults = {
-      ...appState.downloadTypeDefaults,
-      __default:
-        autoDisableNewMods === undefined
-          ? appState.downloadDefaultEnabled
-          : !autoDisableNewMods,
-    };
+    const downloadTypeDefaults = deferProfileUpdate
+      ? { ...appState.downloadTypeDefaults, __default: true }
+      : {
+          ...appState.downloadTypeDefaults,
+          __default:
+            autoDisableNewMods === undefined
+              ? appState.downloadDefaultEnabled
+              : !autoDisableNewMods,
+        };
     const existingTask = get().tasks[name];
 
     let url: string;
@@ -263,8 +267,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         url,
         `${appState.gamePath}/Mods/`,
         JSON.stringify(downloadTypeDefaults),
-        appState.profileEnabled,
-        appState.currentProfileName,
+        deferProfileUpdate ? false : appState.profileEnabled,
+        deferProfileUpdate ? "" : appState.currentProfileName,
         JSON.stringify(appState.alwaysOnMods),
         onDownloadEvent,
         false,

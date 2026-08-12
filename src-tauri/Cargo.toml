@@ -20,6 +20,8 @@ tauri-plugin-http = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-system-symbols = "0.3"
 tauri-plugin-window-controls = "0.1"
+tauri-plugin-deep-link = "2.4.9"
+
 game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 lazy_static = "1"
 anyhow = "1"
@@ -44,6 +46,8 @@ sha2 = "0.10"
 url = "2"
 webpki-roots = "1"
 whoami = "1"
+[target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = { version = "2.4.3", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["wincon", "consoleapi", "libloaderapi", "winuser"] }

@@ -47,6 +47,7 @@ const icons: Record<string, IconType> = {
   flag: FaFlag,
   image: FaImage,
   import: FaFileImport,
+  download: FaDownload,
   heart: FaHeart,
   eye: FaEye,
   clock: FaClock,
