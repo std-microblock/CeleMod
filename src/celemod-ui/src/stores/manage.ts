@@ -496,6 +496,8 @@ export const selectVisibleRootNames = ({
     }
     return true;
   };
+  const getSortName = (name: string) =>
+    displayNames?.[name]?.primaryName.trim() || name;
   return Object.values(nodes)
     .filter(matches)
     .filter((node) => {
@@ -503,7 +505,10 @@ export const selectVisibleRootNames = ({
       return !node.dependedBy.some((dependent) => Boolean(nodes[dependent]));
     })
     .map((node) => node.name)
-    .sort((a, b) => a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase()));
+    .sort(
+      (a, b) =>
+        getSortName(a).localeCompare(getSortName(b)) || a.localeCompare(b),
+    );
 };
 
 export const excludedDependencyNames = EXCLUDED_DEPENDENCIES;
