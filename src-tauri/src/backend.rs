@@ -2463,6 +2463,35 @@ fn enable_installed_local_mods(
     Ok(())
 }
 
+fn collect_required_installed_mods(
+    root_names: &[String],
+    installed: &[LocalMod],
+) -> Vec<(String, String)> {
+    let installed_by_name = installed
+        .iter()
+        .map(|item| (item.name.as_str(), item))
+        .collect::<HashMap<_, _>>();
+    let mut result = Vec::new();
+    let mut visited = HashSet::new();
+    let mut pending = root_names.to_vec();
+    while let Some(name) = pending.pop() {
+        if !visited.insert(name.clone()) {
+            continue;
+        }
+        let Some(item) = installed_by_name.get(name.as_str()) else {
+            continue;
+        };
+        result.push((item.name.clone(), item.file.clone()));
+        pending.extend(
+            item.deps
+                .iter()
+                .filter(|dependency| !dependency.optional)
+                .map(|dependency| dependency.name.clone()),
+        );
+    }
+    result
+}
+
 #[cfg(test)]
 mod local_package_tests {
     use super::*;
@@ -2931,6 +2960,59 @@ mod local_package_tests {
                 .lines()
                 .any(|line| line.trim().eq_ignore_ascii_case(&installed.1)),
             "enabled Mod must not be blacklisted"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn enabling_downloaded_mod_also_enables_installed_required_dependencies() {
+        let root = test_dir("download-default-enable-dependencies");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        blacklist::new_mod_blacklist_profile(&game_path_string, "Default").unwrap();
+        blacklist::apply_mod_blacklist_profiles(&game_path_string, &["Default".into()], &[])
+            .unwrap();
+
+        let dependency_package = root.join("Dependency.zip");
+        write_zip(
+            &dependency_package,
+            &[("everest.yaml", b"- Name: Dependency\n  Version: 1.0.0\n")],
+        );
+        install_local_mod(&game_path, &dependency_package).unwrap();
+
+        let root_package = root.join("Root.zip");
+        write_zip(
+            &root_package,
+            &[(
+                "everest.yaml",
+                b"- Name: Root\n  Version: 1.0.0\n  Dependencies:\n    - Name: Dependency\n      Version: 1.0.0\n",
+            )],
+        );
+        install_local_mod(&game_path, &root_package).unwrap();
+
+        let installed = get_installed_mods_sync(game_path.join("Mods").to_string_lossy().into());
+        let enabled = collect_required_installed_mods(&["Root".to_string()], &installed);
+        enable_installed_local_mods(&game_path_string, &enabled, true, "Default", &[]).unwrap();
+
+        let profiles = blacklist::get_mod_blacklist_profiles(&game_path_string);
+        let default_profile = profiles
+            .iter()
+            .find(|profile| profile.name == "Default")
+            .unwrap();
+        assert!(
+            default_profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == "Root")
+        );
+        assert!(
+            default_profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == "Dependency")
         );
 
         fs::remove_dir_all(root).unwrap();
@@ -4522,9 +4604,16 @@ fn download_mod(
             ) {
                 eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
             }
+            let enabled_with_dependencies = collect_required_installed_mods(
+                &to_enable
+                    .iter()
+                    .map(|(name, _)| name.clone())
+                    .collect::<Vec<_>>(),
+                &installed,
+            );
             if let Err(error) = enable_installed_local_mods(
                 &game_path,
-                &to_enable,
+                &enabled_with_dependencies,
                 profile_enabled,
                 &current_profile_name,
                 &always_on_mods,
