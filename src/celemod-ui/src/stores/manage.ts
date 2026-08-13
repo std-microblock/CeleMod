@@ -27,7 +27,7 @@ export const resolveManageDisplayNames = (
   modName: string,
   comment: string | undefined,
   submissionName: string | undefined,
-  autoUseSubmissionName: boolean
+  autoUseSubmissionName: boolean,
 ): ManageDisplayNames => {
   const normalizedComment = comment?.trim() ?? "";
   const normalizedSubmissionName = submissionName?.trim() ?? "";
@@ -142,7 +142,7 @@ export const useManageStore = create<ManageTreeState>()(
               current.duplicateFiles.push(file);
               const versionOrder = compareVersion(mod.version, current.version);
               const currentFile = current.duplicateFiles.find(
-                (item) => item.file === current.file
+                (item) => item.file === current.file,
               );
               if (
                 versionOrder > 0 ||
@@ -270,8 +270,8 @@ export const useManageStore = create<ManageTreeState>()(
         expanded: state.expanded,
         filters: state.filters,
       }),
-    }
-  )
+    },
+  ),
 );
 
 const EXCLUDED_DEPENDENCIES = new Set(["Everest", "Celeste", "EverestCore"]);
@@ -283,11 +283,11 @@ const ALTERNATIVE_MODS = [
 
 export const alternativesCovering = (
   name: string,
-  nodes: Record<string, ManageNode>
+  nodes: Record<string, ManageNode>,
 ) => {
   if (!ALTERNATIVE_MODS.includes(name)) return [];
   return ALTERNATIVE_MODS.filter(
-    (alternative) => alternative !== name && nodes[alternative]?.enabled
+    (alternative) => alternative !== name && nodes[alternative]?.enabled,
   );
 };
 
@@ -311,7 +311,7 @@ const compareVersion = (left: string, right: string) => {
 export const getDependencyHealth = (
   name: string,
   nodes: Record<string, ManageNode>,
-  includeOptional: boolean
+  includeOptional: boolean,
 ): ManageDependencyHealth => {
   if (!nodes[name]?.enabled) return { status: "healthy", messages: [] };
   const messages: string[] = [];
@@ -344,7 +344,7 @@ export const getDependencyHealth = (
       if (compareVersion(installed.version, dependency.version) < 0) {
         merge(
           "version",
-          `${dependency.name} ${installed.version} < ${dependency.version}`
+          `${dependency.name} ${installed.version} < ${dependency.version}`,
         );
       }
       if (!installed.enabled && !covered) {
@@ -400,7 +400,7 @@ export const collectSwitchNames = ({
           (dependent) =>
             dependent !== name &&
             nodes[dependent]?.enabled &&
-            !result.has(dependent)
+            !result.has(dependent),
         );
         if (!hasOtherEnabledDependent) visit(dependency.name);
       }
@@ -425,14 +425,14 @@ export const selectDefaultOrphanNames = ({
     alwaysOnMods.flatMap((name) => {
       const file = nodes[name]?.file;
       return file ? [file] : [];
-    })
+    }),
   );
   return names.filter((name) => {
     const node = nodes[name];
     return Boolean(
       node?.meta?.category &&
-        allowedTypes.includes(node.meta.category) &&
-        !alwaysOnFiles.has(node.file)
+      allowedTypes.includes(node.meta.category) &&
+      !alwaysOnFiles.has(node.file),
     );
   });
 };
@@ -507,7 +507,7 @@ export const selectVisibleRootNames = ({
     .map((node) => node.name)
     .sort(
       (a, b) =>
-        getSortName(a).localeCompare(getSortName(b)) || a.localeCompare(b)
+        getSortName(a).localeCompare(getSortName(b)) || a.localeCompare(b),
     );
 };
 

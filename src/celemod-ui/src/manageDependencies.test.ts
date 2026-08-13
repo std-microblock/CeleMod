@@ -37,7 +37,7 @@ test("disables an unclassified orphan dependency", () => {
       includeOptional: false,
       autoDisableTypes: [],
     }),
-    ["Root", "UnclassifiedDependency"]
+    ["Root", "UnclassifiedDependency"],
   );
 });
 
@@ -73,6 +73,6 @@ test("keeps a categorized dependency excluded by the orphan type setting", () =>
       includeOptional: false,
       autoDisableTypes: [],
     }),
-    ["Root"]
+    ["Root"],
   );
 });
