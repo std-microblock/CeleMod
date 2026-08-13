@@ -2696,13 +2696,10 @@ mod local_package_tests {
     fn uses_a_custom_loenn_install_root() {
         let root = test_dir("custom-loenn-root");
         let root_string = root.to_string_lossy().into_owned();
-        let install_dir = loenn_install_dir(&root_string).unwrap();
-        assert_eq!(install_dir, root.join("current"));
-
-        fs::create_dir_all(&install_dir).unwrap();
-        fs::write(install_dir.join("Loenn.exe"), b"executable").unwrap();
+        // New layout: the install lives directly under the chosen root (no `/current`).
+        fs::write(root.join("Loenn.exe"), b"executable").unwrap();
         fs::write(
-            install_dir.join("celemod-loenn.json"),
+            root.join("celemod-loenn.json"),
             serde_json::to_vec(&LoennInstallMetadata {
                 version: "test-version".to_string(),
                 executable: "Loenn.exe".to_string(),
@@ -2714,11 +2711,72 @@ mod local_package_tests {
         let state = get_loenn_state_impl(&root_string);
         assert!(state.installed);
         assert_eq!(state.version.as_deref(), Some("test-version"));
+        assert_eq!(state.path.as_deref(), Some(root.to_string_lossy().as_ref()));
+        assert!(loenn_root_dir("relative/path").is_err());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn detects_legacy_loenn_install_under_current() {
+        let root = test_dir("legacy-loenn-root");
+        let root_string = root.to_string_lossy().into_owned();
+        let legacy = root.join("current");
+        fs::create_dir_all(&legacy).unwrap();
+        fs::write(legacy.join("Loenn.exe"), b"executable").unwrap();
+        fs::write(
+            legacy.join("celemod-loenn.json"),
+            serde_json::to_vec(&LoennInstallMetadata {
+                version: "legacy-version".to_string(),
+                executable: "Loenn.exe".to_string(),
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        let state = get_loenn_state_impl(&root_string);
+        assert!(state.installed);
+        assert_eq!(state.version.as_deref(), Some("legacy-version"));
         assert_eq!(
             state.path.as_deref(),
-            Some(install_dir.to_string_lossy().as_ref())
+            Some(legacy.to_string_lossy().as_ref())
         );
-        assert!(loenn_root_dir("relative/path").is_err());
+        assert_eq!(
+            managed_loenn_executable(&root).unwrap(),
+            legacy.join("Loenn.exe")
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn adopts_an_existing_loenn_install_without_metadata() {
+        let root = test_dir("adopted-loenn-root");
+        let root_string = root.to_string_lossy().into_owned();
+
+        #[cfg(target_os = "windows")]
+        let expected = {
+            fs::write(root.join("L\u{00f6}nn.exe"), b"executable").unwrap();
+            root.join("L\u{00f6}nn.exe")
+        };
+        #[cfg(target_os = "linux")]
+        let expected = {
+            fs::write(root.join("Loenn.AppImage"), b"executable").unwrap();
+            root.join("Loenn.AppImage")
+        };
+        #[cfg(target_os = "macos")]
+        let expected = {
+            let inner = root.join("L\u{00f6}nn.app").join("Contents/MacOS");
+            fs::create_dir_all(&inner).unwrap();
+            fs::write(inner.join("love"), b"executable").unwrap();
+            inner.join("love")
+        };
+
+        assert_eq!(detect_loenn_executable(&root), Some(expected.clone()));
+        let state = get_loenn_state_impl(&root_string);
+        assert!(state.installed);
+        assert_eq!(state.version, None);
+        assert_eq!(state.path.as_deref(), Some(root.to_string_lossy().as_ref()));
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -3135,8 +3193,13 @@ fn loenn_root_dir(install_root: &str) -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-fn loenn_install_dir(install_root: &str) -> anyhow::Result<PathBuf> {
-    Ok(loenn_root_dir(install_root)?.join("current"))
+const LOENN_METADATA_FILE: &str = "celemod-loenn.json";
+
+fn read_loenn_metadata_at(install_dir: &Path) -> anyhow::Result<LoennInstallMetadata> {
+    let metadata_path = install_dir.join(LOENN_METADATA_FILE);
+    let metadata = std::fs::read_to_string(&metadata_path)
+        .with_context(|| format!("Failed to read {}", metadata_path.display()))?;
+    serde_json::from_str(&metadata).context("Invalid Loenn installation metadata")
 }
 
 fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
@@ -3151,35 +3214,97 @@ fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
     Ok(path.to_path_buf())
 }
 
-fn read_loenn_metadata(install_root: &str) -> anyhow::Result<LoennInstallMetadata> {
-    let metadata_path = loenn_install_dir(install_root)?.join("celemod-loenn.json");
-    let metadata = std::fs::read_to_string(&metadata_path)
-        .with_context(|| format!("Failed to read {}", metadata_path.display()))?;
-    serde_json::from_str(&metadata).context("Invalid Loenn installation metadata")
+/// Resolves the executable of a CeleMod-managed Lönn install. The current layout
+/// keeps everything directly under `root`; older CeleMod builds nested it under
+/// `root/current`, so fall back to that for forward compatibility.
+fn managed_loenn_executable(root: &Path) -> Option<PathBuf> {
+    let legacy = root.join("current");
+    for install_dir in [root, legacy.as_path()] {
+        if let Ok(metadata) = read_loenn_metadata_at(install_dir) {
+            if let Ok(relative) = safe_relative_path(&metadata.executable) {
+                let executable = install_dir.join(relative);
+                if executable.is_file() {
+                    return Some(executable);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Best-effort detection of an existing Lönn install CeleMod did not create (no
+/// `celemod-loenn.json`), so the user can adopt a folder they already have.
+fn detect_loenn_executable(dir: &Path) -> Option<PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        for name in ["L\u{00f6}nn.exe", "Lonn.exe"] {
+            let candidate = dir.join(name);
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let is_appimage = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.ends_with(".AppImage"));
+                if path.is_file() && is_appimage {
+                    return Some(path);
+                }
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let candidate = dir.join("L\u{00f6}nn.app").join("Contents/MacOS/love");
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    None
 }
 
 fn get_loenn_state_impl(install_root: &str) -> LoennState {
-    let Ok(install_dir) = loenn_install_dir(install_root) else {
+    let Ok(root) = loenn_root_dir(install_root) else {
         return LoennState {
             installed: false,
             version: None,
             path: None,
         };
     };
-    let Ok(metadata) = read_loenn_metadata(install_root) else {
+
+    let legacy = root.join("current");
+    for install_dir in [root.as_path(), legacy.as_path()] {
+        if let Ok(metadata) = read_loenn_metadata_at(install_dir) {
+            let executable = safe_relative_path(&metadata.executable)
+                .ok()
+                .map(|relative| install_dir.join(relative));
+            return LoennState {
+                installed: executable.as_ref().is_some_and(|path| path.is_file()),
+                version: Some(metadata.version),
+                path: Some(install_dir.to_string_lossy().into_owned()),
+            };
+        }
+    }
+
+    // Adopt an existing install: recognizable executable, no CeleMod metadata.
+    if detect_loenn_executable(&root).is_some() {
         return LoennState {
-            installed: false,
+            installed: true,
             version: None,
-            path: Some(install_dir.to_string_lossy().to_string()),
+            path: Some(root.to_string_lossy().into_owned()),
         };
-    };
-    let executable = safe_relative_path(&metadata.executable)
-        .ok()
-        .map(|path| install_dir.join(path));
+    }
+
     LoennState {
-        installed: executable.as_ref().is_some_and(|path| path.is_file()),
-        version: Some(metadata.version),
-        path: Some(install_dir.to_string_lossy().to_string()),
+        installed: false,
+        version: None,
+        path: Some(root.to_string_lossy().into_owned()),
     }
 }
 
@@ -3244,15 +3369,24 @@ fn install_loenn(
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
     let root = loenn_root_dir(install_root)?;
-    std::fs::create_dir_all(&root)?;
-    let download_path = root.join("loenn.download");
-    let staging_dir = root.join("installing");
-    if download_path.exists() {
-        std::fs::remove_file(&download_path)?;
-    }
-    if staging_dir.exists() {
-        std::fs::remove_dir_all(&staging_dir)?;
-    }
+    let parent = root
+        .parent()
+        .context("Loenn install path must be inside a directory")?;
+    std::fs::create_dir_all(parent)?;
+
+    // Stage the download and extraction in a workspace beside `root` so the final
+    // swap (rename) stays on the same filesystem; cross-volume renames are not atomic.
+    let unique = format!(
+        "{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let workspace = parent.join(format!(".celemod-loenn-{unique}"));
+    let download_path = workspace.join("loenn.download");
+    let staging_dir = workspace.join("installing");
     std::fs::create_dir_all(&staging_dir)?;
 
     let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -3307,19 +3441,24 @@ fn install_loenn(
         executable: executable.to_string(),
     };
     std::fs::write(
-        staging_dir.join("celemod-loenn.json"),
+        staging_dir.join(LOENN_METADATA_FILE),
         serde_json::to_vec_pretty(&metadata)?,
     )?;
 
-    let install_dir = loenn_install_dir(install_root)?;
-    if install_dir.exists() {
-        std::fs::remove_dir_all(&install_dir)
-            .context("Failed to replace Loenn. Close Loenn and try again")?;
+    if root.exists() {
+        let backup = parent.join(format!(".celemod-loenn-backup-{unique}"));
+        std::fs::rename(&root, &backup)
+            .context("Failed to move the existing Loenn install aside")?;
+        if let Err(error) = std::fs::rename(&staging_dir, &root) {
+            let _ = std::fs::rename(&backup, &root);
+            return Err(error).context("Failed to move the staged Loenn install into place");
+        }
+        let _ = std::fs::remove_dir_all(&backup);
+    } else {
+        std::fs::rename(&staging_dir, &root)
+            .context("Failed to move the staged Loenn install into place")?;
     }
-    std::fs::rename(&staging_dir, &install_dir)?;
-    if download_path.exists() {
-        let _ = std::fs::remove_file(&download_path);
-    }
+    let _ = std::fs::remove_dir_all(&workspace);
     progress_callback("install".to_string(), 100.0);
     Ok(())
 }
@@ -3386,11 +3525,11 @@ fn download_and_install_loenn(
 
 #[tauri::command]
 fn start_loenn(install_root: String) -> Result<(), String> {
-    let install_dir = loenn_install_dir(&install_root).map_err(|error| format!("{error:#}"))?;
-    let metadata = read_loenn_metadata(&install_root).map_err(|error| format!("{error:#}"))?;
-    let executable = install_dir
-        .join(safe_relative_path(&metadata.executable).map_err(|error| format!("{error:#}"))?);
-    let working_dir = executable.parent().unwrap_or(&install_dir);
+    let root = loenn_root_dir(&install_root).map_err(|error| format!("{error:#}"))?;
+    let executable = managed_loenn_executable(&root)
+        .or_else(|| detect_loenn_executable(&root))
+        .ok_or_else(|| format!("No Lönn executable found in {}", root.display()))?;
+    let working_dir = executable.parent().unwrap_or(&root);
     std::process::Command::new(&executable)
         .current_dir(working_dir)
         .spawn()

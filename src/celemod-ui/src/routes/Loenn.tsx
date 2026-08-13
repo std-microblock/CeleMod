@@ -195,7 +195,9 @@ export const Loenn = () => {
           <div className="local-version">
             <span className="label">{_i18n.t("本地版本")}</span>
             <strong>
-              {localState?.installed ? localState.version : _i18n.t("尚未安装")}
+              {localState?.installed
+                ? (localState.version ?? "—")
+                : _i18n.t("尚未安装")}
             </strong>
             {localState?.installed ? (
               <span className="installed">
