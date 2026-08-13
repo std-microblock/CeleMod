@@ -1892,6 +1892,14 @@ export const Manage = () => {
                     <label>
                       <input
                         type="checkbox"
+                        checked={rootOnly}
+                        onChange={(event) => setRootOnly(event.target.checked)}
+                      />
+                      {_i18n.t("只显示不被依赖的Mod")}
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
                         checked={filters.showHiddenTypes}
                         onChange={(event) =>
                           setShowHiddenTypes(event.target.checked)
