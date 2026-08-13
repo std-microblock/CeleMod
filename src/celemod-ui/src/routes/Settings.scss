@@ -88,6 +88,10 @@
     input {
       transform: scale(1.08);
     }
+    &.disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
   }
 
   .font-scale-row {

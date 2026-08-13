@@ -25,14 +25,16 @@ const SettingToggle = ({
   title,
   description,
   checked,
+  disabled = false,
   onChange,
 }: {
   title: string;
   description: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (value: boolean) => void;
 }) => (
-  <label className="setting-toggle-row">
+  <label className={`setting-toggle-row${disabled ? " disabled" : ""}`}>
     <span>
       <strong>{title}</strong>
       <small>{description}</small>
@@ -40,6 +42,7 @@ const SettingToggle = ({
     <input
       type="checkbox"
       checked={checked}
+      disabled={disabled}
       onChange={(event) => onChange(event.target.checked)}
     />
   </label>
@@ -71,7 +74,7 @@ const TypeSelectionSetting = ({
               onChange(
                 selected
                   ? selectedTypes.filter((value) => value !== type)
-                  : [...selectedTypes, type],
+                  : [...selectedTypes, type]
               )
             }
           >
@@ -97,10 +100,10 @@ const FontScaleSwitch = ({
   onChange: (value: FontScale) => void;
 }) => {
   const [customSelected, setCustomSelected] = useState(
-    !FONT_SCALE_PRESETS.includes(value as (typeof FONT_SCALE_PRESETS)[number]),
+    !FONT_SCALE_PRESETS.includes(value as (typeof FONT_SCALE_PRESETS)[number])
   );
   const presetSelected = FONT_SCALE_PRESETS.includes(
-    value as (typeof FONT_SCALE_PRESETS)[number],
+    value as (typeof FONT_SCALE_PRESETS)[number]
   );
   const showCustom = customSelected || !presetSelected;
 
@@ -167,16 +170,16 @@ export const Settings = () => {
   const [cacheError, setCacheError] = useState("");
 
   const downloadDefaultEnabled = useAppStore(
-    (state) => state.downloadDefaultEnabled,
+    (state) => state.downloadDefaultEnabled
   );
   const downloadTypeDefaults = useAppStore(
-    (state) => state.downloadTypeDefaults,
+    (state) => state.downloadTypeDefaults
   );
   const setDownloadDefaultsAll = useAppStore(
-    (state) => state.setDownloadDefaultsAll,
+    (state) => state.setDownloadDefaultsAll
   );
   const setDownloadTypeDefault = useAppStore(
-    (state) => state.setDownloadTypeDefault,
+    (state) => state.setDownloadTypeDefault
   );
   const checkOptionalDep = useAppStore((state) => state.checkOptionalDep);
   const setCheckOptionalDep = useAppStore((state) => state.setCheckOptionalDep);
@@ -185,34 +188,34 @@ export const Settings = () => {
   const showDetailed = useAppStore((state) => state.showDetailed);
   const setShowDetailed = useAppStore((state) => state.setShowDetailed);
   const autoUseSubmissionNameAsComment = useAppStore(
-    (state) => state.autoUseSubmissionNameAsComment,
+    (state) => state.autoUseSubmissionNameAsComment
   );
   const setAutoUseSubmissionNameAsComment = useAppStore(
-    (state) => state.setAutoUseSubmissionNameAsComment,
+    (state) => state.setAutoUseSubmissionNameAsComment
   );
   const modPageSource = useAppStore((state) => state.modPageSource);
   const setModPageSource = useAppStore((state) => state.setModPageSource);
   const autoToggleDependencies = useAppStore(
-    (state) => state.autoToggleDependencies,
+    (state) => state.autoToggleDependencies
   );
   const setAutoToggleDependencies = useAppStore(
-    (state) => state.setAutoToggleDependencies,
+    (state) => state.setAutoToggleDependencies
   );
   const autoToggleOptionalDependencies = useAppStore(
-    (state) => state.autoToggleOptionalDependencies,
+    (state) => state.autoToggleOptionalDependencies
   );
   const setAutoToggleOptionalDependencies = useAppStore(
-    (state) => state.setAutoToggleOptionalDependencies,
+    (state) => state.setAutoToggleOptionalDependencies
   );
   const deleteOrphansByDefault = useAppStore(
-    (state) => state.deleteOrphansByDefault,
+    (state) => state.deleteOrphansByDefault
   );
   const setDeleteOrphansByDefault = useAppStore(
-    (state) => state.setDeleteOrphansByDefault,
+    (state) => state.setDeleteOrphansByDefault
   );
   const orphanActionTypes = useAppStore((state) => state.orphanActionTypes);
   const setOrphanActionTypes = useAppStore(
-    (state) => state.setOrphanActionTypes,
+    (state) => state.setOrphanActionTypes
   );
   const hiddenModTypes = useAppStore((state) => state.hiddenModTypes);
   const setHiddenModTypes = useAppStore((state) => state.setHiddenModTypes);
@@ -225,20 +228,20 @@ export const Settings = () => {
   const manageFontScale = useAppStore((state) => state.manageFontScale);
   const setManageFontScale = useAppStore((state) => state.setManageFontScale);
   const keyBindingsFontScale = useAppStore(
-    (state) => state.keyBindingsFontScale,
+    (state) => state.keyBindingsFontScale
   );
   const setKeyBindingsFontScale = useAppStore(
-    (state) => state.setKeyBindingsFontScale,
+    (state) => state.setKeyBindingsFontScale
   );
   const enablePageTransitions = useAppStore(
-    (state) => state.enablePageTransitions,
+    (state) => state.enablePageTransitions
   );
   const setEnablePageTransitions = useAppStore(
-    (state) => state.setEnablePageTransitions,
+    (state) => state.setEnablePageTransitions
   );
   const downloadMode = useMemo(() => {
     const values = MOD_TYPE_OPTIONS.map(
-      (type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled,
+      (type) => downloadTypeDefaults[type] ?? downloadDefaultEnabled
     );
     if (values.every(Boolean)) return "enabled";
     if (values.every((value) => !value)) return "disabled";
@@ -294,6 +297,7 @@ export const Settings = () => {
               title={_i18n.t("多线程下载")}
               description={_i18n.t("使用 ureq 并行下载大文件")}
               checked={useMultiThread}
+              disabled={mirror === "wegfan"}
               onChange={setUseMultiThread}
             />
 
@@ -424,7 +428,7 @@ export const Settings = () => {
             <SettingToggle
               title={_i18n.t("自动使用 GameBanana 提交名作为备注名")}
               description={_i18n.t(
-                "没有备注名且提交名与 Mod 名不同时，在管理页优先显示提交名",
+                "没有备注名且提交名与 Mod 名不同时，在管理页优先显示提交名"
               )}
               checked={autoUseSubmissionNameAsComment}
               onChange={setAutoUseSubmissionNameAsComment}
@@ -447,7 +451,7 @@ export const Settings = () => {
             <SettingToggle
               title={_i18n.t("启用 Profile")}
               description={_i18n.t(
-                "关闭时直接使用 blacklist.txt；开启时使用 CeleMod Profile JSON",
+                "关闭时直接使用 blacklist.txt；开启时使用 CeleMod Profile JSON"
               )}
               checked={profileEnabled}
               onChange={setProfileEnabled}
@@ -556,7 +560,7 @@ export const Settings = () => {
                 onChange={(event) => {
                   i18n.setLang(event.target.value);
                   setMirror(
-                    event.target.value === "zh-CN" ? "wegfan" : "0x0ade",
+                    event.target.value === "zh-CN" ? "wegfan" : "0x0ade"
                   );
                 }}
               >
