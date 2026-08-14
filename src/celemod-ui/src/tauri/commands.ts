@@ -117,7 +117,7 @@ const parameterNames: Record<string, string[]> = {
   get_mod_cache_status: [],
   get_database_path: [],
   start_miaonet_oauth: ["gamePath", "onEvent"],
-  get_key_bindings: ["gamePath", "language"],
+  get_key_bindings: ["gamePath", "language", "cancel"],
   update_key_binding: ["gamePath", "request"],
 };
 

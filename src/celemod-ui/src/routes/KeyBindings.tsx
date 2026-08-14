@@ -236,9 +236,11 @@ export const KeyBindings = () => {
   const [selectedConflict, setSelectedConflict] = useState("");
   const [showDisabled, setShowDisabled] = useState(false);
   const [saving, setSaving] = useState("");
+  const requestId = useRef(0);
 
   const refresh = useCallback(() => {
     if (!gamePath) return;
+    const currentRequest = ++requestId.current;
     setLoading(true);
     setError("");
     void callRemote<KeyBindingCatalog>(
@@ -246,12 +248,28 @@ export const KeyBindings = () => {
       gamePath,
       currentLang,
     )
-      .then(setCatalog)
-      .catch((reason) => setError(String(reason)))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (currentRequest !== requestId.current) return;
+        setCatalog(data);
+      })
+      .catch((reason) => {
+        if (currentRequest !== requestId.current) return;
+        setError(String(reason));
+      })
+      .finally(() => {
+        if (currentRequest === requestId.current) setLoading(false);
+      });
   }, [currentLang, gamePath]);
 
-  useEffect(refresh, [refresh]);
+  useEffect(() => {
+    const requestScope = requestId;
+    refresh();
+    // 卸载时作废旧请求：页面切换中途到达的响应不再写入状态，
+    // 下次挂载会以新序号重新加载。
+    return () => {
+      requestScope.current += 1;
+    };
+  }, [refresh]);
 
   const consideredEntries = useMemo(
     () =>

@@ -5,6 +5,10 @@ use std::{
     fs,
     io::Read,
     path::{Path, PathBuf},
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 use super::{
@@ -726,9 +730,35 @@ fn replace_mouse_action(content: &str, action: &str, values: &[String]) -> Resul
 }
 
 #[tauri::command]
-pub(super) fn get_key_bindings(
+pub(super) async fn get_key_bindings(
     game_path: String,
     language: String,
+    cancel: Option<bool>,
+) -> Result<KeyBindingCatalog, String> {
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let worker_cancelled = Arc::clone(&cancelled);
+    let worker = tauri::async_runtime::spawn_blocking(move || {
+        get_key_bindings_impl(game_path, language, &worker_cancelled)
+    });
+    // 默认允许取消：IPC 请求被取消（页面卸载、WebView 销毁）时 Tauri 会 drop
+    // 本 future，guard 随即通知 worker 在下一个检查点退出，结果随之丢弃。
+    // 传 cancel: true 可显式禁用（如页面内的手动刷新）。
+    struct CancelOnDrop(Arc<AtomicBool>);
+    impl Drop for CancelOnDrop {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::Relaxed);
+        }
+    }
+    let _guard = (!cancel.unwrap_or(false)).then(|| CancelOnDrop(cancelled));
+    worker
+        .await
+        .map_err(|error| format!("读取按键配置失败：{error}"))?
+}
+
+fn get_key_bindings_impl(
+    game_path: String,
+    language: String,
+    cancelled: &AtomicBool,
 ) -> Result<KeyBindingCatalog, String> {
     let normalized = normalize_game_path_impl(&game_path);
     let game_path = PathBuf::from(normalized);
@@ -782,6 +812,9 @@ pub(super) fn get_key_bindings(
     config_files.sort_by_key(|entry| entry.file_name().to_string_lossy().to_ascii_lowercase());
 
     for config in config_files {
+        if cancelled.load(Ordering::Relaxed) {
+            return Err("已取消读取按键配置".to_string());
+        }
         let file_name = config.file_name().to_string_lossy().to_string();
         let source = config_source_name(&file_name);
         let Ok(content) = fs::read_to_string(config.path()) else {
@@ -973,8 +1006,12 @@ mod tests {
         if !path.join("Saves").join("settings.celeste").is_file() {
             return;
         }
-        let catalog = get_key_bindings(path.to_string_lossy().into_owned(), "zh-CN".to_string())
-            .expect("local key bindings should be readable");
+        let catalog = get_key_bindings_impl(
+            path.to_string_lossy().into_owned(),
+            "zh-CN".to_string(),
+            &AtomicBool::new(false),
+        )
+        .expect("local key bindings should be readable");
         assert!(
             catalog
                 .entries
