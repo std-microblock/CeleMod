@@ -64,6 +64,35 @@
   }
 }
 
+.home-community {
+  position: absolute;
+  right: 4px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  color: theme.$fg3;
+  font-size: 10px;
+  gap: 12px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    color: theme.$fg2;
+    background: transparent;
+    box-shadow: none;
+    font-size: inherit;
+    letter-spacing: 0;
+    gap: 4px;
+
+    &:hover {
+      color: theme.$primary;
+    }
+  }
+}
+
 .home-keyboard-input-banner {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;

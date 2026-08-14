@@ -98,6 +98,22 @@ export const Home = () => {
             <p>An alternative mod manager for Celeste</p>
           </div>
         </div>
+        {i18n.currentLang === "zh-CN" ? (
+          <div className="home-community">
+            <span>反馈群：550358997</span>
+            <button
+              type="button"
+              onClick={() =>
+                callRemote(
+                  "open_url",
+                  "https://github.com/std-microblock/CeleMod",
+                )
+              }
+            >
+              <Icon name="external" /> GitHub 仓库
+            </button>
+          </div>
+        ) : null}
         <label className="home-language">
           <Icon name="web" />
           <select

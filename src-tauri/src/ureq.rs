@@ -32,7 +32,6 @@ fn make_request(url: &str) -> ureq::Request {
         .set("User-Agent", &user_agent())
         .set("Accept", "*/*")
         .set("Accept-Encoding", "identity")
-        .set("Cache-Control", "no-cache")
 }
 
 fn parse_content_range(value: &str) -> Option<(u64, u64, u64)> {
