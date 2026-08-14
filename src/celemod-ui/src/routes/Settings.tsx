@@ -11,7 +11,6 @@ import {
   useUseMultiThread,
 } from "../states";
 import { callRemote } from "../utils";
-import { clearInMemoryModCatalog, loadModCatalog } from "../api/modCatalog";
 import "./Settings.scss";
 
 interface CacheStatus {
@@ -166,7 +165,6 @@ export const Settings = () => {
   const [useMultiThread, setUseMultiThread] = useUseMultiThread();
   const [downloadAdvanced, setDownloadAdvanced] = useState(false);
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null);
-  const [cacheBusy, setCacheBusy] = useState(false);
   const [cacheError, setCacheError] = useState("");
 
   const downloadDefaultEnabled = useAppStore(

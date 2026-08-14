@@ -38,10 +38,10 @@ fn show_missing_runtime_prompt() {
             MB_YESNO | MB_ICONERROR | MB_SETFOREGROUND,
         )
     };
-    if result == IDYES {
-        if let Err(error) = open::that(DOWNLOAD_URL) {
-            eprintln!("Failed to open the WebView2 download page: {error}");
-        }
+    if result == IDYES
+        && let Err(error) = open::that(DOWNLOAD_URL)
+    {
+        eprintln!("Failed to open the WebView2 download page: {error}");
     }
 
     fn wide(value: &str) -> Vec<u16> {

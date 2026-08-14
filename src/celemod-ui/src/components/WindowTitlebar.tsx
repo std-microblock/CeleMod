@@ -1,4 +1,4 @@
-import _i18n, { useI18N } from "src/i18n";
+import _i18n from "src/i18n";
 import { useEffect, useRef, useState } from "react";
 import { callRemote } from "../tauri/commands";
 import { detectDesktopPlatform } from "../tauri/window";

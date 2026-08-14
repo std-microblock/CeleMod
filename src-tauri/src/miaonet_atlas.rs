@@ -13,8 +13,10 @@ const THUMBNAIL_SIZE: usize = 96;
 
 const MAX_ATLAS_PIXELS: usize = 64 * 1024 * 1024;
 
+type AtlasEntriesCache = HashMap<(PathBuf, String), Arc<Vec<AtlasEntry>>>;
+
 lazy_static::lazy_static! {
-    static ref ATLAS_ENTRIES_CACHE: Mutex<HashMap<(PathBuf, String), Arc<Vec<AtlasEntry>>>> =
+    static ref ATLAS_ENTRIES_CACHE: Mutex<AtlasEntriesCache> =
         Mutex::new(HashMap::new());
     static ref ATLAS_PAGE_CACHE: Mutex<HashMap<PathBuf, Arc<AtlasPage>>> =
         Mutex::new(HashMap::new());
@@ -457,8 +459,10 @@ fn render_named_previews(
             previews.insert(entry.name.clone(), preview);
         }
     }
-    if previews.is_empty() && first_error.is_some() {
-        return Err(first_error.unwrap());
+    if previews.is_empty()
+        && let Some(error) = first_error
+    {
+        return Err(error);
     }
     Ok(previews)
 }

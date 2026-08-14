@@ -1,7 +1,7 @@
 import _i18n from "src/i18n";
 import { Icon } from "./Icon";
 import "./GameSelector.scss";
-import { callRemote, useBlockingMask } from "../utils";
+import { callRemote } from "../utils";
 import { useGamePath } from "src/states";
 
 export const GameSelector = (props: {

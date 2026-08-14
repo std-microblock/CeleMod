@@ -4,7 +4,6 @@ use aes::Aes256;
 use anyhow::{Context, bail};
 use base64::{Engine as _, engine::general_purpose};
 use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
-use dirs;
 use everest::get_mod_cached_new;
 use game_scanner::prelude::Game;
 use parking_lot::Mutex as ParkingMutex;
@@ -1173,15 +1172,11 @@ fn clear_windows_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
     let legacy_acrylic_result = set_legacy_windows_acrylic(window, false);
     let mica_result = clear_mica(window);
     let acrylic_result = clear_acrylic(window);
-    if legacy_acrylic_result.is_ok() || mica_result.is_ok() || acrylic_result.is_ok() {
-        Ok(())
-    } else {
-        Err(format!(
-            "failed to clear legacy Windows acrylic ({}); Mica cleanup failed ({}); modern acrylic cleanup also failed: {}",
-            legacy_acrylic_result.unwrap_err(),
-            mica_result.unwrap_err(),
-            acrylic_result.unwrap_err()
-        ))
+    match (legacy_acrylic_result, mica_result, acrylic_result) {
+        (Ok(()), _, _) | (_, Ok(()), _) | (_, _, Ok(())) => Ok(()),
+        (Err(legacy_acrylic_error), Err(mica_error), Err(acrylic_error)) => Err(format!(
+            "failed to clear legacy Windows acrylic ({legacy_acrylic_error}); Mica cleanup failed ({mica_error}); modern acrylic cleanup also failed: {acrylic_error}"
+        )),
     }
 }
 
@@ -2236,11 +2231,9 @@ fn replace_local_mod_archive(source: &Path, destination: &Path) -> anyhow::Resul
     })?;
 
     let had_existing = destination.exists();
-    if had_existing {
-        if let Err(error) = fs::rename(destination, &backup) {
-            fs::remove_file(&temporary).ok();
-            return Err(error).context("Failed to back up the existing Mod archive");
-        }
+    if had_existing && let Err(error) = fs::rename(destination, &backup) {
+        fs::remove_file(&temporary).ok();
+        return Err(error).context("Failed to back up the existing Mod archive");
     }
 
     if let Err(error) = fs::rename(&temporary, destination) {
@@ -2383,7 +2376,7 @@ fn download_and_install_crash_mod_fix_impl(
 }
 
 fn disable_installed_local_mods(
-    game_path: &String,
+    game_path: &str,
     installed_mods: &[(String, String)],
     profile_enabled: bool,
     current_profile_name: &str,
@@ -2426,7 +2419,7 @@ fn disable_installed_local_mods(
 /// that is never added to `enabled_mods` would be blacklisted on the very next
 /// reload, defeating the "enable by default" download setting.
 fn enable_installed_local_mods(
-    game_path: &String,
+    game_path: &str,
     installed_mods: &[(String, String)],
     profile_enabled: bool,
     current_profile_name: &str,
@@ -2935,7 +2928,7 @@ mod local_package_tests {
 
         enable_installed_local_mods(
             &game_path_string,
-            &[installed.clone()],
+            std::slice::from_ref(&installed),
             true,
             "Default",
             &[],
@@ -3038,7 +3031,7 @@ mod local_package_tests {
 
         disable_installed_local_mods(
             &game_path_string,
-            &[installed.clone()],
+            std::slice::from_ref(&installed),
             true,
             "Default",
             &[],
@@ -3087,8 +3080,14 @@ mod local_package_tests {
         )
         .unwrap();
 
-        enable_installed_local_mods(&game_path_string, &[installed.clone()], false, "", &[])
-            .unwrap();
+        enable_installed_local_mods(
+            &game_path_string,
+            std::slice::from_ref(&installed),
+            false,
+            "",
+            &[],
+        )
+        .unwrap();
 
         let blacklist = fs::read_to_string(game_path.join("Mods").join("blacklist.txt")).unwrap();
         assert!(
@@ -3242,6 +3241,15 @@ struct LoennInstallMetadata {
     executable: String,
 }
 
+struct LoennPackage<'a> {
+    version: &'a str,
+    url: &'a str,
+    package_type: &'a str,
+    file_name: &'a str,
+    executable: &'a str,
+    sha256: &'a str,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct LoennState {
@@ -3302,12 +3310,12 @@ fn safe_relative_path(value: &str) -> anyhow::Result<PathBuf> {
 fn managed_loenn_executable(root: &Path) -> Option<PathBuf> {
     let legacy = root.join("current");
     for install_dir in [root, legacy.as_path()] {
-        if let Ok(metadata) = read_loenn_metadata_at(install_dir) {
-            if let Ok(relative) = safe_relative_path(&metadata.executable) {
-                let executable = install_dir.join(relative);
-                if executable.is_file() {
-                    return Some(executable);
-                }
+        if let Ok(metadata) = read_loenn_metadata_at(install_dir)
+            && let Ok(relative) = safe_relative_path(&metadata.executable)
+        {
+            let executable = install_dir.join(relative);
+            if executable.is_file() {
+                return Some(executable);
             }
         }
     }
@@ -3442,12 +3450,7 @@ fn extract_loenn_zip(
 
 fn install_loenn(
     install_root: &str,
-    version: &str,
-    url: &str,
-    package_type: &str,
-    file_name: &str,
-    executable: &str,
-    sha256: &str,
+    package: LoennPackage<'_>,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
     let root = loenn_root_dir(install_root)?;
@@ -3473,7 +3476,7 @@ fn install_loenn(
 
     let cancel_flag = Arc::new(AtomicBool::new(false));
     ureq::download_file_with_progress(
-        url,
+        package.url,
         download_path.to_string_lossy().as_ref(),
         &mut |callback| {
             progress_callback("download".to_string(), callback.progress);
@@ -3482,15 +3485,15 @@ fn install_loenn(
         &cancel_flag,
     )?;
     progress_callback("verify".to_string(), 0.0);
-    verify_file_sha256(&download_path, sha256)?;
+    verify_file_sha256(&download_path, package.sha256)?;
     progress_callback("verify".to_string(), 100.0);
 
-    match package_type {
+    match package.package_type {
         "zip" => extract_loenn_zip(&download_path, &staging_dir, &mut |progress| {
             progress_callback("extract".to_string(), progress);
         })?,
         "file" => {
-            let relative_file = safe_relative_path(file_name)?;
+            let relative_file = safe_relative_path(package.file_name)?;
             let destination = staging_dir.join(relative_file);
             if let Some(parent) = destination.parent() {
                 std::fs::create_dir_all(parent)?;
@@ -3501,7 +3504,7 @@ fn install_loenn(
         value => bail!("Unsupported Loenn package type: {value}"),
     }
 
-    let executable_relative = safe_relative_path(executable)?;
+    let executable_relative = safe_relative_path(package.executable)?;
     let staged_executable = staging_dir.join(&executable_relative);
     if !staged_executable.is_file() {
         bail!(
@@ -3519,8 +3522,8 @@ fn install_loenn(
     }
 
     let metadata = LoennInstallMetadata {
-        version: version.to_string(),
-        executable: executable.to_string(),
+        version: package.version.to_string(),
+        executable: package.executable.to_string(),
     };
     std::fs::write(
         staging_dir.join(LOENN_METADATA_FILE),
@@ -3555,6 +3558,8 @@ fn get_loenn_state(install_root: String) -> LoennState {
     get_loenn_state_impl(&install_root)
 }
 
+// Tauri deserializes these separate fields; combining them would break the existing IPC protocol.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 fn download_and_install_loenn(
     install_root: String,
@@ -3576,12 +3581,14 @@ fn download_and_install_loenn(
         }
         let result = install_loenn(
             &install_root,
-            &version,
-            &url,
-            &package_type,
-            &file_name,
-            &executable,
-            &sha256,
+            LoennPackage {
+                version: &version,
+                url: &url,
+                package_type: &package_type,
+                file_name: &file_name,
+                executable: &executable,
+                sha256: &sha256,
+            },
             &mut |state, progress| {
                 send_event(
                     &on_event,
@@ -4229,9 +4236,9 @@ fn without_new_keyboard_input_enabled(content: &str) -> String {
         .filter(|line| {
             let trimmed = line.trim();
             trimmed.starts_with('#')
-                || !trimmed
+                || trimmed
                     .split_once('=')
-                    .is_some_and(|(key, _)| key.trim() == "EVEREST_NEW_KEYBOARD_INPUT")
+                    .is_none_or(|(key, _)| key.trim() != "EVEREST_NEW_KEYBOARD_INPUT")
         })
         .collect::<Vec<_>>();
     if lines.is_empty() {
@@ -4475,16 +4482,16 @@ fn install_local_packages(
                 },
             });
         }
-        if auto_disable_new_mods {
-            if let Err(error) = disable_installed_local_mods(
+        if auto_disable_new_mods
+            && let Err(error) = disable_installed_local_mods(
                 &game_path,
                 &installed_mods,
                 profile_enabled,
                 &current_profile_name,
                 &always_on_mods,
-            ) {
-                eprintln!("Failed to auto-disable dropped Mods: {error:#}");
-            }
+            )
+        {
+            eprintln!("Failed to auto-disable dropped Mods: {error:#}");
         }
         send_event(
             &on_event,
@@ -4496,6 +4503,8 @@ fn install_local_packages(
     });
 }
 
+// Tauri deserializes these separate fields; combining them would break the existing IPC protocol.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 fn download_mod(
     name: String,
@@ -4968,6 +4977,7 @@ pub fn run() {
             get_miaonet_local_state,
             get_miaonet_settings,
             save_miaonet_settings,
+            miaonet_atlas::get_miaonet_atlas_catalog,
             miaonet_atlas::get_miaonet_atlas_previews,
             miaonet_atlas::get_miaonet_emote_previews,
             logout_miaonet,

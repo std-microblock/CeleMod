@@ -30,7 +30,6 @@ import {
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
-import { useGlobalContext } from "../App";
 import { enforceEverest } from "../components/EnforceEverestPage";
 import { useDownloadStore } from "../stores/download";
 import { createPopup, PopupContext } from "../components/Popup";
@@ -993,7 +992,6 @@ export const Manage = () => {
   const noEverest = enforceEverest();
   const [gamePath] = useGamePath();
   const modPath = `${gamePath}/Mods`;
-  const global = useGlobalContext();
   const { installedMods } = useInstalledMods();
   const {
     profiles,
@@ -1034,7 +1032,6 @@ export const Manage = () => {
   const setEnabledFilter = useManageStore((state) => state.setEnabledFilter);
   const setHealthFilter = useManageStore((state) => state.setHealthFilter);
   const toggleType = useManageStore((state) => state.toggleType);
-  const setUpdateOnly = useManageStore((state) => state.setUpdateOnly);
   const setShowHiddenTypes = useManageStore(
     (state) => state.setShowHiddenTypes,
   );

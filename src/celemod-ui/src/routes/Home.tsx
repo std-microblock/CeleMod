@@ -11,7 +11,6 @@ import {
   useAppStore,
   useCurrentBlacklistProfile,
   useGamePath,
-  useInstalledMods,
   useMirror,
 } from "../states";
 import "./Home.scss";

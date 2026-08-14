@@ -33,38 +33,6 @@ interface LocalInstallResult {
 
 let localInstallRunning = false;
 
-const getDroppedPaths = (event: any): string[] => {
-  const detail = event.detail ?? event.details ?? event.data;
-  const value = detail?.data?.file;
-  if (!value) return [];
-  const paths = Array.isArray(value) ? value : [value];
-
-  return paths
-    .filter((path) => typeof path === "string")
-    .map((path) => {
-      let decoded = path;
-      try {
-        decoded = decodeURI(path);
-      } catch (_) {
-        // Keep the original path; the backend will report a useful error.
-      }
-      if (!decoded.startsWith("file://")) return decoded;
-      decoded = decoded.slice("file://".length);
-      if (
-        navigator.userAgent.includes("Windows") &&
-        /^\/[A-Za-z]:/.test(decoded)
-      ) {
-        decoded = decoded.slice(1);
-      }
-      return decoded;
-    });
-};
-
-const consumeDropEvent = (event: any) => {
-  event.preventDefault?.();
-  event.stopPropagation?.();
-};
-
 const getDisplayFileName = (path: string) => {
   const parts = path.split(/[\\/]/);
   return parts[parts.length - 1] || path;

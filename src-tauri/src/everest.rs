@@ -254,7 +254,7 @@ pub fn get_everest_version(game_path: &str) -> Option<i32> {
         .or_else(|| {
             if let Ok(data) = std::fs::read(game_path.join("Celeste.exe"))
                 && data
-                    .windows(MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes().len())
+                    .windows(MAGIC_STR_ONLY_ORIGIN_EXE.len())
                     .any(|window| window == MAGIC_STR_ONLY_ORIGIN_EXE.as_bytes())
             {
                 None

@@ -466,10 +466,10 @@ fn collect_legacy_hotkeys(
     };
     let mut bases = HashSet::new();
     for key in mapping.keys().filter_map(Value::as_str) {
-        if let Some(base) = key.strip_prefix("Keyboard") {
-            if !base.is_empty() {
-                bases.insert(base.to_string());
-            }
+        if let Some(base) = key.strip_prefix("Keyboard")
+            && !base.is_empty()
+        {
+            bases.insert(base.to_string());
         }
     }
     for base in bases {

@@ -12,11 +12,10 @@ import { fetch } from "../lib/http";
 import {
   useCurrentEverestVersion,
   useCurrentLang,
-  useGamePath,
   useMirror,
   useCurrentEverestUltra,
 } from "../states";
-import { callRemote, displayDate } from "../utils";
+import { displayDate } from "../utils";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
 import { useGlobalContext } from "../App";
@@ -130,14 +129,12 @@ const VersionList = ({
 const OfficialChannel = ({
   versions,
   branch,
-  title,
   onInstall,
   installedVersion,
   installedEdition,
 }: {
   versions: Maddie480EverestVersion[];
   branch: string;
-  title: string;
   onInstall: (url: string) => void;
   installedVersion: string;
   installedEdition: boolean;
@@ -219,7 +216,6 @@ export const Everest = () => {
   const { currentEverestIsUltra, setCurrentEverestIsUltra } =
     useCurrentEverestUltra();
   const { currentLang } = useCurrentLang();
-  const [gamePath] = useGamePath();
   const { data: updateInfo } = useUpdateInfo();
   const ultra = updateInfo?.everest_ultra;
   const showUltra = featureVisible(ultra, currentLang);
@@ -414,11 +410,6 @@ export const Everest = () => {
             </Fragment>
           ) : everestData ? (
             <OfficialChannel
-              title={
-                activeTab === "beta" || activeTab === "dev"
-                  ? `${activeTab[0].toUpperCase()}${activeTab.slice(1)} Channel`
-                  : ""
-              }
               branch={activeTab}
               installedVersion={currentEverestVersion}
               installedEdition={!currentEverestIsUltra}

@@ -1,7 +1,7 @@
 import { enforceEverest } from "src/components/EnforceEverestPage";
 import { Icon } from "src/components/Icon";
 import "./RecommendMaps.scss";
-import _i18n, { useI18N } from "src/i18n";
+import _i18n from "src/i18n";
 
 // @ts-ignore
 import strawberryJamImg from "../resources/collabs/strawberry-jam.webp";
@@ -12,9 +12,8 @@ import springCollabImg from "../resources/collabs/spring-collab.webp";
 // @ts-ignore
 import theRoadLessTravelledImg from "../resources/collabs/the-road-less-travelled.webp";
 
-import { callRemote, horizontalScrollMouseWheelHandler } from "src/utils";
+import { callRemote } from "src/utils";
 import { Button } from "src/components/Button";
-import { memo } from "react";
 import { useAutoDisableNewMods, useInstalledMods } from "src/states";
 import { useState } from "react";
 import { useDownloadStore } from "src/stores/download";
@@ -37,7 +36,7 @@ export const RecommendMaps = () => {
       setState(_i18n.t("准备下载"));
       callRemote("get_mod_update", name, (data) => {
         if (!!data) {
-          const [gbFileId, version] = JSON.parse(data);
+          const [gbFileId] = JSON.parse(data);
           downloadMod(name, parseInt(gbFileId) === -1 ? url : gbFileId, {
             autoDisableNewMods,
             onProgress(task, progress) {
@@ -50,7 +49,7 @@ export const RecommendMaps = () => {
             onFinished() {
               setState(_i18n.t("已安装"));
             },
-            onFailed(task, error) {
+            onFailed() {
               setState(_i18n.t("下载失败"));
             },
           });

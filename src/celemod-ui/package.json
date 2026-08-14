@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "tauri": "node scripts/tauri.mjs",
     "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "translate": "di18n sync",
     "test:i18n": "node --test scripts/deepseek-translator.test.cjs",
     "test:deep-link": "node --import tsx --test src/deepLink.test.ts"
