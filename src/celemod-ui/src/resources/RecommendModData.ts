@@ -2,6 +2,12 @@ import _i18n from "src/i18n";
 export const _functionalMods = () =>
   [
     {
+      name: "Motion Smoothing",
+      description: _i18n.t("解锁帧率限制，开启丝滑游戏体验（不会影响手感）"),
+      download_url:
+        "https://celeste.weg.fan/api/v2/download/mods/MotionSmoothing",
+    },
+    {
       name: "Collab Lobby UI",
       description: _i18n.t("在大地图中按 M 显示 Collab 地图选择器"),
       download_url:
