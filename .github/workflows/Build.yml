@@ -84,14 +84,16 @@ jobs:
       - name: Rename Windows executable
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Move-Item target/release/cele-mod.exe target/release/CeleMod.exe
+        run: |
+          $version = (Get-Content version.txt -Raw).Trim()
+          Move-Item target/release/cele-mod.exe "target/release/CeleMod_$version.exe"
 
       - name: Upload Windows executable artifact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: CeleMod-windows-exe
-          path: target/release/CeleMod.exe
+          path: target/release/CeleMod_*.exe
           if-no-files-found: error
 
       - name: Upload Windows executable to release
@@ -101,4 +103,4 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: CeleMod ${{ github.ref_name }}
           body_path: CHANGELOG.md
-          files: target/release/CeleMod.exe
+          files: target/release/CeleMod_*.exe
