@@ -602,9 +602,10 @@ pub fn rename_mod_blacklist_profile(
     if source.name == new_name {
         return Ok(());
     }
-    if profiles.iter().any(|profile| {
-        profile.name.eq_ignore_ascii_case(new_name) && profile.name != source.name
-    }) {
+    if profiles
+        .iter()
+        .any(|profile| profile.name.eq_ignore_ascii_case(new_name) && profile.name != source.name)
+    {
         bail!("Profile already exists");
     }
 
@@ -995,8 +996,16 @@ mod tests {
 
         rename_mod_blacklist_profile(&game_path, "Old Name", "New Name").unwrap();
 
-        assert!(!profiles_directory(&game_path).join("Old Name.json").exists());
-        assert!(profiles_directory(&game_path).join("New Name.json").exists());
+        assert!(
+            !profiles_directory(&game_path)
+                .join("Old Name.json")
+                .exists()
+        );
+        assert!(
+            profiles_directory(&game_path)
+                .join("New Name.json")
+                .exists()
+        );
         assert_eq!(get_current_profiles(&game_path), ["New Name"]);
         assert_eq!(get_mod_blacklist_profiles(&game_path)[0].name, "New Name");
         fs::remove_dir_all(game_path).unwrap();

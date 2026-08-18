@@ -4,7 +4,8 @@ const consoleLevels = ["debug", "info", "log", "warn", "error"] as const;
 type ConsoleLevel = (typeof consoleLevels)[number];
 
 const formatValue = (value: unknown): string => {
-  if (value instanceof Error) return value.stack || `${value.name}: ${value.message}`;
+  if (value instanceof Error)
+    return value.stack || `${value.name}: ${value.message}`;
   if (typeof value === "string") return value;
   try {
     const serialized = JSON.stringify(value, (_key, item) => {

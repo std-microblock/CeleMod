@@ -4660,9 +4660,7 @@ fn download_mod(
                 &current_profile_name,
                 &always_on_mods,
             ) {
-                crate::logging::error(format_args!(
-                    "Failed to enable downloaded Mods: {error:#}"
-                ));
+                crate::logging::error(format_args!("Failed to enable downloaded Mods: {error:#}"));
             }
         }
         emit_download_tasks(

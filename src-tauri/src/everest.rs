@@ -125,7 +125,9 @@ fn save_raw_cache(raw: &str) {
         let _ = std::fs::create_dir_all(parent);
     }
     if let Err(error) = std::fs::write(&path, raw) {
-        crate::logging::error(format_args!("Failed to save raw Mod catalog cache: {error}"));
+        crate::logging::error(format_args!(
+            "Failed to save raw Mod catalog cache: {error}"
+        ));
     }
 }
 

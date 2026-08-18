@@ -49,10 +49,7 @@ fn timestamp_millis() -> u128 {
 }
 
 fn write(level: &str, source: &str, message: fmt::Arguments<'_>) {
-    let line = format!(
-        "[{}] [{level}] [{source}] {message}\n",
-        timestamp_millis()
-    );
+    let line = format!("[{}] [{level}] [{source}] {message}\n", timestamp_millis());
     if let Some(file) = LOG_FILE.get()
         && let Ok(mut file) = file.lock()
         && let Some(file) = file.as_mut()
