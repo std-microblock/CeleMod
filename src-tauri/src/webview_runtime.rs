@@ -6,11 +6,13 @@
 pub(crate) fn ensure_available() -> bool {
     match tauri::webview_version() {
         Ok(version) => {
-            println!("System webview runtime: {version}");
+            crate::logging::info(format_args!("System webview runtime: {version}"));
             true
         }
         Err(error) => {
-            eprintln!("System webview runtime is unavailable: {error}");
+            crate::logging::error(format_args!(
+                "System webview runtime is unavailable: {error}"
+            ));
             show_missing_runtime_prompt();
             false
         }
@@ -41,7 +43,9 @@ fn show_missing_runtime_prompt() {
     if result == IDYES
         && let Err(error) = open::that(DOWNLOAD_URL)
     {
-        eprintln!("Failed to open the WebView2 download page: {error}");
+        crate::logging::error(format_args!(
+            "Failed to open the WebView2 download page: {error}"
+        ));
     }
 
     fn wide(value: &str) -> Vec<u16> {
@@ -62,7 +66,7 @@ fn show_missing_runtime_prompt() {
         ])
         .status();
     if status.is_err() {
-        eprintln!("{MESSAGE}");
+        crate::logging::error(format_args!("{MESSAGE}"));
     }
 }
 
@@ -83,10 +87,12 @@ fn show_missing_runtime_prompt() {
             .args(["--error", MESSAGE, "--title", "CeleMod 无法启动"])
             .status();
     }
-    eprintln!("{MESSAGE}");
+    crate::logging::error(format_args!("{MESSAGE}"));
 }
 
 #[cfg(not(any(windows, unix)))]
 fn show_missing_runtime_prompt() {
-    eprintln!("CeleMod cannot initialize the system webview runtime.");
+    crate::logging::error(format_args!(
+        "CeleMod cannot initialize the system webview runtime."
+    ));
 }

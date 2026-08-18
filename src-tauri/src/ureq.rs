@@ -419,7 +419,7 @@ pub fn download_file_to_path_with_progress(
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
-    println!("[ DOWNLOAD ] {} -> {}", url, output_path);
+    crate::logging::info(format_args!("[ DOWNLOAD ] {} -> {}", url, output_path));
 
     let output = Path::new(output_path);
     if let Some(parent) = output.parent() {

@@ -125,7 +125,7 @@ fn save_raw_cache(raw: &str) {
         let _ = std::fs::create_dir_all(parent);
     }
     if let Err(error) = std::fs::write(&path, raw) {
-        eprintln!("Failed to save raw Mod catalog cache: {error}");
+        crate::logging::error(format_args!("Failed to save raw Mod catalog cache: {error}"));
     }
 }
 
@@ -184,7 +184,9 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
             Ok(state)
         }
         Err(network_error) => {
-            eprintln!("Failed to fetch Mod catalog: {network_error:#}");
+            crate::logging::error(format_args!(
+                "Failed to fetch Mod catalog: {network_error:#}"
+            ));
             if let Some((raw, modified)) = read_raw_cache() {
                 USING_CACHE.store(true, Ordering::Relaxed);
                 return catalog_state_from_raw(raw, "stale-cache", modified);
@@ -234,7 +236,7 @@ static MAGIC_STR_ONLY_ORIGIN_EXE: &str = "_StarJumpEnd+<StartCirclingPlayer>";
 
 pub fn get_everest_version(game_path: &str) -> Option<i32> {
     fn check_file(path: PathBuf) -> Option<i32> {
-        println!("Checking {}", path.display());
+        crate::logging::info(format_args!("Checking {}", path.display()));
         let buf = std::fs::read(path).ok()?;
         let str = unsafe { std::str::from_utf8_unchecked(&buf) };
         let pos = str.find(MAGIC_STR);

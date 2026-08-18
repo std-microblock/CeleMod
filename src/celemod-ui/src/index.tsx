@@ -4,7 +4,9 @@ import "./index.scss";
 import "./i2.css";
 import { initializeWindowChrome } from "./tauri/window";
 import { initializeCeleModDeepLinks } from "./deepLink";
+import { initializeFrontendLogging } from "./logging";
 
+initializeFrontendLogging();
 initializeWindowChrome();
 void initializeCeleModDeepLinks().catch((error) =>
   console.error("Failed to initialize CeleMod deep links", error),

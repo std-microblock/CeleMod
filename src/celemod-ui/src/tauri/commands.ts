@@ -111,6 +111,7 @@ const parameterNames: Record<string, string[]> = {
   normalize_game_path: ["path"],
   get_mod_latest_info: ["onEvent"],
   show_log_window: [],
+  write_frontend_log: ["level", "message"],
   is_using_cache: [],
   configure_mod_cache: ["ttlSeconds"],
   get_mod_catalog: ["forceRefresh"],

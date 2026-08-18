@@ -1642,11 +1642,11 @@ fn get_installed_mods_sync_with_catalog(
             let metadata_entries = match parse_mod_yaml_document(&yaml) {
                 Ok(metadata_entries) => metadata_entries,
                 Err(error) => {
-                    println!(
+                    crate::logging::warn(format_args!(
                         "[ WARNING ] Failed to parse {:?}: {}",
                         entry.file_name(),
                         error
-                    );
+                    ));
                     continue;
                 }
             };
@@ -1663,10 +1663,10 @@ fn get_installed_mods_sync_with_catalog(
             let file = entry.file_name().to_string_lossy().to_string();
             for metadata_entry in &metadata_entries {
                 let Some(name) = metadata_entry.name.as_ref() else {
-                    println!(
+                    crate::logging::warn(format_args!(
                         "[ WARNING ] Skipping unnamed metadata in {:?}",
                         entry.file_name()
-                    );
+                    ));
                     continue;
                 };
                 let name = name.clone();
@@ -1689,7 +1689,11 @@ fn get_installed_mods_sync_with_catalog(
         };
 
         if let Err(e) = res {
-            println!("[ WARNING ] Failed to parse {:?}: {}", entry.file_name(), e)
+            crate::logging::warn(format_args!(
+                "[ WARNING ] Failed to parse {:?}: {}",
+                entry.file_name(),
+                e
+            ));
         }
     }
     mods
@@ -1697,7 +1701,9 @@ fn get_installed_mods_sync_with_catalog(
 
 fn get_installed_mods_sync(mods_folder_path: String) -> Vec<LocalMod> {
     let mod_data = get_mod_cached_new().unwrap_or_else(|error| {
-        eprintln!("Failed to load Mod catalog while scanning installed Mods: {error:#}");
+        crate::logging::error(format_args!(
+            "Failed to load Mod catalog while scanning installed Mods: {error:#}"
+        ));
         Arc::new(HashMap::new())
     });
     get_installed_mods_sync_with_catalog(mods_folder_path, Some(mod_data))
@@ -1914,7 +1920,9 @@ fn enqueue_missing_dependencies(
             continue;
         }
         let Some(data) = mod_data.get(&dependency) else {
-            eprintln!("Failed to resolve dependency {dependency} in Mod data");
+            crate::logging::error(format_args!(
+                "Failed to resolve dependency {dependency} in Mod data"
+            ));
             continue;
         };
 
@@ -3766,21 +3774,14 @@ fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
 
 #[tauri::command]
 fn show_log_window() {
-    #[cfg(windows)]
-    unsafe {
-        use winapi::um::winuser::{IsWindowVisible, SW_HIDE, SW_SHOW, ShowWindow};
-
-        let console = winapi::um::wincon::GetConsoleWindow();
-        if console.is_null() {
-            return;
-        }
-        let command = if IsWindowVisible(console) == 0 {
-            SW_SHOW
-        } else {
-            SW_HIDE
-        };
-        ShowWindow(console, command);
+    if let Err(error) = open::that(crate::logging::path()) {
+        crate::logging::error(format_args!("Failed to open CeleMod log: {error}"));
     }
+}
+
+#[tauri::command]
+fn write_frontend_log(level: String, message: String) {
+    crate::logging::frontend(&level, &message);
 }
 
 #[cfg(all(windows, not(debug_assertions)))]
@@ -4491,7 +4492,9 @@ fn install_local_packages(
                 &always_on_mods,
             )
         {
-            eprintln!("Failed to auto-disable dropped Mods: {error:#}");
+            crate::logging::error(format_args!(
+                "Failed to auto-disable dropped Mods: {error:#}"
+            ));
         }
         send_event(
             &on_event,
@@ -4611,7 +4614,9 @@ fn download_mod(
                 &current_profile_name,
                 &always_on_mods,
             ) {
-                eprintln!("Failed to apply downloaded Mod defaults: {error:#}");
+                crate::logging::error(format_args!(
+                    "Failed to apply downloaded Mod defaults: {error:#}"
+                ));
             }
             let enabled_with_dependencies = collect_required_installed_mods(
                 &to_enable
@@ -4627,7 +4632,9 @@ fn download_mod(
                 &current_profile_name,
                 &always_on_mods,
             ) {
-                eprintln!("Failed to enable downloaded Mods: {error:#}");
+                crate::logging::error(format_args!(
+                    "Failed to enable downloaded Mods: {error:#}"
+                ));
             }
         }
         emit_download_tasks(
@@ -4841,11 +4848,17 @@ pub fn run() {
         return;
     }
 
+    crate::logging::initialize();
+
     if !crate::webview_runtime::ensure_available() {
         return;
     }
 
-    println!("CeleMod v{} ({})", env!("VERSION"), env!("GIT_HASH"));
+    crate::logging::info(format_args!(
+        "CeleMod v{} ({})",
+        env!("VERSION"),
+        env!("GIT_HASH")
+    ));
     let startup_game_paths = if is_test_mode() {
         vec![get_test_game_path()]
     } else {
@@ -4858,14 +4871,16 @@ pub fn run() {
     for game_path in startup_game_paths {
         match cleanup_game_mod_download_temp_files(&game_path) {
             Ok(removed) if removed > 0 => {
-                println!("Removed {removed} stale Mod download temporary file(s)");
+                crate::logging::info(format_args!(
+                    "Removed {removed} stale Mod download temporary file(s)"
+                ));
             }
             Ok(_) => {}
             Err(error) => {
-                eprintln!(
+                crate::logging::error(format_args!(
                     "Failed to clean stale Mod downloads in {}: {error:#}",
                     game_path.display()
-                );
+                ));
             }
         }
     }
@@ -4968,6 +4983,7 @@ pub fn run() {
             normalize_game_path,
             get_mod_latest_info,
             show_log_window,
+            write_frontend_log,
             is_using_cache,
             configure_mod_cache,
             get_mod_catalog,
