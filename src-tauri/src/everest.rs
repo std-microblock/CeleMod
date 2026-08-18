@@ -52,6 +52,11 @@ struct ModCatalogState {
 
 lazy_static! {
     static ref MOD_CATALOG_STATE: Mutex<Option<ModCatalogState>> = Mutex::new(None);
+    // Several startup paths can ask for the catalog at the same time (for
+    // example the installed-Mod scan and the local catalog page). Serialize
+    // cache misses so they share the state populated by the first request
+    // instead of all fetching the same catalog concurrently.
+    static ref MOD_CATALOG_LOAD_LOCK: Mutex<()> = Mutex::new(());
 }
 
 fn raw_mod_cache_path() -> Option<PathBuf> {
@@ -200,6 +205,7 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
 }
 
 fn catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
+    let _load_guard = MOD_CATALOG_LOAD_LOCK.lock().unwrap();
     let state = load_catalog(force_refresh)?;
     *MOD_CATALOG_STATE.lock().unwrap() = Some(state.clone());
     Ok(state)
