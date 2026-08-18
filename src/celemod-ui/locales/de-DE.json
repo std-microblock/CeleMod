@@ -453,5 +453,6 @@
   "自定义缩放百分比": "Benutzerdefinierter Skalierungswert",
   "建议删除 Everest 新键盘输入配置": "Everests neue Tastatureingabe-Einstellung entfernen",
   "EVEREST_NEW_KEYBOARD_INPUT=1 会导致群服聊天输入异常，请从 everest-env.txt 中删除此配置：": "EVEREST_NEW_KEYBOARD_INPUT=1 kann bei Mehrspieler-Servern Probleme mit der Chat-Eingabe verursachen. Entferne diese Einstellung aus everest-env.txt:",
-  "立即删除": "Jetzt entfernen"
+  "立即删除": "Jetzt entfernen",
+  "重命名预设": "Voreinstellung umbenennen"
 }

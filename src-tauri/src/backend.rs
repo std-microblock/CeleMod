@@ -4111,6 +4111,15 @@ fn new_mod_blacklist_profile(game_path: String, profile_name: String) -> String 
 }
 
 #[tauri::command]
+fn rename_mod_blacklist_profile(game_path: String, old_name: String, new_name: String) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    match blacklist::rename_mod_blacklist_profile(&game_path, &old_name, &new_name) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => format!("Failed to rename profile: {error}"),
+    }
+}
+
+#[tauri::command]
 fn get_current_profile(game_path: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     blacklist::get_current_profile(&game_path)
@@ -4976,6 +4985,7 @@ pub fn run() {
             commit_mod_profiles,
             export_mod_profile,
             new_mod_blacklist_profile,
+            rename_mod_blacklist_profile,
             get_current_profile,
             remove_mod_blacklist_profile,
             get_mod_update,

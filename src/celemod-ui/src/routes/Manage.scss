@@ -749,7 +749,7 @@
 
 .profile-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   min-height: 29px;
   padding: 0 5px 0 10px;
@@ -792,6 +792,7 @@
 }
 
 .profile-export,
+.profile-rename,
 .profile-delete,
 .profile-import,
 .profile-folder {
@@ -813,6 +814,26 @@
 
 .profile-delete:hover {
   color: #ff8d8a;
+}
+
+.profile-rename-popup {
+  width: min(380px, calc(100vw - 64px));
+  text-align: left;
+
+  .content {
+    display: grid;
+    gap: 7px;
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  small {
+    color: #ff8d8a;
+    overflow-wrap: anywhere;
+  }
 }
 
 .profile-export-wrap {

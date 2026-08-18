@@ -645,6 +645,72 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
   );
 };
 
+const showProfileRename = (
+  gamePath: string,
+  oldName: string,
+  onRenamed: () => Promise<void>,
+) => {
+  createPopup(() => {
+    const popup = useContext(PopupContext);
+    const [name, setName] = useState(oldName);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const submit = async () => {
+      const newName = name.trim();
+      if (!newName || saving) return;
+      if (newName === oldName) {
+        popup.hide();
+        return;
+      }
+      setSaving(true);
+      setError("");
+      try {
+        const result = await callRemote(
+          "rename_mod_blacklist_profile",
+          gamePath,
+          oldName,
+          newName,
+        );
+        if (String(result) !== "Success") throw new Error(String(result));
+        await onRenamed();
+        popup.hide();
+      } catch (renameError) {
+        setError(String(renameError));
+        setSaving(false);
+      }
+    };
+    return (
+      <form
+        className="popup-content profile-rename-popup"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
+      >
+        <div className="title">{_i18n.t("重命名预设")}</div>
+        <div className="content">
+          <input
+            autoFocus
+            value={name}
+            maxLength={30}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={_i18n.t("新 Profile 名称")}
+          />
+          {error && <small>{error}</small>}
+        </div>
+        <div className="buttons">
+          <button type="button" onClick={popup.hide}>
+            {_i18n.t("取消")}
+          </button>
+          <button type="submit" disabled={!name.trim() || saving}>
+            {_i18n.t("确认")}
+          </button>
+        </div>
+      </form>
+    );
+  });
+};
+
 interface ManageActions {
   switchNodes: (
     names: string | string[],
@@ -2265,6 +2331,18 @@ export const Manage = () => {
                         <Icon name="save" />
                       </button>
                     </div>
+                    <button
+                      type="button"
+                      className="profile-rename"
+                      title={_i18n.t("重命名预设")}
+                      onClick={() =>
+                        showProfileRename(gamePath, profile.name, () =>
+                          reloadBlacklistState(gamePath),
+                        )
+                      }
+                    >
+                      <Icon name="edit" />
+                    </button>
                     <button
                       type="button"
                       className="profile-delete"

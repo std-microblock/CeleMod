@@ -552,5 +552,6 @@
   "图片": "Image",
   "文本": "Text",
   "添加文本": "Add text",
-  "添加图片": "Add image"
+  "添加图片": "Add image",
+  "重命名预设": "Rename preset"
 }

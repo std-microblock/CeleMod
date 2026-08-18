@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::{Context, bail};
@@ -175,21 +176,25 @@ fn profile_from_legacy_value(
 fn write_profile(game_path: &str, profile: &ModBlacklistProfile) -> anyhow::Result<()> {
     validate_profile_name(&profile.name)?;
     fs::create_dir_all(profiles_directory(game_path))?;
+    fs::write(
+        profile_path(game_path, &profile.name)?,
+        serialize_profile(profile)?,
+    )?;
+    Ok(())
+}
+
+fn serialize_profile(profile: &ModBlacklistProfile) -> anyhow::Result<String> {
     let profile = ModBlacklistProfile {
         name: profile.name.clone(),
         enabled_mods: normalize_names(profile.enabled_mods.clone()),
         auto_deps: false,
     };
-    fs::write(
-        profile_path(game_path, &profile.name)?,
-        serde_json::to_string_pretty(&ExportedProfile {
-            format: PROFILE_FORMAT,
-            version: PROFILE_VERSION,
-            auto_deps: false,
-            profile: &profile,
-        })?,
-    )?;
-    Ok(())
+    Ok(serde_json::to_string_pretty(&ExportedProfile {
+        format: PROFILE_FORMAT,
+        version: PROFILE_VERSION,
+        auto_deps: false,
+        profile: &profile,
+    })?)
 }
 
 fn parse_mod_list(contents: &str) -> Vec<String> {
@@ -549,6 +554,97 @@ pub fn new_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow:
     )
 }
 
+fn rename_active_profile_header(
+    game_path: &str,
+    old_name: &str,
+    new_name: &str,
+) -> anyhow::Result<()> {
+    let path = Path::new(game_path).join("Mods").join("blacklist.txt");
+    let Ok(contents) = fs::read_to_string(&path) else {
+        return Ok(());
+    };
+    let Some((header, rest)) = contents.split_once('\n') else {
+        return Ok(());
+    };
+    let Some(value) = header.trim().strip_prefix("# Profiles: ") else {
+        return Ok(());
+    };
+    let Ok(mut names) = serde_json::from_str::<Vec<String>>(value) else {
+        return Ok(());
+    };
+    let mut changed = false;
+    for name in &mut names {
+        if name.eq_ignore_ascii_case(old_name) {
+            *name = new_name.to_string();
+            changed = true;
+        }
+    }
+    if changed {
+        fs::write(
+            path,
+            format!("# Profiles: {}\n{rest}", serde_json::to_string(&names)?),
+        )?;
+    }
+    Ok(())
+}
+
+pub fn rename_mod_blacklist_profile(
+    game_path: &str,
+    old_name: &str,
+    new_name: &str,
+) -> anyhow::Result<()> {
+    validate_profile_name(new_name)?;
+    let profiles = get_mod_blacklist_profiles(game_path);
+    let source = profiles
+        .iter()
+        .find(|profile| profile.name.eq_ignore_ascii_case(old_name))
+        .context("Profile not found")?;
+    if source.name == new_name {
+        return Ok(());
+    }
+    if profiles.iter().any(|profile| {
+        profile.name.eq_ignore_ascii_case(new_name) && profile.name != source.name
+    }) {
+        bail!("Profile already exists");
+    }
+
+    let source_path = profile_path(game_path, &source.name)?;
+    let destination_path = profile_path(game_path, new_name)?;
+    let renamed = ModBlacklistProfile {
+        name: new_name.to_string(),
+        enabled_mods: source.enabled_mods.clone(),
+        auto_deps: false,
+    };
+    let renamed_contents = serialize_profile(&renamed)?;
+    if source.name.eq_ignore_ascii_case(new_name) {
+        let temporary = profiles_directory(game_path).join(format!(
+            ".celemod-profile-rename-{}-{}.json",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        fs::write(&temporary, renamed_contents)?;
+        fs::remove_file(&source_path)?;
+        if let Err(error) = fs::rename(&temporary, &destination_path) {
+            let _ = fs::write(&source_path, serialize_profile(source)?);
+            let _ = fs::remove_file(&temporary);
+            return Err(error.into());
+        }
+    } else {
+        if destination_path.exists() {
+            bail!("Profile already exists");
+        }
+        fs::write(&destination_path, renamed_contents)?;
+        if let Err(error) = fs::remove_file(&source_path) {
+            let _ = fs::remove_file(&destination_path);
+            return Err(error.into());
+        }
+    }
+    rename_active_profile_header(game_path, &source.name, new_name)
+}
+
 pub fn remove_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
     fs::remove_file(profile_path(game_path, profile_name)?)?;
     Ok(())
@@ -888,6 +984,21 @@ mod tests {
         new_mod_blacklist_profile(&game_path, "Only").unwrap();
         remove_mod_blacklist_profile(&game_path, "Only").unwrap();
         assert!(get_mod_blacklist_profiles(&game_path).is_empty());
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn renames_profile_and_keeps_it_active() {
+        let game_path = test_game_path("rename-profile");
+        new_mod_blacklist_profile(&game_path, "Old Name").unwrap();
+        apply_mod_blacklist_profiles(&game_path, &["Old Name".to_string()], &[]).unwrap();
+
+        rename_mod_blacklist_profile(&game_path, "Old Name", "New Name").unwrap();
+
+        assert!(!profiles_directory(&game_path).join("Old Name.json").exists());
+        assert!(profiles_directory(&game_path).join("New Name.json").exists());
+        assert_eq!(get_current_profiles(&game_path), ["New Name"]);
+        assert_eq!(get_mod_blacklist_profiles(&game_path)[0].name, "New Name");
         fs::remove_dir_all(game_path).unwrap();
     }
 

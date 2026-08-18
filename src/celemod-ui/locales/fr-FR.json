@@ -453,5 +453,6 @@
   "自定义缩放百分比": "Pourcentage de mise à l’échelle personnalisé",
   "建议删除 Everest 新键盘输入配置": "Supprimer le réglage de la nouvelle saisie clavier d’Everest",
   "EVEREST_NEW_KEYBOARD_INPUT=1 会导致群服聊天输入异常，请从 everest-env.txt 中删除此配置：": "EVEREST_NEW_KEYBOARD_INPUT=1 peut provoquer des problèmes de saisie dans le chat des serveurs multijoueurs. Supprimez ce réglage de everest-env.txt :",
-  "立即删除": "Supprimer maintenant"
+  "立即删除": "Supprimer maintenant",
+  "重命名预设": "Renommer le préréglage"
 }

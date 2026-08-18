@@ -57,6 +57,7 @@ const parameterNames: Record<string, string[]> = {
   ],
   expand_mod_profile_dependencies: ["gamePath", "profileName"],
   new_mod_blacklist_profile: ["gamePath", "profileName"],
+  rename_mod_blacklist_profile: ["gamePath", "oldName", "newName"],
   get_current_profile: ["gamePath"],
   remove_mod_blacklist_profile: ["gamePath", "profileName"],
   get_mod_update: ["name", "onEvent"],
