@@ -433,6 +433,7 @@
 .mod-detail-popup {
   height: calc(100vh - 70px);
   width: calc(100vw - 110px);
+  overflow-x: hidden;
   overflow-y: scroll;
   padding: 10px 0;
   position: relative;
@@ -468,12 +469,17 @@
   .images {
     display: flex;
     overflow-y: hidden;
-    overflow-x: scroll;
+    overflow-x: auto;
+    scrollbar-width: none;
     white-space: nowrap;
     height: 182px;
     width: 100%;
     margin-right: 30px;
     margin-bottom: 15px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     img {
       border-radius: 10px;

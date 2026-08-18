@@ -1383,6 +1383,10 @@
     gap: 8px;
     margin-bottom: 16px;
     overflow-x: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
     img {
       height: 150px;
       border-radius: 9px;
