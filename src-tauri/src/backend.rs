@@ -2493,6 +2493,10 @@ fn collect_required_installed_mods(
     result
 }
 
+fn is_newly_installed_mod(name: &str, installed_before: &HashSet<String>) -> bool {
+    !installed_before.contains(&name.to_ascii_lowercase())
+}
+
 #[cfg(test)]
 mod local_package_tests {
     use super::*;
@@ -2521,6 +2525,14 @@ mod local_package_tests {
             writer.write_all(contents).unwrap();
         }
         writer.finish().unwrap();
+    }
+
+    #[test]
+    fn download_defaults_only_apply_to_new_mods() {
+        let installed_before = HashSet::from(["existing.mod".to_string()]);
+
+        assert!(!is_newly_installed_mod("Existing.Mod", &installed_before));
+        assert!(is_newly_installed_mod("New.Mod", &installed_before));
     }
 
     #[test]
@@ -4572,6 +4584,10 @@ fn download_mod(
             speed_bytes_per_sec: 0.0,
         }];
         let installed = get_installed_mods_sync(mods_dir.clone());
+        let installed_before = installed
+            .iter()
+            .map(|item| item.name.to_ascii_lowercase())
+            .collect::<HashSet<_>>();
         let failed = download_mod_queue(
             &mut tasks,
             &installed,
@@ -4594,6 +4610,9 @@ fn download_mod(
                 .iter()
                 .filter(|task| task.status == DownloadStatus::Finished)
             {
+                if !is_newly_installed_mod(&task.name, &installed_before) {
+                    continue;
+                }
                 let enabled = everest::get_mod_category(&task.name)
                     .and_then(|category| download_type_defaults.get(&category).copied())
                     .unwrap_or(default_enabled);
