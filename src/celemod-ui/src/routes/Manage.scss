@@ -473,6 +473,7 @@
 
 .state-switch {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   min-height: 18px;
   padding: 0 6px;
@@ -483,6 +484,7 @@
   color: theme.$fg3;
   font-size: calc(8px * var(--manage-font-scale, 1));
   letter-spacing: 0;
+  white-space: nowrap;
   &.enabled {
     border-color: color.change(#4caf50, $alpha: 0.28);
     color: #8cdb91;
