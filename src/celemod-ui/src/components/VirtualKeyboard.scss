@@ -1,0 +1,349 @@
+@use "sass:color";
+@use "../styles/theme" as theme;
+
+.virtual-keyboard-panel {
+  margin: 8px 0 0 8px;
+  overflow: hidden;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.075);
+  border-radius: 9px;
+  background: color.change(theme.$bg1, $alpha: 0.5);
+}
+
+.virtual-keyboard-header {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 9px;
+  gap: 12px;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
+  box-sizing: border-box;
+
+  > div {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 7px;
+  }
+  strong {
+    font-size: calc(10px * var(--keybindings-font-scale, 1));
+  }
+}
+
+.virtual-keyboard-platform,
+.virtual-keyboard-summary {
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: color.change(theme.$fg, $alpha: 0.055);
+  color: theme.$fg3;
+  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  white-space: nowrap;
+}
+
+.virtual-keyboard-summary {
+  background: color.change(theme.$primary, $alpha: 0.08);
+  color: color.adjust(theme.$primary, $lightness: 19%);
+}
+
+.virtual-keyboard-legend {
+  flex: 0 0 auto;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: color.change(theme.$fg, $alpha: 0.48);
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    white-space: nowrap;
+
+    &::before {
+      width: 7px;
+      height: 7px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      content: "";
+    }
+    &.unused::before {
+      border-color: color.change(theme.$fg, $alpha: 0.13);
+      background: color.change(theme.$fg, $alpha: 0.025);
+    }
+    &.used::before {
+      border-color: color.change(theme.$primary, $alpha: 0.42);
+      background: color.change(theme.$primary, $alpha: 0.18);
+    }
+    &.multiple::before {
+      border-color: color.change(#ffc66d, $alpha: 0.48);
+      background: color.change(#ffc66d, $alpha: 0.18);
+    }
+  }
+}
+
+.virtual-keyboard-hint {
+  margin: 0;
+  padding: 4px 9px 0;
+  color: color.change(theme.$fg, $alpha: 0.35);
+  font-size: calc(7px * var(--keybindings-font-scale, 1));
+}
+
+.virtual-keyboard-scroll {
+  padding: 7px 8px 9px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.virtual-keyboard-board {
+  --keyboard-gap: 3px;
+  --keyboard-key-height: 26px;
+  width: 776px;
+  margin: 0 auto;
+}
+
+.virtual-keyboard-function-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  gap: 8px;
+}
+
+.virtual-keyboard-function-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--keyboard-gap);
+
+  .virtual-keyboard-key {
+    width: 31px;
+    flex: 0 0 31px !important;
+  }
+}
+
+.virtual-keyboard-body {
+  display: grid;
+  grid-template-columns: minmax(0, 15fr) 3fr 4fr;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.virtual-keyboard-main,
+.virtual-keyboard-navigation {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--keyboard-gap);
+}
+
+.virtual-keyboard-row {
+  display: flex;
+  min-width: 0;
+  height: var(--keyboard-key-height);
+  gap: var(--keyboard-gap);
+}
+
+.virtual-keyboard-navigation .virtual-keyboard-row {
+  .virtual-keyboard-key,
+  .virtual-keyboard-spacer {
+    min-width: 0;
+    flex: 1 1 0 !important;
+  }
+}
+
+.virtual-keyboard-spacer {
+  display: block;
+}
+
+.virtual-keyboard-numpad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(5, var(--keyboard-key-height));
+  gap: var(--keyboard-gap);
+
+  .virtual-keyboard-key {
+    width: auto;
+    min-width: 0;
+  }
+}
+
+.virtual-keyboard-key {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: var(--keyboard-key-height);
+  min-height: var(--keyboard-key-height);
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  overflow: hidden;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.11);
+  border-radius: 4px;
+  background: color.change(theme.$bg2, $alpha: 0.48);
+  box-shadow: 0 1px 0 color.change(theme.$fg, $alpha: 0.035);
+  color: color.change(theme.$fg, $alpha: 0.48);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: calc(6.8px * var(--keybindings-font-scale, 1));
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: none;
+
+  > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  > small {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: grid;
+    min-width: 10px;
+    height: 10px;
+    padding: 0 2px;
+    place-items: center;
+    border-radius: 99px;
+    background: color.change(theme.$primary, $alpha: 0.26);
+    color: color.adjust(theme.$primary, $lightness: 26%);
+    font-family: inherit;
+    font-size: calc(5.5px * var(--keybindings-font-scale, 1));
+    line-height: 10px;
+  }
+  &.used {
+    border-color: color.change(theme.$primary, $alpha: 0.36);
+    background: color.change(theme.$primary, $alpha: 0.12);
+    color: color.change(theme.$fg, $alpha: 0.82);
+  }
+  &.multiple {
+    border-color: color.change(#ffc66d, $alpha: 0.43);
+    background: color.change(#ffc66d, $alpha: 0.12);
+    color: #efc575;
+    > small {
+      background: color.change(#ffc66d, $alpha: 0.22);
+      color: #ffd58c;
+    }
+  }
+  &:hover,
+  &.selected {
+    z-index: 1;
+    border-color: color.change(theme.$primary, $alpha: 0.78);
+    background: color.change(theme.$primary, $alpha: 0.24);
+    box-shadow: 0 0 0 1px color.change(theme.$primary, $alpha: 0.13);
+    color: theme.$fg;
+  }
+  &:focus-visible {
+    z-index: 2;
+    outline: 1px solid color.change(theme.$primary, $alpha: 0.85);
+    outline-offset: 1px;
+  }
+}
+
+.virtual-keyboard-extra {
+  display: flex;
+  align-items: center;
+  padding: 0 9px 7px;
+  gap: 7px;
+
+  > span {
+    flex: 0 0 auto;
+    color: color.change(theme.$fg, $alpha: 0.38);
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
+  }
+  > div {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .virtual-keyboard-key.extra {
+    width: auto;
+    min-width: 35px;
+    padding: 0 7px;
+    flex: 0 0 auto !important;
+  }
+}
+
+.virtual-keyboard-detail {
+  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  background: color.change(theme.$bg2, $alpha: 0.2);
+}
+
+.virtual-keyboard-detail-title {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 4px 8px 4px 10px;
+  gap: 7px;
+  box-sizing: border-box;
+
+  > strong {
+    color: color.adjust(theme.$primary, $lightness: 21%);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: calc(9px * var(--keybindings-font-scale, 1));
+  }
+  > span {
+    color: theme.$fg3;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
+  }
+  > button {
+    display: grid;
+    width: 21px;
+    height: 21px;
+    min-height: 0;
+    margin-left: auto;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: theme.$fg3;
+
+    .icon {
+      width: 9px;
+      height: 9px;
+    }
+  }
+}
+
+.virtual-keyboard-detail-actions {
+  display: flex;
+  max-height: 92px;
+  padding: 0 9px 8px;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow-y: auto;
+
+  > div {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    padding: 4px 6px;
+    gap: 5px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.065);
+    border-radius: 5px;
+    background: color.change(theme.$bg1, $alpha: 0.55);
+  }
+  strong {
+    max-width: 180px;
+    overflow: hidden;
+    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  span {
+    color: theme.$fg3;
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
+  }
+  code {
+    color: color.change(theme.$fg, $alpha: 0.5);
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
+  }
+}
+
+@media (max-width: 860px) {
+  .virtual-keyboard-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .virtual-keyboard-legend {
+    align-self: stretch;
+  }
+}
