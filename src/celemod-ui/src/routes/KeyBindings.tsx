@@ -8,6 +8,10 @@ import {
 } from "react";
 import _i18n from "../i18n";
 import { Icon } from "../components/Icon";
+import {
+  VirtualKeyboard,
+  type VirtualKeyboardBinding,
+} from "../components/VirtualKeyboard";
 import { createPopup, PopupContext } from "../components/Popup";
 import { useCurrentLang, useGamePath } from "../states";
 import { callRemote } from "../utils";
@@ -116,6 +120,14 @@ const keyName = (value: string) => {
   if (/^D\d$/.test(value)) return value.slice(1);
   return aliases[value] ?? value;
 };
+
+const canonicalKeyboardKey = (value: string) =>
+  ({
+    Capital: "CapsLock",
+    Next: "PageDown",
+    Prior: "PageUp",
+    Return: "Enter",
+  })[value] ?? value;
 
 const keyboardCodeToXna = (code: string) => {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);
@@ -234,6 +246,7 @@ export const KeyBindings = () => {
   const [conflictOnly, setConflictOnly] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("keyboard");
   const [selectedConflict, setSelectedConflict] = useState("");
+  const [selectedKeyboardKey, setSelectedKeyboardKey] = useState("");
   const [showDisabled, setShowDisabled] = useState(false);
   const [saving, setSaving] = useState("");
   const requestId = useRef(0);
@@ -302,6 +315,20 @@ export const KeyBindings = () => {
         ),
       ),
     [consideredEntries],
+  );
+
+  const virtualKeyboardBindings = useMemo<VirtualKeyboardBinding[]>(
+    () =>
+      occurrences
+        .filter((occurrence) => occurrence.device === "keyboard")
+        .map((occurrence) => ({
+          actionId: occurrence.entryKey,
+          label: displayLabel(occurrence.entry),
+          source: occurrence.entry.source,
+          combination: occurrence.group.map(keyName).join(" + "),
+          keys: occurrence.group.map(canonicalKeyboardKey),
+        })),
+    [occurrences],
   );
 
   const conflictGroups = useMemo<ConflictGroup[]>(() => {
@@ -377,6 +404,15 @@ export const KeyBindings = () => {
     return consideredEntries.filter((entry) => {
       if (source !== "*" && entry.source !== source) return false;
       if (conflictOnly && !conflictsByEntry.has(entryKey(entry))) return false;
+      if (
+        selectedKeyboardKey &&
+        !entry.keyboard.some((group) =>
+          group.some(
+            (value) => canonicalKeyboardKey(value) === selectedKeyboardKey,
+          ),
+        )
+      )
+        return false;
       if (!normalizedQuery) return true;
       return [
         entry.source,
@@ -385,7 +421,14 @@ export const KeyBindings = () => {
         entry.description ?? "",
       ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
     });
-  }, [consideredEntries, conflictOnly, conflictsByEntry, query, source]);
+  }, [
+    consideredEntries,
+    conflictOnly,
+    conflictsByEntry,
+    query,
+    selectedKeyboardKey,
+    source,
+  ]);
 
   const saveEntry = useCallback(
     async (
@@ -755,7 +798,10 @@ export const KeyBindings = () => {
               </button>
               <button
                 className={inputMode === "controller" ? "selected" : ""}
-                onClick={() => setInputMode("controller")}
+                onClick={() => {
+                  setInputMode("controller");
+                  setSelectedKeyboardKey("");
+                }}
               >
                 <Icon name="gamepad" />
                 {_i18n.t("手柄")}
@@ -777,7 +823,11 @@ export const KeyBindings = () => {
             )}
             <button
               className={`conflict-toggle ${conflictOnly ? "selected" : ""}`}
-              onClick={() => setConflictOnly(!conflictOnly)}
+              onClick={() => {
+                const next = !conflictOnly;
+                setConflictOnly(next);
+                if (next) setSelectedKeyboardKey("");
+              }}
               title={_i18n.t("冲突")}
             >
               <Icon name="warn" />
@@ -805,6 +855,14 @@ export const KeyBindings = () => {
         )}
 
         <div className="keybindings-scroll">
+          {!loading && inputMode === "keyboard" && !conflictOnly && (
+            <VirtualKeyboard
+              bindings={virtualKeyboardBindings}
+              selectedKey={selectedKeyboardKey}
+              onSelectKey={setSelectedKeyboardKey}
+              formatKey={keyName}
+            />
+          )}
           {loading ? (
             <div className="keybindings-empty">
               {_i18n.t("正在读取按键配置…")}
