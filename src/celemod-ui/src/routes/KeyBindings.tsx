@@ -12,6 +12,10 @@ import {
   VirtualKeyboard,
   type VirtualKeyboardBinding,
 } from "../components/VirtualKeyboard";
+import {
+  VirtualController,
+  type VirtualControllerBinding,
+} from "../components/VirtualController";
 import { createPopup, PopupContext } from "../components/Popup";
 import { useCurrentLang, useGamePath } from "../states";
 import { callRemote } from "../utils";
@@ -247,6 +251,7 @@ export const KeyBindings = () => {
   const [inputMode, setInputMode] = useState<InputMode>("keyboard");
   const [selectedConflict, setSelectedConflict] = useState("");
   const [selectedKeyboardKey, setSelectedKeyboardKey] = useState("");
+  const [selectedControllerButton, setSelectedControllerButton] = useState("");
   const [showDisabled, setShowDisabled] = useState(false);
   const [saving, setSaving] = useState("");
   const requestId = useRef(0);
@@ -327,6 +332,20 @@ export const KeyBindings = () => {
           source: occurrence.entry.source,
           combination: occurrence.group.map(keyName).join(" + "),
           keys: occurrence.group.map(canonicalKeyboardKey),
+        })),
+    [occurrences],
+  );
+
+  const virtualControllerBindings = useMemo<VirtualControllerBinding[]>(
+    () =>
+      occurrences
+        .filter((occurrence) => occurrence.device === "controller")
+        .map((occurrence) => ({
+          actionId: occurrence.entryKey,
+          label: displayLabel(occurrence.entry),
+          source: occurrence.entry.source,
+          combination: occurrence.group.map(keyName).join(" + "),
+          buttons: occurrence.group,
         })),
     [occurrences],
   );
@@ -413,6 +432,13 @@ export const KeyBindings = () => {
         )
       )
         return false;
+      if (
+        selectedControllerButton &&
+        !entry.controller.some((group) =>
+          group.includes(selectedControllerButton),
+        )
+      )
+        return false;
       if (!normalizedQuery) return true;
       return [
         entry.source,
@@ -426,6 +452,7 @@ export const KeyBindings = () => {
     conflictOnly,
     conflictsByEntry,
     query,
+    selectedControllerButton,
     selectedKeyboardKey,
     source,
   ]);
@@ -791,7 +818,10 @@ export const KeyBindings = () => {
             <div className="input-mode-switch">
               <button
                 className={inputMode === "keyboard" ? "selected" : ""}
-                onClick={() => setInputMode("keyboard")}
+                onClick={() => {
+                  setInputMode("keyboard");
+                  setSelectedControllerButton("");
+                }}
               >
                 <Icon name="keyboard" />
                 {_i18n.t("键鼠")}
@@ -827,6 +857,7 @@ export const KeyBindings = () => {
                 const next = !conflictOnly;
                 setConflictOnly(next);
                 if (next) setSelectedKeyboardKey("");
+                if (next) setSelectedControllerButton("");
               }}
               title={_i18n.t("冲突")}
             >
@@ -861,6 +892,14 @@ export const KeyBindings = () => {
               selectedKey={selectedKeyboardKey}
               onSelectKey={setSelectedKeyboardKey}
               formatKey={keyName}
+            />
+          )}
+          {!loading && inputMode === "controller" && !conflictOnly && (
+            <VirtualController
+              bindings={virtualControllerBindings}
+              selectedButton={selectedControllerButton}
+              onSelectButton={setSelectedControllerButton}
+              formatButton={keyName}
             />
           )}
           {loading ? (
