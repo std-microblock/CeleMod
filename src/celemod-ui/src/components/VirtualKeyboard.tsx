@@ -49,7 +49,8 @@ const key = (value: string, label?: string, width?: number): KeyDefinition => ({
 });
 
 const mainRows = (platform: KeyboardPlatform): KeyDefinition[][] => {
-  const meta = platform === "macos" ? "⌘" : platform === "linux" ? "Super" : "Win";
+  const meta =
+    platform === "macos" ? "⌘" : platform === "linux" ? "Super" : "Win";
   const alt = platform === "macos" ? "⌥" : "Alt";
   const control = platform === "macos" ? "⌃" : "Ctrl";
   const backspace = platform === "macos" ? "delete" : "Backspace";
@@ -59,7 +60,9 @@ const mainRows = (platform: KeyboardPlatform): KeyDefinition[][] => {
   return [
     [
       key("OemTilde", "`"),
-      ...Array.from({ length: 10 }, (_, index) => key(`D${(index + 1) % 10}`, String((index + 1) % 10))),
+      ...Array.from({ length: 10 }, (_, index) =>
+        key(`D${(index + 1) % 10}`, String((index + 1) % 10)),
+      ),
       key("OemMinus", "−"),
       key("OemPlus", "="),
       key("Back", backspace, 2),
@@ -109,9 +112,14 @@ const mainRows = (platform: KeyboardPlatform): KeyDefinition[][] => {
   ];
 };
 
-const navigationRows = (platform: KeyboardPlatform): (KeyDefinition | null)[][] => [
+const navigationRows = (
+  platform: KeyboardPlatform,
+): (KeyDefinition | null)[][] => [
   [
-    key(platform === "macos" ? "Help" : "Insert", platform === "macos" ? "help" : "Insert"),
+    key(
+      platform === "macos" ? "Help" : "Insert",
+      platform === "macos" ? "help" : "Insert",
+    ),
     key("Home"),
     key("PageUp", "Page Up"),
   ],
@@ -122,7 +130,11 @@ const navigationRows = (platform: KeyboardPlatform): (KeyDefinition | null)[][] 
 ];
 
 const numpadKeys = (platform: KeyboardPlatform): KeyDefinition[] => [
-  { ...key("NumLock", platform === "macos" ? "clear" : "Num"), column: "1", row: "1" },
+  {
+    ...key("NumLock", platform === "macos" ? "clear" : "Num"),
+    column: "1",
+    row: "1",
+  },
   { ...key("Divide", "/"), column: "2", row: "1" },
   { ...key("Multiply", "×"), column: "3", row: "1" },
   { ...key("Subtract", "−"), column: "4", row: "1" },
@@ -146,9 +158,10 @@ const functionGroups = (platform: KeyboardPlatform): KeyDefinition[][] => [
   ["F1", "F2", "F3", "F4"].map((value) => key(value)),
   ["F5", "F6", "F7", "F8"].map((value) => key(value)),
   ["F9", "F10", "F11", "F12"].map((value) => key(value)),
-  (platform === "macos" ? ["F13", "F14", "F15"] : ["PrintScreen", "Scroll", "Pause"]).map(
-    (value) => key(value, value === "PrintScreen" ? "Print" : value),
-  ),
+  (platform === "macos"
+    ? ["F13", "F14", "F15"]
+    : ["PrintScreen", "Scroll", "Pause"]
+  ).map((value) => key(value, value === "PrintScreen" ? "Print" : value)),
 ];
 
 const platformTitle = (platform: KeyboardPlatform) =>
@@ -195,17 +208,23 @@ export const VirtualKeyboard = ({
         [
           ...functions.flat(),
           ...rows.flat(),
-          ...navRows.flatMap((row) => row.filter((item): item is KeyDefinition => item !== null)),
+          ...navRows.flatMap((row) =>
+            row.filter((item): item is KeyDefinition => item !== null),
+          ),
           ...keypad,
         ].map((item) => item.value),
       ),
     [functions, keypad, navRows, rows],
   );
-  const usedLayoutKeys = [...layoutKeys].filter((value) => (usageByKey.get(value)?.size ?? 0) > 0).length;
+  const usedLayoutKeys = [...layoutKeys].filter(
+    (value) => (usageByKey.get(value)?.size ?? 0) > 0,
+  ).length;
   const extraKeys = [...usageByKey.keys()]
     .filter((value) => !layoutKeys.has(value))
     .sort((left, right) => left.localeCompare(right));
-  const selectedActions = selectedKey ? [...(usageByKey.get(selectedKey)?.values() ?? [])] : [];
+  const selectedActions = selectedKey
+    ? [...(usageByKey.get(selectedKey)?.values() ?? [])]
+    : [];
 
   const renderKey = (definition: KeyDefinition, className = "") => {
     const count = usageByKey.get(definition.value)?.size ?? 0;
@@ -239,11 +258,16 @@ export const VirtualKeyboard = ({
   };
 
   return (
-    <section className="virtual-keyboard-panel" aria-label={_i18n.t("键盘占用")}>
+    <section
+      className="virtual-keyboard-panel"
+      aria-label={_i18n.t("键盘占用")}
+    >
       <header className="virtual-keyboard-header">
         <div>
           <strong>{_i18n.t("键盘占用")}</strong>
-          <span className="virtual-keyboard-platform">{platformTitle(platform)}</span>
+          <span className="virtual-keyboard-platform">
+            {platformTitle(platform)}
+          </span>
           <span className="virtual-keyboard-summary">
             {_i18n.t("{used}/{total} 个键已使用", {
               used: usedLayoutKeys,
@@ -251,7 +275,10 @@ export const VirtualKeyboard = ({
             })}
           </span>
         </div>
-        <div className="virtual-keyboard-legend" aria-label={_i18n.t("占用状态")}>
+        <div
+          className="virtual-keyboard-legend"
+          aria-label={_i18n.t("占用状态")}
+        >
           <span className="unused">{_i18n.t("未使用")}</span>
           <span className="used">{_i18n.t("单一占用")}</span>
           <span className="multiple">{_i18n.t("多处占用")}</span>
@@ -283,12 +310,21 @@ export const VirtualKeyboard = ({
               {navRows.map((row, index) => (
                 <div className="virtual-keyboard-row" key={index}>
                   {row.map((item, itemIndex) =>
-                    item ? renderKey(item) : <span className="virtual-keyboard-spacer" key={itemIndex} />,
+                    item ? (
+                      renderKey(item)
+                    ) : (
+                      <span
+                        className="virtual-keyboard-spacer"
+                        key={itemIndex}
+                      />
+                    ),
                   )}
                 </div>
               ))}
             </div>
-            <div className="virtual-keyboard-numpad">{keypad.map((item) => renderKey(item))}</div>
+            <div className="virtual-keyboard-numpad">
+              {keypad.map((item) => renderKey(item))}
+            </div>
           </div>
         </div>
       </div>
@@ -307,7 +343,9 @@ export const VirtualKeyboard = ({
             <span>
               {selectedActions.length === 0
                 ? _i18n.t("没有功能使用此按键")
-                : _i18n.t("{count} 个功能使用此按键", { count: selectedActions.length })}
+                : _i18n.t("{count} 个功能使用此按键", {
+                    count: selectedActions.length,
+                  })}
             </span>
             <button
               type="button"

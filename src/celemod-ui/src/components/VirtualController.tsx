@@ -108,7 +108,11 @@ const detectControllerLayout = (id: string): ControllerLayout => {
 const readControllerIdentity = (): ControllerIdentity => {
   const gamepad = [...(navigator.getGamepads?.() ?? [])].find(Boolean);
   return gamepad
-    ? { connected: true, id: gamepad.id, layout: detectControllerLayout(gamepad.id) }
+    ? {
+        connected: true,
+        id: gamepad.id,
+        layout: detectControllerLayout(gamepad.id),
+      }
     : { connected: false, id: "", layout: "xbox" };
 };
 
@@ -209,7 +213,6 @@ const faceControls = (
   control("B", x + horizontalOffset, y, "face"),
   control("A", x, y + verticalOffset, "face"),
 ];
-
 
 const controllerPositions: Record<ControllerLayout, ControlPosition[]> = {
   xbox: [
@@ -340,8 +343,7 @@ export const VirtualController = ({
   ).length;
   const extraButtons = [...usageByButton.keys()]
     .filter(
-      (value) =>
-        !(CONTROLLER_BUTTONS as readonly string[]).includes(value),
+      (value) => !(CONTROLLER_BUTTONS as readonly string[]).includes(value),
     )
     .sort((left, right) => left.localeCompare(right));
   const selectedActions = selectedButton
@@ -401,10 +403,7 @@ export const VirtualController = ({
     );
   };
 
-  const renderStick = (
-    side: "Left" | "Right",
-    position: StickPosition,
-  ) => (
+  const renderStick = (side: "Left" | "Right", position: StickPosition) => (
     <div
       className="virtual-controller-stick-control"
       key={`${side}Stick`}
@@ -413,16 +412,15 @@ export const VirtualController = ({
       <svg viewBox="0 0 100 100">
         {STICK_SEGMENTS.map((segment) => {
           const value = `${side}Thumbstick${segment.suffix}`;
-          const {
-            accessibleLabel,
-            count,
-            selected,
-            status,
-            usageLabel,
-          } = buttonPresentation(value);
+          const { accessibleLabel, count, selected, status, usageLabel } =
+            buttonPresentation(value);
           const select = () => onSelectButton(selected ? "" : value);
           const badgeX =
-            segment.x < 50 ? segment.x + 8 : segment.x > 50 ? segment.x - 8 : segment.x + 9;
+            segment.x < 50
+              ? segment.x + 8
+              : segment.x > 50
+                ? segment.x - 8
+                : segment.x + 9;
           return (
             <g key={value}>
               <path
@@ -441,11 +439,7 @@ export const VirtualController = ({
               >
                 <title>{`${accessibleLabel} · ${usageLabel}`}</title>
               </path>
-              <text
-                className="stick-segment-label"
-                x={segment.x}
-                y={segment.y}
-              >
+              <text className="stick-segment-label" x={segment.x} y={segment.y}>
                 {segment.label}
               </text>
               {count > 0 && (
@@ -466,7 +460,10 @@ export const VirtualController = ({
   );
 
   return (
-    <section className="virtual-controller-panel" aria-label={_i18n.t("手柄占用")}>
+    <section
+      className="virtual-controller-panel"
+      aria-label={_i18n.t("手柄占用")}
+    >
       <header className="virtual-controller-header">
         <div className="virtual-controller-heading">
           <strong>{_i18n.t("手柄占用")}</strong>
@@ -500,9 +497,7 @@ export const VirtualController = ({
             className={`virtual-controller-connection ${identity.connected ? "connected" : ""}`}
             title={identity.id}
           >
-            {identity.connected
-              ? _i18n.t("已连接")
-              : _i18n.t("未检测到手柄")}
+            {identity.connected ? _i18n.t("已连接") : _i18n.t("未检测到手柄")}
           </span>
           <span className="virtual-controller-summary">
             {_i18n.t("{used}/{total} 个按钮已使用", {
@@ -511,7 +506,10 @@ export const VirtualController = ({
             })}
           </span>
         </div>
-        <div className="virtual-controller-legend" aria-label={_i18n.t("占用状态")}>
+        <div
+          className="virtual-controller-legend"
+          aria-label={_i18n.t("占用状态")}
+        >
           <span className="unused">{_i18n.t("未使用")}</span>
           <span className="used">{_i18n.t("单一占用")}</span>
           <span className="multiple">{_i18n.t("多处占用")}</span>
