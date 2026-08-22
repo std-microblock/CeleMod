@@ -81,7 +81,7 @@ let catalog: CatalogMod[] | null = null;
 let catalogPromise: Promise<CatalogMod[]> | null = null;
 
 export const loadModCatalog = async (
-  ttlHours = 24,
+  ttlHours = 1,
   forceRefresh = false,
 ): Promise<CatalogMod[]> => {
   await callRemote("configure_mod_cache", Math.max(0, ttlHours) * 60 * 60);

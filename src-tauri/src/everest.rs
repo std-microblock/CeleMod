@@ -27,7 +27,7 @@ pub struct ModInfoCached {
 }
 
 static USING_CACHE: AtomicBool = AtomicBool::new(false);
-static MOD_CACHE_TTL_SECONDS: AtomicU64 = AtomicU64::new(24 * 60 * 60);
+static MOD_CACHE_TTL_SECONDS: AtomicU64 = AtomicU64::new(60 * 60);
 
 pub fn is_using_cache() -> bool {
     USING_CACHE.load(Ordering::Relaxed)

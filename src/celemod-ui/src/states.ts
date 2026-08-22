@@ -259,7 +259,7 @@ export const useAppStore = create<AppState>()(
         deleteOrphansByDefault: true,
         orphanActionTypes: [...DEFAULT_ORPHAN_ACTION_TYPES],
         hiddenModTypes: [],
-        modCacheTtlHours: 24,
+        modCacheTtlHours: 1,
         enableAcrylic: true,
         profileEnabled: false,
         profileModeInitialized: false,
