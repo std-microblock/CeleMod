@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { collectSwitchNames, type ManageNode } from "./stores/manage";
+import {
+  collectSwitchNames,
+  normalizeManageDependencies,
+  type ManageNode,
+} from "./stores/manage";
 
 const node = (name: string, options: Partial<ManageNode> = {}): ManageNode => ({
   name,
@@ -14,6 +18,17 @@ const node = (name: string, options: Partial<ManageNode> = {}): ManageNode => ({
   duplicateFiles: [],
   meta: null,
   ...options,
+});
+
+test("deduplicates dependency declarations by Mod name", () => {
+  assert.deepEqual(
+    normalizeManageDependencies([
+      { name: "CollabLobbyUI", version: "1.0.0", optional: true },
+      { name: "CollabLobbyUI", version: "1.0.9", optional: false },
+      { name: "CollabLobbyUI", version: "1.0.5", optional: true },
+    ]),
+    [{ name: "CollabLobbyUI", version: "1.0.9", optional: false }],
+  );
 });
 
 test("disables an unclassified orphan dependency", () => {

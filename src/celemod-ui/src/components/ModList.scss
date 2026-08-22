@@ -518,7 +518,10 @@
       color: #ef596f;
     }
 
-    width: calc(100vw - 100px);
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
   }
 }
 

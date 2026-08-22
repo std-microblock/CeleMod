@@ -45,6 +45,7 @@ import {
   collectSwitchNames,
   excludedDependencyNames,
   getDependencyHealth,
+  normalizeManageDependencies,
   selectVisibleRootNames,
   resolveManageDisplayNames,
   useManageStore,
@@ -814,7 +815,9 @@ const ManageTreeNode = ({
   const [editingComment, setEditingComment] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   if (!node || excludedDependencyNames.has(name)) return null;
-  const visibleDependencies = node.dependencies.filter(
+  const visibleDependencies = normalizeManageDependencies(
+    node.dependencies,
+  ).filter(
     (dependency) =>
       !excludedDependencyNames.has(dependency.name) &&
       (actions.checkOptional || !dependency.optional),
@@ -827,7 +830,8 @@ const ManageTreeNode = ({
   );
   const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
-  const menuOpen = openMenuName === name;
+  const instanceId = JSON.stringify([...path, name]);
+  const menuOpen = openMenuName === instanceId;
   const displayNames = resolveManageDisplayNames(
     name,
     actions.comments[name],
@@ -986,7 +990,7 @@ const ManageTreeNode = ({
         >
           <button
             className={menuOpen ? "active" : ""}
-            onClick={() => setOpenMenuName(menuOpen ? null : name)}
+            onClick={() => setOpenMenuName(menuOpen ? null : instanceId)}
             title={_i18n.t("更多操作")}
           >
             <Icon name="opts-h" />

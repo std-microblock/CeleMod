@@ -67,6 +67,36 @@ export interface ManageModFile {
   modifiedAt: number;
 }
 
+const compareVersion = (left: string, right: string) => {
+  const normalize = (value: string) =>
+    value.split(/[.-]/).map((part) => Number(part) || 0);
+  const a = normalize(left);
+  const b = normalize(right);
+  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+    if ((a[index] ?? 0) !== (b[index] ?? 0))
+      return (a[index] ?? 0) - (b[index] ?? 0);
+  }
+  return 0;
+};
+
+export const normalizeManageDependencies = (
+  dependencies: readonly ManageDependency[],
+) => {
+  const byName = new Map<string, ManageDependency>();
+  for (const dependency of dependencies) {
+    const current = byName.get(dependency.name);
+    if (!current) {
+      byName.set(dependency.name, { ...dependency });
+      continue;
+    }
+    if (compareVersion(dependency.version, current.version) > 0)
+      current.version = dependency.version;
+    // A dependency is optional only when every declaration says it is optional.
+    current.optional = current.optional && dependency.optional;
+  }
+  return [...byName.values()];
+};
+
 interface ManageFilters {
   query: string;
   enabled: ManageEnabledFilter;
@@ -153,9 +183,7 @@ export const useManageStore = create<ManageTreeState>()(
                 current.version = mod.version;
                 current.file = mod.file;
                 current.size = mod.size;
-                current.dependencies = mod.deps.map((dependency) => ({
-                  ...dependency,
-                }));
+                current.dependencies = normalizeManageDependencies(mod.deps);
               }
               continue;
             }
@@ -167,7 +195,7 @@ export const useManageStore = create<ManageTreeState>()(
               version: mod.version,
               file: mod.file,
               size: mod.size,
-              dependencies: mod.deps.map((dependency) => ({ ...dependency })),
+              dependencies: normalizeManageDependencies(mod.deps),
               dependedBy: [],
               duplicateFiles: [file],
               meta: catalogByName[mod.name.trim().toLocaleLowerCase()] ?? null,
@@ -176,7 +204,8 @@ export const useManageStore = create<ManageTreeState>()(
           for (const node of Object.values(nodes)) {
             for (const dependency of node.dependencies) {
               if (!dependency.optional && nodes[dependency.name]) {
-                nodes[dependency.name].dependedBy.push(node.name);
+                if (!nodes[dependency.name].dependedBy.includes(node.name))
+                  nodes[dependency.name].dependedBy.push(node.name);
               }
             }
           }
@@ -295,18 +324,6 @@ export interface ManageDependencyHealth {
   status: "healthy" | "missing" | "disabled" | "version";
   messages: string[];
 }
-
-const compareVersion = (left: string, right: string) => {
-  const normalize = (value: string) =>
-    value.split(/[.-]/).map((part) => Number(part) || 0);
-  const a = normalize(left);
-  const b = normalize(right);
-  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-    if ((a[index] ?? 0) !== (b[index] ?? 0))
-      return (a[index] ?? 0) - (b[index] ?? 0);
-  }
-  return 0;
-};
 
 export const getDependencyHealth = (
   name: string,
