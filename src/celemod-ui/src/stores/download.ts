@@ -258,9 +258,6 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     };
 
     void (async () => {
-      if (replacingInstalledMod) {
-        await callRemote("rm_mod", `${appState.gamePath}/Mods/`, name);
-      }
       await callRemote(
         "download_mod",
         name,

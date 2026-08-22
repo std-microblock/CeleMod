@@ -21,7 +21,7 @@ use std::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use ureq::DownloadCallbackInfo;
 
@@ -1440,7 +1440,7 @@ fn download_mod_archive_with_cancel(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Vec<EverestModMetadata>> {
     let destination = Path::new(dest);
     let destination_lock = DOWNLOAD_DESTINATION_LOCKS
         .lock()
@@ -1460,11 +1460,9 @@ fn download_mod_archive_with_cancel(
             Err(std::sync::TryLockError::Poisoned(error)) => break error.into_inner(),
         }
     };
-    let mut temporary_name = destination.as_os_str().to_os_string();
-    temporary_name.push(".celemod");
-    let temporary = PathBuf::from(temporary_name);
+    let temporary = mod_download_sidecar_path(destination);
 
-    let result: anyhow::Result<()> = try {
+    let result: anyhow::Result<Vec<EverestModMetadata>> = try {
         ureq::download_file_to_path_with_progress(
             url,
             temporary.to_string_lossy().as_ref(),
@@ -1473,19 +1471,87 @@ fn download_mod_archive_with_cancel(
             cancel_flag,
         )?;
 
-        if !is_valid_zip_archive(&temporary) {
-            bail!("Downloaded file is not a valid zip archive");
-        }
-
-        if destination.exists() {
-            std::fs::remove_file(destination)
-                .with_context(|| format!("Failed to replace Mod archive at {dest}"))?;
-        }
-        std::fs::rename(&temporary, destination)
-            .with_context(|| format!("Failed to finish Mod archive at {dest}"))?;
+        commit_downloaded_mod_archive(&temporary, destination)?
     };
 
     result
+}
+
+fn mod_download_sidecar_path(destination: &Path) -> PathBuf {
+    let mut temporary_name = destination.as_os_str().to_os_string();
+    temporary_name.push(".celemod");
+    PathBuf::from(temporary_name)
+}
+
+fn replace_mod_archive(temporary: &Path, destination: &Path) -> anyhow::Result<()> {
+    if !destination.exists() {
+        fs::rename(temporary, destination).with_context(|| {
+            format!("Failed to finish Mod archive at {}", destination.display())
+        })?;
+        return Ok(());
+    }
+
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let mut backup_name = destination.as_os_str().to_os_string();
+    backup_name.push(format!(".celemod-backup-{}-{unique}", std::process::id()));
+    let backup = PathBuf::from(backup_name);
+
+    fs::rename(destination, &backup).with_context(|| {
+        format!(
+            "Failed to stage existing Mod archive at {}",
+            destination.display()
+        )
+    })?;
+    if let Err(error) = fs::rename(temporary, destination) {
+        let restore_error = fs::rename(&backup, destination).err();
+        return match restore_error {
+            Some(restore_error) => Err(anyhow::anyhow!(
+                "Failed to replace Mod archive at {}: {error}; also failed to restore the previous archive: {restore_error}",
+                destination.display()
+            )),
+            None => Err(error).with_context(|| {
+                format!(
+                    "Failed to replace Mod archive at {}; the previous archive was restored",
+                    destination.display()
+                )
+            }),
+        };
+    }
+    if let Err(error) = fs::remove_file(&backup) {
+        crate::logging::warn(format_args!(
+            "Failed to remove Mod update backup {}: {error}",
+            backup.display()
+        ));
+    }
+    Ok(())
+}
+
+fn commit_downloaded_mod_archive(
+    temporary: &Path,
+    destination: &Path,
+) -> anyhow::Result<Vec<EverestModMetadata>> {
+    if !is_valid_zip_archive(temporary) {
+        bail!("Downloaded file is not a valid zip archive");
+    }
+
+    // Parse the metadata before touching the installed archive. A corrupt or
+    // incomplete update must never remove the currently working Mod.
+    let metadata_entries = parse_mod_yaml(temporary)?;
+    replace_mod_archive(temporary, destination)?;
+
+    // The cache is only an optimization. The archive has already been fully
+    // validated, so a cache write failure should not turn a successful update
+    // into a destructive retry path.
+    if let Err(error) = extract_mod_for_yaml(destination) {
+        crate::logging::warn(format_args!(
+            "Failed to refresh Mod metadata cache for {}: {error:#}",
+            destination.display()
+        ));
+    }
+    Ok(metadata_entries)
 }
 
 fn cleanup_mod_download_temp_files_impl(mods_dir: &Path) -> anyhow::Result<usize> {
@@ -1715,14 +1781,13 @@ fn get_installed_mods_without_catalog_sync(mods_folder_path: String) -> Vec<Loca
 
 fn download_and_install_mod(
     url: &str,
-    dest: &String,
+    dest: &str,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<Vec<(String, String)>> {
-    download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
-
-    let metadata_entries = extract_mod_for_yaml(Path::new(dest))?;
+    let metadata_entries =
+        download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
 
     let mut deps: Vec<(String, String)> = Vec::new();
 
@@ -2068,7 +2133,6 @@ fn download_mod_queue(
                         tasks[index].status = DownloadStatus::Failed;
                         tasks[index].data = error;
                         tasks[index].speed_bytes_per_sec = 0.0;
-                        let _ = fs::remove_file(&tasks[index].dest);
                         failed = true;
                     }
                 }
@@ -2847,6 +2911,59 @@ mod local_package_tests {
         assert!(!mods.join("Example.zip.celemod").exists());
         assert!(mods.join("Keep.zip").exists());
         assert!(mods.join("Keep.celemod").exists());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn invalid_mod_update_keeps_the_installed_archive() {
+        let root = test_dir("invalid-mod-update");
+        let mods = root.join("Mods");
+        fs::create_dir_all(&mods).unwrap();
+        let destination = mods.join("CanvasContest.zip");
+        let temporary = mod_download_sidecar_path(&destination);
+        write_zip(
+            &destination,
+            &[
+                ("everest.yaml", b"- Name: CanvasContest\n  Version: 1.0.8\n"),
+                ("Maps/CanvasContest/old.bin", b"old map"),
+            ],
+        );
+        write_zip(&temporary, &[("readme.txt", b"incomplete update")]);
+
+        assert!(commit_downloaded_mod_archive(&temporary, &destination).is_err());
+        let installed = parse_mod_yaml(&destination).unwrap();
+        assert_eq!(installed[0].version.as_deref(), Some("1.0.8"));
+        let mut archive = zip::ZipArchive::new(fs::File::open(&destination).unwrap()).unwrap();
+        assert!(archive.by_name("Maps/CanvasContest/old.bin").is_ok());
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn valid_mod_update_replaces_the_installed_archive_after_validation() {
+        let root = test_dir("valid-mod-update");
+        let mods = root.join("Mods");
+        fs::create_dir_all(&mods).unwrap();
+        let destination = mods.join("CanvasContest.zip");
+        let temporary = mod_download_sidecar_path(&destination);
+        write_zip(
+            &destination,
+            &[("everest.yaml", b"- Name: CanvasContest\n  Version: 1.0.8\n")],
+        );
+        write_zip(
+            &temporary,
+            &[
+                ("everest.yaml", b"- Name: CanvasContest\n  Version: 1.0.9\n"),
+                ("Maps/CanvasContest/new.bin", b"new map"),
+            ],
+        );
+
+        let metadata = commit_downloaded_mod_archive(&temporary, &destination).unwrap();
+        assert_eq!(metadata[0].version.as_deref(), Some("1.0.9"));
+        assert!(!temporary.exists());
+        let mut archive = zip::ZipArchive::new(fs::File::open(&destination).unwrap()).unwrap();
+        assert!(archive.by_name("Maps/CanvasContest/new.bin").is_ok());
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -4579,11 +4696,28 @@ fn download_mod(
                 return;
             }
         };
+        let installed = get_installed_mods_sync(mods_dir.clone());
+        let destination_file = installed
+            .iter()
+            .find(|item| {
+                item.name == name
+                    && Path::new(&mods_dir).join(&item.file).is_file()
+                    && Path::new(&item.file)
+                        .extension()
+                        .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
+            })
+            .map(|item| item.file.clone())
+            .unwrap_or_else(|| format!("{}.zip", make_path_compatible_name(&name)));
+        let previous_files = installed
+            .iter()
+            .filter(|item| item.name == name && item.file != destination_file)
+            .map(|item| item.file.clone())
+            .collect::<HashSet<_>>();
         let mut tasks = vec![DownloadInfo {
             name: name.clone(),
             url,
             dest: Path::new(&mods_dir)
-                .join(format!("{}.zip", make_path_compatible_name(&name)))
+                .join(&destination_file)
                 .to_string_lossy()
                 .to_string(),
             status: DownloadStatus::Waiting,
@@ -4592,7 +4726,6 @@ fn download_mod(
             total_bytes: 0,
             speed_bytes_per_sec: 0.0,
         }];
-        let installed = get_installed_mods_sync(mods_dir.clone());
         let installed_before = installed
             .iter()
             .map(|item| item.name.to_ascii_lowercase())
@@ -4606,6 +4739,17 @@ fn download_mod(
             multi_thread,
             &cancel_flag,
         );
+        if tasks
+            .first()
+            .is_some_and(|task| task.status == DownloadStatus::Finished)
+            && !previous_files.is_empty()
+            && let Err(error) =
+                delete_mod_files_sync(&mods_dir, &previous_files.into_iter().collect::<Vec<_>>())
+        {
+            crate::logging::warn(format_args!(
+                "Failed to remove superseded Mod files after updating {name}: {error:#}"
+            ));
+        }
         if !failed {
             let game_path = Path::new(&mods_dir)
                 .parent()
