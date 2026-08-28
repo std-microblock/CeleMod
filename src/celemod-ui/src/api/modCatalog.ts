@@ -79,6 +79,7 @@ export interface LocalSubmission extends Content {
 
 let catalog: CatalogMod[] | null = null;
 let catalogPromise: Promise<CatalogMod[]> | null = null;
+let catalogRequestId = 0;
 
 export const loadModCatalog = async (
   ttlHours = 1,
@@ -88,20 +89,25 @@ export const loadModCatalog = async (
   if (catalog && !forceRefresh) return catalog;
   if (catalogPromise && !forceRefresh) return catalogPromise;
 
-  catalogPromise = callRemote<string>("get_mod_catalog", forceRefresh)
+  const requestId = ++catalogRequestId;
+  let request: Promise<CatalogMod[]>;
+  request = callRemote<string>("get_mod_catalog", forceRefresh)
     .then((raw) => {
       const parsed = JSON.parse(raw) as CatalogResponse;
-      catalog = Array.isArray(parsed.data) ? parsed.data : [];
-      return catalog;
+      const nextCatalog = Array.isArray(parsed.data) ? parsed.data : [];
+      if (requestId === catalogRequestId) catalog = nextCatalog;
+      return nextCatalog;
     })
     .finally(() => {
-      catalogPromise = null;
+      if (catalogPromise === request) catalogPromise = null;
     });
-  return catalogPromise;
+  catalogPromise = request;
+  return request;
 };
 
 export const clearInMemoryModCatalog = () => {
   catalog = null;
+  catalogRequestId += 1;
   catalogPromise = null;
 };
 

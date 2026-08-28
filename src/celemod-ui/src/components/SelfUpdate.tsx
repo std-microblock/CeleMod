@@ -4,14 +4,20 @@ import { callRemote, compareVersion } from "../utils";
 import "./SelfUpdate.scss";
 import { useState } from "react";
 import { ProgressIndicator } from "./Progress";
-import { getLatestUpdateInfo } from "../api/updateInfo";
+import {
+  getLatestUpdateInfo,
+  refreshLatestUpdateInfo,
+} from "../api/updateInfo";
 
-export const checkUpdate = async () => {
+export const checkUpdate = async (forceRefresh = false) => {
   const currentVersion = (await callRemote<string>("celemod_version"))
     .split("")
     .filter((v) => v === "." || !isNaN(parseInt(v)))
     .join("");
-  const info = await getLatestUpdateInfo();
+  const info = await (forceRefresh
+    ? refreshLatestUpdateInfo()
+    : getLatestUpdateInfo());
+
   const latestVersion = info.version
     .split("")
     .filter((v) => v === "." || !isNaN(parseInt(v)))

@@ -3,6 +3,8 @@ import { useI18N } from "src/i18n";
 import { useEffect, useState } from "react";
 import { GameSelector } from "../components/GameSelector";
 import { Icon } from "../components/Icon";
+import { Button } from "../components/Button";
+import { refreshLatestUpdateInfo } from "../api/updateInfo";
 import { callRemote, selectGamePath, useBlockingMask } from "../utils";
 // @ts-ignore
 import strawberry from "../resources/Celemod.png";
@@ -57,6 +59,21 @@ export const Home = () => {
   const { profiles, activeProfileNames } = useCurrentBlacklistProfile();
   const alwaysOnMods = useAppStore((state) => state.alwaysOnMods);
   const mask = useBlockingMask();
+  const [updateCheckState, setUpdateCheckState] = useState<
+    "idle" | "checking" | "success" | "error"
+  >("idle");
+
+  const checkUpdates = () => {
+    if (updateCheckState === "checking") return;
+    setUpdateCheckState("checking");
+    void refreshLatestUpdateInfo().then(
+      () => setUpdateCheckState("success"),
+      (error) => {
+        console.error("Failed to refresh update information", error);
+        setUpdateCheckState("error");
+      },
+    );
+  };
 
   useEffect(() => {
     if (!gamePath) return;
@@ -128,6 +145,20 @@ export const Home = () => {
             <option value="pt-BR">Brazilian Portuguese</option>
           </select>
         </label>
+        <div className="home-update-actions">
+          <Button
+            disabled={updateCheckState === "checking"}
+            onClick={checkUpdates}
+          >
+            {updateCheckState === "checking"
+              ? _i18n.t("检查中…")
+              : updateCheckState === "success"
+                ? _i18n.t("检查完成")
+                : updateCheckState === "error"
+                  ? _i18n.t("检查失败")
+                  : _i18n.t("检查更新")}
+          </Button>
+        </div>
       </header>
 
       {gamePath && newKeyboardInputEnabled === true ? (
