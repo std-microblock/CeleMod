@@ -11,6 +11,7 @@ import {
   useMirror,
   useUseMultiThread,
 } from "../states";
+import { clearInMemoryModCatalog, loadModCatalog } from "../api/modCatalog";
 import { callRemote } from "../utils";
 import "./Settings.scss";
 
@@ -166,6 +167,7 @@ export const Settings = () => {
   const [useMultiThread, setUseMultiThread] = useUseMultiThread();
   const [downloadAdvanced, setDownloadAdvanced] = useState(false);
   const [cacheStatus, setCacheStatus] = useState<CacheStatus | null>(null);
+  const [cacheBusy, setCacheBusy] = useState(false);
   const [cacheError, setCacheError] = useState("");
 
   const downloadDefaultEnabled = useAppStore(
@@ -249,13 +251,17 @@ export const Settings = () => {
     return "advanced";
   }, [downloadDefaultEnabled, downloadTypeDefaults]);
 
-  const refreshCacheStatus = () => {
-    void callRemote<CacheStatus>("get_mod_cache_status")
-      .then(setCacheStatus)
-      .catch((error) => setCacheError(String(error)));
+  const refreshCacheStatus = async () => {
+    try {
+      setCacheStatus(await callRemote<CacheStatus>("get_mod_cache_status"));
+    } catch (error) {
+      setCacheError(String(error));
+    }
   };
 
-  useEffect(refreshCacheStatus, []);
+  useEffect(() => {
+    void refreshCacheStatus();
+  }, []);
 
   const formatCacheTime = (timestamp: number) => {
     if (!timestamp) return _i18n.t("未知");
@@ -509,6 +515,30 @@ export const Settings = () => {
                   {cacheStatus ? formatCacheTime(cacheStatus.updatedAt) : "--"}
                 </strong>
               </div>
+            </div>
+            <div className="cache-actions">
+              <span title={cacheStatus?.path}>
+                {cacheStatus?.path || _i18n.t("缓存尚未建立")}
+              </span>
+              <button
+                type="button"
+                disabled={cacheBusy}
+                onClick={async () => {
+                  setCacheBusy(true);
+                  setCacheError("");
+                  try {
+                    clearInMemoryModCatalog();
+                    await loadModCatalog(modCacheTtlHours, true);
+                    await refreshCacheStatus();
+                  } catch (error) {
+                    setCacheError(String(error));
+                  } finally {
+                    setCacheBusy(false);
+                  }
+                }}
+              >
+                {cacheBusy ? _i18n.t("刷新中…") : _i18n.t("立即刷新")}
+              </button>
             </div>
             {cacheError && <div className="settings-error">{cacheError}</div>}
           </div>

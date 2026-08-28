@@ -82,6 +82,22 @@ const UPDATE_INFO_URL =
   "https://ganbei-hot-update-1258625969.file.myqcloud.com/celemod/updateInfo.json";
 
 let cachedUpdateInfo: Promise<UpdateInfo> | null = null;
+let cachedUpdateInfoRequestId = 0;
+let forcedUpdateInfoRequest: Promise<UpdateInfo> | null = null;
+let lastForcedUpdateAt = 0;
+const MANUAL_REFRESH_COOLDOWN_MS = 10_000;
+type UpdateInfoListener = (value: UpdateInfo) => void;
+const updateInfoListeners = new Set<UpdateInfoListener>();
+
+const notifyUpdateInfo = (value: UpdateInfo) => {
+  for (const listener of updateInfoListeners) {
+    try {
+      listener(value);
+    } catch (error) {
+      console.error("Failed to notify update info listener", error);
+    }
+  }
+};
 
 const parseUpdateInfo = (text: string) =>
   JSON.parse(
@@ -93,7 +109,11 @@ const parseUpdateInfo = (text: string) =>
 
 export const getLatestUpdateInfo = (forceRefresh = false) => {
   if (!cachedUpdateInfo || forceRefresh) {
-    cachedUpdateInfo = fetch(`${UPDATE_INFO_URL}?${Date.now()}`)
+    const requestId = ++cachedUpdateInfoRequestId;
+    console.info(
+      `[update-info] Fetching latest version information (${forceRefresh ? "forced refresh" : "cache miss"}, request ${requestId})`,
+    );
+    const request = fetch(`${UPDATE_INFO_URL}?${Date.now()}-${requestId}`)
       .then((response) => {
         if (!response.ok)
           throw new Error(
@@ -102,12 +122,99 @@ export const getLatestUpdateInfo = (forceRefresh = false) => {
         return response.text();
       })
       .then(parseUpdateInfo)
-      .catch((error) => {
-        cachedUpdateInfo = null;
-        throw error;
+      .then((value) => {
+        console.info(
+          `[update-info] Latest version information loaded: ${value.version} (request ${requestId})`,
+        );
+        return value;
       });
+    cachedUpdateInfo = request;
+    void request.then(
+      (value) => {
+        if (
+          cachedUpdateInfo === request &&
+          cachedUpdateInfoRequestId === requestId
+        ) {
+          notifyUpdateInfo(value);
+        }
+      },
+      () => {
+        if (
+          cachedUpdateInfo === request &&
+          cachedUpdateInfoRequestId === requestId
+        ) {
+          cachedUpdateInfo = null;
+        }
+      },
+    );
+  } else {
+    console.info(
+      `[update-info] Using cached latest version information (request ${cachedUpdateInfoRequestId})`,
+    );
   }
   return cachedUpdateInfo;
+};
+
+export const refreshLatestUpdateInfo = () => {
+  if (forcedUpdateInfoRequest) return forcedUpdateInfoRequest;
+  const now = Date.now();
+  if (cachedUpdateInfo && now - lastForcedUpdateAt < MANUAL_REFRESH_COOLDOWN_MS) {
+    console.info(
+      `[update-info] Manual refresh throttled; using cached request ${cachedUpdateInfoRequestId}`,
+    );
+    return cachedUpdateInfo;
+  }
+  lastForcedUpdateAt = now;
+  const request = getLatestUpdateInfo(true);
+  forcedUpdateInfoRequest = request;
+  void request.then(
+    () => {
+      if (forcedUpdateInfoRequest === request) forcedUpdateInfoRequest = null;
+    },
+    () => {
+      if (forcedUpdateInfoRequest === request) forcedUpdateInfoRequest = null;
+    },
+  );
+  return request;
+};
+
+export const subscribeToUpdateInfo = (listener: UpdateInfoListener) => {
+  updateInfoListeners.add(listener);
+  return () => updateInfoListeners.delete(listener);
+};
+
+export const useUpdateInfo = () => {
+  const [data, setData] = useState<UpdateInfo | null>(null);
+  const [error, setError] = useState<unknown>(null);
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = subscribeToUpdateInfo((value) => {
+      if (!active) return;
+      setData(value);
+      setError(null);
+    });
+    const request = getLatestUpdateInfo();
+    const requestId = cachedUpdateInfoRequestId;
+    void request.then(
+      (value) => {
+        if (active && requestId === cachedUpdateInfoRequestId) {
+          setData(value);
+          setError(null);
+        }
+      },
+      (reason) => {
+        if (active && requestId === cachedUpdateInfoRequestId)
+          setError(reason);
+      },
+    );
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  return { data, error };
 };
 
 export const featureVisible = (
@@ -116,19 +223,3 @@ export const featureVisible = (
 ) =>
   Boolean(feature?.enabled && (!feature.only_zh_cn || currentLang === "zh-CN"));
 
-export const useUpdateInfo = () => {
-  const [data, setData] = useState<UpdateInfo | null>(null);
-  const [error, setError] = useState<unknown>(null);
-
-  useEffect(() => {
-    let active = true;
-    getLatestUpdateInfo()
-      .then((value) => active && setData(value))
-      .catch((reason) => active && setError(reason));
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return { data, error };
-};

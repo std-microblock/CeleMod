@@ -42,6 +42,18 @@
   }
 }
 
+.home-update-actions {
+  position: absolute;
+  right: 4px;
+  bottom: 48px;
+
+  button {
+    min-height: 28px;
+    padding: 0 11px;
+    font-size: 10px;
+  }
+}
+
 .home-language {
   position: absolute;
   top: 4px;
