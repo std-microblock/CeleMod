@@ -59,15 +59,16 @@ export function WindowTitlebar() {
       <button
         className="celemod-version"
         title={_i18n.t(
-          "左键检查更新，右键切换控制台 / Left click to check updates, right click to toggle console",
+          "左键检查更新，右键打开日志 / Left click to check updates, right click to open the log",
         )}
         onClick={(event) => {
-          if (event.shiftKey) void callRemote("show_log_window");
-          else void window._checkUpdate?.();
+          if (event.shiftKey)
+            void callRemote("show_log_window").catch(console.error);
+          else void window._checkUpdate?.(true).catch(console.error);
         }}
         onContextMenu={(event) => {
           event.preventDefault();
-          void callRemote("show_log_window");
+          void callRemote("show_log_window").catch(console.error);
         }}
       >
         <span className="caption-hash">{hash}</span>

@@ -4422,10 +4422,29 @@ fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
 }
 
 #[tauri::command]
-fn show_log_window() {
-    if let Err(error) = open::that(crate::logging::path()) {
-        crate::logging::error(format_args!("Failed to open CeleMod log: {error}"));
-    }
+fn show_log_window() -> Result<(), String> {
+    let path = crate::logging::path();
+    #[cfg(windows)]
+    let result = match open::that(path) {
+        Ok(()) => Ok(()),
+        Err(default_error) => std::process::Command::new("notepad.exe")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+            .map_err(|notepad_error| {
+                format!(
+                    "default opener failed: {default_error}; Notepad fallback failed: {notepad_error}"
+                )
+            }),
+    };
+    #[cfg(not(windows))]
+    let result = open::that(path).map_err(|error| error.to_string());
+
+    result.map_err(|error| {
+        let message = format!("Failed to open CeleMod log {}: {error}", path.display());
+        crate::logging::error(format_args!("{message}"));
+        message
+    })
 }
 
 #[tauri::command]
