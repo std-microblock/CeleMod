@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  collectOrphanDependencyNames,
   collectSwitchNames,
   normalizeManageDependencies,
   type ManageNode,
@@ -89,5 +90,46 @@ test("keeps a categorized dependency excluded by the orphan type setting", () =>
       autoDisableTypes: [],
     }),
     ["Root"],
+  );
+});
+
+
+test("does not treat optional dependencies as orphan deletion candidates", () => {
+  const nodes = {
+    Root: node("Root", {
+      dependencies: [
+        { name: "OptionalMod", version: "1.0.0", optional: true },
+        { name: "RequiredMod", version: "1.0.0", optional: false },
+      ],
+    }),
+    OptionalMod: node("OptionalMod"),
+    RequiredMod: node("RequiredMod", { dependedBy: ["Root"] }),
+  };
+
+  assert.deepEqual(
+    collectOrphanDependencyNames({ name: "Root", nodes }),
+    ["RequiredMod"],
+  );
+});
+
+test("collects transitive required orphan dependencies", () => {
+  const nodes = {
+    Root: node("Root", {
+      dependencies: [
+        { name: "RequiredMod", version: "1.0.0", optional: false },
+      ],
+    }),
+    RequiredMod: node("RequiredMod", {
+      dependencies: [
+        { name: "NestedMod", version: "1.0.0", optional: false },
+      ],
+      dependedBy: ["Root"],
+    }),
+    NestedMod: node("NestedMod", { dependedBy: ["RequiredMod"] }),
+  };
+
+  assert.deepEqual(
+    collectOrphanDependencyNames({ name: "Root", nodes }),
+    ["RequiredMod", "NestedMod"],
   );
 });

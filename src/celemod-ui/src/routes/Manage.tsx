@@ -50,6 +50,7 @@ import {
   resolveManageDisplayNames,
   useManageStore,
   selectDefaultOrphanNames,
+  collectOrphanDependencyNames,
 } from "../stores/manage";
 
 type ModListCheck = {

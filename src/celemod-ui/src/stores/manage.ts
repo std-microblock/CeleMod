@@ -427,6 +427,47 @@ export const collectSwitchNames = ({
   return [...result];
 };
 
+/**
+ * Collect required dependencies that become orphaned when deleting a Mod.
+ * Optional dependencies are intentionally ignored: they are suggestions, not
+ * runtime requirements, and should not be pulled into the deletion dialog.
+ */
+export const collectOrphanDependencyNames = ({
+  name,
+  nodes,
+}: {
+  name: string;
+  nodes: Record<string, ManageNode>;
+}) => {
+  const orphaned: string[] = [];
+  const orphanedSet = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (nodeName: string) => {
+    if (visited.has(nodeName)) return;
+    visited.add(nodeName);
+    for (const dependency of nodes[nodeName]?.dependencies ?? []) {
+      // Optional dependencies (and engine-provided dependencies) are not
+      // candidates for automatic deletion.
+      if (
+        dependency.optional ||
+        EXCLUDED_DEPENDENCIES.has(dependency.name)
+      )
+        continue;
+      const dependencyNode = nodes[dependency.name];
+      if (!dependencyNode || orphanedSet.has(dependency.name)) continue;
+      const remaining = dependencyNode.dependedBy.filter(
+        (dependent) => dependent !== name && !orphanedSet.has(dependent),
+      );
+      if (remaining.length > 0) continue;
+      orphaned.push(dependency.name);
+      orphanedSet.add(dependency.name);
+      visit(dependency.name);
+    }
+  };
+  visit(name);
+  return orphaned;
+};
+
 export const selectDefaultOrphanNames = ({
   names,
   nodes,
