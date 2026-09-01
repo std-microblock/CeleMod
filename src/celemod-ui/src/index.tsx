@@ -5,6 +5,7 @@ import "./i2.css";
 import { initializeWindowChrome } from "./tauri/window";
 import { initializeCeleModDeepLinks } from "./deepLink";
 import { initializeFrontendLogging } from "./logging";
+import { ThemePreview } from "./themePreview";
 
 initializeFrontendLogging();
 initializeWindowChrome();
@@ -12,4 +13,11 @@ void initializeCeleModDeepLinks().catch((error) =>
   console.error("Failed to initialize CeleMod deep links", error),
 );
 
-createRoot(document.getElementById("root")!).render(<App />);
+const root = document.getElementById("root")!;
+createRoot(root).render(
+  import.meta.env.DEV && window.location.pathname === "/__theme-preview" ? (
+    <ThemePreview />
+  ) : (
+    <App />
+  ),
+);

@@ -53,7 +53,10 @@ export const installMaterialYouInteractions = () => {
   });
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   cleanups.push(() => observer.disconnect());
-  return () => cleanups.splice(0).forEach((cleanup) => cleanup());
+  return () => {
+    cleanups.splice(0).forEach((cleanup) => cleanup());
+    delete document.documentElement.dataset.materialYouHooks;
+  };
 };
 
 export const materialYouTonal = (tone: "primary" | "secondary" | "tertiary" | "surface" = "surface") => ({

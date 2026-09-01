@@ -3,6 +3,10 @@
 @use "./styles/theme-system";
 @use "./styles/theme-variants";
 @use "./styles/themes/linear";
+@use "./styles/themes/fluent";
+@use "./styles/themes/material-you";
+@use "./styles/themes/metro";
+@use "./styles/themes/material-2";
 
 :root {
   /* Runtime theme tokens. Theme providers can override these values on
