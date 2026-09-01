@@ -215,6 +215,10 @@ pub fn set_mod_cache_ttl(seconds: u64) {
     MOD_CACHE_TTL_SECONDS.store(seconds, Ordering::Relaxed);
 }
 
+pub fn get_mod_cache_ttl_seconds() -> u64 {
+    MOD_CACHE_TTL_SECONDS.load(Ordering::Relaxed)
+}
+
 pub fn get_mod_catalog_json(force_refresh: bool) -> anyhow::Result<String> {
     Ok(catalog(force_refresh)?.raw)
 }

@@ -191,8 +191,7 @@
   }
 }
 
-.download-task-progress,
-.download-subtask-progress {
+.download-task-progress {
   overflow: hidden;
   background: theme.$bg3;
 
@@ -209,8 +208,7 @@
   margin: 5px 0 4px 23px;
 }
 
-.download-task-failed .download-task-progress > span,
-.download-subtask-failed .download-subtask-progress > span {
+.download-task-failed .download-task-progress > span {
   background: #d95c66;
 }
 
@@ -242,65 +240,39 @@
 
 .download-task-error {
   min-width: 0;
+  margin: 0 0 0 auto;
+  padding: 0;
   overflow: hidden;
+  border: 0;
   color: #ed737d;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &:hover {
+    color: #ff8b94;
+    background: transparent;
+    box-shadow: none;
+    text-decoration: underline;
+  }
 }
 
-.download-subtasks {
+.download-dependencies {
   margin: 6px 0 0 23px;
   border-top: 1px solid color.change(theme.$fg, $alpha: 0.055);
 }
 
-.download-subtask {
-  padding: 5px 0 1px;
-}
-
-.download-subtask-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  color: theme.$fg3;
-  font-size: 8px;
-  gap: 6px;
-
-  > span {
-    min-width: 0;
-    overflow: hidden;
-    color: theme.$fg2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  strong {
-    font-size: 8px;
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
-  }
-}
-
-.download-subtask-progress {
-  height: 2px;
-  margin: 4px 0 3px;
-}
-
-.download-subtask-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-left: 0;
-  color: theme.$fg3;
-  font-size: 7px;
-  font-variant-numeric: tabular-nums;
-}
-
-.download-subtask-error {
-  margin: 3px 0 0;
+.download-task-error-details {
+  padding: 6px 0 1px;
   color: #ed737d;
   font-size: 8px;
   line-height: 1.4;
   overflow-wrap: anywhere;
   user-select: text;
+  white-space: pre-wrap;
 }
 
 .download-list-empty {

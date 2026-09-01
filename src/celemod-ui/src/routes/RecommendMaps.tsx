@@ -40,11 +40,7 @@ export const RecommendMaps = () => {
           downloadMod(name, parseInt(gbFileId) === -1 ? url : gbFileId, {
             autoDisableNewMods,
             onProgress(task, progress) {
-              setState(
-                `${progress}% (${
-                  task.subtasks.filter((v) => v.state === "Finished").length
-                }/${task.subtasks.length})`,
-              );
+              setState(`${Math.round(progress)}% (${task.state === "finished" ? 1 : 0}/1)`);
             },
             onFinished() {
               setState(_i18n.t("已安装"));

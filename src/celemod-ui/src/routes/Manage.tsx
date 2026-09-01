@@ -438,6 +438,11 @@ type FullModCheckProgress = {
   issues: { file: string; error: string }[];
 };
 
+type BatchUpdateProgress = {
+  completed: number;
+  total: number;
+};
+
 const formatSize = (size: number) => {
   if (!Number.isFinite(size) || size <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -448,6 +453,12 @@ const formatSize = (size: number) => {
   return `${(size / 1024 ** index).toFixed(index === 0 ? 0 : 2)} ${
     units[index]
   }`;
+};
+
+const formatModifiedAt = (modifiedAt: number) => {
+  if (!Number.isFinite(modifiedAt) || modifiedAt <= 0) return "--";
+  const date = new Date(modifiedAt);
+  return Number.isNaN(date.getTime()) ? "--" : date.toLocaleString();
 };
 
 const Badge = ({
@@ -814,6 +825,7 @@ const ManageTreeNode = ({
   const openMenuName = useManageStore((state) => state.openMenuName);
   const setOpenMenuName = useManageStore((state) => state.setOpenMenuName);
   const [editingComment, setEditingComment] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   if (!node || excludedDependencyNames.has(name)) return null;
   const visibleDependencies = normalizeManageDependencies(
@@ -839,6 +851,15 @@ const ManageTreeNode = ({
     node.meta?.submissionName,
     actions.autoUseSubmissionNameAsComment,
   );
+  const startEditingComment = () => {
+    setCommentDraft(actions.comments[name] ?? "");
+    setEditingComment(true);
+  };
+  const finishEditingComment = (save: boolean) => {
+    if (save && commentDraft !== (actions.comments[name] ?? ""))
+      actions.setComment(name, commentDraft);
+    setEditingComment(false);
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -899,20 +920,23 @@ const ManageTreeNode = ({
               <input
                 autoFocus
                 className="tree-comment-input"
-                value={actions.comments[name] ?? ""}
-                onChange={(event) =>
-                  actions.setComment(name, event.target.value)
-                }
-                onBlur={() => setEditingComment(false)}
+                value={commentDraft}
+                onChange={(event) => setCommentDraft(event.target.value)}
+                onBlur={() => finishEditingComment(true)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === "Escape")
-                    setEditingComment(false);
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    finishEditingComment(true);
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    finishEditingComment(false);
+                  }
                 }}
               />
             ) : (
               <button
                 className="tree-name"
-                onClick={() => setEditingComment(true)}
+                onClick={startEditingComment}
                 title={_i18n.t("点击编辑备注")}
               >
                 {displayNames.primaryName}
@@ -928,6 +952,9 @@ const ManageTreeNode = ({
           <div className="tree-secondary-line">
             {node.meta?.category && (
               <Badge tone="neutral">{node.meta.category}</Badge>
+            )}
+            {node.isDirectory && (
+              <Badge tone="info">{_i18n.t("文件夹")}</Badge>
             )}
             {optional && <Badge tone="warning">{_i18n.t("可选依赖")}</Badge>}
             {health.status === "missing" && (
@@ -980,7 +1007,8 @@ const ManageTreeNode = ({
             )}
             {actions.showDetailed && (
               <span className="tree-file-detail">
-                {formatSize(node.size)} · {node.file}
+                {formatSize(node.size)} · {_i18n.t("上次修改")} {" "}
+                {formatModifiedAt(node.modifiedAt)} · {node.file}
               </span>
             )}
           </div>
@@ -1076,11 +1104,14 @@ export const Manage = () => {
   const [alwaysOnMods, setAlwaysOnMods] = useAlwaysOnMods();
   const [comments, setComments] = useModComments();
   const downloadMod = useDownloadStore((state) => state.downloadMod);
+  const downloadMods = useDownloadStore((state) => state.downloadMods);
   const [catalog, setCatalog] = useState<CatalogMod[]>([]);
   const [latestRaw, setLatestRaw] = useState<
     [string, string, string, string][]
   >([]);
   const [updateStates, setUpdateStates] = useState<Record<string, string>>({});
+  const [batchUpdateProgress, setBatchUpdateProgress] =
+    useState<BatchUpdateProgress | null>(null);
   const activeUpdates = useRef(new Set<string>());
   const [fullCheckRunning, setFullCheckRunning] = useState(false);
   const [fixingDependencies, setFixingDependencies] = useState(false);
@@ -1480,6 +1511,32 @@ export const Manage = () => {
     [downloadMod],
   );
 
+  const downloadMissingBatch = useCallback(
+    async (names: string[]) => {
+      const items = await Promise.all(
+        names.map(
+          (name) =>
+            new Promise<{ name: string; source: string } | null>((resolve) => {
+              callRemote("get_mod_update", name, (data: string) => {
+                if (!data) return resolve(null);
+                const [fileId, , url] = JSON.parse(data);
+                resolve({ name, source: fileId === "-1" ? String(url || "") : String(fileId) });
+              }).catch(() => resolve(null));
+            }),
+        ),
+      );
+      const valid = items.filter((item): item is { name: string; source: string } => Boolean(item?.source));
+      if (valid.length !== names.length) return false;
+      try {
+        await downloadMods(valid, { autoDisableNewMods: false });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [downloadMods],
+  );
+
   const updateNode = useCallback(
     (name: string): Promise<boolean> => {
       const update = updates.find((item) => item.name === name);
@@ -1517,6 +1574,32 @@ export const Manage = () => {
     [downloadMod, updates],
   );
 
+  const updateAll = useCallback(() => {
+    if (batchUpdateProgress || updates.length === 0) return;
+    const names = updates.map((update) => update.name);
+    setBatchUpdateProgress({ completed: 0, total: names.length });
+
+    let completed = 0;
+    const markCompleted = () => {
+      completed += 1;
+      setBatchUpdateProgress({ completed, total: names.length });
+    };
+
+    void Promise.all(
+      names.map((name) => updateNode(name).then(markCompleted, markCompleted)),
+    )
+      .then(() => reloadMods())
+      .then(() =>
+        setUpdateStates((state) =>
+          Object.fromEntries(
+            Object.entries(state).filter(([name]) => !names.includes(name)),
+          ),
+        ),
+      )
+      .catch(console.error)
+      .finally(() => setBatchUpdateProgress(null));
+  }, [batchUpdateProgress, reloadMods, updateNode, updates]);
+
   const deleteNode = useCallback(
     (name: string) => {
       const node = nodes[name];
@@ -1524,35 +1607,29 @@ export const Manage = () => {
       const nodeIsAlwaysOn = alwaysOnMods.some(
         (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
       );
-      const orphaned: string[] = [];
-      const visited = new Set<string>();
-      const visit = (nodeName: string) => {
-        if (visited.has(nodeName)) return;
-        visited.add(nodeName);
-        for (const dependency of nodes[nodeName]?.dependencies ?? []) {
-          const dependencyNode = nodes[dependency.name];
-          if (!dependencyNode) continue;
-          const remaining = dependencyNode.dependedBy.filter(
-            (dependent) => dependent !== name && !orphaned.includes(dependent),
-          );
-          if (remaining.length === 0 && !orphaned.includes(dependency.name)) {
-            orphaned.push(dependency.name);
-            visit(dependency.name);
-          }
-        }
-      };
-      visit(name);
+      const orphaned = collectOrphanDependencyNames({ name, nodes });
       createPopup(() => {
         const popup = useContext(PopupContext);
-        const [selected, setSelected] = useState<string[]>(
-          deleteOrphansByDefault
+        // Deleting an enabled orphan is usually surprising (for example, an
+        // independently installed map pack may also be a dependency). Keep
+        // this safeguard enabled by default, while still allowing advanced
+        // users to opt out explicitly.
+        const [excludeEnabled, setExcludeEnabled] = useState(true);
+        const [selected, setSelected] = useState<string[]>(() => {
+          const defaults = deleteOrphansByDefault
             ? selectDefaultOrphanNames({
                 names: orphaned,
                 nodes,
                 allowedTypes: orphanActionTypes,
                 alwaysOnMods,
               })
-            : [],
+            : [];
+          return defaults.filter(
+            (orphan) => !excludeEnabled || !nodes[orphan]?.enabled,
+          );
+        });
+        const selectableOrphans = orphaned.filter(
+          (orphan) => !excludeEnabled || !nodes[orphan]?.enabled,
         );
         return (
           <div className="popup-content delete-mod-popup">
@@ -1560,7 +1637,11 @@ export const Manage = () => {
             <div className="delete-target">
               <strong>{name}</strong>
               <span>
-                {node.version} · {node.file} ·{" "}
+                {node.version} · {node.file}
+                {node.isDirectory && (
+                  <b className="folder-kind-badge">{_i18n.t("文件夹")}</b>
+                )}
+                {` · ${formatSize(node.size)} · ${_i18n.t("上次修改")} ${formatModifiedAt(node.modifiedAt)} · `}
                 {node.meta?.category ?? _i18n.t("未知类型")} ·{" "}
                 {_i18n.t(node.enabled ? "已启用" : "已禁用")}
                 {` · ${_i18n.t(nodeIsAlwaysOn ? "始终开启" : "非始终开启")}`}
@@ -1574,7 +1655,36 @@ export const Manage = () => {
             )}
             {orphaned.length > 0 && (
               <div className="orphan-section">
-                <strong>{_i18n.t("同时删除不再被依赖的 Mod")}</strong>
+                <div className="orphan-heading">
+                  <strong>{_i18n.t("同时删除不再被依赖的 Mod")}</strong>
+                  <div className="orphan-actions">
+                    <button
+                      type="button"
+                      onClick={() => setSelected(selectableOrphans)}
+                    >
+                      {_i18n.t("全选")}
+                    </button>
+                    <button type="button" onClick={() => setSelected([])}>
+                      {_i18n.t("全不选")}
+                    </button>
+                  </div>
+                </div>
+                <label className="orphan-option">
+                  <input
+                    type="checkbox"
+                    checked={excludeEnabled}
+                    onChange={(event) => {
+                      const next = event.target.checked;
+                      setExcludeEnabled(next);
+                      if (next) {
+                        setSelected((current) =>
+                          current.filter((orphan) => !nodes[orphan]?.enabled),
+                        );
+                      }
+                    }}
+                  />
+                  <span>{_i18n.t("不删除已启用的 Mod")}</span>
+                </label>
                 <div className="orphan-list">
                   {orphaned.map((orphan) => {
                     const orphanNode = nodes[orphan];
@@ -1587,6 +1697,7 @@ export const Manage = () => {
                         <input
                           type="checkbox"
                           checked={selected.includes(orphan)}
+                          disabled={excludeEnabled && Boolean(orphanNode?.enabled)}
                           onChange={(event) =>
                             setSelected(
                               event.target.checked
@@ -1706,7 +1817,13 @@ export const Manage = () => {
                     <span>
                       <strong>{item.file}</strong>
                       <small>
-                        {item.version} · {formatSize(item.size)}
+                        {item.version} · {formatSize(item.size)} ·{" "}
+                        {_i18n.t("上次修改")} {formatModifiedAt(item.modifiedAt)}
+                        {item.isDirectory && (
+                          <b className="folder-kind-badge">
+                            {_i18n.t("文件夹")}
+                          </b>
+                        )}
                       </small>
                     </span>
                     {latest && <em>{_i18n.t("最新版本")}</em>}
@@ -1933,8 +2050,10 @@ export const Manage = () => {
             <div className="manage-search">
               <Icon name="search" />
               <input
+                type="search"
                 value={filters.query}
                 onChange={(event) => setQuery(event.target.value)}
+                aria-label={_i18n.t("搜索")}
                 placeholder={_i18n.t("搜索名称、备注、作者或文件…")}
               />
               {filters.query && (
@@ -2086,22 +2205,16 @@ export const Manage = () => {
             <div className="manage-notice-bar">
               {showUpdate && updates.length > 0 && (
                 <button
-                  onClick={() => {
-                    const names = updates.map((update) => update.name);
-                    void Promise.all(names.map(updateNode))
-                      .then(() => reloadMods())
-                      .then(() =>
-                        setUpdateStates((state) =>
-                          Object.fromEntries(
-                            Object.entries(state).filter(
-                              ([name]) => !names.includes(name),
-                            ),
-                          ),
-                        ),
-                      );
-                  }}
+                  disabled={batchUpdateProgress !== null}
+                  onClick={updateAll}
                 >
-                  {_i18n.t("更新全部 Mod")} ({updates.length})
+                  {batchUpdateProgress
+                    ? `${_i18n.t("更新中…")} (${Math.max(
+                        0,
+                        batchUpdateProgress.total -
+                          batchUpdateProgress.completed,
+                      )} / ${batchUpdateProgress.total})`
+                    : _i18n.t("更新全部 ({count})", { count: updates.length })}
                 </button>
               )}
               {missingDependencies.length > 0 && (
@@ -2109,11 +2222,7 @@ export const Manage = () => {
                   disabled={fixingDependencies}
                   onClick={() => {
                     setFixingDependencies(true);
-                    void Promise.all(
-                      missingDependencies.map((dependency) =>
-                        downloadMissing(dependency.name),
-                      ),
-                    )
+                    void downloadMissingBatch(missingDependencies.map((dependency) => dependency.name))
                       .then(() => reloadMods())
                       .finally(() => setFixingDependencies(false));
                   }}

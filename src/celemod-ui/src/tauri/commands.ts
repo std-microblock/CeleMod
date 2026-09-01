@@ -3,9 +3,8 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 type LegacyCallback = (...args: unknown[]) => void;
 
 const parameterNames: Record<string, string[]> = {
-  download_mod: [
-    "name",
-    "url",
+  download_mod_batch: [
+    "roots",
     "modsDir",
     "downloadTypeDefaults",
     "profileEnabled",
@@ -15,7 +14,7 @@ const parameterNames: Record<string, string[]> = {
     "useCnProxy",
     "multiThread",
   ],
-  cancel_download_mod: ["name"],
+  cancel_mod_download: ["name"],
   cleanup_mod_download_temp_files: ["gamePath"],
   get_celeste_dirs: [],
   take_pending_deep_links: [],
@@ -103,7 +102,7 @@ const parameterNames: Record<string, string[]> = {
   celemod_hash: [],
   enable_window_controls: [],
   do_self_update: ["url", "onEvent"],
-  start_game_directly: ["path", "origin"],
+  start_game_directly: ["path", "origin", "legacyLoader"],
   check_everest_crash: ["gamePath"],
   stop_game_for_restart: ["gamePath"],
   restart_game_with_loader: ["gamePath", "legacyLoader"],
@@ -153,7 +152,12 @@ export async function callRemote<T = unknown>(
     args[parameterName] = value;
   });
 
-  return invoke<T>(name, args);
+  try {
+    return await invoke<T>(name, args);
+  } catch (error) {
+    console.error(`Tauri command "${name}" failed`, error);
+    throw error;
+  }
 }
 
 export async function invokeCommand<T>(
@@ -165,5 +169,10 @@ export async function invokeCommand<T>(
       `Tauri command "${name}" is unavailable in a browser preview`,
     );
   }
-  return invoke<T>(name, args);
+  try {
+    return await invoke<T>(name, args);
+  } catch (error) {
+    console.error(`Tauri command "${name}" failed`, error);
+    throw error;
+  }
 }

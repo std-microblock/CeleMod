@@ -26,28 +26,15 @@ const formatSpeed = (bytesPerSec: number) => {
 export const DownloadTask = ({
   task,
   initialExpanded = false,
-  showFinishedSubtasks = false,
   allowRetry = true,
 }: {
   task: Download.TaskInfo;
   initialExpanded?: boolean;
-  showFinishedSubtasks?: boolean;
   allowRetry?: boolean;
 }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(initialExpanded);
-  const finished = task.subtasks.filter(
-    (subtask) => subtask.state === "Finished",
-  ).length;
-  const activeSubtask = task.subtasks.find(
-    (subtask) => subtask.state === "Downloading",
-  );
-  const visibleSubtasks = showFinishedSubtasks
-    ? task.subtasks
-    : task.subtasks.filter(
-        (subtask) => subtask.state !== "Finished" || subtask.error,
-      );
   const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
   const status = task.canceled
     ? { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" }
@@ -55,7 +42,7 @@ export const DownloadTask = ({
       ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
       : task.state === "finished"
         ? { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" }
-        : activeSubtask
+        : task.state === "pending"
           ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
           : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
   const action =
@@ -109,51 +96,31 @@ export const DownloadTask = ({
 
       <div className="download-task-summary">
         <strong>{Math.round(progress)}%</strong>
-        <span>
-          {finished}/{task.subtasks.length}
-        </span>
-        {activeSubtask ? (
+        <span>{task.requested ? _i18n.t("下载") : _i18n.t("依赖")}</span>
+        {task.state === "pending" ? (
           <>
             <span>
-              {formatBytes(activeSubtask.downloadedBytes)} /{" "}
-              {formatBytes(activeSubtask.totalBytes)}
+              {formatBytes(task.downloadedBytes)} / {formatBytes(task.totalBytes)}
             </span>
-            <span>{formatSpeed(activeSubtask.speedBytesPerSec)}</span>
+            <span>{formatSpeed(task.speedBytesPerSec)}</span>
           </>
         ) : task.error && !expanded ? (
-          <span className="download-task-error" title={task.error}>
+          <button
+            type="button"
+            className="download-task-error"
+            title={task.error}
+            onClick={() => setExpanded(true)}
+          >
             {task.error}
-          </span>
+          </button>
         ) : null}
       </div>
 
-      {expanded ? (
-        <div className="download-subtasks">
-          {visibleSubtasks.map((subtask) => (
-            <div
-              className={`download-subtask download-subtask-${subtask.state.toLowerCase()}`}
-              key={subtask.name}
-            >
-              <div className="download-subtask-line">
-                <span title={subtask.name}>{subtask.name}</span>
-                <strong>{Math.round(subtask.progress)}%</strong>
-              </div>
-              <div className="download-subtask-progress" aria-hidden="true">
-                <span style={{ width: `${subtask.progress}%` }} />
-              </div>
-              {subtask.state === "Failed" ? (
-                <div className="download-subtask-error">{subtask.error}</div>
-              ) : (
-                <div className="download-subtask-meta">
-                  <span>
-                    {formatBytes(subtask.downloadedBytes)} /{" "}
-                    {formatBytes(subtask.totalBytes)}
-                  </span>
-                  <span>{formatSpeed(subtask.speedBytesPerSec)}</span>
-                </div>
-              )}
-            </div>
-          ))}
+      {expanded && task.dependencies.length > 0 ? (
+        <div className="download-dependencies">
+          <div className="download-task-error-details">
+            {_i18n.t("依赖")}: {task.dependencies.join(", ")}
+          </div>
         </div>
       ) : null}
     </article>

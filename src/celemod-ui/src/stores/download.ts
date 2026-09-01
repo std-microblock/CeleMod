@@ -7,39 +7,30 @@ import {
 import { callRemote } from "../utils";
 
 export namespace Download {
-  export interface SubtaskInfo {
-    name: string;
-    progress: number;
-    from: string;
-    to: string;
-    state: "Downloading" | "Finished" | "Failed" | "Waiting";
-    error?: string;
-    downloadedBytes: number;
-    totalBytes: number;
-    speedBytesPerSec: number;
-  }
-
   export interface TaskInfo {
     name: string;
-    subtasks: SubtaskInfo[];
+    requested: boolean;
+    dependencies: string[];
     source?: string;
     ownerId?: string;
-    mod: {
-      name: string;
-      id?: string;
-    };
+    mod: { name: string; id?: string };
     state: "finished" | "failed" | "pending";
     error?: string;
     progress: number;
+    downloadedBytes: number;
+    totalBytes: number;
+    speedBytesPerSec: number;
     canceled?: boolean;
     attemptId: number;
   }
 }
 
-interface BackendDownloadInfo {
+interface BackendModTaskInfo {
   name: string;
   url: string;
   dest: string;
+  requested: boolean;
+  dependencies: string[];
   status: "Waiting" | "Downloading" | "Finished" | "Failed";
   data: string;
   downloaded_bytes: number;
@@ -57,9 +48,23 @@ interface DownloadOptions {
   onFailed?: (task: Download.TaskInfo, error: string) => void;
 }
 
+interface BatchDownloadOptions {
+  force?: boolean;
+  autoDisableNewMods?: boolean;
+  ownerId?: string;
+  deferProfileUpdate?: boolean;
+  onProgress?: (tasks: Download.TaskInfo[], progress: number) => void;
+  onFinished?: (tasks: Download.TaskInfo[]) => void;
+  onFailed?: (tasks: Download.TaskInfo[], error: string) => void;
+}
+
 interface DownloadStore {
   tasks: Record<string, Download.TaskInfo>;
   cancelDownload: (name: string) => boolean;
+  downloadMods: (
+    items: Array<{ name: string; source: string }>,
+    options?: BatchDownloadOptions,
+  ) => Promise<Download.TaskInfo[]>;
   downloadMod: (
     name: string,
     gbFileIdOrUrl: string,
@@ -69,23 +74,141 @@ interface DownloadStore {
 
 let nextAttemptId = 1;
 
-const replaceTask = (
+const normalizeName = (name: string) => name.trim().toLocaleLowerCase();
+
+const replaceTasks = (
   tasks: Record<string, Download.TaskInfo>,
-  task: Download.TaskInfo,
-) => ({ ...tasks, [task.name]: task });
+  updates: Download.TaskInfo[],
+) => {
+  const next = { ...tasks };
+  for (const task of updates) next[normalizeName(task.name)] = task;
+  return next;
+};
 
 export const useDownloadStore = create<DownloadStore>((set, get) => ({
   tasks: {},
 
   cancelDownload(name) {
-    const task = get().tasks[name];
+    const key = normalizeName(name);
+    const task = get().tasks[key];
     if (!task || task.state !== "pending") return false;
-
     set((state) => ({
-      tasks: replaceTask(state.tasks, { ...task, canceled: true }),
+      tasks: {
+        ...state.tasks,
+        [key]: { ...task, canceled: true },
+      },
     }));
-    void callRemote("cancel_download_mod", name);
+    void callRemote("cancel_mod_download", name);
     return true;
+  },
+
+  async downloadMods(items, options = {}) {
+    if (items.length === 0) return [];
+    const {
+      force = false,
+      autoDisableNewMods,
+      ownerId,
+      onProgress,
+      onFinished,
+      onFailed,
+      deferProfileUpdate = false,
+    } = options;
+    const appState = useAppStore.getState();
+    const resolveUrl = (source: string) =>
+      source.startsWith("http")
+        ? source
+        : appState.mirror === "wegfan"
+          ? `https://celeste.weg.fan/api/v2/download/gamebanana-files/${source}`
+          : appState.mirror === "0x0ade"
+            ? `https://celestemodupdater.0x0a.de/banana-mirror/${source}.zip`
+            : `https://gamebanana.com/dl/${source}`;
+    const roots = items.map(({ name, source }) => [name, resolveUrl(source)] as [string, string]);
+    const attemptId = nextAttemptId++;
+    const initial = items.map(({ name, source }) => ({
+      name,
+      requested: true,
+      dependencies: [],
+      source,
+      ownerId,
+      mod: { name },
+      state: "pending" as const,
+      progress: 0,
+      downloadedBytes: 0,
+      totalBytes: 0,
+      speedBytesPerSec: 0,
+      canceled: false,
+      attemptId,
+    }));
+    set((state) => ({ tasks: replaceTasks(state.tasks, initial) }));
+
+    return await new Promise<Download.TaskInfo[]>((resolve, reject) => {
+      const onDownloadEvent = (rawTasks: string, state: "pending" | "failed" | "finished") => {
+        let backendTasks: BackendModTaskInfo[];
+        try {
+          const parsed = JSON.parse(rawTasks) as unknown;
+          if (!Array.isArray(parsed)) throw new Error("Expected an array");
+          backendTasks = parsed as BackendModTaskInfo[];
+        } catch (error) {
+          const message = `Invalid download status: ${String(error)}`;
+          onFailed?.(initial, message);
+          reject(new Error(message));
+          return;
+        }
+        const mapped = backendTasks.map((task, index) => ({
+          name: task.name,
+          requested: Boolean(task.requested),
+          dependencies: task.dependencies ?? [],
+          source: task.url,
+          ownerId,
+          mod: { name: task.name },
+          state: (task.status === "Finished" ? "finished" : task.status === "Failed" ? "failed" : "pending") as Download.TaskInfo["state"],
+          progress: task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
+          error: task.status === "Failed" ? task.data : undefined,
+          downloadedBytes: task.downloaded_bytes || 0,
+          totalBytes: task.total_bytes || 0,
+          speedBytesPerSec: task.speed_bytes_per_sec || 0,
+          canceled: task.status === "Failed" && task.data === "Download canceled",
+          attemptId: attemptId + index,
+        }));
+        set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
+        const progress = mapped.length ? mapped.reduce((sum, task) => sum + task.progress, 0) / mapped.length : 0;
+        onProgress?.(mapped, progress);
+        if (state === "finished") {
+          void reloadInstalledMods()
+            .then(() => reloadBlacklistState(appState.gamePath))
+            .finally(() => {
+              onFinished?.(mapped);
+              resolve(mapped);
+            });
+        } else if (state === "failed") {
+          const message = mapped.find((task) => task.error)?.error || "Download failed";
+          onFailed?.(mapped, message);
+          reject(new Error(message));
+        }
+      };
+      void callRemote(
+        "download_mod_batch",
+        JSON.stringify(roots),
+        `${appState.gamePath}/Mods/`,
+        JSON.stringify({
+          ...appState.downloadTypeDefaults,
+          __default: deferProfileUpdate
+            ? true
+            : autoDisableNewMods === undefined
+              ? appState.downloadDefaultEnabled
+              : !autoDisableNewMods,
+        }),
+        deferProfileUpdate ? false : appState.profileEnabled,
+        deferProfileUpdate ? "" : appState.currentProfileName,
+        JSON.stringify(appState.alwaysOnMods),
+        onDownloadEvent,
+        false,
+        appState.useMultiThread,
+      ).catch((error) => {
+        onFailed?.(initial, String(error));
+        reject(error);
+      });
+    });
   },
 
   downloadMod(name, gbFileIdOrUrl, options = {}) {
@@ -99,191 +222,162 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       deferProfileUpdate = false,
     } = options;
     const appState = useAppStore.getState();
-    const downloadTypeDefaults = deferProfileUpdate
-      ? { ...appState.downloadTypeDefaults, __default: true }
-      : {
-          ...appState.downloadTypeDefaults,
-          __default:
-            autoDisableNewMods === undefined
-              ? appState.downloadDefaultEnabled
-              : !autoDisableNewMods,
-        };
-    const existingTask = get().tasks[name];
-
-    let url: string;
-    if (gbFileIdOrUrl.startsWith("http")) {
-      url = gbFileIdOrUrl;
-    } else if (appState.mirror === "wegfan") {
-      url = `https://celeste.weg.fan/api/v2/download/gamebanana-files/${gbFileIdOrUrl}`;
-    } else if (appState.mirror === "0x0ade") {
-      url = `https://celestemodupdater.0x0a.de/banana-mirror/${gbFileIdOrUrl}.zip`;
-    } else {
-      url = `https://gamebanana.com/dl/${gbFileIdOrUrl}`;
-    }
-
+    const source = gbFileIdOrUrl;
+    const url = source.startsWith("http")
+      ? source
+      : appState.mirror === "wegfan"
+        ? `https://celeste.weg.fan/api/v2/download/gamebanana-files/${source}`
+        : appState.mirror === "0x0ade"
+          ? `https://celestemodupdater.0x0a.de/banana-mirror/${source}.zip`
+          : `https://gamebanana.com/dl/${source}`;
+    const key = normalizeName(name);
+    const existingTask = get().tasks[key];
     const replacingInstalledMod = appState.installedMods.find(
-      (mod) => mod.name === name,
+      (mod) => normalizeName(mod.name) === key,
     );
+
     if (replacingInstalledMod && !force) {
-      const task: Download.TaskInfo = {
+      const failedTask: Download.TaskInfo = {
         name,
-        subtasks: [],
-        source: gbFileIdOrUrl,
+        requested: true,
+        dependencies: [],
+        source,
         ownerId: ownerId ?? existingTask?.ownerId,
         mod: { name },
         state: "failed",
         error: "Mod already installed",
         progress: 0,
+        downloadedBytes: 0,
+        totalBytes: 0,
+        speedBytesPerSec: 0,
         canceled: false,
         attemptId: nextAttemptId++,
       };
-      set((state) => ({ tasks: replaceTask(state.tasks, task) }));
-      onFailed?.(task, task.error!);
-      return task;
+      set((state) => ({ tasks: replaceTasks(state.tasks, [failedTask]) }));
+      onFailed?.(failedTask, failedTask.error!);
+      return failedTask;
     }
 
-    if (existingTask && !force) return existingTask;
+    if (existingTask && !force && existingTask.state === "pending") return existingTask;
 
     const attemptId = nextAttemptId++;
-    const task: Download.TaskInfo = {
+    const initialTask: Download.TaskInfo = {
       name,
-      subtasks: [
-        {
-          name,
-          progress: 0,
-          from: url,
-          to: `${appState.gamePath}/Mods/${name}.zip`,
-          state: "Waiting",
-          downloadedBytes: 0,
-          totalBytes: 0,
-          speedBytesPerSec: 0,
-        },
-      ],
-      source: gbFileIdOrUrl,
+      requested: true,
+      dependencies: [],
+      source,
       ownerId: ownerId ?? existingTask?.ownerId,
       mod: { name },
       state: "pending",
       progress: 0,
+      downloadedBytes: 0,
+      totalBytes: 0,
+      speedBytesPerSec: 0,
       canceled: false,
       attemptId,
     };
-    set((state) => ({ tasks: replaceTask(state.tasks, task) }));
+    set((state) => ({ tasks: replaceTasks(state.tasks, [initialTask]) }));
 
     const onDownloadEvent = (
-      _subtasks: string,
+      rawTasks: string,
       state: "pending" | "failed" | "finished",
     ) => {
-      const currentTask = get().tasks[name];
-      if (!currentTask || currentTask.attemptId !== attemptId) return;
+      const current = get().tasks[key];
+      if (!current || current.attemptId !== attemptId) return;
 
-      const backendSubtasks = JSON.parse(_subtasks) as BackendDownloadInfo[];
-      const subtasks = backendSubtasks.map((subtask) => ({
-        name: subtask.name,
-        progress:
-          subtask.status === "Downloading"
-            ? Number.parseFloat(subtask.data)
-            : subtask.status === "Finished"
+      let backendTasks: BackendModTaskInfo[];
+      try {
+        const parsed = JSON.parse(rawTasks) as unknown;
+        if (!Array.isArray(parsed)) throw new Error("Expected an array");
+        backendTasks = parsed as BackendModTaskInfo[];
+      } catch (error) {
+        const message = `Invalid download status for ${name}: ${String(error)}`;
+        const failedTask = { ...current, state: "failed" as const, error: message };
+        set((store) => ({ tasks: replaceTasks(store.tasks, [failedTask]) }));
+        onFailed?.(failedTask, message);
+        return;
+      }
+
+      const mapped = backendTasks.map((task) => {
+        const taskKey = normalizeName(task.name);
+        const previous = get().tasks[taskKey];
+        const taskState =
+          task.status === "Finished"
+            ? "finished"
+            : task.status === "Failed"
+              ? "failed"
+              : "pending";
+        return {
+          name: task.name,
+          requested: Boolean(task.requested),
+          dependencies: task.dependencies ?? [],
+          source: task.url,
+          ownerId: previous?.ownerId ?? (taskKey === key ? ownerId : undefined),
+          mod: { name: task.name },
+          state: taskState as Download.TaskInfo["state"],
+          progress:
+            task.status === "Finished"
               ? 100
-              : 0,
-        from: subtask.url,
-        to: subtask.dest,
-        error: subtask.status === "Failed" ? subtask.data : undefined,
-        state: subtask.status,
-        downloadedBytes: subtask.downloaded_bytes || 0,
-        totalBytes: subtask.total_bytes || 0,
-        speedBytesPerSec: subtask.speed_bytes_per_sec || 0,
-      }));
+              : Number.parseFloat(task.data) || 0,
+          error: task.status === "Failed" ? task.data : undefined,
+          downloadedBytes: task.downloaded_bytes || 0,
+          totalBytes: task.total_bytes || 0,
+          speedBytesPerSec: task.speed_bytes_per_sec || 0,
+          canceled: task.status === "Failed" && task.data === "Download canceled",
+          attemptId: previous?.attemptId ?? attemptId,
+        } satisfies Download.TaskInfo;
+      });
+      set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
 
-      const error =
-        state === "failed"
-          ? backendSubtasks.find((subtask) => subtask.status === "Failed")?.data
-          : undefined;
-      const progress =
-        state === "pending"
-          ? Number.parseFloat(
-              backendSubtasks.find(
-                (subtask) => subtask.status === "Downloading",
-              )?.data || "0",
-            )
-          : state === "finished"
-            ? 100
-            : currentTask.progress;
-      const nextTask: Download.TaskInfo = {
-        ...currentTask,
-        subtasks,
+      const currentRoot =
+        mapped.find((task) => normalizeName(task.name) === key) ?? current;
+      const overallProgress = mapped.length
+        ? mapped.reduce((sum, task) => sum + task.progress, 0) / mapped.length
+        : currentRoot.progress;
+      const rootTask = {
+        ...currentRoot,
         state,
-        progress,
-        error,
-        canceled:
-          state === "finished"
-            ? false
-            : error === "Download canceled"
-              ? true
-              : currentTask.canceled,
-      };
-
-      set((store) => ({ tasks: replaceTask(store.tasks, nextTask) }));
+        progress: state === "finished" ? 100 : overallProgress,
+      } as Download.TaskInfo;
 
       if (state === "finished") {
         void reloadInstalledMods()
-          .then(async (installedMods) => {
-            const installedMod = installedMods.find((mod) => mod.name === name);
-            if (
-              replacingInstalledMod &&
-              installedMod &&
-              replacingInstalledMod.file !== installedMod.file
-            ) {
-              const result = await callRemote<string>(
-                "update_blacklist_mod_file",
-                appState.gamePath,
-                name,
-                replacingInstalledMod.file,
-                installedMod.file,
-                appState.profileEnabled,
-                JSON.stringify(appState.alwaysOnMods),
-              );
-              if (result !== "Success") throw new Error(result);
-            }
-            await reloadBlacklistState(appState.gamePath);
-          })
-          .catch((error) =>
-            console.error("Failed to refresh installed Mods", error),
-          )
-          .finally(() => onFinished?.(nextTask));
+          .then(() => reloadBlacklistState(appState.gamePath))
+          .catch((error) => console.error("Failed to refresh installed Mods", error))
+          .finally(() => onFinished?.(rootTask));
       } else if (state === "failed") {
-        onFailed?.(nextTask, error || "Download failed");
+        onFailed?.(rootTask, rootTask.error || "Download failed");
       } else {
-        onProgress?.(nextTask, progress);
+        onProgress?.(rootTask, overallProgress);
       }
     };
 
-    void (async () => {
-      await callRemote(
-        "download_mod",
-        name,
-        url,
-        `${appState.gamePath}/Mods/`,
-        JSON.stringify(downloadTypeDefaults),
-        deferProfileUpdate ? false : appState.profileEnabled,
-        deferProfileUpdate ? "" : appState.currentProfileName,
-        JSON.stringify(appState.alwaysOnMods),
-        onDownloadEvent,
-        false,
-        appState.useMultiThread,
-      );
-    })().catch((error) => {
-      const currentTask = get().tasks[name];
-      if (!currentTask || currentTask.attemptId !== attemptId) return;
-      const message = String(error);
-      const failedTask = {
-        ...currentTask,
-        state: "failed" as const,
-        error: message,
-      };
-      set((store) => ({ tasks: replaceTask(store.tasks, failedTask) }));
-      onFailed?.(failedTask, message);
+    void callRemote(
+      "download_mod_batch",
+      JSON.stringify([[name, url]]),
+      `${appState.gamePath}/Mods/`,
+      JSON.stringify({
+        ...appState.downloadTypeDefaults,
+        __default: deferProfileUpdate
+          ? true
+          : autoDisableNewMods === undefined
+            ? appState.downloadDefaultEnabled
+            : !autoDisableNewMods,
+      }),
+      deferProfileUpdate ? false : appState.profileEnabled,
+      deferProfileUpdate ? "" : appState.currentProfileName,
+      JSON.stringify(appState.alwaysOnMods),
+      onDownloadEvent,
+      false,
+      appState.useMultiThread,
+    ).catch((error) => {
+      const current = get().tasks[key];
+      if (!current || current.attemptId !== attemptId) return;
+      const failedTask = { ...current, state: "failed" as const, error: String(error) };
+      set((store) => ({ tasks: replaceTasks(store.tasks, [failedTask]) }));
+      onFailed?.(failedTask, failedTask.error!);
     });
 
-    return task;
+    return initialTask;
   },
 }));

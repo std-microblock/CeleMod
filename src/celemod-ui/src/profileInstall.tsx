@@ -4,7 +4,7 @@ import { PopupContext, createPopup } from "./components/Popup";
 import { DownloadTask } from "./components/DownloadList";
 import { loadModCatalog, type CatalogMod } from "./api/modCatalog";
 import type { ModBlacklistProfile, ProfileImportResult } from "./ipc/blacklist";
-import { useDownloadStore, type Download } from "./stores/download";
+import type { Download } from "./stores/download";
 import {
   reloadBlacklistState,
   reloadInstalledMods,
@@ -155,83 +155,89 @@ const downloadPlannedMods = async (
   plan: ProfileImportPlan,
   onProgress: (progress: ProfileImportProgress) => void,
 ) => {
-  const roots = plan.downloads.map((mod) => mod.name);
-  const taskSnapshots = new Map<string, Download.TaskInfo>();
-  const discovered = new Set<string>();
-  for (const [index, mod] of plan.downloads.entries()) {
-    taskSnapshots.set(mod.name, {
-      name: mod.name,
-      subtasks: [],
-      source: sourceForMod(mod),
-      ownerId: `profile-install-${index}`,
-      mod: { name: mod.name },
-      state: "pending",
-      progress: 0,
-      canceled: false,
-      attemptId: -1 - index,
-    });
-  }
-  const report = (current: string) => {
-    const tasks = [...taskSnapshots.values()];
-    const allSubtasks = tasks.flatMap((task) => task.subtasks);
-    for (const subtask of allSubtasks) {
-      if (!roots.includes(subtask.name)) discovered.add(subtask.name);
-    }
-    const finished = allSubtasks.filter(
-      (subtask) => subtask.state === "Finished",
-    ).length;
-    const failed = allSubtasks.filter(
-      (subtask) => subtask.state === "Failed",
-    ).length;
-    const active = allSubtasks.find(
-      (subtask) => subtask.state === "Downloading",
-    );
+  const roots = plan.downloads.map((mod) => {
+    const source = sourceForMod(mod);
+    if (!source) throw new Error(`${mod.name}: 没有可用下载地址`);
+    return [mod.name, source] as [string, string];
+  });
+  const rootNames = roots.map(([name]) => name);
+  let snapshot: Download.TaskInfo[] = [];
+  const report = (current = "") => {
+    const finished = snapshot.filter((task) => task.state === "finished").length;
+    const failed = snapshot.filter((task) => task.state === "failed").length;
+    const active = snapshot.find((task) => task.state === "pending");
     onProgress({
-      total: Math.max(plan.downloads.length, allSubtasks.length),
+      total: snapshot.length || roots.length,
       finished,
       failed,
       current: active?.name ?? current,
-      progress: active?.progress ?? 0,
-      discovered: [...discovered],
-      tasks,
+      progress: snapshot.length
+        ? snapshot.reduce((sum, task) => sum + task.progress, 0) / snapshot.length
+        : 0,
+      discovered: snapshot
+        .map((task) => task.name)
+        .filter((name) => !rootNames.includes(name)),
+      tasks: snapshot,
     });
   };
-  report("");
-
-  await Promise.all(
-    plan.downloads.map(
-      (mod) =>
-        new Promise<void>((resolve, reject) => {
-          const source = sourceForMod(mod);
-          if (!source) {
-            reject(new Error(`${mod.name}: 没有可用下载地址`));
-            return;
-          }
-          const alreadyInstalled = useAppStore
-            .getState()
-            .installedMods.some((item) => item.name === mod.name);
-          useDownloadStore.getState().downloadMod(mod.name, source, {
-            force: alreadyInstalled,
-            autoDisableNewMods: false,
-            deferProfileUpdate: true,
-            onProgress: (task) => {
-              taskSnapshots.set(mod.name, task);
-              report(mod.name);
-            },
-            onFinished: (task) => {
-              taskSnapshots.set(mod.name, task);
-              report(mod.name);
-              resolve();
-            },
-            onFailed: (task, error) => {
-              taskSnapshots.set(mod.name, task);
-              report(mod.name);
-              reject(new Error(`${mod.name}: ${error}`));
-            },
-          });
-        }),
-    ),
-  );
+  report();
+  await new Promise<void>((resolve, reject) => {
+    const onDownloadEvent = (
+      rawTasks: string,
+      state: "pending" | "failed" | "finished",
+    ) => {
+      let backendTasks: Array<{
+        name: string;
+        url: string;
+        dest: string;
+        requested: boolean;
+        dependencies: string[];
+        status: "Waiting" | "Downloading" | "Finished" | "Failed";
+        data: string;
+        downloaded_bytes: number;
+        total_bytes: number;
+        speed_bytes_per_sec: number;
+      }>;
+      try {
+        backendTasks = JSON.parse(rawTasks);
+      } catch (error) {
+        reject(new Error(`Invalid download status: ${String(error)}`));
+        return;
+      }
+      snapshot = backendTasks.map((task, index) => ({
+        name: task.name,
+        progress: task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
+        requested: task.requested,
+        dependencies: task.dependencies ?? [],
+        source: task.url,
+        mod: { name: task.name },
+        state: state === "finished" || task.status === "Finished"
+          ? "finished"
+          : task.status === "Failed" ? "failed" : "pending",
+        error: task.status === "Failed" ? task.data : undefined,
+        downloadedBytes: task.downloaded_bytes || 0,
+        totalBytes: task.total_bytes || 0,
+        speedBytesPerSec: task.speed_bytes_per_sec || 0,
+        canceled: task.status === "Failed" && task.data === "Download canceled",
+        attemptId: -1000 - index,
+      }));
+      report();
+      if (state === "finished") resolve();
+      if (state === "failed") reject(new Error(snapshot.find((task) => task.error)?.error || "Download failed"));
+    };
+    void callRemote(
+      "download_mod_batch",
+      JSON.stringify(roots),
+      `${useAppStore.getState().gamePath}/Mods/`,
+      JSON.stringify({ ...useAppStore.getState().downloadTypeDefaults, __default: true }),
+      false,
+      "",
+      JSON.stringify(useAppStore.getState().alwaysOnMods),
+      onDownloadEvent,
+      false,
+      useAppStore.getState().useMultiThread,
+    ).catch(reject);
+  });
 };
 const commitProfiles = async (
   gamePath: string,
@@ -312,7 +318,6 @@ const ProfileInstallProgress = ({
               key={`${task.name}-${task.attemptId}`}
               task={task}
               initialExpanded
-              showFinishedSubtasks
               allowRetry={false}
             />
           ))}
@@ -323,11 +328,8 @@ const ProfileInstallProgress = ({
         {running && (
           <button
             onClick={() => {
-              for (const task of progress.tasks) {
-                if (task.state === "pending") {
-                  useDownloadStore.getState().cancelDownload(task.name);
-                }
-              }
+              const root = plan.downloads[0]?.name;
+              if (root) void callRemote("cancel_mod_download", root);
             }}
           >
             {_i18n.t("取消")}

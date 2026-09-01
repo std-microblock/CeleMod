@@ -27,6 +27,10 @@ use ureq::DownloadCallbackInfo;
 
 static TEST_MODE: AtomicBool = AtomicBool::new(false);
 static MIAONET_OAUTH_ACTIVE: AtomicBool = AtomicBool::new(false);
+#[cfg(target_os = "windows")]
+static WINDOWS_ACRYLIC_ENABLED: AtomicBool = AtomicBool::new(false);
+#[cfg(target_os = "windows")]
+static WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE: AtomicBool = AtomicBool::new(false);
 
 fn is_test_mode() -> bool {
     TEST_MODE.load(Ordering::Relaxed)
@@ -47,6 +51,7 @@ extern crate lazy_static;
 lazy_static::lazy_static! {
     static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_DESTINATION_LOCKS: Mutex<HashMap<String, Arc<Mutex<()>>>> = Mutex::new(HashMap::new());
+    static ref MOD_DEPENDENCY_GRAPH: Mutex<Option<ModDependencyGraphCache>> = Mutex::new(None);
     static ref PENDING_DEEP_LINKS: ParkingMutex<Vec<String>> = ParkingMutex::new(Vec::new());
 }
 
@@ -118,6 +123,7 @@ const MIAONET_DEFAULT_EMOTES: [&str; 8] = [
     "p:theo/yolo0 3 2 1 2 !",
     "p:granny/laugh",
 ];
+const MIAONET_EMOTES_FILE_NAME: &str = "MiaoNet-Emotes.txt";
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -226,6 +232,26 @@ fn miaonet_settings_path(game_path: &Path) -> Result<PathBuf, String> {
         .ok_or_else(|| "找不到 Celeste 的设置目录。".to_string())
 }
 
+fn miaonet_emotes_path(game_path: &Path) -> Result<PathBuf, String> {
+    let directories = miaonet_settings_directories(game_path);
+    directories
+        .iter()
+        .map(|directory| directory.join(MIAONET_EMOTES_FILE_NAME))
+        .find(|path| path.is_file())
+        .or_else(|| {
+            directories
+                .iter()
+                .find(|directory| directory.join("modsettings-MiaoNet.celeste").is_file())
+                .map(|directory| directory.join(MIAONET_EMOTES_FILE_NAME))
+        })
+        .or_else(|| {
+            directories
+                .first()
+                .map(|directory| directory.join(MIAONET_EMOTES_FILE_NAME))
+        })
+        .ok_or_else(|| "找不到 Celeste 的设置目录。".to_string())
+}
+
 fn read_miaonet_settings_document(path: &Path) -> Result<serde_yaml::Value, String> {
     if !path.is_file() {
         return Ok(serde_yaml::Value::Mapping(serde_yaml::Mapping::new()));
@@ -238,21 +264,58 @@ fn read_miaonet_settings_document(path: &Path) -> Result<serde_yaml::Value, Stri
     serde_yaml::from_str(&content).map_err(|error| format!("解析 MiaoNet 设置失败：{error}"))
 }
 
-fn miaonet_settings_from_document(document: &serde_yaml::Value) -> Result<MiaoNetSettings, String> {
+fn parse_miaonet_emotes_file(content: &str) -> Vec<String> {
+    content
+        .strip_prefix('\u{feff}')
+        .unwrap_or(content)
+        .lines()
+        .map(str::to_string)
+        .collect()
+}
+
+fn read_miaonet_emotes_file(path: &Path) -> Result<Option<Vec<String>>, String> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let content =
+        fs::read_to_string(path).map_err(|error| format!("读取 MiaoNet 表情设置失败：{error}"))?;
+    Ok(Some(parse_miaonet_emotes_file(&content)))
+}
+
+fn write_miaonet_emotes_file(path: &Path, emotes: &[String]) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| "MiaoNet 表情设置路径无效。".to_string())?;
+    fs::create_dir_all(parent).map_err(|error| format!("创建 Celeste 设置目录失败：{error}"))?;
+    let line_ending = if cfg!(windows) { "\r\n" } else { "\n" };
+    let mut content = emotes.join(line_ending);
+    if !emotes.is_empty() {
+        content.push_str(line_ending);
+    }
+    fs::write(path, content).map_err(|error| format!("写入 MiaoNet 表情设置失败：{error}"))
+}
+
+fn miaonet_settings_from_document_with_emotes(
+    document: &serde_yaml::Value,
+    external_emotes: Option<Vec<String>>,
+) -> Result<MiaoNetSettings, String> {
     if !matches!(document, serde_yaml::Value::Mapping(_)) {
         return Err("MiaoNet 设置文件格式不正确。".to_string());
     }
-    let emotes = match yaml_property(document, "Emotes") {
-        None => MIAONET_DEFAULT_EMOTES
-            .iter()
-            .map(|emote| (*emote).to_string())
-            .collect(),
-        Some(serde_yaml::Value::Null) => Vec::new(),
-        Some(serde_yaml::Value::Sequence(values)) => values
-            .iter()
-            .map(|value| value.as_str().unwrap_or_default().to_string())
-            .collect(),
-        Some(_) => return Err("MiaoNet 的 Emotes 设置不是列表。".to_string()),
+    let emotes = match external_emotes {
+        Some(emotes) => emotes,
+        None => match yaml_property(document, "Emotes") {
+            None => MIAONET_DEFAULT_EMOTES
+                .iter()
+                .map(|emote| (*emote).to_string())
+                .collect(),
+            Some(serde_yaml::Value::Null) => Vec::new(),
+            Some(serde_yaml::Value::Sequence(values)) => values
+                .iter()
+                .map(|value| value.as_str().unwrap_or_default().to_string())
+                .collect(),
+            Some(_) => return Err("MiaoNet 的 Emotes 设置不是列表。".to_string()),
+        },
     };
     let opacity = |name: &str, default: u8, min: u8, max: u8| {
         yaml_property(document, name)
@@ -301,10 +364,17 @@ fn miaonet_settings_from_document(document: &serde_yaml::Value) -> Result<MiaoNe
     })
 }
 
+#[cfg(test)]
+fn miaonet_settings_from_document(document: &serde_yaml::Value) -> Result<MiaoNetSettings, String> {
+    miaonet_settings_from_document_with_emotes(document, None)
+}
+
 fn load_miaonet_settings(game_path: &Path) -> Result<MiaoNetSettings, String> {
     let settings_path = miaonet_settings_path(game_path)?;
+    let emotes_path = miaonet_emotes_path(game_path)?;
     let document = read_miaonet_settings_document(&settings_path)?;
-    miaonet_settings_from_document(&document)
+    let emotes = read_miaonet_emotes_file(&emotes_path)?;
+    miaonet_settings_from_document_with_emotes(&document, emotes)
 }
 
 fn set_yaml_property(mapping: &mut serde_yaml::Mapping, name: &str, value: serde_yaml::Value) {
@@ -418,6 +488,7 @@ fn save_miaonet_settings_update(
     update: &MiaoNetSettingsUpdate,
 ) -> Result<MiaoNetSettings, String> {
     let settings_path = miaonet_settings_path(game_path)?;
+    let emotes_path = miaonet_emotes_path(game_path)?;
     let mut document = read_miaonet_settings_document(&settings_path)?;
     apply_miaonet_settings_update(&mut document, update)?;
     let parent = settings_path
@@ -428,7 +499,8 @@ fn save_miaonet_settings_update(
         .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
     fs::write(&settings_path, serialized)
         .map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))?;
-    miaonet_settings_from_document(&document)
+    write_miaonet_emotes_file(&emotes_path, &update.emotes)?;
+    miaonet_settings_from_document_with_emotes(&document, Some(update.emotes.clone()))
 }
 
 fn read_miaonet_auth_state(game_path: &Path) -> (bool, Option<String>) {
@@ -1046,16 +1118,14 @@ fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result
         let _guard = MiaoNetOauthGuard;
         miaonet_oauth_event(&on_event, "waiting_browser", None);
         if let Err(error) = open::that(&authorization_url) {
-            miaonet_oauth_event(
-                &on_event,
-                "failed",
-                Some(&format!("无法打开系统浏览器：{error}")),
-            );
+            let message = logged_error(format!("无法打开系统浏览器：{error}"));
+            miaonet_oauth_event(&on_event, "failed", Some(&message));
             return;
         }
         if let Err(error) =
             run_miaonet_oauth_listener(listener, &state, &game_path, protocol_version, &on_event)
         {
+            logged_error(format!("MiaoNet OAuth 失败：{error}"));
             miaonet_oauth_event(&on_event, "failed", Some(&error));
         }
     });
@@ -1064,6 +1134,12 @@ fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result
 
 fn send_event(channel: &Channel<IpcEvent>, args: Vec<IpcEvent>) {
     let _ = channel.send(IpcEvent::Array(args));
+}
+
+fn logged_error(message: impl Into<String>) -> String {
+    let message = message.into();
+    crate::logging::error(format_args!("{message}"));
+    message
 }
 
 #[cfg(target_os = "macos")]
@@ -1080,7 +1156,10 @@ fn apply_macos_vibrancy(window: &tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
-fn set_legacy_windows_acrylic(window: &tauri::WebviewWindow, enabled: bool) -> Result<(), String> {
+fn set_legacy_windows_acrylic_for_hwnd(
+    hwnd: winapi::shared::windef::HWND,
+    enabled: bool,
+) -> Result<(), String> {
     use std::ffi::c_void;
     use winapi::{
         shared::{minwindef::BOOL, windef::HWND},
@@ -1108,11 +1187,6 @@ fn set_legacy_windows_acrylic(window: &tauri::WebviewWindow, enabled: bool) -> R
     const WCA_ACCENT_POLICY: i32 = 19;
     const ACCENT_DISABLED: i32 = 0;
     const ACCENT_ENABLE_ACRYLIC_BLUR_BEHIND: i32 = 4;
-
-    let hwnd = window
-        .hwnd()
-        .map_err(|error| format!("failed to get the Windows window handle: {error}"))?
-        .0 as HWND;
 
     unsafe {
         let user32 = GetModuleHandleA(c"user32.dll".as_ptr());
@@ -1150,6 +1224,120 @@ fn set_legacy_windows_acrylic(window: &tauri::WebviewWindow, enabled: bool) -> R
     }
 
     Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn set_legacy_windows_acrylic(window: &tauri::WebviewWindow, enabled: bool) -> Result<(), String> {
+    use winapi::shared::windef::HWND;
+
+    let hwnd = window
+        .hwnd()
+        .map_err(|error| format!("failed to get the Windows window handle: {error}"))?
+        .0 as HWND;
+    set_legacy_windows_acrylic_for_hwnd(hwnd, enabled)
+}
+
+#[cfg(target_os = "windows")]
+fn is_windows_10() -> bool {
+    use winapi::{
+        shared::minwindef::DWORD,
+        um::{
+            libloaderapi::{GetModuleHandleA, GetProcAddress},
+            winnt::RTL_OSVERSIONINFOW,
+        },
+    };
+
+    type RtlGetVersion = unsafe extern "system" fn(*mut RTL_OSVERSIONINFOW) -> i32;
+
+    unsafe {
+        let ntdll = GetModuleHandleA(c"ntdll.dll".as_ptr());
+        if ntdll.is_null() {
+            return false;
+        }
+        let proc = GetProcAddress(ntdll, c"RtlGetVersion".as_ptr());
+        if proc.is_null() {
+            return false;
+        }
+
+        let rtl_get_version: RtlGetVersion = std::mem::transmute(proc);
+        let mut version: RTL_OSVERSIONINFOW = std::mem::zeroed();
+        version.dwOSVersionInfoSize = std::mem::size_of::<RTL_OSVERSIONINFOW>() as DWORD;
+        rtl_get_version(&mut version) >= 0
+            && version.dwMajorVersion == 10
+            && version.dwBuildNumber < 22_000
+    }
+}
+
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn windows_move_resize_subclass_proc(
+    hwnd: winapi::shared::windef::HWND,
+    message: winapi::shared::minwindef::UINT,
+    wparam: winapi::shared::minwindef::WPARAM,
+    lparam: winapi::shared::minwindef::LPARAM,
+    subclass_id: winapi::shared::basetsd::UINT_PTR,
+    _ref_data: winapi::shared::basetsd::DWORD_PTR,
+) -> winapi::shared::minwindef::LRESULT {
+    use winapi::um::{
+        commctrl::{DefSubclassProc, RemoveWindowSubclass},
+        winuser::{WM_ENTERSIZEMOVE, WM_EXITSIZEMOVE, WM_NCDESTROY},
+    };
+
+    match message {
+        WM_ENTERSIZEMOVE => {
+            if WINDOWS_ACRYLIC_ENABLED.load(Ordering::Acquire)
+                && !WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE.swap(true, Ordering::AcqRel)
+                && set_legacy_windows_acrylic_for_hwnd(hwnd, false).is_err()
+            {
+                WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE.store(false, Ordering::Release);
+            }
+        }
+        WM_EXITSIZEMOVE => {
+            if WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE.swap(false, Ordering::AcqRel)
+                && WINDOWS_ACRYLIC_ENABLED.load(Ordering::Acquire)
+            {
+                let _ = set_legacy_windows_acrylic_for_hwnd(hwnd, true);
+            }
+        }
+        WM_NCDESTROY => {
+            WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE.store(false, Ordering::Release);
+            unsafe {
+                RemoveWindowSubclass(hwnd, Some(windows_move_resize_subclass_proc), subclass_id);
+            }
+        }
+        _ => {}
+    }
+
+    unsafe { DefSubclassProc(hwnd, message, wparam, lparam) }
+}
+
+#[cfg(target_os = "windows")]
+fn install_windows_move_resize_acrylic_workaround(
+    window: &tauri::WebviewWindow,
+) -> Result<(), String> {
+    use winapi::{shared::windef::HWND, um::commctrl::SetWindowSubclass};
+
+    if !is_windows_10() {
+        return Ok(());
+    }
+
+    const SUBCLASS_ID: usize = 0x4345_4C45;
+    let hwnd = window
+        .hwnd()
+        .map_err(|error| format!("failed to get the Windows window handle: {error}"))?
+        .0 as HWND;
+    let installed = unsafe {
+        SetWindowSubclass(
+            hwnd,
+            Some(windows_move_resize_subclass_proc),
+            SUBCLASS_ID,
+            0,
+        )
+    };
+    if installed == 0 {
+        Err("failed to install the Windows 10 acrylic move/resize workaround".into())
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(target_os = "windows")]
@@ -1195,6 +1383,10 @@ fn set_window_vibrancy(window: tauri::WebviewWindow, enabled: bool) -> Result<()
 
     #[cfg(target_os = "windows")]
     {
+        WINDOWS_ACRYLIC_ENABLED.store(enabled, Ordering::Release);
+        if enabled && WINDOWS_ACRYLIC_SUSPENDED_FOR_MOVE_RESIZE.load(Ordering::Acquire) {
+            return Ok(());
+        }
         if enabled {
             apply_windows_vibrancy(&window)
         } else {
@@ -1218,7 +1410,9 @@ fn compare_version(a: &str, b: &str) -> i32 {
         if a_part == b_part {
             continue;
         }
-        if a_part.parse::<i32>().unwrap() > b_part.parse::<i32>().unwrap() {
+        let a_number = a_part.parse::<i64>().unwrap_or(0);
+        let b_number = b_part.parse::<i64>().unwrap_or(0);
+        if a_number > b_number {
             return 1;
         } else {
             return -1;
@@ -1594,6 +1788,44 @@ struct LocalMod {
     file: String,
     size: u64,
     modified_at: u64,
+    is_directory: bool,
+}
+
+fn modified_at_millis(metadata: &fs::Metadata) -> u64 {
+    metadata
+        .modified()
+        .ok()
+        .and_then(|value| value.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|value| value.as_millis() as u64)
+        .unwrap_or_default()
+}
+
+fn mod_path_stats(path: &Path) -> anyhow::Result<(u64, u64)> {
+    let metadata = fs::symlink_metadata(path).context("Failed to read Mod metadata")?;
+    let mut size = if metadata.is_dir() { 0 } else { metadata.len() };
+    let mut modified_at = modified_at_millis(&metadata);
+    if !metadata.is_dir() {
+        return Ok((size, modified_at));
+    }
+
+    let mut directories = vec![path.to_path_buf()];
+    while let Some(directory) = directories.pop() {
+        for entry in fs::read_dir(&directory)
+            .with_context(|| format!("Failed to read Mod directory {}", directory.display()))?
+        {
+            let entry = entry.context("Failed to read an entry in the Mod directory")?;
+            let entry_metadata = fs::symlink_metadata(entry.path())
+                .context("Failed to read metadata in the Mod directory")?;
+            modified_at = modified_at.max(modified_at_millis(&entry_metadata));
+            if entry_metadata.is_dir() {
+                directories.push(entry.path());
+            } else {
+                size = size.saturating_add(entry_metadata.len());
+            }
+        }
+    }
+
+    Ok((size, modified_at))
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -1661,18 +1893,18 @@ fn get_installed_mods_sync_with_catalog(
                 anyhow::Ok(())?
             }
 
-            let yaml = if entry.file_type().context("invalid file type")?.is_dir() {
-                let cache_path = entry.path().read_dir().unwrap().find(|v| {
-                    v.as_ref()
-                        .map(|v| {
-                            let name = v.file_name().to_string_lossy().to_string().to_lowercase();
-                            name == "everest.yaml" || name == "everest.yml"
-                        })
-                        .unwrap_or(false)
-                });
+            let is_directory = entry.file_type().context("invalid file type")?.is_dir();
+            let yaml = if is_directory {
+                let cache_path = fs::read_dir(entry.path())
+                    .context("Failed to read directory Mod")?
+                    .find_map(|value| {
+                        let value = value.ok()?;
+                        let name = value.file_name().to_string_lossy().to_ascii_lowercase();
+                        (name == "everest.yaml" || name == "everest.yml").then_some(value)
+                    });
                 match cache_path {
                     Some(cache_path) => {
-                        let cache_path = cache_path.unwrap().path();
+                        let cache_path = cache_path.path();
                         read_to_string_bom(&cache_path)?
                     }
                     None => {
@@ -1717,14 +1949,7 @@ fn get_installed_mods_sync_with_catalog(
                 }
             };
 
-            let metadata = entry.metadata().context("Failed to read Mod metadata")?;
-            let size = metadata.len();
-            let modified_at = metadata
-                .modified()
-                .ok()
-                .and_then(|value| value.duration_since(std::time::UNIX_EPOCH).ok())
-                .map(|value| value.as_millis() as u64)
-                .unwrap_or_default();
+            let (size, modified_at) = mod_path_stats(&entry.path())?;
 
             let file = entry.file_name().to_string_lossy().to_string();
             for metadata_entry in &metadata_entries {
@@ -1750,6 +1975,7 @@ fn get_installed_mods_sync_with_catalog(
                     file: file.clone(),
                     size,
                     modified_at,
+                    is_directory,
                 });
             }
         };
@@ -1779,35 +2005,15 @@ fn get_installed_mods_without_catalog_sync(mods_folder_path: String) -> Vec<Loca
     get_installed_mods_sync_with_catalog(mods_folder_path, None)
 }
 
-fn download_and_install_mod(
+fn download_mod_file(
     url: &str,
     dest: &str,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
-) -> anyhow::Result<Vec<(String, String)>> {
-    let metadata_entries =
-        download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
-
-    let mut deps: Vec<(String, String)> = Vec::new();
-
-    for metadata_entry in &metadata_entries {
-        if let Some(dependencies) = &metadata_entry.dependencies {
-            for dependency in dependencies {
-                let dependency = (
-                    dependency
-                        .name
-                        .clone()
-                        .context("Interrupted yaml dependency")?,
-                    parse_version(dependency.version.as_deref()),
-                );
-                if !deps.contains(&dependency) {
-                    deps.push(dependency);
-                }
-            }
-        }
-    }
-    Ok(deps)
+) -> anyhow::Result<()> {
+    download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
+    Ok(())
 }
 
 fn rm_mod_sync(mods_folder_path: &str, mod_name: &str) -> anyhow::Result<()> {
@@ -1926,6 +2132,126 @@ fn normalize_game_path_buf(path: &Path) -> PathBuf {
     path.to_path_buf()
 }
 
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct GraphDependency {
+    name: String,
+    #[serde(default)]
+    version: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct GraphMod {
+    #[serde(rename = "URL", default)]
+    url: String,
+    #[serde(rename = "MirrorName", default)]
+    _mirror_name: String,
+    #[serde(default)]
+    dependencies: Vec<GraphDependency>,
+    #[serde(rename = "OptionalDependencies", default)]
+    _optional_dependencies: Vec<GraphDependency>,
+}
+
+struct ModDependencyGraphCache {
+    graph: Arc<HashMap<String, GraphMod>>,
+    loaded_at: SystemTime,
+}
+
+fn normalize_mod_key(name: &str) -> String {
+    name.trim().to_ascii_lowercase()
+}
+
+fn mod_dependency_graph_cache_path() -> Option<PathBuf> {
+    dirs::cache_dir().map(|directory| directory.join("CeleMod").join("mod_dependency_graph.yaml"))
+}
+
+fn parse_mod_dependency_graph(raw: &str) -> anyhow::Result<Arc<HashMap<String, GraphMod>>> {
+    let parsed: HashMap<String, GraphMod> =
+        serde_yaml::from_str(raw).context("Failed to parse Mod dependency graph")?;
+    Ok(Arc::new(
+        parsed
+            .into_iter()
+            .map(|(name, item)| (normalize_mod_key(&name), item))
+            .collect(),
+    ))
+}
+
+fn read_mod_dependency_graph_cache() -> Option<(String, SystemTime)> {
+    let path = mod_dependency_graph_cache_path()?;
+    let modified = fs::metadata(&path).ok()?.modified().ok()?;
+    let raw = fs::read_to_string(path).ok()?;
+    Some((raw, modified))
+}
+
+fn save_mod_dependency_graph_cache(raw: &str) {
+    let Some(path) = mod_dependency_graph_cache_path() else {
+        return;
+    };
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    if let Err(error) = fs::write(path, raw) {
+        crate::logging::warn(format_args!(
+            "Failed to save Mod dependency graph cache: {error}"
+        ));
+    }
+}
+
+fn load_mod_dependency_graph() -> anyhow::Result<Arc<HashMap<String, GraphMod>>> {
+    let ttl = Duration::from_secs(everest::get_mod_cache_ttl_seconds());
+    if let Some(cache) = MOD_DEPENDENCY_GRAPH.lock().unwrap().as_ref()
+        && cache.loaded_at.elapsed().unwrap_or(Duration::MAX) <= ttl
+    {
+        return Ok(Arc::clone(&cache.graph));
+    }
+
+    if let Some((raw, modified)) = read_mod_dependency_graph_cache()
+        && modified.elapsed().unwrap_or(Duration::MAX) <= ttl
+    {
+        let graph = parse_mod_dependency_graph(&raw)?;
+        *MOD_DEPENDENCY_GRAPH.lock().unwrap() = Some(ModDependencyGraphCache {
+            graph: Arc::clone(&graph),
+            loaded_at: modified,
+        });
+        return Ok(graph);
+    }
+
+    let network_result = (|| -> anyhow::Result<String> {
+        let response =
+            ::ureq::get("https://celeste.weg.fan/api/v2/download/mod_dependency_graph.yaml")
+                .set("User-Agent", &format!("CeleMod/{}", env!("VERSION")))
+                .timeout(Duration::from_secs(20))
+                .call()
+                .context("Failed to fetch Mod dependency graph")?;
+        response
+            .into_string()
+            .context("Failed to read Mod dependency graph")
+    })();
+    let raw = match network_result {
+        Ok(raw) => {
+            save_mod_dependency_graph_cache(&raw);
+            raw
+        }
+        Err(error) => {
+            if let Some((raw, _)) = read_mod_dependency_graph_cache() {
+                crate::logging::warn(format_args!(
+                    "Using stale Mod dependency graph cache after network failure: {error:#}"
+                ));
+                raw
+            } else {
+                return Err(error);
+            }
+        }
+    };
+    let graph = parse_mod_dependency_graph(&raw)?;
+    *MOD_DEPENDENCY_GRAPH.lock().unwrap() = Some(ModDependencyGraphCache {
+        graph: Arc::clone(&graph),
+        loaded_at: SystemTime::now(),
+    });
+    Ok(graph)
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 enum DownloadStatus {
     Waiting,
@@ -1935,10 +2261,12 @@ enum DownloadStatus {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct DownloadInfo {
+struct ModTaskInfo {
     name: String,
     url: String,
     dest: String,
+    requested: bool,
+    dependencies: Vec<String>,
     status: DownloadStatus,
     data: String,
     downloaded_bytes: u64,
@@ -1953,11 +2281,21 @@ enum DownloadWorkerMessage {
     },
     Finished {
         index: usize,
-        result: Result<Vec<(String, String)>, String>,
+        result: Result<(), String>,
     },
 }
 
-fn emit_download_tasks(tasks: &[DownloadInfo], on_event: &Channel<IpcEvent>, state: &'static str) {
+fn emit_download_tasks(tasks: &[ModTaskInfo], on_event: &Channel<IpcEvent>, state: &'static str) {
+    if state == "failed" {
+        for task in tasks.iter().filter(|task| {
+            task.status == DownloadStatus::Failed && task.data != "Download canceled"
+        }) {
+            logged_error(format!(
+                "Mod download failed for {} ({}): {}",
+                task.name, task.url, task.data
+            ));
+        }
+    }
     let snapshot = serde_json::to_string(tasks).unwrap_or_else(|_| "[]".to_string());
     send_event(
         on_event,
@@ -1965,54 +2303,117 @@ fn emit_download_tasks(tasks: &[DownloadInfo], on_event: &Channel<IpcEvent>, sta
     );
 }
 
-fn enqueue_missing_dependencies(
-    tasks: &mut Vec<DownloadInfo>,
-    queued: &mut HashMap<String, usize>,
-    dependencies: Vec<(String, String)>,
+fn emit_download_failure(
+    name: &str,
+    url: &str,
+    mods_dir: &str,
+    error: String,
+    on_event: &Channel<IpcEvent>,
+) {
+    let task = ModTaskInfo {
+        name: name.to_string(),
+        url: url.to_string(),
+        dest: Path::new(mods_dir)
+            .join(format!("{}.zip", make_path_compatible_name(name)))
+            .to_string_lossy()
+            .to_string(),
+        requested: true,
+        dependencies: Vec::new(),
+        status: DownloadStatus::Failed,
+        data: error,
+        downloaded_bytes: 0,
+        total_bytes: 0,
+        speed_bytes_per_sec: 0.0,
+    };
+    emit_download_tasks(&[task], on_event, "failed");
+}
+
+fn expand_dependency_graph(
+    tasks: &mut Vec<ModTaskInfo>,
     installed: &[LocalMod],
     mod_data: &HashMap<String, everest::ModInfoCached>,
+    graph: &HashMap<String, GraphMod>,
     mods_dir: &str,
-) -> usize {
-    let mut added = 0;
-    for (dependency, min_version) in dependencies {
-        // queued 记录 Waiting / Downloading / Finished / Failed 的整个任务队列，
-        // 任意父依赖重复发现同一个名字时都不会再次入队。
-        if queued.contains_key(&dependency)
-            || installed.iter().any(|item| {
-                item.name == dependency && compare_version(&item.version, &min_version) >= 0
-            })
-        {
-            continue;
-        }
-        let Some(data) = mod_data.get(&dependency) else {
-            crate::logging::error(format_args!(
-                "Failed to resolve dependency {dependency} in Mod data"
-            ));
+) -> anyhow::Result<()> {
+    let mut queued = tasks
+        .iter()
+        .enumerate()
+        .map(|(index, task)| (normalize_mod_key(&task.name), index))
+        .collect::<HashMap<_, _>>();
+    let mut cursor = 0;
+
+    while cursor < tasks.len() {
+        let index = cursor;
+        cursor += 1;
+        let name = tasks[index].name.clone();
+        let key = normalize_mod_key(&name);
+        let Some(node) = graph.get(&key) else {
             continue;
         };
 
-        let index = tasks.len();
-        queued.insert(dependency.clone(), index);
-        tasks.push(DownloadInfo {
-            name: dependency.clone(),
-            url: data.download_url.clone(),
-            dest: Path::new(mods_dir)
-                .join(format!("{}.zip", make_path_compatible_name(&dependency)))
-                .to_string_lossy()
-                .to_string(),
-            status: DownloadStatus::Waiting,
-            data: "0".to_string(),
-            downloaded_bytes: 0,
-            total_bytes: 0,
-            speed_bytes_per_sec: 0.0,
-        });
-        added += 1;
+        for dependency in &node.dependencies {
+            let dependency_key = normalize_mod_key(&dependency.name);
+            if dependency_key == "celeste"
+                || dependency_key == "everest"
+                || dependency_key == "everestcore"
+                || installed.iter().any(|item| {
+                    normalize_mod_key(&item.name) == dependency_key
+                        && compare_version(&item.version, &dependency.version) >= 0
+                })
+            {
+                continue;
+            }
+
+            let dependency_index = if let Some(index) = queued.get(&dependency_key).copied() {
+                index
+            } else {
+                let catalog = mod_data.get(&dependency.name).or_else(|| {
+                    mod_data
+                        .iter()
+                        .find(|(name, _)| normalize_mod_key(name) == dependency_key)
+                        .map(|(_, value)| value)
+                });
+                let graph_dependency = graph.get(&dependency_key);
+                let url = graph_dependency
+                    .and_then(|item| (!item.url.is_empty()).then_some(item.url.clone()))
+                    .or_else(|| catalog.map(|item| item.download_url.clone()))
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("Missing dependency {name}: {}", dependency.name)
+                    })?;
+                let index = tasks.len();
+                queued.insert(dependency_key, index);
+                tasks.push(ModTaskInfo {
+                    name: dependency.name.clone(),
+                    url,
+                    dest: Path::new(mods_dir)
+                        .join(format!(
+                            "{}.zip",
+                            make_path_compatible_name(&dependency.name)
+                        ))
+                        .to_string_lossy()
+                        .to_string(),
+                    requested: false,
+                    dependencies: Vec::new(),
+                    status: DownloadStatus::Waiting,
+                    data: "0".to_string(),
+                    downloaded_bytes: 0,
+                    total_bytes: 0,
+                    speed_bytes_per_sec: 0.0,
+                });
+                index
+            };
+
+            let dependency_name = tasks[dependency_index].name.clone();
+            if !tasks[index].dependencies.contains(&dependency_name) {
+                tasks[index].dependencies.push(dependency_name);
+            }
+        }
     }
-    added
+    Ok(())
 }
 
 fn start_waiting_mod_downloads(
-    tasks: &mut [DownloadInfo],
+    tasks: &mut [ModTaskInfo],
     started_or_finished: &mut HashSet<String>,
     sender: &std::sync::mpsc::Sender<DownloadWorkerMessage>,
     handles: &mut Vec<std::thread::JoinHandle<()>>,
@@ -2047,7 +2448,7 @@ fn start_waiting_mod_downloads(
         handles.push(std::thread::spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let progress_sender = sender.clone();
-                download_and_install_mod(
+                download_mod_file(
                     &task_url,
                     &task_dest,
                     &mut |progress| {
@@ -2068,10 +2469,9 @@ fn start_waiting_mod_downloads(
     started
 }
 
-/// 事件驱动的依赖队列：任意 Mod 一完成就立即解析 YAML、去重入队它的新依赖，
-/// 并马上启动所有 Waiting 项，不等待同一层的其他下载结束。
+/// 扁平依赖队列：启动前先根据依赖图展开并去重所有任务，下载过程中不再动态追加依赖。
 fn download_mod_queue(
-    tasks: &mut Vec<DownloadInfo>,
+    tasks: &mut Vec<ModTaskInfo>,
     installed: &[LocalMod],
     mod_data: &HashMap<String, everest::ModInfoCached>,
     mods_dir: &str,
@@ -2079,11 +2479,25 @@ fn download_mod_queue(
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
 ) -> bool {
-    let mut queued = tasks
-        .iter()
-        .enumerate()
-        .map(|(index, task)| (task.name.clone(), index))
-        .collect::<HashMap<_, _>>();
+    let graph = match load_mod_dependency_graph() {
+        Ok(graph) => graph,
+        Err(error) => {
+            if let Some(task) = tasks.first_mut() {
+                task.status = DownloadStatus::Failed;
+                task.data = format!("{error:#}");
+            }
+            emit_download_tasks(tasks, on_event, "failed");
+            return true;
+        }
+    };
+    if let Err(error) = expand_dependency_graph(tasks, installed, mod_data, &graph, mods_dir) {
+        if let Some(task) = tasks.first_mut() {
+            task.status = DownloadStatus::Failed;
+            task.data = format!("{error:#}");
+        }
+        emit_download_tasks(tasks, on_event, "failed");
+        return true;
+    }
     let mut started_or_finished = HashSet::new();
     let (sender, receiver) = std::sync::mpsc::channel();
     let mut handles = Vec::new();
@@ -2100,6 +2514,17 @@ fn download_mod_queue(
 
     while active > 0 {
         let Ok(message) = receiver.recv() else {
+            let error = "Download worker channel closed unexpectedly";
+            if let Some(task) = tasks
+                .iter_mut()
+                .find(|task| task.status == DownloadStatus::Downloading)
+            {
+                task.status = DownloadStatus::Failed;
+                task.data = error.to_string();
+                task.speed_bytes_per_sec = 0.0;
+            } else {
+                logged_error(error);
+            }
             failed = true;
             break;
         };
@@ -2114,20 +2539,10 @@ fn download_mod_queue(
             DownloadWorkerMessage::Finished { index, result } => {
                 active -= 1;
                 match result {
-                    Ok(task_dependencies) => {
+                    Ok(()) => {
                         tasks[index].status = DownloadStatus::Finished;
                         tasks[index].data = "100".to_string();
                         tasks[index].speed_bytes_per_sec = 0.0;
-                        if !cancel_flag.load(Ordering::Relaxed) {
-                            enqueue_missing_dependencies(
-                                tasks,
-                                &mut queued,
-                                task_dependencies,
-                                installed,
-                                mod_data,
-                                mods_dir,
-                            );
-                        }
                     }
                     Err(error) => {
                         tasks[index].status = DownloadStatus::Failed;
@@ -2154,6 +2569,7 @@ fn download_mod_queue(
     drop(sender);
     for handle in handles {
         if handle.join().is_err() {
+            logged_error("Download worker thread stopped unexpectedly");
             failed = true;
         }
     }
@@ -2712,6 +3128,38 @@ mod local_package_tests {
     }
 
     #[test]
+    fn scans_and_deletes_directory_mods_with_recursive_stats() {
+        let root = test_dir("directory-mod");
+        let mods_path = root.join("Mods");
+        let mod_path = mods_path.join("DirectoryMod");
+        let nested_path = mod_path.join("Assets").join("data.bin");
+        let yaml = b"- Name: DirectoryMod\n  Version: 2.3.4\n";
+        fs::create_dir_all(nested_path.parent().unwrap()).unwrap();
+        fs::write(mod_path.join("everest.yaml"), yaml).unwrap();
+        fs::write(&nested_path, b"initial").unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(&nested_path, b"updated contents").unwrap();
+
+        let nested_modified_at = modified_at_millis(&fs::metadata(&nested_path).unwrap());
+        let installed =
+            get_installed_mods_sync_with_catalog(mods_path.to_string_lossy().into_owned(), None);
+
+        assert_eq!(installed.len(), 1);
+        assert_eq!(installed[0].name, "DirectoryMod");
+        assert_eq!(installed[0].file, "DirectoryMod");
+        assert!(installed[0].is_directory);
+        assert_eq!(
+            installed[0].size,
+            yaml.len() as u64 + b"updated contents".len() as u64
+        );
+        assert!(installed[0].modified_at >= nested_modified_at);
+
+        delete_mod_files_sync(&mods_path.to_string_lossy(), &["DirectoryMod".to_string()]).unwrap();
+        assert!(!mod_path.exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn replaces_affected_mod_archive_with_verified_fix_package() {
         let root = test_dir("crash-mod-fix");
         let game_path = root.join("game");
@@ -2989,60 +3437,91 @@ mod local_package_tests {
     }
 
     #[test]
-    fn dependency_queue_deduplicates_all_task_states() {
-        let root = test_dir("dependency-queue");
-        let mut tasks = Vec::new();
-        let mut queued = HashMap::new();
-        let mod_data = HashMap::from([(
-            "SharedDependency".to_string(),
-            everest::ModInfoCached {
-                name: "SharedDependency".to_string(),
-                version: "1.0.0".to_string(),
-                game_banana_id: 1,
-                game_banana_file_id: 2,
-                download_url: "https://example.invalid/dependency.zip".to_string(),
-            },
-        )]);
-        let dependencies = vec![
-            ("SharedDependency".to_string(), "1.0.0".to_string()),
-            ("SharedDependency".to_string(), "1.0.0".to_string()),
-        ];
-
-        assert_eq!(
-            enqueue_missing_dependencies(
-                &mut tasks,
-                &mut queued,
-                dependencies.clone(),
-                &[],
-                &mod_data,
-                root.to_string_lossy().as_ref(),
+    fn dependency_graph_flattens_and_deduplicates_tasks() {
+        let root = test_dir("dependency-graph");
+        let graph = HashMap::from([
+            (
+                "a".to_string(),
+                GraphMod {
+                    url: "https://example.invalid/a.zip".to_string(),
+                    _mirror_name: String::new(),
+                    dependencies: vec![GraphDependency {
+                        name: "Shared".to_string(),
+                        version: "1.0.0".to_string(),
+                    }],
+                    _optional_dependencies: Vec::new(),
+                },
             ),
-            1
-        );
-        assert_eq!(tasks.len(), 1);
-
-        for status in [
-            DownloadStatus::Waiting,
-            DownloadStatus::Downloading,
-            DownloadStatus::Finished,
-            DownloadStatus::Failed,
-        ] {
-            tasks[0].status = status;
-            assert_eq!(
-                enqueue_missing_dependencies(
-                    &mut tasks,
-                    &mut queued,
-                    dependencies.clone(),
-                    &[],
-                    &mod_data,
-                    root.to_string_lossy().as_ref(),
-                ),
-                0
-            );
-            assert_eq!(tasks.len(), 1);
-        }
-
+            (
+                "b".to_string(),
+                GraphMod {
+                    url: "https://example.invalid/b.zip".to_string(),
+                    _mirror_name: String::new(),
+                    dependencies: vec![GraphDependency {
+                        name: "shared".to_string(),
+                        version: "1.0.0".to_string(),
+                    }],
+                    _optional_dependencies: Vec::new(),
+                },
+            ),
+            (
+                "shared".to_string(),
+                GraphMod {
+                    url: "https://example.invalid/shared.zip".to_string(),
+                    _mirror_name: String::new(),
+                    dependencies: Vec::new(),
+                    _optional_dependencies: Vec::new(),
+                },
+            ),
+        ]);
+        let mut tasks = vec![
+            ModTaskInfo {
+                name: "A".to_string(),
+                url: graph["a"].url.clone(),
+                dest: root.join("A.zip").to_string_lossy().to_string(),
+                requested: true,
+                dependencies: Vec::new(),
+                status: DownloadStatus::Waiting,
+                data: "0".to_string(),
+                downloaded_bytes: 0,
+                total_bytes: 0,
+                speed_bytes_per_sec: 0.0,
+            },
+            ModTaskInfo {
+                name: "B".to_string(),
+                url: graph["b"].url.clone(),
+                dest: root.join("B.zip").to_string_lossy().to_string(),
+                requested: true,
+                dependencies: Vec::new(),
+                status: DownloadStatus::Waiting,
+                data: "0".to_string(),
+                downloaded_bytes: 0,
+                total_bytes: 0,
+                speed_bytes_per_sec: 0.0,
+            },
+        ];
+        expand_dependency_graph(
+            &mut tasks,
+            &[],
+            &HashMap::new(),
+            &graph,
+            root.to_string_lossy().as_ref(),
+        )
+        .unwrap();
+        assert_eq!(tasks.len(), 3);
+        assert_eq!(tasks[0].dependencies, vec!["Shared"]);
+        assert_eq!(tasks[1].dependencies, vec!["Shared"]);
+        assert!(!tasks[2].requested);
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn dependency_graph_parses_uppercase_url_field() {
+        let graph = parse_mod_dependency_graph(
+            "Demo:\n  URL: https://example.invalid/demo.zip\n  MirrorName: '42'\n  Dependencies: []\n  OptionalDependencies: []\n",
+        )
+        .unwrap();
+        assert_eq!(graph["demo"].url, "https://example.invalid/demo.zip");
     }
 
     #[test]
@@ -3239,7 +3718,7 @@ mod local_package_tests {
 }
 
 #[tauri::command]
-fn cancel_download_mod(name: String) -> bool {
+fn cancel_mod_download(name: String) -> bool {
     if let Some(flag) = DOWNLOAD_CANCEL_FLAGS.lock().unwrap().get(&name) {
         flag.store(true, Ordering::Relaxed);
         true
@@ -3306,15 +3785,22 @@ fn start_game_directly_with_loader_impl(
         command.arg("--vanilla");
     }
     if legacy_loader {
-        // EverestUltra's accelerated loader can be disabled for one launch through
-        // these environment switches, without changing the user's normal setup.
-        command
-            .env("EVEREST_PARALLEL_LOAD", "0")
-            .env("EVEREST_ILHOOK_STARTUP_TRANSACTION", "0")
-            .env("EVEREST_LOADER_PGO_REORDER", "0");
+        configure_legacy_loader_environment(&mut command);
     }
     command.spawn()?;
     Ok(())
+}
+
+const EVEREST_ULTRA_SLOW_START_ENVIRONMENT: [(&str, &str); 3] = [
+    ("EVEREST_PARALLEL_LOAD", "0"),
+    ("EVEREST_ILHOOK_STARTUP_TRANSACTION", "0"),
+    ("EVEREST_LOADER_PGO_REORDER", "0"),
+];
+
+fn configure_legacy_loader_environment(command: &mut std::process::Command) {
+    // EverestUltra reads these switches from the launched Celeste process. Keep
+    // them process-local so a slow start does not change the user's normal setup.
+    command.envs(EVEREST_ULTRA_SLOW_START_ENVIRONMENT);
 }
 
 fn start_game_directly_impl(path: String, origin: bool) -> anyhow::Result<()> {
@@ -3738,13 +4224,13 @@ fn download_and_install_loenn(
                 &on_event,
                 vec![serde_json::json!("success"), serde_json::json!(100.0)],
             ),
-            Err(error) => send_event(
-                &on_event,
-                vec![
-                    serde_json::json!("failed"),
-                    serde_json::json!(format!("{error:#}")),
-                ],
-            ),
+            Err(error) => {
+                let error = logged_error(format!("Failed to install Loenn: {error:#}"));
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!("failed"), serde_json::json!(error)],
+                );
+            }
         }
     });
 }
@@ -3780,8 +4266,9 @@ fn start_game(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn start_game_directly(path: String, origin: bool) -> Result<(), String> {
-    start_game_directly_impl(path, origin).map_err(|error| format!("{error:#}"))
+fn start_game_directly(path: String, origin: bool, legacy_loader: bool) -> Result<(), String> {
+    start_game_directly_with_loader_impl(path, origin, legacy_loader)
+        .map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
@@ -4037,11 +4524,11 @@ fn switch_direct_blacklist(game_path: String, mod_files: String, enabled: bool) 
     let game_path = normalize_game_path_impl(&game_path);
     let mod_files: Vec<String> = match serde_json::from_str(&mod_files) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse Mod files: {error}"),
+        Err(error) => return logged_error(format!("Failed to parse Mod files: {error}")),
     };
     match blacklist::switch_direct_blacklist(&game_path, &mod_files, enabled) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to update blacklist.txt: {error}"),
+        Err(error) => logged_error(format!("Failed to update blacklist.txt: {error}")),
     }
 }
 
@@ -4057,7 +4544,9 @@ fn update_blacklist_mod_file(
     let game_path = normalize_game_path_impl(&game_path);
     let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
+        Err(error) => {
+            return logged_error(format!("Failed to parse always-on Mods: {error}"));
+        }
     };
     match blacklist::update_blacklist_mod_file(
         &game_path,
@@ -4068,7 +4557,7 @@ fn update_blacklist_mod_file(
         &always_on_mods,
     ) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to update blacklist Mod file: {error}"),
+        Err(error) => logged_error(format!("Failed to update blacklist Mod file: {error}")),
     }
 }
 
@@ -4077,15 +4566,17 @@ fn apply_mod_profiles(game_path: String, profile_names: String, always_on_mods: 
     let game_path = normalize_game_path_impl(&game_path);
     let profile_names: Vec<String> = match serde_json::from_str(&profile_names) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse profile names: {error}"),
+        Err(error) => return logged_error(format!("Failed to parse profile names: {error}")),
     };
     let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
+        Err(error) => {
+            return logged_error(format!("Failed to parse always-on Mods: {error}"));
+        }
     };
     match blacklist::apply_mod_blacklist_profiles(&game_path, &profile_names, &always_on_mods) {
         Ok(_) => "Success".to_string(),
-        Err(error) => format!("Failed to apply profiles: {error}"),
+        Err(error) => logged_error(format!("Failed to apply profiles: {error}")),
     }
 }
 
@@ -4094,7 +4585,9 @@ fn get_active_profile_mods(game_path: String, always_on_mods: String) -> String 
     let game_path = normalize_game_path_impl(&game_path);
     let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse always-on Mods: {error}"),
+        Err(error) => {
+            return logged_error(format!("Failed to parse always-on Mods: {error}"));
+        }
     };
     serde_json::to_string(&blacklist::get_active_profile_mods(
         &game_path,
@@ -4113,11 +4606,11 @@ fn switch_mod_profile_mods(
     let game_path = normalize_game_path_impl(&game_path);
     let mod_names: Vec<String> = match serde_json::from_str(&mod_names) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse Mod names: {error}"),
+        Err(error) => return logged_error(format!("Failed to parse Mod names: {error}")),
     };
     match blacklist::switch_mod_profile_mods(&game_path, &profile_name, &mod_names, enabled) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to update profile: {error}"),
+        Err(error) => logged_error(format!("Failed to update profile: {error}")),
     }
 }
 
@@ -4133,7 +4626,10 @@ fn get_olympus_presets(game_path: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::get_olympus_presets(&game_path) {
         Ok(profiles) => serde_json::to_string(&profiles).unwrap_or_else(|_| "[]".to_string()),
-        Err(_) => "[]".to_string(),
+        Err(error) => {
+            logged_error(format!("Failed to load Olympus presets: {error}"));
+            "[]".to_string()
+        }
     }
 }
 
@@ -4142,11 +4638,13 @@ fn preview_olympus_profiles(game_path: String, profile_names: String) -> String 
     let game_path = normalize_game_path_impl(&game_path);
     let profile_names: Vec<String> = match serde_json::from_str(&profile_names) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse Olympus profile names: {error}"),
+        Err(error) => {
+            return logged_error(format!("Failed to parse Olympus profile names: {error}"));
+        }
     };
     match blacklist::preview_olympus_profiles(&game_path, &profile_names) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
-        Err(error) => format!("Failed to preview Olympus presets: {error}"),
+        Err(error) => logged_error(format!("Failed to preview Olympus presets: {error}")),
     }
 }
 
@@ -4155,7 +4653,7 @@ fn preview_mod_profiles_json(game_path: String, contents: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::preview_mod_profiles_json(&game_path, &contents) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
-        Err(error) => format!("Failed to preview profiles: {error}"),
+        Err(error) => logged_error(format!("Failed to preview profiles: {error}")),
     }
 }
 
@@ -4164,7 +4662,7 @@ fn preview_mod_profiles(game_path: String, source_path: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::preview_mod_profiles(&game_path, &source_path) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
-        Err(error) => format!("Failed to preview profiles: {error}"),
+        Err(error) => logged_error(format!("Failed to preview profiles: {error}")),
     }
 }
 
@@ -4173,11 +4671,11 @@ fn commit_mod_profiles(game_path: String, profiles: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     let profiles = match serde_json::from_str::<Vec<blacklist::ModBlacklistProfile>>(&profiles) {
         Ok(value) => value,
-        Err(error) => return format!("Failed to parse profiles: {error}"),
+        Err(error) => return logged_error(format!("Failed to parse profiles: {error}")),
     };
     match blacklist::commit_profile_import(&game_path, profiles) {
         Ok(result) => serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string()),
-        Err(error) => format!("Failed to import profiles: {error}"),
+        Err(error) => logged_error(format!("Failed to import profiles: {error}")),
     }
 }
 
@@ -4193,7 +4691,9 @@ fn export_mod_profile(
     let enabled_mods = match enabled_mods {
         Some(value) => match serde_json::from_str::<Vec<String>>(&value) {
             Ok(value) => Some(value),
-            Err(error) => return format!("Failed to parse exported Mod names: {error}"),
+            Err(error) => {
+                return logged_error(format!("Failed to parse exported Mod names: {error}"));
+            }
         },
         None => None,
     };
@@ -4205,7 +4705,7 @@ fn export_mod_profile(
         auto_deps,
     ) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to export profile: {error}"),
+        Err(error) => logged_error(format!("Failed to export profile: {error}")),
     }
 }
 
@@ -4214,7 +4714,7 @@ fn expand_mod_profile_dependencies(game_path: String, profile_name: String) -> S
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::expand_mod_profile_dependencies(&game_path, &profile_name) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to expand profile dependencies: {error}"),
+        Err(error) => logged_error(format!("Failed to expand profile dependencies: {error}")),
     }
 }
 
@@ -4223,7 +4723,7 @@ fn new_mod_blacklist_profile(game_path: String, profile_name: String) -> String 
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::new_mod_blacklist_profile(&game_path, &profile_name) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to create blacklist profile: {error}"),
+        Err(error) => logged_error(format!("Failed to create blacklist profile: {error}")),
     }
 }
 
@@ -4232,7 +4732,7 @@ fn rename_mod_blacklist_profile(game_path: String, old_name: String, new_name: S
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::rename_mod_blacklist_profile(&game_path, &old_name, &new_name) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to rename profile: {error}"),
+        Err(error) => logged_error(format!("Failed to rename profile: {error}")),
     }
 }
 
@@ -4240,7 +4740,7 @@ fn rename_mod_blacklist_profile(game_path: String, old_name: String, new_name: S
 fn get_current_profile(game_path: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     blacklist::get_current_profile(&game_path)
-        .unwrap_or_else(|error| format!("Failed to get current profile: {error}"))
+        .unwrap_or_else(|error| logged_error(format!("Failed to get current profile: {error}")))
 }
 
 #[tauri::command]
@@ -4248,26 +4748,30 @@ fn remove_mod_blacklist_profile(game_path: String, profile_name: String) -> Stri
     let game_path = normalize_game_path_impl(&game_path);
     match blacklist::remove_mod_blacklist_profile(&game_path, &profile_name) {
         Ok(()) => "Success".to_string(),
-        Err(error) => format!("Failed to remove profile: {error}"),
+        Err(error) => logged_error(format!("Failed to remove profile: {error}")),
     }
 }
 
 #[tauri::command]
 fn get_mod_update(name: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
-        let data = get_mod_cached_new()
-            .ok()
-            .and_then(|mods| {
-                mods.get(&name).map(|item| {
+        let data = match get_mod_cached_new() {
+            Ok(mods) => mods
+                .get(&name)
+                .map(|item| {
                     (
                         item.game_banana_file_id.to_string(),
                         item.version.clone(),
                         item.download_url.clone(),
                     )
                 })
-            })
-            .and_then(|value| serde_json::to_string(&value).ok())
-            .unwrap_or_default();
+                .and_then(|value| serde_json::to_string(&value).ok())
+                .unwrap_or_default(),
+            Err(error) => {
+                logged_error(format!("Failed to get update info for {name}: {error:#}"));
+                String::new()
+            }
+        };
         send_event(&on_event, vec![serde_json::json!(data)]);
     });
 }
@@ -4275,20 +4779,23 @@ fn get_mod_update(name: String, on_event: Channel<IpcEvent>) {
 #[tauri::command]
 fn get_mod_latest_info(on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
-        let values: Vec<(String, String, String, String)> = get_mod_cached_new()
-            .map(|mods| {
-                mods.iter()
-                    .map(|(name, item)| {
-                        (
-                            name.clone(),
-                            item.version.clone(),
-                            item.game_banana_file_id.to_string(),
-                            item.download_url.clone(),
-                        )
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let values: Vec<(String, String, String, String)> = match get_mod_cached_new() {
+            Ok(mods) => mods
+                .iter()
+                .map(|(name, item)| {
+                    (
+                        name.clone(),
+                        item.version.clone(),
+                        item.game_banana_file_id.to_string(),
+                        item.download_url.clone(),
+                    )
+                })
+                .collect(),
+            Err(error) => {
+                logged_error(format!("Failed to get latest Mod info: {error:#}"));
+                Vec::new()
+            }
+        };
         let data = serde_json::to_string(&values).unwrap_or_else(|_| "[]".to_string());
         send_event(&on_event, vec![serde_json::json!(data)]);
     });
@@ -4307,7 +4814,14 @@ fn delete_mods(game_path: String, mod_names: String, on_event: Channel<IpcEvent>
             .join("Mods")
             .to_string_lossy()
             .to_string();
-        let names: Vec<String> = serde_json::from_str(&mod_names).unwrap_or_default();
+        let names: Vec<String> = match serde_json::from_str(&mod_names) {
+            Ok(names) => names,
+            Err(error) => {
+                let error = logged_error(format!("Failed to parse Mods to remove: {error}"));
+                send_event(&on_event, vec![serde_json::json!(error)]);
+                return;
+            }
+        };
         let failed = names
             .iter()
             .filter_map(|name| {
@@ -4319,7 +4833,7 @@ fn delete_mods(game_path: String, mod_names: String, on_event: Channel<IpcEvent>
         let result = if failed.is_empty() {
             "Success".to_string()
         } else {
-            format!("Failed to remove some Mods: {}", failed.join(", "))
+            logged_error(format!("Failed to remove some Mods: {}", failed.join(", ")))
         };
         send_event(&on_event, vec![serde_json::json!(result)]);
     });
@@ -4328,10 +4842,17 @@ fn delete_mods(game_path: String, mod_names: String, on_event: Channel<IpcEvent>
 #[tauri::command]
 fn delete_mod_files(mods_folder_path: String, file_names: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
-        let names: Vec<String> = serde_json::from_str(&file_names).unwrap_or_default();
+        let names: Vec<String> = match serde_json::from_str(&file_names) {
+            Ok(names) => names,
+            Err(error) => {
+                let error = logged_error(format!("Failed to parse Mod files to remove: {error}"));
+                send_event(&on_event, vec![serde_json::json!(error)]);
+                return;
+            }
+        };
         let result = delete_mod_files_sync(&mods_folder_path, &names)
             .map(|_| "Success".to_string())
-            .unwrap_or_else(|error| format!("Failed to remove some files: {error}"));
+            .unwrap_or_else(|error| logged_error(format!("Failed to remove some files: {error}")));
         send_event(&on_event, vec![serde_json::json!(result)]);
     });
 }
@@ -4343,12 +4864,10 @@ fn get_everest_version(game_path: String, on_event: Channel<IpcEvent>) {
         let (version, is_ultra) = if is_test_mode() {
             ("4000".to_string(), false)
         } else {
-            (
-                everest::get_everest_version(&game_path)
-                    .map(|value| value.to_string())
-                    .unwrap_or_default(),
-                everest::is_everest_ultra(Path::new(&game_path)),
-            )
+            let version = everest::get_everest_version(&game_path)
+                .map(|value| value.to_string())
+                .unwrap_or_default();
+            (version, everest::is_everest_ultra(Path::new(&game_path)))
         };
         send_event(
             &on_event,
@@ -4429,13 +4948,13 @@ fn download_and_install_everest(game_path: String, url: String, on_event: Channe
                 &on_event,
                 vec![serde_json::json!("Success"), serde_json::json!(100.0)],
             ),
-            Err(error) => send_event(
-                &on_event,
-                vec![
-                    serde_json::json!("Failed"),
-                    serde_json::json!(error.to_string()),
-                ],
-            ),
+            Err(error) => {
+                let error = logged_error(format!("Failed to install Everest: {error:#}"));
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!("Failed"), serde_json::json!(error)],
+                );
+            }
         }
     });
 }
@@ -4459,8 +4978,15 @@ fn download_and_install_crash_mod_fix(
             return;
         }
         let game_path = normalize_game_path_impl(&game_path);
-        let affected_versions =
-            serde_json::from_str::<Vec<String>>(&affected_versions).unwrap_or_default();
+        let affected_versions = match serde_json::from_str::<Vec<String>>(&affected_versions) {
+            Ok(versions) => versions,
+            Err(error) => {
+                logged_error(format!(
+                    "Failed to parse affected versions for crash Mod fix: {error}"
+                ));
+                Vec::new()
+            }
+        };
         let result = download_and_install_crash_mod_fix_impl(
             Path::new(&game_path),
             &mod_name,
@@ -4480,13 +5006,13 @@ fn download_and_install_crash_mod_fix(
                 &on_event,
                 vec![serde_json::json!("Success"), serde_json::json!(file)],
             ),
-            Err(error) => send_event(
-                &on_event,
-                vec![
-                    serde_json::json!("Failed"),
-                    serde_json::json!(format!("{error:#}")),
-                ],
-            ),
+            Err(error) => {
+                let error = logged_error(format!("Failed to install crash Mod fix: {error:#}"));
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!("Failed"), serde_json::json!(error)],
+                );
+            }
         }
     });
 }
@@ -4502,51 +5028,51 @@ fn install_local_packages(
     on_event: Channel<IpcEvent>,
 ) {
     std::thread::spawn(move || {
-        let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap_or_default();
+        let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
+            Ok(mods) => mods,
+            Err(error) => {
+                logged_error(format!(
+                    "Failed to parse always-on Mods while installing local packages: {error}"
+                ));
+                Vec::new()
+            }
+        };
         let paths: Vec<String> = match serde_json::from_str(&package_paths) {
             Ok(paths) => paths,
             Err(error) => {
+                let error = logged_error(format!("Invalid package list: {error}"));
                 send_event(
                     &on_event,
-                    vec![
-                        serde_json::json!("failed"),
-                        serde_json::json!(format!("Invalid package list: {error}")),
-                    ],
+                    vec![serde_json::json!("failed"), serde_json::json!(error)],
                 );
                 return;
             }
         };
         if paths.is_empty() {
+            let error = logged_error("No packages were dropped");
             send_event(
                 &on_event,
-                vec![
-                    serde_json::json!("failed"),
-                    serde_json::json!("No packages were dropped"),
-                ],
+                vec![serde_json::json!("failed"), serde_json::json!(error)],
             );
             return;
         }
         let game_path = normalize_game_path_impl(&game_path);
         let normalized_game_path = Path::new(&game_path);
         if !normalized_game_path.is_dir() {
+            let error = logged_error("The selected Celeste folder does not exist");
             send_event(
                 &on_event,
-                vec![
-                    serde_json::json!("failed"),
-                    serde_json::json!("The selected Celeste folder does not exist"),
-                ],
+                vec![serde_json::json!("failed"), serde_json::json!(error)],
             );
             return;
         }
         if !is_test_mode() && is_celeste_running(normalized_game_path) {
+            let error = logged_error(
+                "Celeste is currently running. Exit the game before installing packages.",
+            );
             send_event(
                 &on_event,
-                vec![
-                    serde_json::json!("failed"),
-                    serde_json::json!(
-                        "Celeste is currently running. Exit the game before installing packages."
-                    ),
-                ],
+                vec![serde_json::json!("failed"), serde_json::json!(error)],
             );
             return;
         }
@@ -4613,12 +5139,17 @@ fn install_local_packages(
                     success: true,
                     error: String::new(),
                 },
-                Err(error) => LocalPackageInstallResult {
-                    file: file_name,
-                    package_type,
-                    success: false,
-                    error: format!("{error:#}"),
-                },
+                Err(error) => {
+                    let error = logged_error(format!(
+                        "Failed to install local package {file_name}: {error:#}"
+                    ));
+                    LocalPackageInstallResult {
+                        file: file_name,
+                        package_type,
+                        success: false,
+                        error,
+                    }
+                }
             });
         }
         if auto_disable_new_mods
@@ -4647,9 +5178,56 @@ fn install_local_packages(
 // Tauri deserializes these separate fields; combining them would break the existing IPC protocol.
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
-fn download_mod(
-    name: String,
-    url: String,
+fn download_mod_batch(
+    roots: String,
+    mods_dir: String,
+    download_type_defaults: String,
+    profile_enabled: bool,
+    current_profile_name: String,
+    always_on_mods: String,
+    on_event: Channel<IpcEvent>,
+    use_cn_proxy: bool,
+    multi_thread: bool,
+) {
+    let roots = match serde_json::from_str::<Vec<(String, String)>>(&roots) {
+        Ok(roots) if !roots.is_empty() => roots,
+        Ok(_) => {
+            emit_download_failure(
+                "batch",
+                "",
+                &mods_dir,
+                "No Mods to download".to_string(),
+                &on_event,
+            );
+            return;
+        }
+        Err(error) => {
+            emit_download_failure(
+                "batch",
+                "",
+                &mods_dir,
+                format!("Invalid Mod download list: {error}"),
+                &on_event,
+            );
+            return;
+        }
+    };
+    download_mod_with_roots(
+        roots,
+        mods_dir,
+        download_type_defaults,
+        profile_enabled,
+        current_profile_name,
+        always_on_mods,
+        on_event,
+        use_cn_proxy,
+        multi_thread,
+    );
+}
+
+#[allow(clippy::too_many_arguments)]
+fn download_mod_with_roots(
+    roots: Vec<(String, String)>,
     mods_dir: String,
     download_type_defaults: String,
     profile_enabled: bool,
@@ -4661,20 +5239,37 @@ fn download_mod(
 ) {
     let _ = use_cn_proxy;
     std::thread::spawn(move || {
-        let always_on_mods: Vec<String> = serde_json::from_str(&always_on_mods).unwrap_or_default();
+        let (name, url) = roots.first().cloned().unwrap_or_default();
+        let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
+            Ok(mods) => mods,
+            Err(error) => {
+                logged_error(format!(
+                    "Failed to parse always-on Mods for download {name}: {error}"
+                ));
+                Vec::new()
+            }
+        };
         let download_type_defaults =
-            serde_json::from_str::<HashMap<String, bool>>(&download_type_defaults)
-                .unwrap_or_default();
+            match serde_json::from_str::<HashMap<String, bool>>(&download_type_defaults) {
+                Ok(defaults) => defaults,
+                Err(error) => {
+                    logged_error(format!(
+                        "Failed to parse Mod type defaults for download {name}: {error}"
+                    ));
+                    HashMap::new()
+                }
+            };
         let default_enabled = download_type_defaults
             .get("__default")
             .copied()
             .unwrap_or(true);
         if let Err(error) = fs::create_dir_all(&mods_dir) {
-            send_event(
+            emit_download_failure(
+                &name,
+                &url,
+                &mods_dir,
+                format!("Failed to create Mods directory: {error}"),
                 &on_event,
-                vec![serde_json::json!(format!(
-                    "Failed to create Mods directory: {error}"
-                ))],
             );
             return;
         }
@@ -4686,46 +5281,47 @@ fn download_mod(
         let mod_data = match get_mod_cached_new() {
             Ok(data) => data,
             Err(error) => {
-                send_event(
+                emit_download_failure(
+                    &name,
+                    &url,
+                    &mods_dir,
+                    format!("Failed to get Mod data: {error}"),
                     &on_event,
-                    vec![serde_json::json!(format!(
-                        "Failed to get Mod data: {error}"
-                    ))],
                 );
                 DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
                 return;
             }
         };
         let installed = get_installed_mods_sync(mods_dir.clone());
-        let destination_file = installed
-            .iter()
-            .find(|item| {
-                item.name == name
-                    && Path::new(&mods_dir).join(&item.file).is_file()
-                    && Path::new(&item.file)
-                        .extension()
-                        .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
-            })
-            .map(|item| item.file.clone())
-            .unwrap_or_else(|| format!("{}.zip", make_path_compatible_name(&name)));
-        let previous_files = installed
-            .iter()
-            .filter(|item| item.name == name && item.file != destination_file)
-            .map(|item| item.file.clone())
-            .collect::<HashSet<_>>();
-        let mut tasks = vec![DownloadInfo {
-            name: name.clone(),
-            url,
-            dest: Path::new(&mods_dir)
-                .join(&destination_file)
-                .to_string_lossy()
-                .to_string(),
-            status: DownloadStatus::Waiting,
-            data: String::new(),
-            downloaded_bytes: 0,
-            total_bytes: 0,
-            speed_bytes_per_sec: 0.0,
-        }];
+        let mut tasks = Vec::new();
+        for (root_name, root_url) in &roots {
+            let destination_file = installed
+                .iter()
+                .find(|item| {
+                    item.name == *root_name
+                        && Path::new(&mods_dir).join(&item.file).is_file()
+                        && Path::new(&item.file)
+                            .extension()
+                            .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
+                })
+                .map(|item| item.file.clone())
+                .unwrap_or_else(|| format!("{}.zip", make_path_compatible_name(root_name)));
+            tasks.push(ModTaskInfo {
+                name: root_name.clone(),
+                url: root_url.clone(),
+                dest: Path::new(&mods_dir)
+                    .join(&destination_file)
+                    .to_string_lossy()
+                    .to_string(),
+                requested: true,
+                dependencies: Vec::new(),
+                status: DownloadStatus::Waiting,
+                data: String::new(),
+                downloaded_bytes: 0,
+                total_bytes: 0,
+                speed_bytes_per_sec: 0.0,
+            });
+        }
         let installed_before = installed
             .iter()
             .map(|item| item.name.to_ascii_lowercase())
@@ -4739,17 +5335,6 @@ fn download_mod(
             multi_thread,
             &cancel_flag,
         );
-        if tasks
-            .first()
-            .is_some_and(|task| task.status == DownloadStatus::Finished)
-            && !previous_files.is_empty()
-            && let Err(error) =
-                delete_mod_files_sync(&mods_dir, &previous_files.into_iter().collect::<Vec<_>>())
-        {
-            crate::logging::warn(format_args!(
-                "Failed to remove superseded Mod files after updating {name}: {error:#}"
-            ));
-        }
         if !failed {
             let game_path = Path::new(&mods_dir)
                 .parent()
@@ -4845,12 +5430,12 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
                 let current_exe = match std::env::current_exe() {
                     Ok(path) => path,
                     Err(error) => {
+                        let error = logged_error(format!(
+                            "Failed to locate the current executable during self-update: {error}"
+                        ));
                         send_event(
                             &on_event,
-                            vec![
-                                serde_json::json!("failed"),
-                                serde_json::json!(error.to_string()),
-                            ],
+                            vec![serde_json::json!("failed"), serde_json::json!(error)],
                         );
                         return;
                     }
@@ -4858,24 +5443,24 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
                 let mut command = std::process::Command::new(&tmp);
                 command.arg("/update").arg(current_exe);
                 if let Err(error) = command.spawn() {
+                    let error = logged_error(format!(
+                        "Failed to start the downloaded CeleMod updater: {error}"
+                    ));
                     send_event(
                         &on_event,
-                        vec![
-                            serde_json::json!("failed"),
-                            serde_json::json!(error.to_string()),
-                        ],
+                        vec![serde_json::json!("failed"), serde_json::json!(error)],
                     );
                 } else {
                     std::process::exit(0);
                 }
             }
-            Err(error) => send_event(
-                &on_event,
-                vec![
-                    serde_json::json!("failed"),
-                    serde_json::json!(error.to_string()),
-                ],
-            ),
+            Err(error) => {
+                let error = logged_error(format!("Failed to download CeleMod update: {error:#}"));
+                send_event(
+                    &on_event,
+                    vec![serde_json::json!("failed"), serde_json::json!(error)],
+                );
+            }
         }
     });
 }
@@ -4955,6 +5540,50 @@ mod miaonet_settings_tests {
     }
 
     #[test]
+    fn external_emotes_override_legacy_yaml_emotes() {
+        let document: serde_yaml::Value =
+            serde_yaml::from_str("Emotes:\n  - legacy\n").expect("test yaml should parse");
+        let settings = miaonet_settings_from_document_with_emotes(
+            &document,
+            Some(vec!["new first".to_string(), "new second".to_string()]),
+        )
+        .expect("settings with external emotes should load");
+
+        assert_eq!(settings.emotes, vec!["new first", "new second"]);
+    }
+
+    #[test]
+    fn parses_miaonet_emotes_text_as_one_emote_per_line() {
+        assert_eq!(
+            parse_miaonet_emotes_file("\u{feff}Hi!\r\np:granny/laugh\r\n\r\n"),
+            vec!["Hi!", "p:granny/laugh", ""]
+        );
+        assert!(parse_miaonet_emotes_file("").is_empty());
+    }
+
+    #[test]
+    fn writes_and_reads_separate_miaonet_emotes_file() {
+        let root = std::env::temp_dir().join(format!(
+            "celemod-miaonet-emotes-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system clock should be valid")
+                .as_nanos()
+        ));
+        let path = root.join(MIAONET_EMOTES_FILE_NAME);
+        let emotes = vec!["Hi!".to_string(), "p:granny/laugh".to_string()];
+
+        write_miaonet_emotes_file(&path, &emotes).expect("emotes file should be written");
+        assert_eq!(
+            read_miaonet_emotes_file(&path).expect("emotes file should be read"),
+            Some(emotes)
+        );
+
+        fs::remove_dir_all(root).expect("test directory should be removed");
+    }
+
+    #[test]
     fn rejects_out_of_range_emote_opacity() {
         let mut document = serde_yaml::Value::Mapping(serde_yaml::Mapping::new());
         let mut update = sample_update();
@@ -4994,6 +5623,53 @@ mod keyboard_input_tests {
             without_new_keyboard_input_enabled("EVEREST_NEW_KEYBOARD_INPUT=1\n"),
             ""
         );
+    }
+}
+
+#[cfg(test)]
+mod legacy_loader_tests {
+    use super::configure_legacy_loader_environment;
+    use std::process::Command;
+
+    #[cfg(any(windows, unix))]
+    #[test]
+    fn slow_start_environment_reaches_the_child_process() {
+        #[cfg(windows)]
+        let mut command = {
+            let mut command = Command::new("cmd.exe");
+            command.args(["/D", "/S", "/C", "set EVEREST_"]);
+            command
+        };
+        #[cfg(unix)]
+        let mut command = {
+            let mut command = Command::new("sh");
+            command.args(["-c", "env | grep '^EVEREST_'"]);
+            command
+        };
+
+        configure_legacy_loader_environment(&mut command);
+        let output = command
+            .output()
+            .expect("the environment probe child process should start");
+        assert!(
+            output.status.success(),
+            "environment probe failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for name in [
+            "EVEREST_PARALLEL_LOAD",
+            "EVEREST_ILHOOK_STARTUP_TRANSACTION",
+            "EVEREST_LOADER_PGO_REORDER",
+        ] {
+            assert!(
+                stdout
+                    .lines()
+                    .any(|line| line.trim() == format!("{name}=0")),
+                "child process did not receive {name}=0; output was: {stdout}"
+            );
+        }
     }
 }
 
@@ -5087,6 +5763,18 @@ pub fn run() {
                 apply_macos_vibrancy(&window).map_err(std::io::Error::other)?;
             }
 
+            #[cfg(target_os = "windows")]
+            {
+                let window = app.get_webview_window("main").ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        "main webview window was not created",
+                    )
+                })?;
+                install_windows_move_resize_acrylic_workaround(&window)
+                    .map_err(std::io::Error::other)?;
+            }
+
             Ok(())
         })
         .plugin(tauri_plugin_system_symbols::init())
@@ -5095,8 +5783,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             take_pending_deep_links,
-            download_mod,
-            cancel_download_mod,
+            download_mod_batch,
+            cancel_mod_download,
             cleanup_mod_download_temp_files,
             get_celeste_dirs,
             get_installed_mod_ids,

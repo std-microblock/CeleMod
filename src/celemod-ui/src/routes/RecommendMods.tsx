@@ -320,7 +320,7 @@ const HelperModRow = ({
               className="recommended-download-progress"
               style={{ "--download-progress": `${progress}%` } as CSSProperties}
             >
-              <span>{task.subtasks.length}</span>
+              <span>{task.dependencies.length}</span>
             </span>
           ) : task.state === "failed" || task.canceled ? (
             <Icon name="i-cross" />

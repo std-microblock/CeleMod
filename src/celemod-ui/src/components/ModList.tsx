@@ -370,7 +370,7 @@ export const Mod = memo(
                     } as CSSProperties
                   }
                 >
-                  <span>{downloadTask.subtasks.length}</span>
+                  <span>{downloadTask.dependencies.length}</span>
                 </span>
               ) : downloadTask.state === "failed" || downloadTask.canceled ? (
                 <Icon name="i-cross" />
