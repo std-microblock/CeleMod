@@ -1,0 +1,2082 @@
+/* everest */
+html[data-theme="metro"] .everest,
+html[data-theme="win10"] .everest {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest:hover,
+html[data-theme="win10"] .everest:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-header,
+html[data-theme="win10"] .everest-header {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-header:hover,
+html[data-theme="win10"] .everest-header:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-list,
+html[data-theme="win10"] .everest-list {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-list:hover,
+html[data-theme="win10"] .everest-list:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-card,
+html[data-theme="win10"] .everest-card {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-card:hover,
+html[data-theme="win10"] .everest-card:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-version,
+html[data-theme="win10"] .everest-version {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-version:hover,
+html[data-theme="win10"] .everest-version:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-actions,
+html[data-theme="win10"] .everest-actions {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-actions:hover,
+html[data-theme="win10"] .everest-actions:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .everest-empty,
+html[data-theme="win10"] .everest-empty {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .everest-empty:hover,
+html[data-theme="win10"] .everest-empty:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+/* keybindings */
+html[data-theme="metro"] .keybindings-page,
+html[data-theme="win10"] .keybindings-page {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-page:hover,
+html[data-theme="win10"] .keybindings-page:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-sources,
+html[data-theme="win10"] .keybindings-sources {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-sources:hover,
+html[data-theme="win10"] .keybindings-sources:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-main,
+html[data-theme="win10"] .keybindings-main {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-main:hover,
+html[data-theme="win10"] .keybindings-main:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-toolbar,
+html[data-theme="win10"] .keybindings-toolbar {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-toolbar:hover,
+html[data-theme="win10"] .keybindings-toolbar:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-actions,
+html[data-theme="win10"] .keybindings-actions {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-actions:hover,
+html[data-theme="win10"] .keybindings-actions:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-title,
+html[data-theme="win10"] .keybindings-title {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-title:hover,
+html[data-theme="win10"] .keybindings-title:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-search,
+html[data-theme="win10"] .keybindings-search {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-search:hover,
+html[data-theme="win10"] .keybindings-search:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-row,
+html[data-theme="win10"] .binding-row {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-row:hover,
+html[data-theme="win10"] .binding-row:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-info,
+html[data-theme="win10"] .binding-info {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-info:hover,
+html[data-theme="win10"] .binding-info:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-devices,
+html[data-theme="win10"] .binding-devices {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-devices:hover,
+html[data-theme="win10"] .binding-devices:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-device,
+html[data-theme="win10"] .binding-device {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-device:hover,
+html[data-theme="win10"] .binding-device:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-values,
+html[data-theme="win10"] .binding-values {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-values:hover,
+html[data-theme="win10"] .binding-values:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-chip,
+html[data-theme="win10"] .binding-chip {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-chip:hover,
+html[data-theme="win10"] .binding-chip:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-add,
+html[data-theme="win10"] .binding-add {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-add:hover,
+html[data-theme="win10"] .binding-add:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .conflict-detail,
+html[data-theme="win10"] .conflict-detail {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .conflict-detail:hover,
+html[data-theme="win10"] .conflict-detail:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .conflict-action-row,
+html[data-theme="win10"] .conflict-action-row {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .conflict-action-row:hover,
+html[data-theme="win10"] .conflict-action-row:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .keybindings-empty,
+html[data-theme="win10"] .keybindings-empty {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .keybindings-empty:hover,
+html[data-theme="win10"] .keybindings-empty:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+/* download */
+html[data-theme="metro"] .downloadListBackdrop,
+html[data-theme="win10"] .downloadListBackdrop {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .downloadListBackdrop:hover,
+html[data-theme="win10"] .downloadListBackdrop:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .downloadList,
+html[data-theme="win10"] .downloadList {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .downloadList:hover,
+html[data-theme="win10"] .downloadList:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-list-header,
+html[data-theme="win10"] .download-list-header {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-list-header:hover,
+html[data-theme="win10"] .download-list-header:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-list-heading,
+html[data-theme="win10"] .download-list-heading {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-list-heading:hover,
+html[data-theme="win10"] .download-list-heading:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-list-close,
+html[data-theme="win10"] .download-list-close {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-list-close:hover,
+html[data-theme="win10"] .download-list-close:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .taskList,
+html[data-theme="win10"] .taskList {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .taskList:hover,
+html[data-theme="win10"] .taskList:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task,
+html[data-theme="win10"] .download-task {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task:hover,
+html[data-theme="win10"] .download-task:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-topline,
+html[data-theme="win10"] .download-task-topline {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-topline:hover,
+html[data-theme="win10"] .download-task-topline:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-toggle,
+html[data-theme="win10"] .download-task-toggle {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-toggle:hover,
+html[data-theme="win10"] .download-task-toggle:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-title,
+html[data-theme="win10"] .download-task-title {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-title:hover,
+html[data-theme="win10"] .download-task-title:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-status-text,
+html[data-theme="win10"] .download-task-status-text {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-status-text:hover,
+html[data-theme="win10"] .download-task-status-text:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-actions,
+html[data-theme="win10"] .download-task-actions {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-actions:hover,
+html[data-theme="win10"] .download-task-actions:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-progress,
+html[data-theme="win10"] .download-task-progress {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-progress:hover,
+html[data-theme="win10"] .download-task-progress:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-task-summary,
+html[data-theme="win10"] .download-task-summary {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-task-summary:hover,
+html[data-theme="win10"] .download-task-summary:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-dependency-list,
+html[data-theme="win10"] .download-dependency-list {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-dependency-list:hover,
+html[data-theme="win10"] .download-dependency-list:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-dependency-heading,
+html[data-theme="win10"] .download-dependency-heading {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-dependency-heading:hover,
+html[data-theme="win10"] .download-dependency-heading:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-detail-row,
+html[data-theme="win10"] .download-detail-row {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-detail-row:hover,
+html[data-theme="win10"] .download-detail-row:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-dependency-main,
+html[data-theme="win10"] .download-dependency-main {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-dependency-main:hover,
+html[data-theme="win10"] .download-dependency-main:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-dependency-actions,
+html[data-theme="win10"] .download-dependency-actions {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-dependency-actions:hover,
+html[data-theme="win10"] .download-dependency-actions:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .download-list-empty,
+html[data-theme="win10"] .download-list-empty {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .download-list-empty:hover,
+html[data-theme="win10"] .download-list-empty:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+/* search */
+html[data-theme="metro"] .search-page,
+html[data-theme="win10"] .search-page {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-page:hover,
+html[data-theme="win10"] .search-page:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-empty-state,
+html[data-theme="win10"] .search-empty-state {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-empty-state:hover,
+html[data-theme="win10"] .search-empty-state:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-skeleton,
+html[data-theme="win10"] .search-skeleton {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-skeleton:hover,
+html[data-theme="win10"] .search-skeleton:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-skeleton-grid,
+html[data-theme="win10"] .search-skeleton-grid {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-skeleton-grid:hover,
+html[data-theme="win10"] .search-skeleton-grid:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-skeleton-card,
+html[data-theme="win10"] .search-skeleton-card {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-skeleton-card:hover,
+html[data-theme="win10"] .search-skeleton-card:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-preview,
+html[data-theme="win10"] .skeleton-preview {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-preview:hover,
+html[data-theme="win10"] .skeleton-preview:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-content,
+html[data-theme="win10"] .skeleton-content {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-content:hover,
+html[data-theme="win10"] .skeleton-content:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-block,
+html[data-theme="win10"] .skeleton-block {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-block:hover,
+html[data-theme="win10"] .skeleton-block:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-badge,
+html[data-theme="win10"] .skeleton-badge {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-badge:hover,
+html[data-theme="win10"] .skeleton-badge:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-title,
+html[data-theme="win10"] .skeleton-title {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-title:hover,
+html[data-theme="win10"] .skeleton-title:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-author,
+html[data-theme="win10"] .skeleton-author {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-author:hover,
+html[data-theme="win10"] .skeleton-author:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .skeleton-meta,
+html[data-theme="win10"] .skeleton-meta {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .skeleton-meta:hover,
+html[data-theme="win10"] .skeleton-meta:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-page .filter,
+html[data-theme="win10"] .search-page .filter {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-page .filter:hover,
+html[data-theme="win10"] .search-page .filter:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .search-page .searchinput,
+html[data-theme="win10"] .search-page .searchinput {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .search-page .searchinput:hover,
+html[data-theme="win10"] .search-page .searchinput:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+/* forms */
+html[data-theme="metro"] .home-language select,
+html[data-theme="win10"] .home-language select {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .home-language select:hover,
+html[data-theme="win10"] .home-language select:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-search input,
+html[data-theme="win10"] .manage-search input {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-search input:hover,
+html[data-theme="win10"] .manage-search input:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-filter-popup select,
+html[data-theme="win10"] .manage-filter-popup select {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-filter-popup select:hover,
+html[data-theme="win10"] .manage-filter-popup select:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .profile-create input,
+html[data-theme="win10"] .profile-create input {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .profile-create input:hover,
+html[data-theme="win10"] .profile-create input:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .profile-editor-field input,
+html[data-theme="win10"] .profile-editor-field input {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .profile-editor-field input:hover,
+html[data-theme="win10"] .profile-editor-field input:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .profile-editor-field textarea,
+html[data-theme="win10"] .profile-editor-field textarea {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .profile-editor-field textarea:hover,
+html[data-theme="win10"] .profile-editor-field textarea:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content input,
+html[data-theme="win10"] .popup-content input {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content input:hover,
+html[data-theme="win10"] .popup-content input:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content textarea,
+html[data-theme="win10"] .popup-content textarea {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content textarea:hover,
+html[data-theme="win10"] .popup-content textarea:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content select,
+html[data-theme="win10"] .popup-content select {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content select:hover,
+html[data-theme="win10"] .popup-content select:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .settings-card select,
+html[data-theme="win10"] .settings-card select {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .settings-card select:hover,
+html[data-theme="win10"] .settings-card select:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .settings-card input[type="number"],
+html[data-theme="win10"] .settings-card input[type="number"] {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .settings-card input[type="number"]:hover,
+html[data-theme="win10"] .settings-card input[type="number"]:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+/* popups */
+html[data-theme="metro"] .popup-container,
+html[data-theme="win10"] .popup-container {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-container:hover,
+html[data-theme="win10"] .popup-container:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content,
+html[data-theme="win10"] .popup-content {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content:hover,
+html[data-theme="win10"] .popup-content:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content .title,
+html[data-theme="win10"] .popup-content .title {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content .title:hover,
+html[data-theme="win10"] .popup-content .title:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content .content,
+html[data-theme="win10"] .popup-content .content {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content .content:hover,
+html[data-theme="win10"] .popup-content .content:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .popup-content .buttons,
+html[data-theme="win10"] .popup-content .buttons {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .popup-content .buttons:hover,
+html[data-theme="win10"] .popup-content .buttons:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-detail-popup,
+html[data-theme="win10"] .manage-detail-popup {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-detail-popup:hover,
+html[data-theme="win10"] .manage-detail-popup:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-detail-popup .detail-close,
+html[data-theme="win10"] .manage-detail-popup .detail-close {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-detail-popup .detail-close:hover,
+html[data-theme="win10"] .manage-detail-popup .detail-close:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-detail-popup .detail-heading,
+html[data-theme="win10"] .manage-detail-popup .detail-heading {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-detail-popup .detail-heading:hover,
+html[data-theme="win10"] .manage-detail-popup .detail-heading:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-detail-popup .detail-stats,
+html[data-theme="win10"] .manage-detail-popup .detail-stats {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-detail-popup .detail-stats:hover,
+html[data-theme="win10"] .manage-detail-popup .detail-stats:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-detail-popup .detail-images,
+html[data-theme="win10"] .manage-detail-popup .detail-images {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-detail-popup .detail-images:hover,
+html[data-theme="win10"] .manage-detail-popup .detail-images:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .filter-popup,
+html[data-theme="win10"] .filter-popup {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .filter-popup:hover,
+html[data-theme="win10"] .filter-popup:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-filter-popup,
+html[data-theme="win10"] .manage-filter-popup {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: var(--metro-shadow);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-filter-popup:hover,
+html[data-theme="win10"] .manage-filter-popup:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .manage-action-menu,
+html[data-theme="win10"] .manage-action-menu {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .manage-action-menu:hover,
+html[data-theme="win10"] .manage-action-menu:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .profile-import-menu,
+html[data-theme="win10"] .profile-import-menu {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .profile-import-menu:hover,
+html[data-theme="win10"] .profile-import-menu:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .binding-capture-popup,
+html[data-theme="win10"] .binding-capture-popup {
+  color: var(--metro-ink);
+  border-color: var(--metro-border) !important;
+  border-radius: 0 !important;
+  background-color: var(--metro-surface-2);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.3);
+  font-family: var(--font);
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+}
+html[data-theme="metro"] .binding-capture-popup:hover,
+html[data-theme="win10"] .binding-capture-popup:hover {
+  color: var(--metro-ink);
+  border-color: var(--metro-accent-bright) !important;
+  background-color: var(--metro-surface-3);
+}
+html[data-theme="metro"] .home-game-missing,
+html[data-theme="win10"] .home-game-missing {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-game-missing::before,
+html[data-theme="win10"] .home-game-missing::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-game-missing:hover::before,
+html[data-theme="win10"] .home-game-missing:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-keyboard-input-banner,
+html[data-theme="win10"] .home-keyboard-input-banner {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-keyboard-input-banner::before,
+html[data-theme="win10"] .home-keyboard-input-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-keyboard-input-banner:hover::before,
+html[data-theme="win10"] .home-keyboard-input-banner:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-keyboard-input-actions,
+html[data-theme="win10"] .home-keyboard-input-actions {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-keyboard-input-actions::before,
+html[data-theme="win10"] .home-keyboard-input-actions::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-keyboard-input-actions:hover::before,
+html[data-theme="win10"] .home-keyboard-input-actions:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-section-heading,
+html[data-theme="win10"] .home-section-heading {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-section-heading::before,
+html[data-theme="win10"] .home-section-heading::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-section-heading:hover::before,
+html[data-theme="win10"] .home-section-heading:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-brand,
+html[data-theme="win10"] .home-brand {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-brand::before,
+html[data-theme="win10"] .home-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-brand:hover::before,
+html[data-theme="win10"] .home-brand:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-community,
+html[data-theme="win10"] .home-community {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-community::before,
+html[data-theme="win10"] .home-community::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-community:hover::before,
+html[data-theme="win10"] .home-community:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-language,
+html[data-theme="win10"] .home-language {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-language::before,
+html[data-theme="win10"] .home-language::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-language:hover::before,
+html[data-theme="win10"] .home-language:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-profiles-section,
+html[data-theme="win10"] .home-profiles-section {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-profiles-section::before,
+html[data-theme="win10"] .home-profiles-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-profiles-section:hover::before,
+html[data-theme="win10"] .home-profiles-section:hover::before { opacity: 1; }
+html[data-theme="metro"] .home-active-mods,
+html[data-theme="win10"] .home-active-mods {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .home-active-mods::before,
+html[data-theme="win10"] .home-active-mods::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .home-active-mods:hover::before,
+html[data-theme="win10"] .home-active-mods:hover::before { opacity: 1; }
+html[data-theme="metro"] .manage-notice-bar,
+html[data-theme="win10"] .manage-notice-bar {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .manage-notice-bar::before,
+html[data-theme="win10"] .manage-notice-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .manage-notice-bar:hover::before,
+html[data-theme="win10"] .manage-notice-bar:hover::before { opacity: 1; }
+html[data-theme="metro"] .manage-filter-hint,
+html[data-theme="win10"] .manage-filter-hint {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .manage-filter-hint::before,
+html[data-theme="win10"] .manage-filter-hint::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .manage-filter-hint:hover::before,
+html[data-theme="win10"] .manage-filter-hint:hover::before { opacity: 1; }
+html[data-theme="metro"] .manage-tree-scroll,
+html[data-theme="win10"] .manage-tree-scroll {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .manage-tree-scroll::before,
+html[data-theme="win10"] .manage-tree-scroll::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .manage-tree-scroll:hover::before,
+html[data-theme="win10"] .manage-tree-scroll:hover::before { opacity: 1; }
+html[data-theme="metro"] .manage-empty,
+html[data-theme="win10"] .manage-empty {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .manage-empty::before,
+html[data-theme="win10"] .manage-empty::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .manage-empty:hover::before,
+html[data-theme="win10"] .manage-empty:hover::before { opacity: 1; }
+html[data-theme="metro"] .manage-side,
+html[data-theme="win10"] .manage-side {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .manage-side::before,
+html[data-theme="win10"] .manage-side::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .manage-side:hover::before,
+html[data-theme="win10"] .manage-side:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-list,
+html[data-theme="win10"] .profile-list {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-list::before,
+html[data-theme="win10"] .profile-list::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-list:hover::before,
+html[data-theme="win10"] .profile-list:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-row,
+html[data-theme="win10"] .profile-row {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-row::before,
+html[data-theme="win10"] .profile-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-row:hover::before,
+html[data-theme="win10"] .profile-row:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-select,
+html[data-theme="win10"] .profile-select {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-select::before,
+html[data-theme="win10"] .profile-select::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-select:hover::before,
+html[data-theme="win10"] .profile-select:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-import-progress-popup,
+html[data-theme="win10"] .profile-import-progress-popup {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-import-progress-popup::before,
+html[data-theme="win10"] .profile-import-progress-popup::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-import-progress-popup:hover::before,
+html[data-theme="win10"] .profile-import-progress-popup:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-install-progress-popup,
+html[data-theme="win10"] .profile-install-progress-popup {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-install-progress-popup::before,
+html[data-theme="win10"] .profile-install-progress-popup::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-install-progress-popup:hover::before,
+html[data-theme="win10"] .profile-install-progress-popup:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-install-task-list,
+html[data-theme="win10"] .profile-install-task-list {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-install-task-list::before,
+html[data-theme="win10"] .profile-install-task-list::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-install-task-list:hover::before,
+html[data-theme="win10"] .profile-install-task-list:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-install-confirm-popup,
+html[data-theme="win10"] .profile-install-confirm-popup {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-install-confirm-popup::before,
+html[data-theme="win10"] .profile-install-confirm-popup::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-install-confirm-popup:hover::before,
+html[data-theme="win10"] .profile-install-confirm-popup:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-export-popup,
+html[data-theme="win10"] .profile-export-popup {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-export-popup::before,
+html[data-theme="win10"] .profile-export-popup::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-export-popup:hover::before,
+html[data-theme="win10"] .profile-export-popup:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-export-header,
+html[data-theme="win10"] .profile-export-header {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-export-header::before,
+html[data-theme="win10"] .profile-export-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-export-header:hover::before,
+html[data-theme="win10"] .profile-export-header:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-export-tabs,
+html[data-theme="win10"] .profile-export-tabs {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-export-tabs::before,
+html[data-theme="win10"] .profile-export-tabs::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-export-tabs:hover::before,
+html[data-theme="win10"] .profile-export-tabs:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-export-preview,
+html[data-theme="win10"] .profile-export-preview {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-export-preview::before,
+html[data-theme="win10"] .profile-export-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-export-preview:hover::before,
+html[data-theme="win10"] .profile-export-preview:hover::before { opacity: 1; }
+html[data-theme="metro"] .profile-export-actions,
+html[data-theme="win10"] .profile-export-actions {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .profile-export-actions::before,
+html[data-theme="win10"] .profile-export-actions::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .profile-export-actions:hover::before,
+html[data-theme="win10"] .profile-export-actions:hover::before { opacity: 1; }
+html[data-theme="metro"] .check-progress,
+html[data-theme="win10"] .check-progress {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .check-progress::before,
+html[data-theme="win10"] .check-progress::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .check-progress:hover::before,
+html[data-theme="win10"] .check-progress:hover::before { opacity: 1; }
+html[data-theme="metro"] .check-result,
+html[data-theme="win10"] .check-result {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .check-result::before,
+html[data-theme="win10"] .check-result::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .check-result:hover::before,
+html[data-theme="win10"] .check-result:hover::before { opacity: 1; }
+html[data-theme="metro"] .issue-list,
+html[data-theme="win10"] .issue-list {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .issue-list::before,
+html[data-theme="win10"] .issue-list::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .issue-list:hover::before,
+html[data-theme="win10"] .issue-list:hover::before { opacity: 1; }
+html[data-theme="metro"] .centered-tab-buttons,
+html[data-theme="win10"] .centered-tab-buttons {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .centered-tab-buttons::before,
+html[data-theme="win10"] .centered-tab-buttons::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .centered-tab-buttons:hover::before,
+html[data-theme="win10"] .centered-tab-buttons:hover::before { opacity: 1; }
+html[data-theme="metro"] .no-everest,
+html[data-theme="win10"] .no-everest {
+  position: relative;
+  border-radius: 0 !important;
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  color: var(--metro-ink);
+  box-shadow: 2px 2px 0 rgba(0,0,0,.32);
+}
+html[data-theme="metro"] .no-everest::before,
+html[data-theme="win10"] .no-everest::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--metro-accent);
+  opacity: .0;
+  pointer-events: none;
+}
+html[data-theme="metro"] .no-everest:hover::before,
+html[data-theme="win10"] .no-everest:hover::before { opacity: 1; }
+html[data-theme="metro"] h1, html[data-theme="win10"] h1 {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] h2, html[data-theme="win10"] h2 {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] h3, html[data-theme="win10"] h3 {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] h4, html[data-theme="win10"] h4 {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] strong, html[data-theme="win10"] strong {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] label, html[data-theme="win10"] label {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] small, html[data-theme="win10"] small {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] p, html[data-theme="win10"] p {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] a, html[data-theme="win10"] a {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .icon, html[data-theme="win10"] .icon {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .title, html[data-theme="win10"] .title {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .subtitle, html[data-theme="win10"] .subtitle {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .description, html[data-theme="win10"] .description {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .meta, html[data-theme="win10"] .meta {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .status, html[data-theme="win10"] .status {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .badge, html[data-theme="win10"] .badge {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .count, html[data-theme="win10"] .count {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .empty, html[data-theme="win10"] .empty {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] .loading, html[data-theme="win10"] .loading {
+  font-family: var(--font);
+  text-shadow: none;
+}
+html[data-theme="metro"] *, html[data-theme="win10"] * { scrollbar-width: thin; scrollbar-color: var(--metro-accent) transparent; }
+html[data-theme="metro"] *::-webkit-scrollbar, html[data-theme="win10"] *::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-theme="metro"] *::-webkit-scrollbar-track, html[data-theme="win10"] *::-webkit-scrollbar-track { background: rgba(8,18,24,.7); }
+html[data-theme="metro"] *::-webkit-scrollbar-thumb, html[data-theme="win10"] *::-webkit-scrollbar-thumb { background: var(--metro-accent); border: 2px solid rgba(8,18,24,.7); }
+html[data-theme="metro"] *::-webkit-scrollbar-thumb:hover, html[data-theme="win10"] *::-webkit-scrollbar-thumb:hover { background: var(--metro-accent-bright); }

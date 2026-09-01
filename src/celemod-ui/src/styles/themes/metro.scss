@@ -1,3 +1,5 @@
+@use "./metro-pages";
+
 /*
  * Windows 10 Metro theme
  *
@@ -339,6 +341,17 @@ html[data-theme="win10"] .metro-ink-pulse::before {
   transform: translate(-50%, -50%);
   animation: metro-ink-pulse 260ms ease-out both;
   pointer-events: none;
+}
+html[data-theme="metro"] .metro-key-press,
+html[data-theme="win10"] .metro-key-press {
+  transform: translate(3px, 3px) !important;
+  box-shadow: 0 0 0 rgba(0,0,0,0) !important;
+  background: var(--metro-accent) !important;
+}
+html[data-theme="metro"] [data-metro-focused="true"],
+html[data-theme="win10"] [data-metro-focused="true"] {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 @keyframes metro-ink-pulse {
   0% { opacity: .7; box-shadow: 0 0 0 0 rgba(0,164,239,.65); }
