@@ -157,7 +157,7 @@ html[data-theme="material-2"] .channel-card,
 html[data-theme="material-2"] .version-item,
 html[data-theme="material-2"] .download-task,
 html[data-theme="material-2"] .gameSelector,
-html[data-theme="material-2"] [class*="-card"] {
+html[data-theme="material-2"] .md2-surface-card {
   border: 1px solid var(--md2-divider);
   border-radius: var(--md2-radius);
   background: var(--md2-surface);
@@ -190,7 +190,7 @@ html[data-theme="material-2"] button {
   font-weight: 500;
   letter-spacing: .08em;
   text-transform: uppercase;
-  transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
 }
 html[data-theme="material-2"] button::after {
   position: absolute;
@@ -204,7 +204,7 @@ html[data-theme="material-2"] button::after {
 }
 html[data-theme="material-2"] button:hover::after { opacity: .08; }
 html[data-theme="material-2"] button:focus-visible { outline: 2px solid var(--md2-primary); outline-offset: 2px; }
-html[data-theme="material-2"] button:active { transform: translateY(1px); }
+html[data-theme="material-2"] button:active { background-color: rgba(255,255,255,.12); }
 html[data-theme="material-2"] button:active::after { opacity: .16; }
 html[data-theme="material-2"] button.primary,
 html[data-theme="material-2"] button[class*="primary"] {
@@ -341,11 +341,7 @@ html[data-theme="material-2"] .md2-ripple {
   background: currentColor;
   opacity: .22;
   pointer-events: none;
-  transform: scale(0);
-  animation: md2-ripple 450ms ease-out forwards;
-}
-@keyframes md2-ripple {
-  to { opacity: 0; transform: scale(1); }
+  opacity: .22;
 }
 html[data-theme="material-2"] .md2-snackbar {
   position: fixed;
@@ -363,63 +359,11 @@ html[data-theme="material-2"] .md2-snackbar {
   background: #323232;
   box-shadow: 0 3px 5px rgba(0, 0, 0, .40), 0 1px 10px rgba(0, 0, 0, .24);
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity 180ms ease;
 }
-html[data-theme="material-2"] .md2-snackbar.is-visible { opacity: 1; transform: translateY(0); }
+html[data-theme="material-2"] .md2-snackbar.is-visible { opacity: 1; }
 html[data-theme="material-2"] [role="dialog"].is-visible,
-html[data-theme="material-2"] .md2-dialog.is-visible { animation: md2-dialog-enter 180ms ease-out both; }
-@keyframes md2-dialog-enter {
-  from { opacity: 0; transform: translateY(8px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Keep layout measurements on the 4/8dp rhythm used by M2 components. */
-html[data-theme="material-2"] .settings-columns { gap: 24px; }
-html[data-theme="material-2"] .settings-section-title { margin: 0 0 8px 0; }
-html[data-theme="material-2"] .setting-toggle-row,
-html[data-theme="material-2"] .setting-select-row,
-html[data-theme="material-2"] .font-scale-row,
-html[data-theme="material-2"] .download-default-head { min-height: 64px; padding: 16px; }
-html[data-theme="material-2"] .home-header { padding: 24px 8px 40px; }
-html[data-theme="material-2"] .home-section { margin-bottom: 24px; padding: 0 8px; }
-html[data-theme="material-2"] .home-profiles-section .profiles { gap: 8px; padding-left: 0; }
-html[data-theme="material-2"] h1,
-html[data-theme="material-2"] h2,
-html[data-theme="material-2"] h3 { font-family: inherit; font-weight: 500; letter-spacing: 0; }
-html[data-theme="material-2"] h1 { font-size: 24px; line-height: 32px; }
-html[data-theme="material-2"] h2 { font-size: 20px; line-height: 28px; }
-html[data-theme="material-2"] h3 { font-size: 16px; line-height: 24px; }
-html[data-theme="material-2"] small,
-html[data-theme="material-2"] .setting-description small { color: var(--md2-on-surface-medium); }
-
-/* Home route: clear M2 hierarchy and 8dp content rhythm. */
-html[data-theme="material-2"] .home-brand { gap: 16px; }
-html[data-theme="material-2"] .home-brand img { width: 80px; height: 80px; }
-html[data-theme="material-2"] .home-brand h1 { margin: 0; font-size: 28px; line-height: 36px; font-weight: 400; }
-html[data-theme="material-2"] .home-brand p { margin-top: 8px; color: var(--md2-on-surface-medium); font-size: 14px; line-height: 20px; }
-html[data-theme="material-2"] .home-language { top: 8px; right: 8px; color: var(--md2-on-surface-medium); }
-html[data-theme="material-2"] .home-language select { min-width: 136px; min-height: 40px; }
-html[data-theme="material-2"] .home-community { right: 8px; bottom: 16px; gap: 8px; color: var(--md2-on-surface-medium); }
-html[data-theme="material-2"] .home-community button { min-height: 32px; padding: 0 8px; letter-spacing: .04em; }
-html[data-theme="material-2"] .home-keyboard-input-banner { margin: 0 8px 24px; padding: 16px; border: 1px solid rgba(231, 179, 78, .36); border-radius: var(--md2-radius); background: rgba(231, 179, 78, .08); }
-html[data-theme="material-2"] .home-keyboard-input-banner strong { font-size: 14px; font-weight: 500; }
-html[data-theme="material-2"] .home-keyboard-input-banner span { font-size: 12px; line-height: 16px; }
-html[data-theme="material-2"] .home-keyboard-input-banner code { padding: 4px 8px; border-radius: 2px; background: rgba(0, 0, 0, .28); font-size: 12px; }
-html[data-theme="material-2"] .home-keyboard-input-actions { gap: 8px !important; }
-html[data-theme="material-2"] .home-keyboard-input-actions button { min-height: 36px; }
-html[data-theme="material-2"] .home-game-section .gameSelector { padding: 16px; }
-html[data-theme="material-2"] .home-game-missing { margin: 0; padding: 16px; border: 1px solid rgba(207, 102, 121, .48); border-radius: var(--md2-radius); background: rgba(207, 102, 121, .08); }
-html[data-theme="material-2"] .home-game-missing button { margin-left: auto; }
-html[data-theme="material-2"] .home-profiles-section .profile { width: 144px; min-height: 48px; padding: 8px 16px; border-color: var(--md2-divider); background: var(--md2-surface); }
-html[data-theme="material-2"] .home-profiles-section .profile:hover { border-color: var(--md2-primary); background: var(--md2-surface-1); }
-html[data-theme="material-2"] .home-profiles-section .profile.selected { border-color: var(--md2-primary); background: rgba(187, 134, 252, .12); box-shadow: inset 3px 0 var(--md2-primary), 0 2px 4px rgba(0, 0, 0, .3); }
-html[data-theme="material-2"] .home-profiles-section .profile .name { font-size: 14px; font-weight: 500; }
-html[data-theme="material-2"] .home-profiles-section .profile .profile-meta { margin-top: 4px; color: var(--md2-on-surface-medium); font-size: 11px; }
-html[data-theme="material-2"] .home-active-mods { margin: 16px 0 0; padding: 16px; }
-html[data-theme="material-2"] .home-active-mods-heading { color: var(--md2-on-surface-medium); font-size: 12px; }
-html[data-theme="material-2"] .home-active-mod-list { margin-top: 8px; gap: 8px; }
-html[data-theme="material-2"] .home-active-mod-list span { padding: 4px 8px; border-radius: 2px; color: var(--md2-on-surface-medium); background: var(--md2-surface-2); font-size: 11px; }
+html[data-theme="material-2"] .md2-dialog.is-visible { opacity: 1; }
 
 /* Search route: text-field-first query surface and result cards. */
 html[data-theme="material-2"] .search-page { width: min(960px, 100%); margin: 0 auto; padding: 16px; }
@@ -641,7 +585,10 @@ html[data-theme="material-2"] .sr-only { position: absolute; width: 1px; height:
   html[data-theme="material-2"] textarea { border: 1px solid CanvasText !important; background: Canvas !important; color: CanvasText !important; }
   html[data-theme="material-2"] .settings-card,
   html[data-theme="material-2"] .popup-content,
-  html[data-theme="material-2"] [class*="-card"] { border: 1px solid CanvasText; box-shadow: none; }
+  html[data-theme="material-2"] .settings-card,
+  html[data-theme="material-2"] .channel-card,
+  html[data-theme="material-2"] .search-result,
+  html[data-theme="material-2"] .mod-card { border: 1px solid CanvasText; box-shadow: none; }
 }
 
 /* Manage detail and profile editor controls. */
@@ -781,13 +728,11 @@ html[data-theme="material-2"] .input-mode-switch button.active { color: var(--md
 html[data-theme="material-2"] .catalog-loading,
 html[data-theme="material-2"] .detail-loading { display: grid; place-items: center; min-height: 160px; color: var(--md2-on-surface-medium); }
 html[data-theme="material-2"] .catalog-loading::before,
-html[data-theme="material-2"] .detail-loading::before { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.20); border-top-color: var(--md2-primary); border-radius: 50%; content: ""; animation: md2-spin 700ms linear infinite; }
-@keyframes md2-spin { to { transform: rotate(360deg); } }
+html[data-theme="material-2"] .detail-loading::before { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.20); border-top-color: var(--md2-primary); border-radius: 50%; content: ""; }
 html[data-theme="material-2"] .blocking-mask { background: rgba(18,18,18,.88); }
 html[data-theme="material-2"] .blocking-mask-spinner { border-color: rgba(255,255,255,.20); border-top-color: var(--md2-primary); }
 html[data-theme="material-2"] .blocking-mask-text { color: var(--md2-on-surface); font-size: 14px; font-weight: 500; }
-html[data-theme="material-2"] .page-entering { animation: md2-page-enter 180ms cubic-bezier(.4,0,.2,1) both; }
-@keyframes md2-page-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+html[data-theme="material-2"] .page-entering { animation: none; opacity: 1; }
 
 /* Keep touch targets at least 48dp on pointer devices. */
 @media (pointer: coarse) {
