@@ -830,3 +830,98 @@ html[data-theme="material-2"] .md2-height-full { height: 100%; }
 html[data-theme="material-2"] .md2-text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html[data-theme="material-2"] .md2-text-center { text-align: center; }
 html[data-theme="material-2"] .md2-no-select { user-select: none; }
+
+/* M2 app bar and navigation states without spatial motion. */
+html[data-theme="material-2"] .window-titlebar .icon,
+html[data-theme="material-2"] .window-titlebar button { color: var(--md2-on-surface-medium); }
+html[data-theme="material-2"] .window-titlebar button:hover { background: rgba(255,255,255,.08); }
+html[data-theme="material-2"] .window-titlebar button:active { background: rgba(255,255,255,.16); }
+html[data-theme="material-2"] .sidebar .navBtn:focus-visible { outline: 2px solid var(--md2-primary); outline-offset: -2px; }
+html[data-theme="material-2"] .sidebar .navBtn.selected .title { color: var(--md2-primary); font-weight: 500; }
+html[data-theme="material-2"] .sidebar .navBtn:not(.selected) .icon { opacity: .78; }
+html[data-theme="material-2"] .sidebar .navBtn.selected .icon { opacity: 1; }
+html[data-theme="material-2"] .app-content { background: var(--md2-background); }
+html[data-theme="material-2"] .page { scrollbar-gutter: stable; }
+html[data-theme="material-2"] .page > header { min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--md2-divider); background: var(--md2-surface); }
+html[data-theme="material-2"] .page > header h1 { margin: 0; color: var(--md2-on-surface); font-size: 20px; font-weight: 500; }
+html[data-theme="material-2"] .page > header p { margin: 4px 0 0; color: var(--md2-on-surface-medium); font-size: 12px; }
+
+/* Tabs are text-only controls with one persistent primary indicator. */
+html[data-theme="material-2"] .channel-tabs,
+html[data-theme="material-2"] .profile-export-tabs,
+html[data-theme="material-2"] .source-switch { min-height: 48px; }
+html[data-theme="material-2"] .channel-tabs > button,
+html[data-theme="material-2"] .profile-export-tabs > button,
+html[data-theme="material-2"] .source-switch > button { position: relative; color: var(--md2-on-surface-medium); background: transparent; }
+html[data-theme="material-2"] .channel-tabs > button::after,
+html[data-theme="material-2"] .profile-export-tabs > button::after,
+html[data-theme="material-2"] .source-switch > button::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; background: var(--md2-primary); content: ""; opacity: 0; }
+html[data-theme="material-2"] .channel-tabs > button.active,
+html[data-theme="material-2"] .profile-export-tabs > button.active,
+html[data-theme="material-2"] .source-switch > button.active { color: var(--md2-primary); }
+html[data-theme="material-2"] .channel-tabs > button.active::after,
+html[data-theme="material-2"] .profile-export-tabs > button.active::after,
+html[data-theme="material-2"] .source-switch > button.active::after { opacity: 1; }
+html[data-theme="material-2"] .channel-tabs > button:disabled { color: var(--md2-on-surface-disabled); }
+
+/* Lists replace nested cards for dense M2 content. */
+html[data-theme="material-2"] .version-list,
+html[data-theme="material-2"] .profile-list,
+html[data-theme="material-2"] .issue-list,
+html[data-theme="material-2"] .orphan-list { gap: 0; border-top: 1px solid var(--md2-divider); }
+html[data-theme="material-2"] .version-item,
+html[data-theme="material-2"] .profile-folder,
+html[data-theme="material-2"] .issue-list > *,
+html[data-theme="material-2"] .orphan-option { border-bottom: 1px solid var(--md2-divider); border-radius: 0; }
+html[data-theme="material-2"] .version-item:hover,
+html[data-theme="material-2"] .profile-folder:hover,
+html[data-theme="material-2"] .issue-list > *:hover,
+html[data-theme="material-2"] .orphan-option:hover { background: rgba(255,255,255,.06); }
+html[data-theme="material-2"] .version-item:last-child,
+html[data-theme="material-2"] .profile-folder:last-child,
+html[data-theme="material-2"] .orphan-option:last-child { border-bottom: 0; }
+html[data-theme="material-2"] .manage-tree-row { border-bottom: 1px solid rgba(255,255,255,.06); border-radius: 0; }
+html[data-theme="material-2"] .manage-tree-row:last-child { border-bottom: 0; }
+html[data-theme="material-2"] .manage-tree-row.missing { border-left: 4px solid var(--md2-error); }
+html[data-theme="material-2"] .manage-tree-row.selected { border-left: 4px solid var(--md2-primary); background: rgba(187,134,252,.10); }
+
+/* Snackbar and dialog geometry follows M2 baseline instead of animated sheets. */
+html[data-theme="material-2"] .md2-snackbar { right: 24px; bottom: 24px; border-radius: 4px; }
+html[data-theme="material-2"] .md2-snackbar-message { flex: 1; padding: 14px 0; line-height: 20px; }
+html[data-theme="material-2"] .md2-snackbar-action { min-width: 64px; min-height: 36px; margin-left: 16px; padding: 0 8px; color: var(--md2-secondary); letter-spacing: .08em; }
+html[data-theme="material-2"] .md2-snackbar-action:hover { background: rgba(3,218,198,.12); }
+html[data-theme="material-2"] .popup-container { opacity: 1; transform: none; transition: none; }
+html[data-theme="material-2"] .popup-content { outline: none; }
+html[data-theme="material-2"] .popup-content .buttons button.primary { min-width: 88px; }
+html[data-theme="material-2"] .popup-content .buttons button:not(.primary) { color: var(--md2-primary); }
+html[data-theme="material-2"] .popup-content .buttons button.danger { color: var(--md2-error); }
+html[data-theme="material-2"] [role="dialog"] { isolation: isolate; }
+html[data-theme="material-2"] [role="dialog"]::backdrop { background: rgba(0,0,0,.60); }
+
+/* Progress and loading use static M2 indicators when motion is disabled. */
+html[data-theme="material-2"] .download-task-progress,
+html[data-theme="material-2"] .download-dependency-progress,
+html[data-theme="material-2"] .check-progress { overflow: hidden; border-radius: 0; }
+html[data-theme="material-2"] .download-task-progress > *,
+html[data-theme="material-2"] .download-dependency-progress > *,
+html[data-theme="material-2"] .check-progress > * { height: 100%; background: var(--md2-primary); }
+html[data-theme="material-2"] .progress-label { color: var(--md2-on-surface-medium); font-size: 12px; font-variant-numeric: tabular-nums; }
+html[data-theme="material-2"] .catalog-loading::before,
+html[data-theme="material-2"] .detail-loading::before { opacity: .72; }
+html[data-theme="material-2"] .catalog-loading,
+html[data-theme="material-2"] .detail-loading { gap: 16px; }
+
+/* Form field labels and helper/error copy. */
+html[data-theme="material-2"] .field,
+html[data-theme="material-2"] .form-field { display: grid; gap: 4px; margin: 16px 0; }
+html[data-theme="material-2"] .field > label,
+html[data-theme="material-2"] .form-field > label { color: var(--md2-on-surface-medium); font-size: 12px; }
+html[data-theme="material-2"] .field .helper,
+html[data-theme="material-2"] .form-field .helper { color: var(--md2-on-surface-disabled); font-size: 11px; line-height: 16px; }
+html[data-theme="material-2"] .field.invalid input,
+html[data-theme="material-2"] .field.invalid select,
+html[data-theme="material-2"] .field.invalid textarea { border-color: var(--md2-error) !important; }
+html[data-theme="material-2"] .field.invalid .helper { color: var(--md2-error); }
+html[data-theme="material-2"] input::placeholder,
+html[data-theme="material-2"] textarea::placeholder { color: var(--md2-on-surface-disabled); opacity: 1; }
+html[data-theme="material-2"] input:disabled::placeholder { color: var(--md2-on-surface-disabled); }
