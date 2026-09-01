@@ -158,3 +158,2869 @@ html[data-theme="material-you"] .page { scrollbar-color: var(--md-outline) trans
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Material You route treatments */
+html[data-theme="material-you"] .home-page .md-slot-1 {
+  --md-slot-index: 1;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-2 {
+  --md-slot-index: 2;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-3 {
+  --md-slot-index: 3;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-4 {
+  --md-slot-index: 4;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-5 {
+  --md-slot-index: 5;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-6 {
+  --md-slot-index: 6;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-7 {
+  --md-slot-index: 7;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-8 {
+  --md-slot-index: 8;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-9 {
+  --md-slot-index: 9;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-10 {
+  --md-slot-index: 10;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-11 {
+  --md-slot-index: 11;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-12 {
+  --md-slot-index: 12;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-13 {
+  --md-slot-index: 13;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-14 {
+  --md-slot-index: 14;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-15 {
+  --md-slot-index: 15;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-16 {
+  --md-slot-index: 16;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-17 {
+  --md-slot-index: 17;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-18 {
+  --md-slot-index: 18;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-19 {
+  --md-slot-index: 19;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-20 {
+  --md-slot-index: 20;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-21 {
+  --md-slot-index: 21;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-22 {
+  --md-slot-index: 22;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-23 {
+  --md-slot-index: 23;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-24 {
+  --md-slot-index: 24;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-25 {
+  --md-slot-index: 25;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-26 {
+  --md-slot-index: 26;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-27 {
+  --md-slot-index: 27;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-28 {
+  --md-slot-index: 28;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-29 {
+  --md-slot-index: 29;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-30 {
+  --md-slot-index: 30;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-31 {
+  --md-slot-index: 31;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-32 {
+  --md-slot-index: 32;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-33 {
+  --md-slot-index: 33;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-34 {
+  --md-slot-index: 34;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-35 {
+  --md-slot-index: 35;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-36 {
+  --md-slot-index: 36;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-37 {
+  --md-slot-index: 37;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-38 {
+  --md-slot-index: 38;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-39 {
+  --md-slot-index: 39;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-40 {
+  --md-slot-index: 40;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-41 {
+  --md-slot-index: 41;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-42 {
+  --md-slot-index: 42;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-43 {
+  --md-slot-index: 43;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-44 {
+  --md-slot-index: 44;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-45 {
+  --md-slot-index: 45;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-46 {
+  --md-slot-index: 46;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-47 {
+  --md-slot-index: 47;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-48 {
+  --md-slot-index: 48;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-49 {
+  --md-slot-index: 49;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-50 {
+  --md-slot-index: 50;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-51 {
+  --md-slot-index: 51;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-52 {
+  --md-slot-index: 52;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-53 {
+  --md-slot-index: 53;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-54 {
+  --md-slot-index: 54;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-55 {
+  --md-slot-index: 55;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-56 {
+  --md-slot-index: 56;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-57 {
+  --md-slot-index: 57;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-58 {
+  --md-slot-index: 58;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-59 {
+  --md-slot-index: 59;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-60 {
+  --md-slot-index: 60;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-61 {
+  --md-slot-index: 61;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-62 {
+  --md-slot-index: 62;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-63 {
+  --md-slot-index: 63;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-64 {
+  --md-slot-index: 64;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-65 {
+  --md-slot-index: 65;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-66 {
+  --md-slot-index: 66;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-67 {
+  --md-slot-index: 67;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-68 {
+  --md-slot-index: 68;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-69 {
+  --md-slot-index: 69;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-70 {
+  --md-slot-index: 70;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-71 {
+  --md-slot-index: 71;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-72 {
+  --md-slot-index: 72;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-73 {
+  --md-slot-index: 73;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-74 {
+  --md-slot-index: 74;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-75 {
+  --md-slot-index: 75;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-76 {
+  --md-slot-index: 76;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-77 {
+  --md-slot-index: 77;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-78 {
+  --md-slot-index: 78;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-79 {
+  --md-slot-index: 79;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-80 {
+  --md-slot-index: 80;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-81 {
+  --md-slot-index: 81;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-82 {
+  --md-slot-index: 82;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-83 {
+  --md-slot-index: 83;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-84 {
+  --md-slot-index: 84;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-85 {
+  --md-slot-index: 85;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-86 {
+  --md-slot-index: 86;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-87 {
+  --md-slot-index: 87;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-88 {
+  --md-slot-index: 88;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-89 {
+  --md-slot-index: 89;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-90 {
+  --md-slot-index: 90;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-91 {
+  --md-slot-index: 91;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-92 {
+  --md-slot-index: 92;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-93 {
+  --md-slot-index: 93;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-94 {
+  --md-slot-index: 94;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-95 {
+  --md-slot-index: 95;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-96 {
+  --md-slot-index: 96;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-97 {
+  --md-slot-index: 97;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-98 {
+  --md-slot-index: 98;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-99 {
+  --md-slot-index: 99;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-100 {
+  --md-slot-index: 100;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-101 {
+  --md-slot-index: 101;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-102 {
+  --md-slot-index: 102;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-103 {
+  --md-slot-index: 103;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-104 {
+  --md-slot-index: 104;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-105 {
+  --md-slot-index: 105;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-106 {
+  --md-slot-index: 106;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-107 {
+  --md-slot-index: 107;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-108 {
+  --md-slot-index: 108;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-109 {
+  --md-slot-index: 109;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-110 {
+  --md-slot-index: 110;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-111 {
+  --md-slot-index: 111;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-112 {
+  --md-slot-index: 112;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-113 {
+  --md-slot-index: 113;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-114 {
+  --md-slot-index: 114;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-115 {
+  --md-slot-index: 115;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-116 {
+  --md-slot-index: 116;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-117 {
+  --md-slot-index: 117;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-118 {
+  --md-slot-index: 118;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-119 {
+  --md-slot-index: 119;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-120 {
+  --md-slot-index: 120;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-121 {
+  --md-slot-index: 121;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-122 {
+  --md-slot-index: 122;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-123 {
+  --md-slot-index: 123;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-124 {
+  --md-slot-index: 124;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-125 {
+  --md-slot-index: 125;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-126 {
+  --md-slot-index: 126;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-127 {
+  --md-slot-index: 127;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-128 {
+  --md-slot-index: 128;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-129 {
+  --md-slot-index: 129;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-130 {
+  --md-slot-index: 130;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-131 {
+  --md-slot-index: 131;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-132 {
+  --md-slot-index: 132;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-133 {
+  --md-slot-index: 133;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-134 {
+  --md-slot-index: 134;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-135 {
+  --md-slot-index: 135;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-136 {
+  --md-slot-index: 136;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-137 {
+  --md-slot-index: 137;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-138 {
+  --md-slot-index: 138;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-139 {
+  --md-slot-index: 139;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-140 {
+  --md-slot-index: 140;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-141 {
+  --md-slot-index: 141;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-142 {
+  --md-slot-index: 142;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-143 {
+  --md-slot-index: 143;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-144 {
+  --md-slot-index: 144;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-145 {
+  --md-slot-index: 145;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-146 {
+  --md-slot-index: 146;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-147 {
+  --md-slot-index: 147;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-148 {
+  --md-slot-index: 148;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-149 {
+  --md-slot-index: 149;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-150 {
+  --md-slot-index: 150;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-151 {
+  --md-slot-index: 151;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-152 {
+  --md-slot-index: 152;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-153 {
+  --md-slot-index: 153;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-154 {
+  --md-slot-index: 154;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-155 {
+  --md-slot-index: 155;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-156 {
+  --md-slot-index: 156;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-157 {
+  --md-slot-index: 157;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-158 {
+  --md-slot-index: 158;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-159 {
+  --md-slot-index: 159;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-160 {
+  --md-slot-index: 160;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-161 {
+  --md-slot-index: 161;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-162 {
+  --md-slot-index: 162;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-163 {
+  --md-slot-index: 163;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-164 {
+  --md-slot-index: 164;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-165 {
+  --md-slot-index: 165;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-166 {
+  --md-slot-index: 166;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-167 {
+  --md-slot-index: 167;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-168 {
+  --md-slot-index: 168;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-169 {
+  --md-slot-index: 169;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-170 {
+  --md-slot-index: 170;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-171 {
+  --md-slot-index: 171;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-172 {
+  --md-slot-index: 172;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-173 {
+  --md-slot-index: 173;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-174 {
+  --md-slot-index: 174;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-175 {
+  --md-slot-index: 175;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-176 {
+  --md-slot-index: 176;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-177 {
+  --md-slot-index: 177;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-178 {
+  --md-slot-index: 178;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-179 {
+  --md-slot-index: 179;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-180 {
+  --md-slot-index: 180;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-181 {
+  --md-slot-index: 181;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-182 {
+  --md-slot-index: 182;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-183 {
+  --md-slot-index: 183;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-184 {
+  --md-slot-index: 184;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-185 {
+  --md-slot-index: 185;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-186 {
+  --md-slot-index: 186;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-187 {
+  --md-slot-index: 187;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-188 {
+  --md-slot-index: 188;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-189 {
+  --md-slot-index: 189;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-190 {
+  --md-slot-index: 190;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-191 {
+  --md-slot-index: 191;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 81%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-192 {
+  --md-slot-index: 192;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 82%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-193 {
+  --md-slot-index: 193;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 83%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-194 {
+  --md-slot-index: 194;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 84%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-195 {
+  --md-slot-index: 195;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 85%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-196 {
+  --md-slot-index: 196;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 86%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-197 {
+  --md-slot-index: 197;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 87%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-198 {
+  --md-slot-index: 198;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 88%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-199 {
+  --md-slot-index: 199;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 89%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-200 {
+  --md-slot-index: 200;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 90%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-page .md-slot-201 {
+  --md-slot-index: 201;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 91%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 71%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-header .md-slot-202 {
+  --md-slot-index: 202;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 92%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 72%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-brand .md-slot-203 {
+  --md-slot-index: 203;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 93%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 73%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-section .md-slot-204 {
+  --md-slot-index: 204;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 94%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 74%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-profiles-section .md-slot-205 {
+  --md-slot-index: 205;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 95%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 75%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .home-active-mods .md-slot-206 {
+  --md-slot-index: 206;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 96%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 76%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-page .md-slot-207 {
+  --md-slot-index: 207;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 97%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 77%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .settings-card .md-slot-208 {
+  --md-slot-index: 208;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 98%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 78%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .theme-picker .md-slot-209 {
+  --md-slot-index: 209;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 99%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 79%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .search-page .md-slot-210 {
+  --md-slot-index: 210;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 70%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 80%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .filter .md-slot-211 {
+  --md-slot-index: 211;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 71%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 81%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-page .md-slot-212 {
+  --md-slot-index: 212;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 72%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 82%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .manage-toolbar .md-slot-213 {
+  --md-slot-index: 213;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 73%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 83%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .everest .md-slot-214 {
+  --md-slot-index: 214;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 74%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 84%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .channel-card .md-slot-215 {
+  --md-slot-index: 215;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 75%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 85%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-page .md-slot-216 {
+  --md-slot-index: 216;
+  border-radius: var(--md-shape-sm);
+  color: color-mix(in srgb, var(--md-on-surface) 76%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 86%, var(--md-surface-container-high));
+  transition: all 140ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .keybindings-main .md-slot-217 {
+  --md-slot-index: 217;
+  border-radius: var(--md-shape-md);
+  color: color-mix(in srgb, var(--md-on-surface) 77%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 87%, var(--md-surface-container-high));
+  transition: all 160ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .downloadList .md-slot-218 {
+  --md-slot-index: 218;
+  border-radius: var(--md-shape-lg);
+  color: color-mix(in srgb, var(--md-on-surface) 78%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 88%, var(--md-surface-container-high));
+  transition: all 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .download-task .md-slot-219 {
+  --md-slot-index: 219;
+  border-radius: var(--md-shape-xl);
+  color: color-mix(in srgb, var(--md-on-surface) 79%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 89%, var(--md-surface-container-high));
+  transition: all 200ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .popup-content .md-slot-220 {
+  --md-slot-index: 220;
+  border-radius: var(--md-shape-xs);
+  color: color-mix(in srgb, var(--md-on-surface) 80%, var(--md-on-surface-variant));
+  background: color-mix(in srgb, var(--md-surface-container) 70%, var(--md-surface-container-high));
+  transition: all 120ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .md-density-1 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-2 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-3 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-4 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-5 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-6 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-7 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-8 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-9 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-10 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-11 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-12 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-13 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-14 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-15 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-16 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-17 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-18 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-19 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-20 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-21 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-22 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-23 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-24 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-25 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-26 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-27 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-28 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-29 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-30 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-31 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-32 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-33 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-34 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-35 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-36 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-37 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-38 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-39 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-40 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-41 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-42 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-43 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-44 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-45 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-46 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-47 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-48 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-49 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-50 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-51 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-52 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-53 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-54 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-55 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-56 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-57 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-58 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-59 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-60 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-61 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-62 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-63 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-64 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-65 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-66 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-67 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-68 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-69 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-70 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-71 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-72 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-73 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-74 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-75 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-76 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-77 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-78 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-79 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-80 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-81 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-82 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-83 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-84 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-85 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-86 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-87 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-88 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-89 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-90 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-91 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-92 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-93 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-94 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-95 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-96 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-97 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-98 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-99 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-100 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-101 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-102 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-103 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-104 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-105 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-106 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-107 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-108 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-109 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-110 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-111 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-112 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-113 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-114 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-115 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-116 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-117 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-118 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-119 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-120 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-121 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-122 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-123 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-124 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-125 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-126 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-127 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-128 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-129 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-130 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-131 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-132 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-133 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-134 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-135 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-136 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-137 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-138 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-139 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-140 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-141 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-142 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-143 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-144 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-145 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-146 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-147 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-148 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-149 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-150 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-151 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-152 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-153 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-154 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-155 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-156 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-157 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-158 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-159 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-160 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-161 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-162 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-163 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-164 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-165 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-166 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-167 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-168 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-169 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-170 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-171 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-172 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-173 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-174 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-175 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-176 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-177 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-178 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-179 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-180 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-181 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-182 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-183 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-184 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-185 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-186 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-187 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-188 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-189 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-190 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-191 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 9px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-192 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 4px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-193 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 5px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-194 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 6px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-195 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 7px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-196 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 8px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-197 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 9px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-198 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 4px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-199 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 5px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-200 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 6px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-201 {
+  min-height: 36px;
+  padding-inline: 10px;
+  gap: 7px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-202 {
+  min-height: 40px;
+  padding-inline: 12px;
+  gap: 8px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-203 {
+  min-height: 44px;
+  padding-inline: 14px;
+  gap: 9px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-204 {
+  min-height: 32px;
+  padding-inline: 16px;
+  gap: 4px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-205 {
+  min-height: 36px;
+  padding-inline: 8px;
+  gap: 5px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-206 {
+  min-height: 40px;
+  padding-inline: 10px;
+  gap: 6px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-207 {
+  min-height: 44px;
+  padding-inline: 12px;
+  gap: 7px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-208 {
+  min-height: 32px;
+  padding-inline: 14px;
+  gap: 8px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-209 {
+  min-height: 36px;
+  padding-inline: 16px;
+  gap: 9px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-210 {
+  min-height: 40px;
+  padding-inline: 8px;
+  gap: 4px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-211 {
+  min-height: 44px;
+  padding-inline: 10px;
+  gap: 5px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-212 {
+  min-height: 32px;
+  padding-inline: 12px;
+  gap: 6px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-213 {
+  min-height: 36px;
+  padding-inline: 14px;
+  gap: 7px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-214 {
+  min-height: 40px;
+  padding-inline: 16px;
+  gap: 8px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-215 {
+  min-height: 44px;
+  padding-inline: 8px;
+  gap: 9px;
+  border-radius: var(--md-shape-xs);
+}
+html[data-theme="material-you"] .md-density-216 {
+  min-height: 32px;
+  padding-inline: 10px;
+  gap: 4px;
+  border-radius: var(--md-shape-sm);
+}
+html[data-theme="material-you"] .md-density-217 {
+  min-height: 36px;
+  padding-inline: 12px;
+  gap: 5px;
+  border-radius: var(--md-shape-md);
+}
+html[data-theme="material-you"] .md-density-218 {
+  min-height: 40px;
+  padding-inline: 14px;
+  gap: 6px;
+  border-radius: var(--md-shape-lg);
+}
+html[data-theme="material-you"] .md-density-219 {
+  min-height: 44px;
+  padding-inline: 16px;
+  gap: 7px;
+  border-radius: var(--md-shape-xl);
+}
+html[data-theme="material-you"] .md-density-220 {
+  min-height: 32px;
+  padding-inline: 8px;
+  gap: 8px;
+  border-radius: var(--md-shape-xs);
+}
+@keyframes md-ripple-expand {
+  0% { transform: translate(-50%,-50%) scale(0); opacity:.24; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity:0; }
+}
