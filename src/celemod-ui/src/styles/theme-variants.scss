@@ -2,6 +2,19 @@
    not only the color palette. Applied by the theme provider through html[data-theme]. */
 
 @mixin theme-vars($bg, $surface, $surface2, $fg, $muted, $primary, $radius, $font) {
+  /* semantic tokens consumed by the runtime theme system */
+  --bg: #{$bg};
+  --bg1: #{$surface};
+  --bg2: #{$surface2};
+  --bg3: color-mix(in srgb, #{$surface2} 80%, #fff 20%);
+  --fg: #{$fg};
+  --fg1: #{$fg};
+  --fg2: #{$muted};
+  --fg3: color-mix(in srgb, #{$muted} 78%, transparent);
+  --primary: #{$primary};
+  --radius: #{$radius};
+  --elevation: 0 8px 24px rgba(0, 0, 0, .35);
+  --font: #{$font};
   --theme-bg: #{$bg};
   --theme-surface: #{$surface};
   --theme-surface-2: #{$surface2};
@@ -14,7 +27,7 @@
 
 /* Material You — expressive rounded surfaces, tonal elevation and touch ripple. */
 html[data-theme="material-you"] {
-  @include theme-vars(#141218, #211f26, #302d36, #f4eff7, #cac4d0, #d0bcff, 24px, "Google Sans", system-ui, sans-serif);
+  @include theme-vars(#141218, #211f26, #302d36, #f4eff7, #cac4d0, #d0bcff, 24px, "Google Sans, system-ui, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background:
@@ -42,7 +55,7 @@ html[data-theme="material-you"] [class*="Card"] { border-radius: var(--theme-rad
 
 /* Fluent Design — acrylic translucency, reveal lighting and compact corners. */
 html[data-theme="fluent"] {
-  @include theme-vars(#202020, rgba(45,45,45,.72), rgba(63,63,63,.78), #fff, #c8c8c8, #60cdff, 6px, "Segoe UI Variable", "Segoe UI", sans-serif);
+  @include theme-vars(#202020, rgba(45,45,45,.72), rgba(63,63,63,.78), #fff, #c8c8c8, #60cdff, 6px, "Segoe UI Variable, Segoe UI, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background: linear-gradient(135deg,#202020 0%,#1b1b1b 60%,#252525 100%);
@@ -68,7 +81,7 @@ html[data-theme="fluent"] [class*="Card"] { background: var(--theme-surface) !im
 
 /* Linear / NextUI — dense dark canvas, hairline borders and gradient focus. */
 html[data-theme="linear"], html[data-theme="nextui"] {
-  @include theme-vars(#0a0a0b, #111113, #19191d, #f5f5f7, #8b8b93, #8b5cf6, 10px, Inter, system-ui, sans-serif);
+  @include theme-vars(#0a0a0b, #111113, #19191d, #f5f5f7, #8b8b93, #8b5cf6, 10px, "Inter, system-ui, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background-color: var(--theme-bg);
@@ -99,7 +112,7 @@ html[data-theme="nextui"] [class*="panel"] { background: var(--theme-surface) !i
 
 /* Windows 10 Metro — square tiles, hard edges, glow and 3-D press depth. */
 html[data-theme="metro"], html[data-theme="win10"] {
-  @include theme-vars(#111820, #1f2b35, #283944, #fff, #c4d3dc, #0078d7, 0, "Segoe UI", sans-serif);
+  @include theme-vars(#111820, #1f2b35, #283944, #fff, #c4d3dc, #0078d7, 0, "Segoe UI, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background: linear-gradient(145deg,#0f171d,#152631 55%,#0d1318);
@@ -132,7 +145,7 @@ html[data-theme="win10"] [class*="panel"] { border-radius: 0 !important; backgro
 
 /* Material Design 2 — classic elevation, compact 4px controls and uppercase action labels. */
 html[data-theme="material-2"] {
-  @include theme-vars(#121212, #1e1e1e, #2a2a2a, #fff, #bdbdbd, #bb86fc, 4px, Roboto, system-ui, sans-serif);
+  @include theme-vars(#121212, #1e1e1e, #2a2a2a, #fff, #bdbdbd, #bb86fc, 4px, "Roboto, system-ui, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background: var(--theme-bg);
