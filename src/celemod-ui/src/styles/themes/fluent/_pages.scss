@@ -103,14 +103,12 @@ html[data-theme="fluent"] .theme-option {
   border-radius: 6px !important;
   background: var(--fluent-fill-subtle) !important;
   transition: border-color var(--fluent-duration-fast), background var(--fluent-duration-fast) !important;
-  transform: none !important;
 }
 
 html[data-theme="fluent"] .theme-option:hover {
   border-color: var(--fluent-stroke-strong) !important;
   background: var(--fluent-fill-control-hover) !important;
   box-shadow: none !important;
-  transform: none !important;
 }
 
 html[data-theme="fluent"] .theme-option.selected {

@@ -440,7 +440,6 @@ html[data-theme="win10"] .settings-card .font-scale-row:hover { background: var(
    retaining colour, outline and shadow state changes. */
 html[data-theme="metro"] *,
 html[data-theme="win10"] * {
-  transform: none !important;
   transition-property: background-color, border-color, color, box-shadow, opacity, outline-color !important;
 }
 html[data-theme="metro"] .page-entering,
