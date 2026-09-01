@@ -159,6 +159,13 @@ html[data-theme="material-you"] .setting-select-row,
 html[data-theme="material-you"] .font-scale-row { border-color: var(--md-outline-variant) !important; }
 html[data-theme="material-you"] .home-page, html[data-theme="material-you"] .settings-page { padding-top: 20px; }
 html[data-theme="material-you"] .home-section-heading h2, html[data-theme="material-you"] .settings-header h1 { color: var(--md-on-surface); }
+/* The base keybinding route used viewport math for the legacy 65px rail.
+   Material You has a 76px navigation rail, so let the grid consume the actual
+   content box to prevent the search/actions row from clipping at the right. */
+html[data-theme="material-you"] .page-KeyBindings,
+html[data-theme="material-you"] .keybindings-page { width: 100%; max-width: 100%; }
+html[data-theme="material-you"] .keybindings-page { grid-template-columns: var(--binding-source-width) minmax(0, 1fr); }
+html[data-theme="material-you"] .keybindings-main { width: auto; }
 
 /* Text fields and selects use M3 outlined field treatment. */
 html[data-theme="material-you"] input:not([type="checkbox"]),
