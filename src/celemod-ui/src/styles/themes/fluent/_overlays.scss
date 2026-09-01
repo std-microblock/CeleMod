@@ -1,0 +1,228 @@
+html[data-theme="fluent"] .filter-popup,
+html[data-theme="fluent"] .manage-filter-popup,
+html[data-theme="fluent"] .manage-action-menu,
+html[data-theme="fluent"] .popup-content,
+html[data-theme="fluent"] .download-list,
+html[data-theme="fluent"] .download-list-menu,
+html[data-theme="fluent"] .context-menu,
+html[data-theme="fluent"] [role="menu"] {
+  border: 1px solid var(--fluent-stroke-strong) !important;
+  border-radius: var(--fluent-radius-overlay) !important;
+  background: var(--fluent-acrylic-strong) !important;
+  box-shadow: var(--fluent-shadow-flyout) !important;
+  backdrop-filter: blur(30px) saturate(140%);
+  transform-origin: var(--fluent-overlay-origin, top right);
+  animation: fluent-flyout-in var(--fluent-duration-normal) var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"] .filter-popup {
+  padding: 14px;
+}
+
+html[data-theme="fluent"] .filter-popup-header {
+  border-bottom-color: var(--fluent-stroke-divider) !important;
+}
+
+html[data-theme="fluent"] .filter-popup-header strong,
+html[data-theme="fluent"] .popup-heading strong {
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .filter-popup-header span,
+html[data-theme="fluent"] .popup-heading span {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .manage-filter-popup > label,
+html[data-theme="fluent"] .filter-grid label {
+  border-radius: 4px;
+}
+
+html[data-theme="fluent"] .manage-action-menu button,
+html[data-theme="fluent"] [role="menu"] button,
+html[data-theme="fluent"] .context-menu button {
+  width: 100%;
+  justify-content: flex-start;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .manage-action-menu button:hover,
+html[data-theme="fluent"] [role="menu"] button:hover,
+html[data-theme="fluent"] .context-menu button:hover {
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .popup-container,
+html[data-theme="fluent"] .dialog-backdrop,
+html[data-theme="fluent"] .modal-backdrop {
+  background: var(--fluent-smoke);
+  backdrop-filter: blur(3px);
+}
+
+html[data-theme="fluent"] .popup-content,
+html[data-theme="fluent"] .dialog,
+html[data-theme="fluent"] [role="dialog"] {
+  border-radius: 8px !important;
+  background: var(--fluent-acrylic-strong) !important;
+  box-shadow: var(--fluent-shadow-dialog) !important;
+  animation: fluent-dialog-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"] .popup-content .title,
+html[data-theme="fluent"] .dialog-title {
+  color: var(--fluent-text-primary);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .popup-content .content,
+html[data-theme="fluent"] .dialog-content {
+  color: var(--fluent-text-secondary);
+}
+
+html[data-theme="fluent"] .popup-content .buttons,
+html[data-theme="fluent"] .dialog-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+html[data-theme="fluent"] .download-list-container,
+html[data-theme="fluent"] .download-list-menu {
+  color: var(--fluent-text-primary);
+}
+
+html[data-theme="fluent"] .download-list-header {
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .download-list-header h2,
+html[data-theme="fluent"] .download-list-title {
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .download-item,
+html[data-theme="fluent"] .download-list-item {
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+  background: transparent;
+  transition: background var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] .download-item:hover,
+html[data-theme="fluent"] .download-list-item:hover {
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .download-item-progress,
+html[data-theme="fluent"] .download-progress {
+  overflow: hidden;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--fluent-fill-control-selected);
+}
+
+html[data-theme="fluent"] .download-item-progress > *,
+html[data-theme="fluent"] .download-progress > * {
+  border-radius: inherit;
+  background: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .toast,
+html[data-theme="fluent"] .snackbar,
+html[data-theme="fluent"] [role="status"] {
+  border: 1px solid var(--fluent-stroke-strong);
+  border-radius: 6px;
+  color: var(--fluent-text-primary);
+  background: var(--fluent-acrylic-strong);
+  box-shadow: var(--fluent-shadow-flyout);
+  backdrop-filter: blur(24px) saturate(135%);
+  animation: fluent-snackbar-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"] .toast.success,
+html[data-theme="fluent"] .snackbar.success {
+  border-left: 3px solid var(--fluent-success);
+}
+
+html[data-theme="fluent"] .toast.warning,
+html[data-theme="fluent"] .snackbar.warning {
+  border-left: 3px solid var(--fluent-warning);
+}
+
+html[data-theme="fluent"] .toast.error,
+html[data-theme="fluent"] .snackbar.error {
+  border-left: 3px solid var(--fluent-danger);
+}
+
+html[data-theme="fluent"] .blocking-mask {
+  color: var(--fluent-text-primary);
+  background: rgba(18,18,18,.75);
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme="fluent"] .blocking-mask-spinner {
+  border-color: rgba(255,255,255,.18);
+  border-top-color: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .drop-install-overlay,
+html[data-theme="fluent"] .drop-installer-overlay {
+  border: 2px dashed rgba(96,205,255,.55);
+  border-radius: 8px;
+  background: rgba(32,32,32,.82);
+  backdrop-filter: blur(24px);
+}
+
+html[data-theme="fluent"] .drop-install-card {
+  border: 1px solid var(--fluent-stroke-strong) !important;
+  border-radius: 8px !important;
+  background: var(--fluent-acrylic-strong) !important;
+  box-shadow: var(--fluent-shadow-dialog) !important;
+}
+
+html[data-theme="fluent"] .crash-assistant,
+html[data-theme="fluent"] .manage-detail-popup {
+  border: 1px solid var(--fluent-stroke-strong) !important;
+  border-radius: 8px !important;
+  background: var(--fluent-acrylic-strong) !important;
+  box-shadow: var(--fluent-shadow-dialog) !important;
+  backdrop-filter: blur(30px) saturate(135%);
+}
+
+html[data-theme="fluent"] .crash-assistant header,
+html[data-theme="fluent"] .manage-detail-popup header {
+  border-bottom-color: var(--fluent-stroke-divider) !important;
+}
+
+html[data-theme="fluent"] .crash-assistant footer,
+html[data-theme="fluent"] .manage-detail-popup footer {
+  border-top-color: var(--fluent-stroke-divider) !important;
+}
+
+@keyframes fluent-flyout-in {
+  from { opacity: 0; transform: translateY(-6px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fluent-dialog-in {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fluent-snackbar-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="fluent"] *,
+  html[data-theme="fluent"] *::before,
+  html[data-theme="fluent"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

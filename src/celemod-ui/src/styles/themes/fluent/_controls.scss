@@ -1,0 +1,222 @@
+html[data-theme="fluent"] button,
+html[data-theme="fluent"] select,
+html[data-theme="fluent"] input:not([type="checkbox"]),
+html[data-theme="fluent"] textarea {
+  min-height: var(--fluent-control-md);
+  border: 1px solid var(--fluent-stroke-control) !important;
+  border-radius: var(--fluent-radius-control) !important;
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+  transition: border-color var(--fluent-duration-fast) var(--fluent-ease-standard), background-color var(--fluent-duration-fast) var(--fluent-ease-standard), box-shadow var(--fluent-duration-fast) var(--fluent-ease-standard), transform var(--fluent-duration-fast) var(--fluent-ease-standard);
+}
+
+html[data-theme="fluent"] button {
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+html[data-theme="fluent"] button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--fluent-reveal-opacity, 0);
+  background: radial-gradient(120px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%), rgba(255,255,255,.15), transparent 66%);
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
+}
+
+html[data-theme="fluent"] button:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] button:active {
+  transform: scale(.985);
+  background: var(--fluent-fill-control-pressed) !important;
+}
+
+html[data-theme="fluent"] button:disabled {
+  color: var(--fluent-text-disabled) !important;
+  border-color: var(--fluent-stroke-subtle) !important;
+  background: var(--fluent-fill-disabled) !important;
+  transform: none;
+}
+
+html[data-theme="fluent"] button.primary,
+html[data-theme="fluent"] button[class*="primary"],
+html[data-theme="fluent"] .search-submit {
+  color: var(--fluent-accent-fg) !important;
+  border-color: transparent !important;
+  background: var(--fluent-accent) !important;
+  box-shadow: 0 2px 8px rgba(96,205,255,.2);
+}
+
+html[data-theme="fluent"] button.primary:hover,
+html[data-theme="fluent"] button[class*="primary"]:hover,
+html[data-theme="fluent"] .search-submit:hover {
+  background: var(--fluent-accent-hover) !important;
+}
+
+html[data-theme="fluent"] button.primary:active,
+html[data-theme="fluent"] button[class*="primary"]:active,
+html[data-theme="fluent"] .search-submit:active {
+  background: var(--fluent-accent-pressed) !important;
+}
+
+html[data-theme="fluent"] input:not([type="checkbox"]),
+html[data-theme="fluent"] textarea,
+html[data-theme="fluent"] select {
+  outline: 0;
+  font-family: inherit;
+}
+
+html[data-theme="fluent"] input:not([type="checkbox"]):hover,
+html[data-theme="fluent"] textarea:hover,
+html[data-theme="fluent"] select:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] input:not([type="checkbox"]):focus,
+html[data-theme="fluent"] textarea:focus,
+html[data-theme="fluent"] select:focus {
+  border-bottom-color: var(--fluent-accent) !important;
+  box-shadow: inset 0 -2px var(--fluent-accent);
+}
+
+html[data-theme="fluent"] input::placeholder,
+html[data-theme="fluent"] textarea::placeholder {
+  color: var(--fluent-text-tertiary);
+  opacity: 1;
+}
+
+html[data-theme="fluent"] select {
+  padding-inline: 10px 30px;
+  background-color: var(--fluent-fill-control) !important;
+}
+
+html[data-theme="fluent"] select option {
+  color: var(--fluent-text-primary);
+  background: #2b2b2b;
+}
+
+html[data-theme="fluent"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid var(--fluent-stroke-strong);
+  border-radius: 3px;
+  background: var(--fluent-fill-control);
+  opacity: 1;
+  transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast), transform var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] input[type="checkbox"]:hover {
+  border-color: var(--fluent-text-secondary);
+  background: var(--fluent-fill-control-hover);
+}
+
+html[data-theme="fluent"] input[type="checkbox"]:checked {
+  border-color: var(--fluent-accent);
+  background-color: var(--fluent-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23082630' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+html[data-theme="fluent"] input[type="checkbox"]:active {
+  transform: scale(.92);
+}
+
+html[data-theme="fluent"] input[type="checkbox"]:disabled {
+  opacity: .45;
+}
+
+html[data-theme="fluent"] .segmented-setting,
+html[data-theme="fluent"] .source-switch,
+html[data-theme="fluent"] .centered-tab-buttons {
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 6px;
+  background: rgba(0,0,0,.18);
+}
+
+html[data-theme="fluent"] .segmented-setting button,
+html[data-theme="fluent"] .source-switch button,
+html[data-theme="fluent"] .centered-tab-buttons > button {
+  min-height: 28px;
+  border-color: transparent !important;
+  border-radius: 4px !important;
+  color: var(--fluent-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .segmented-setting button:hover,
+html[data-theme="fluent"] .source-switch button:hover,
+html[data-theme="fluent"] .centered-tab-buttons > button:hover {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .segmented-setting button.selected,
+html[data-theme="fluent"] .source-switch button.selected,
+html[data-theme="fluent"] .centered-tab-buttons > button.selected,
+html[data-theme="fluent"] .centered-tab-buttons > button.active {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control-selected) !important;
+  box-shadow: inset 0 0 0 1px var(--fluent-stroke-subtle) !important;
+}
+
+html[data-theme="fluent"] .toolbar-icon-button,
+html[data-theme="fluent"] .toolbar-action-button,
+html[data-theme="fluent"] .filter-toggle,
+html[data-theme="fluent"] .view-toggle {
+  height: 32px;
+  min-height: 32px;
+  border-radius: 4px !important;
+  background: var(--fluent-fill-control) !important;
+}
+
+html[data-theme="fluent"] .toolbar-icon-button.active,
+html[data-theme="fluent"] .toolbar-action-button.active,
+html[data-theme="fluent"] .filter-toggle.active,
+html[data-theme="fluent"] .view-toggle.active {
+  color: var(--fluent-accent) !important;
+  border-color: rgba(96,205,255,.5) !important;
+  background: rgba(96,205,255,.1) !important;
+}
+
+html[data-theme="fluent"] .toolbar-count,
+html[data-theme="fluent"] .filter-count {
+  color: var(--fluent-accent-fg);
+  border-color: var(--fluent-bg);
+  background: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] a {
+  color: var(--fluent-accent);
+  text-decoration: none;
+}
+
+html[data-theme="fluent"] a:hover {
+  color: var(--fluent-accent-hover);
+  text-decoration: underline;
+}
+
+html[data-theme="fluent"] code,
+html[data-theme="fluent"] kbd {
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 4px;
+  color: var(--fluent-text-secondary);
+  background: rgba(0,0,0,.2);
+}
+
+html[data-theme="fluent"][data-fluent-keyboard="true"] :is(button, input, select, textarea, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--fluent-focus) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--fluent-bg), 0 0 0 4px rgba(96,205,255,.22) !important;
+}

@@ -1,0 +1,351 @@
+html[data-theme="fluent"] .settings-page {
+  width: min(1040px, 100%);
+  padding: 18px 24px 60px;
+}
+
+html[data-theme="fluent"] .settings-header {
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+html[data-theme="fluent"] .settings-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+html[data-theme="fluent"] .settings-header p {
+  color: var(--fluent-text-tertiary);
+  font-size: 12px;
+}
+
+html[data-theme="fluent"] .settings-columns {
+  gap: 24px;
+}
+
+html[data-theme="fluent"] .settings-section-title {
+  margin: 0 0 9px 2px;
+  color: var(--fluent-text-tertiary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+html[data-theme="fluent"] .settings-card {
+  overflow: hidden;
+  border: 1px solid var(--fluent-stroke-control) !important;
+  border-radius: var(--fluent-radius-card) !important;
+  background: var(--fluent-acrylic-base) !important;
+  box-shadow: var(--fluent-shadow-card) !important;
+  backdrop-filter: blur(24px) saturate(135%);
+}
+
+html[data-theme="fluent"] .settings-card > *,
+html[data-theme="fluent"] .settings-card .theme-setting,
+html[data-theme="fluent"] .settings-card .setting-toggle-row,
+html[data-theme="fluent"] .settings-card .setting-select-row,
+html[data-theme="fluent"] .settings-card .font-scale-row {
+  border-color: var(--fluent-stroke-divider) !important;
+}
+
+html[data-theme="fluent"] .setting-toggle-row,
+html[data-theme="fluent"] .setting-select-row,
+html[data-theme="fluent"] .font-scale-row,
+html[data-theme="fluent"] .download-default-head {
+  min-height: 60px;
+  padding: 10px 16px;
+  transition: background var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] .setting-toggle-row:hover,
+html[data-theme="fluent"] .setting-select-row:hover,
+html[data-theme="fluent"] .font-scale-row:hover,
+html[data-theme="fluent"] .download-default-head:hover {
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .settings-card strong {
+  color: var(--fluent-text-primary);
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .settings-card small {
+  color: var(--fluent-text-tertiary) !important;
+}
+
+html[data-theme="fluent"] .theme-setting {
+  padding: 16px;
+}
+
+html[data-theme="fluent"] .theme-picker-card {
+  border-radius: 6px !important;
+  transition: transform var(--fluent-duration-normal) var(--fluent-ease-decelerate), border-color var(--fluent-duration-normal), background var(--fluent-duration-normal);
+}
+
+html[data-theme="fluent"] .theme-picker-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--fluent-stroke-strong) !important;
+}
+
+html[data-theme="fluent"] .theme-picker-card.selected {
+  border-color: var(--fluent-accent) !important;
+  box-shadow: 0 0 0 1px var(--fluent-accent), 0 8px 20px rgba(0,0,0,.25) !important;
+}
+
+html[data-theme="fluent"] .download-type-grid label {
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 4px;
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .download-type-grid label:hover {
+  background: var(--fluent-fill-control-hover);
+}
+
+html[data-theme="fluent"] .home-page {
+  width: min(880px, 100%);
+  padding: 20px 28px 56px;
+}
+
+html[data-theme="fluent"] .home-header {
+  padding: 26px 8px 48px;
+}
+
+html[data-theme="fluent"] .home-brand {
+  gap: 20px;
+}
+
+html[data-theme="fluent"] .home-brand img {
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.3));
+}
+
+html[data-theme="fluent"] .home-brand h1 {
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+html[data-theme="fluent"] .home-brand p {
+  color: var(--fluent-text-tertiary);
+  font-size: 17px;
+}
+
+html[data-theme="fluent"] .home-language {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .home-community button {
+  min-height: 24px;
+  padding-inline: 7px;
+  color: var(--fluent-text-secondary) !important;
+}
+
+html[data-theme="fluent"] .home-community button:hover {
+  color: var(--fluent-accent) !important;
+}
+
+html[data-theme="fluent"] .home-section {
+  margin-bottom: 22px;
+  padding: 0 8px;
+}
+
+html[data-theme="fluent"] .home-section-heading h2 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .home-keyboard-input-banner {
+  border: 1px solid rgba(252,225,0,.25);
+  border-radius: 6px;
+  background: rgba(252,225,0,.06);
+}
+
+html[data-theme="fluent"] .home-profiles-section .profile,
+html[data-theme="fluent"] .home-active-mod-list > * {
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 6px;
+  background: var(--fluent-fill-subtle);
+  box-shadow: none;
+  transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast), transform var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] .home-profiles-section .profile:hover,
+html[data-theme="fluent"] .home-active-mod-list > *:hover {
+  border-color: var(--fluent-stroke-strong);
+  background: var(--fluent-fill-control-hover);
+  transform: translateY(-1px);
+}
+
+html[data-theme="fluent"] .filter,
+html[data-theme="fluent"] .manage-toolbar,
+html[data-theme="fluent"] .keybindings-toolbar {
+  min-height: 46px;
+  padding: 6px 10px !important;
+  border-bottom: 1px solid var(--fluent-stroke-divider) !important;
+  background: color-mix(in srgb, var(--fluent-mica-alt) 82%, transparent) !important;
+  backdrop-filter: blur(20px) saturate(120%);
+}
+
+html[data-theme="fluent"] .filter {
+  gap: 6px;
+}
+
+html[data-theme="fluent"] .search-field .icon,
+html[data-theme="fluent"] .manage-search .icon,
+html[data-theme="fluent"] .keybindings-search .icon {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .searchinput,
+html[data-theme="fluent"] .manage-search input,
+html[data-theme="fluent"] .keybindings-search input {
+  height: 32px;
+  border-radius: 4px !important;
+  background: rgba(0,0,0,.18) !important;
+}
+
+html[data-theme="fluent"] .searchinput:focus,
+html[data-theme="fluent"] .manage-search input:focus,
+html[data-theme="fluent"] .keybindings-search input:focus {
+  border-bottom-color: var(--fluent-accent) !important;
+  box-shadow: inset 0 -2px var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .search-results,
+html[data-theme="fluent"] .search-grid {
+  padding: 14px;
+  gap: 10px;
+}
+
+html[data-theme="fluent"] .search-result-card,
+html[data-theme="fluent"] .search-skeleton-card,
+html[data-theme="fluent"] .mod-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--fluent-stroke-subtle) !important;
+  border-radius: 6px !important;
+  background: var(--fluent-fill-subtle) !important;
+  box-shadow: none !important;
+  transition: border-color var(--fluent-duration-fast), background var(--fluent-duration-fast), transform var(--fluent-duration-normal) var(--fluent-ease-decelerate);
+}
+
+html[data-theme="fluent"] .search-result-card:hover,
+html[data-theme="fluent"] .mod-card:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+  transform: translateY(-2px);
+}
+
+html[data-theme="fluent"] .manage-page {
+  grid-template-columns: minmax(0, 1fr) 248px;
+  background: transparent;
+}
+
+html[data-theme="fluent"] .manage-main {
+  border-right-color: var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .manage-toolbar {
+  gap: 5px;
+}
+
+html[data-theme="fluent"] .manage-title-block h1 {
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .manage-title-block span {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .manage-notice-bar,
+html[data-theme="fluent"] .manage-filter-hint {
+  border-color: var(--fluent-stroke-divider);
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .manage-tree-scroll {
+  padding: 6px 8px 14px;
+}
+
+html[data-theme="fluent"] .manage-tree-row {
+  position: relative;
+  border-radius: 4px;
+  transition: background var(--fluent-duration-fast), color var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] .manage-tree-row:hover {
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .manage-tree-row.selected {
+  background: var(--fluent-fill-control-selected) !important;
+}
+
+html[data-theme="fluent"] .manage-tree-row.selected::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 1px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .manage-side {
+  background: rgba(0,0,0,.08);
+}
+
+html[data-theme="fluent"] .manage-side section,
+html[data-theme="fluent"] .manage-side .profile-card {
+  border-color: var(--fluent-stroke-subtle) !important;
+  border-radius: 6px !important;
+  background: var(--fluent-fill-subtle) !important;
+}
+
+html[data-theme="fluent"] .channel-card,
+html[data-theme="fluent"] .everest-card,
+html[data-theme="fluent"] .version-card {
+  border: 1px solid var(--fluent-stroke-subtle) !important;
+  border-radius: 8px !important;
+  background: var(--fluent-fill-subtle) !important;
+  box-shadow: var(--fluent-shadow-card) !important;
+}
+
+html[data-theme="fluent"] .channel-card:hover,
+html[data-theme="fluent"] .everest-card:hover,
+html[data-theme="fluent"] .version-card:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .keybindings-page {
+  background: transparent;
+}
+
+html[data-theme="fluent"] .keybindings-list,
+html[data-theme="fluent"] .keybindings-scroll {
+  padding: 8px 12px 20px;
+}
+
+html[data-theme="fluent"] .keybinding-row,
+html[data-theme="fluent"] .keybindings-row {
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+  background: transparent;
+  transition: background var(--fluent-duration-fast);
+}
+
+html[data-theme="fluent"] .keybinding-row:hover,
+html[data-theme="fluent"] .keybindings-row:hover {
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .keybinding-key,
+html[data-theme="fluent"] .binding-chip {
+  border: 1px solid var(--fluent-stroke-control);
+  border-radius: 4px;
+  background: var(--fluent-fill-control);
+  box-shadow: inset 0 -1px rgba(0,0,0,.35);
+}

@@ -3,6 +3,7 @@ import { useAppStore, useEnableAcrylic } from "../states";
 import { invokeCommand } from "../tauri/commands";
 import { detectDesktopPlatform } from "../tauri/window";
 import { getTheme, THEME_REGISTRY, type ThemeId } from "../themes/registry";
+import { mountFluentInteractions } from "../styles/themes/fluent/runtime";
 
 export { useEnableAcrylic } from "../states";
 export { THEME_REGISTRY, getTheme };
@@ -43,6 +44,11 @@ export const createThemeContext = () => {
     for (const [alias, token] of Object.entries(aliases))
       root.style.setProperty(alias, `var(${token})`);
     root.style.setProperty("--theme-features", definition.features.join(" "));
+  }, [theme]);
+
+  useEffect(() => {
+    if (theme !== "fluent") return;
+    return mountFluentInteractions();
   }, [theme]);
 
   useEffect(() => {

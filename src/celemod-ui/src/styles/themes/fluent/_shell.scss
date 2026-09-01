@@ -1,0 +1,191 @@
+html[data-theme="fluent"] .app-frame {
+  position: relative;
+  isolation: isolate;
+  padding-inline: 12px;
+  background: var(--fluent-mica-base);
+  backdrop-filter: blur(42px) saturate(125%);
+}
+
+html[data-theme="fluent"] .app-frame::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.035), transparent 42%), radial-gradient(70% 80% at 82% 8%, rgba(96,205,255,.08), transparent 70%);
+}
+
+html[data-theme="fluent"] .app-frame::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+html[data-theme="fluent"] .window-titlebar {
+  flex-basis: 46px;
+  min-height: 46px;
+  padding-inline: 10px;
+}
+
+html[data-theme="fluent"] .window-caption {
+  color: var(--fluent-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  opacity: .92;
+}
+
+html[data-theme="fluent"] .caption-version {
+  color: var(--fluent-text-tertiary);
+  font-size: 10px;
+}
+
+html[data-theme="fluent"] .caption-hash {
+  color: var(--fluent-text-disabled);
+  font-size: 9px;
+}
+
+html[data-theme="fluent"] .app-shell {
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 4px;
+}
+
+html[data-theme="fluent"] .sidebar {
+  width: 64px;
+  margin-right: 0;
+  padding: 4px 4px 0;
+  box-sizing: border-box;
+}
+
+html[data-theme="fluent"] .sidebar-scroll {
+  width: 60px;
+}
+
+html[data-theme="fluent"] .sidebar-items {
+  width: 60px;
+  gap: 2px;
+}
+
+html[data-theme="fluent"] .sidebar .navBtn,
+html[data-theme="fluent"] .downloadListBtn {
+  position: relative;
+  width: 56px;
+  height: 48px;
+  margin: 0 0 3px;
+  padding: 4px 0 2px;
+  border: 1px solid transparent;
+  border-radius: 6px !important;
+  color: var(--fluent-text-secondary);
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  transition: background-color var(--fluent-duration-fast) var(--fluent-ease-standard), color var(--fluent-duration-fast) var(--fluent-ease-standard), transform var(--fluent-duration-fast) var(--fluent-ease-standard);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn::before,
+html[data-theme="fluent"] .downloadListBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--fluent-reveal-opacity, 0);
+  background: radial-gradient(84px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%), rgba(255,255,255,.2), transparent 68%);
+  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn:hover,
+html[data-theme="fluent"] .downloadListBtn:hover {
+  color: var(--fluent-text-primary);
+  background: var(--fluent-fill-control-hover);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn:active,
+html[data-theme="fluent"] .downloadListBtn:active {
+  transform: scale(.97);
+  background: var(--fluent-fill-control-pressed);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn.selected {
+  color: var(--fluent-text-primary);
+  border-color: var(--fluent-stroke-subtle) !important;
+  background: var(--fluent-fill-control-selected) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.018);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn.selected::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: -1px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--fluent-accent);
+  box-shadow: 0 0 10px rgba(96,205,255,.42);
+  animation: fluent-nav-indicator-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"] .sidebar .navBtn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-theme="fluent"] .sidebar .title {
+  width: 54px;
+  color: inherit;
+  font-size: 10px;
+  opacity: .78;
+}
+
+html[data-theme="fluent"] .downloadListBtn {
+  margin-top: 8px;
+  border-color: var(--fluent-stroke-control);
+  background: var(--fluent-fill-control);
+}
+
+html[data-theme="fluent"] .app-content {
+  overflow: hidden;
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in srgb, var(--fluent-mica-alt) 54%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.024);
+}
+
+html[data-theme="fluent"] .page {
+  width: 100%;
+  padding: 0;
+}
+
+html[data-theme="fluent"] .page-entering {
+  animation: fluent-page-enter var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"] .page-leaving {
+  animation: fluent-page-leave var(--fluent-duration-fast) var(--fluent-ease-accelerate) both;
+}
+
+html[data-theme="fluent"][data-fluent-keyboard="true"] :focus-visible {
+  outline: 2px solid var(--fluent-focus) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--fluent-bg), 0 0 0 4px rgba(96,205,255,.24) !important;
+}
+
+@keyframes fluent-nav-indicator-in {
+  from { opacity: 0; transform: scaleY(.35); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes fluent-page-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fluent-page-leave {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-3px); }
+}

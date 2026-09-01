@@ -1,6 +1,11 @@
-/* Fluent 2 theme: Mica/Acrylic layers, NavigationView indicator, Reveal hover
-   lighting and compact command surfaces. */
+@use "./fluent/tokens";
+@use "./fluent/shell";
+@use "./fluent/controls";
+@use "./fluent/pages";
+@use "./fluent/overlays";
 
+/* Legacy single-file implementation replaced by the focused partials above. */
+/*
 html[data-theme="fluent"] {
   --fluent-bg: #202020;
   --fluent-mica: rgba(32, 32, 32, 0.82);
@@ -178,3 +183,4 @@ html[data-theme="fluent"] ::selection { color: #0b2530; background: var(--fluent
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="fluent"] *, html[data-theme="fluent"] *::before, html[data-theme="fluent"] *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+*/
