@@ -14,6 +14,8 @@ const node = (name: string, options: Partial<ManageNode> = {}): ManageNode => ({
   version: "1.0.0",
   file: `${name}.zip`,
   size: 0,
+  modifiedAt: 0,
+  isDirectory: false,
   dependencies: [],
   dependedBy: [],
   duplicateFiles: [],

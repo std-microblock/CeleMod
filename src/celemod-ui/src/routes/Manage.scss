@@ -68,8 +68,8 @@
     color: theme.$fg3;
     pointer-events: none;
   }
-  input {
-    width: 100%;
+    input {
+      width: 100%;
     height: 30px;
     padding: 0 34px 0 32px;
     border: 1px solid color.change(theme.$fg, $alpha: 0.08);
@@ -79,10 +79,16 @@
     color: theme.$fg;
     outline: none;
     font-size: calc(11px * var(--manage-font-scale, 1));
-    &:focus {
-      border-color: color.change(theme.$primary, $alpha: 0.6);
+      &:focus {
+        border-color: color.change(theme.$primary, $alpha: 0.6);
+      }
+
+      // The toolbar has its own clear button; hide the browser-provided one
+      // so search controls are not duplicated in WebKit-based builds.
+      &::-webkit-search-cancel-button {
+        display: none;
+      }
     }
-  }
   button {
     position: absolute;
     right: 5px;
@@ -601,6 +607,21 @@
   &.tone-accent {
     color: #dda2e7;
   }
+}
+
+.folder-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color.change(#42a5f5, $alpha: 0.12);
+  color: #82c4fa;
+  font-size: 0.88em;
+  font-weight: 650;
+  line-height: 1.45;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .tree-row-actions {
@@ -1601,9 +1622,43 @@
 }
 .orphan-section {
   margin-top: 14px;
-  > strong {
+  .orphan-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .orphan-heading > strong {
     font-size: calc(10px * var(--manage-font-scale, 1));
   }
+}
+.orphan-actions {
+  display: inline-flex;
+  gap: 4px;
+
+  button {
+    min-height: 22px;
+    padding: 0 7px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.14);
+    border-radius: 5px;
+    background: theme.$bg2;
+    box-shadow: none;
+    color: theme.$fg2;
+    font-size: calc(8px * var(--manage-font-scale, 1));
+
+    &:hover {
+      background: theme.$bg3;
+      color: theme.$fg;
+    }
+  }
+}
+.orphan-option {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  gap: 6px;
+  color: theme.$fg2;
+  font-size: calc(8px * var(--manage-font-scale, 1));
 }
 .orphan-list {
   display: grid;

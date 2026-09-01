@@ -54,6 +54,8 @@ export interface ManageNode {
   version: string;
   file: string;
   size: number;
+  modifiedAt: number;
+  isDirectory: boolean;
   dependencies: ManageDependency[];
   dependedBy: string[];
   duplicateFiles: ManageModFile[];
@@ -65,6 +67,7 @@ export interface ManageModFile {
   version: string;
   size: number;
   modifiedAt: number;
+  isDirectory: boolean;
 }
 
 const compareVersion = (left: string, right: string) => {
@@ -167,6 +170,7 @@ export const useManageStore = create<ManageTreeState>()(
               version: mod.version,
               size: mod.size,
               modifiedAt: mod.modified_at,
+              isDirectory: mod.is_directory,
             };
             if (current) {
               current.duplicateFiles.push(file);
@@ -183,6 +187,8 @@ export const useManageStore = create<ManageTreeState>()(
                 current.version = mod.version;
                 current.file = mod.file;
                 current.size = mod.size;
+                current.modifiedAt = mod.modified_at;
+                current.isDirectory = mod.is_directory;
                 current.dependencies = normalizeManageDependencies(mod.deps);
               }
               continue;
@@ -195,6 +201,8 @@ export const useManageStore = create<ManageTreeState>()(
               version: mod.version,
               file: mod.file,
               size: mod.size,
+              modifiedAt: mod.modified_at,
+              isDirectory: mod.is_directory,
               dependencies: normalizeManageDependencies(mod.deps),
               dependedBy: [],
               duplicateFiles: [file],

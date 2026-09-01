@@ -10,6 +10,8 @@
   "转到 Everest 页": "Go to the Everest page",
   "选择游戏路径": "Select game path",
   "Mods 文件夹": "Mods folder",
+  "文件夹": "Folder",
+  "上次修改": "Last modified",
   "文件列表为空": "File list is empty",
   "Celemod 有更新": "Celemod has updates",
   "更新详情": "Update details",
@@ -118,6 +120,8 @@
   "选择其他路径": "Choose another path",
   "简体中文": "&&",
   "Everest": "Everest",
+  "慢速启动": "Slow start",
+  "仅本次禁用 EverestUltra 的并行加载、ILHook 启动事务和 PGO 重排": "Disable EverestUltra parallel loading, the ILHook startup transaction, and PGO reordering for this launch only",
   "原版": "Vanilla",
   "Hateline": "Hateline",
   "Taffyline Part1": "Taffyline Part1",
@@ -580,5 +584,8 @@
   "文本": "Text",
   "添加文本": "Add text",
   "添加图片": "Add image",
-  "重命名预设": "Rename preset"
+  "重命名预设": "Rename preset",
+  "全选": "Select all",
+  "全不选": "Select none",
+  "不删除已启用的 Mod": "Do not delete enabled mods"
 }

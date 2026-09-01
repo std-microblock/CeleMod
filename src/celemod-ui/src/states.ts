@@ -20,6 +20,7 @@ export interface BackendModInfo {
   file: string;
   size: number;
   modified_at: number;
+  is_directory: boolean;
 }
 
 type SearchSort = "new" | "updateAdded" | "updated" | "views" | "likes";
@@ -66,8 +67,11 @@ const createDownloadTypeDefaults = (
 ): Record<string, boolean> =>
   Object.fromEntries(MOD_TYPE_OPTIONS.map((type) => [type, enabled]));
 
-export const resolveMultiThreadSetting = (mirror: string, requested: boolean) =>
-  mirror !== "wegfan" && requested;
+// The downloader probes Range support at runtime.  Keep the user's setting
+// intact for every mirror; WEGFan's CDN is normalized to a Range-capable host
+// by the backend before a download starts.
+export const resolveMultiThreadSetting = (_mirror: string, requested: boolean) =>
+  requested;
 const normalizeFontScale = (value: unknown): FontScale => {
   const scale = Number(value);
   return Number.isFinite(scale)

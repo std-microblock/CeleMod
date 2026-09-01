@@ -1160,6 +1160,7 @@ mod tests {
                 file: "Root.Mod.zip".to_string(),
                 size: 0,
                 modified_at: 0,
+                is_directory: false,
             },
             super::super::LocalMod {
                 game_banana_id: 2,
@@ -1169,6 +1170,7 @@ mod tests {
                 file: "Shared.Dependency.zip".to_string(),
                 size: 0,
                 modified_at: 0,
+                is_directory: false,
             },
         ];
         assert_eq!(
@@ -1203,6 +1205,7 @@ mod tests {
             file: "Root.Mod.zip".to_string(),
             size: 0,
             modified_at: 0,
+            is_directory: false,
         }];
         assert_eq!(
             expand_installed_dependencies(&installed, &["Root.Mod".to_string()]),

@@ -52,6 +52,8 @@ test("sorts the management list by the displayed primary name", () => {
     version: "1.0.0",
     file: `${name}.zip`,
     size: 0,
+    modifiedAt: 0,
+    isDirectory: false,
     dependencies: [],
     dependedBy: [],
     duplicateFiles: [],
@@ -83,5 +85,44 @@ test("sorts the management list by the displayed primary name", () => {
       },
     }),
     ["Zulu", "Alpha"],
+  );
+});
+
+test("filters management mods by their internal name", () => {
+  const node = (name: string): ManageNode => ({
+    name,
+    id: name,
+    enabled: true,
+    version: "1.0.0",
+    file: `${name}.zip`,
+    size: 0,
+    modifiedAt: 0,
+    isDirectory: false,
+    dependencies: [],
+    dependedBy: [],
+    duplicateFiles: [],
+    meta: null,
+  });
+
+  assert.deepEqual(
+    selectVisibleRootNames({
+      nodes: {
+        "Everest.Core": node("Everest.Core"),
+        CelesteNet: node("CelesteNet"),
+      },
+      filters: {
+        query: "everest.core",
+        enabled: "all",
+        health: "all",
+        types: [],
+        updateOnly: false,
+        showHiddenTypes: false,
+      },
+      rootOnly: false,
+      includeOptional: false,
+      hiddenTypes: [],
+      updateNames: new Set(),
+    }),
+    ["Everest.Core"],
   );
 });
