@@ -1,11 +1,6 @@
 @use "sass:color";
 @use "../styles/theme" as theme;
 
-.page-Multiplayer {
-  width: 100%;
-  overflow: hidden;
-}
-
 .multiplayer-page {
   display: flex;
   width: min(760px, 100%);

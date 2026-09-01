@@ -174,7 +174,6 @@
 }
 
 .conflict-toggle,
-.keybindings-refresh,
 .disabled-toggle,
 .input-mode-switch button {
   display: inline-flex;
@@ -203,10 +202,6 @@
   }
 }
 
-.keybindings-refresh {
-  width: 28px;
-  padding: 0;
-}
 .disabled-toggle {
   width: 42px;
   padding: 0;
