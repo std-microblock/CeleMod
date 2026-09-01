@@ -373,3 +373,22 @@ html[data-theme="material-2"] .md2-dialog.is-visible { animation: md2-dialog-ent
   from { opacity: 0; transform: translateY(8px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Keep layout measurements on the 4/8dp rhythm used by M2 components. */
+html[data-theme="material-2"] .settings-columns { gap: 24px; }
+html[data-theme="material-2"] .settings-section-title { margin: 0 0 8px 0; }
+html[data-theme="material-2"] .setting-toggle-row,
+html[data-theme="material-2"] .setting-select-row,
+html[data-theme="material-2"] .font-scale-row,
+html[data-theme="material-2"] .download-default-head { min-height: 64px; padding: 16px; }
+html[data-theme="material-2"] .home-header { padding: 24px 8px 40px; }
+html[data-theme="material-2"] .home-section { margin-bottom: 24px; padding: 0 8px; }
+html[data-theme="material-2"] .home-profiles-section .profiles { gap: 8px; padding-left: 0; }
+html[data-theme="material-2"] h1,
+html[data-theme="material-2"] h2,
+html[data-theme="material-2"] h3 { font-family: inherit; font-weight: 500; letter-spacing: 0; }
+html[data-theme="material-2"] h1 { font-size: 24px; line-height: 32px; }
+html[data-theme="material-2"] h2 { font-size: 20px; line-height: 28px; }
+html[data-theme="material-2"] h3 { font-size: 16px; line-height: 24px; }
+html[data-theme="material-2"] small,
+html[data-theme="material-2"] .setting-description small { color: var(--md2-on-surface-medium); }
