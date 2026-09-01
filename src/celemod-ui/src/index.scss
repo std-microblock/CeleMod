@@ -324,8 +324,7 @@ html[data-platform="macos"] .app-shell {
   height: 100%;
   min-width: 0;
   min-height: 0;
-  transform-origin: 50% 42%;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 .page-entering {
@@ -340,27 +339,13 @@ html[data-platform="macos"] .app-shell {
 }
 
 @keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.992);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes page-leave {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(-2px) scale(0.998);
-  }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 .page-Search,
@@ -439,8 +424,7 @@ input[type="checkbox"]:checked {
 }
 
 .icon-i-asterisk {
-  transform: scale(0.55);
-  transform-origin: center;
+  font-size: .55em;
 }
 
 *::-webkit-scrollbar-button {
@@ -513,9 +497,8 @@ select option {
 }
 
 @keyframes blocking-mask-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  from { opacity: .65; }
+  to { opacity: 1; }
 }
 
 .centered-tab-buttons {

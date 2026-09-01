@@ -29,10 +29,9 @@
   border-radius: inherit;
   background: currentColor;
   opacity: .12;
-  animation: theme-ripple .4s ease-out;
+  transition: opacity .4s ease-out;
   pointer-events: none;
 }
-@keyframes theme-ripple { from { transform: scale(.6); opacity: .22; } to { transform: scale(1); opacity: 0; } }
 
 [data-theme="fluent"] .settings-card,
 [data-theme="fluent"] .app-frame {
@@ -48,10 +47,9 @@
 [data-theme="metro"] button {
   border-radius: 0;
   box-shadow: var(--elevation);
-  transition: transform .16s ease, box-shadow .16s ease;
+  transition: box-shadow .16s ease;
 }
 [data-theme="metro"] button:hover {
-  transform: translate3d(-2px, -2px, 0);
   box-shadow: 7px 7px 0 color-mix(in srgb, var(--primary) 75%, #000);
 }
 

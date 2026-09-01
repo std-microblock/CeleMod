@@ -32,10 +32,7 @@
       margin: 0;
       object-fit: cover;
       object-position: center;
-      transform: scale(1.01);
-      transition:
-        transform 280ms ease,
-        filter 280ms ease;
+      transition: filter 280ms ease;
     }
   }
 
@@ -81,7 +78,6 @@
       object-fit: cover;
       object-position: center;
       filter: blur(42px) brightness(0.46) saturate(1.35);
-      transform: scale(1.14);
     }
   }
 

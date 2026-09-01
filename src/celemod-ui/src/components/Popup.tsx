@@ -22,15 +22,13 @@ export const createPopup = (
   const controls = {
     show() {
       container.style.opacity = "1";
-      container.style.transform = "scale(1)";
     },
     hide() {
       container.style.opacity = "0";
-      container.style.transform = "scale(1.3)";
       setTimeout(() => {
         root.unmount();
         container.remove();
-      }, 200);
+      }, 120);
     },
   };
 

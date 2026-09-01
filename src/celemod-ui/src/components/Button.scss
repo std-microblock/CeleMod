@@ -15,8 +15,7 @@ button {
   text-align: center;
   transition:
     background-color 140ms ease,
-    box-shadow 140ms ease,
-    transform 100ms ease;
+    box-shadow 140ms ease;
 }
 
 button.large {
@@ -35,7 +34,6 @@ button:hover {
 
 button:active {
   background: var(--color-surface-active, #{theme.$bg3});
-  transform: translateY(1px);
 }
 
 button:disabled {
