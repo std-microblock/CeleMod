@@ -1,6 +1,7 @@
 import _i18n, { useI18N } from "src/i18n";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../components/Icon";
+import { ThemePicker } from "../components/ThemePicker";
 import { useEnableAcrylic } from "../context/theme";
 import {
   FontScale,
@@ -231,6 +232,8 @@ export const Settings = () => {
   const setKeyBindingsFontScale = useAppStore(
     (state) => state.setKeyBindingsFontScale,
   );
+  const theme = useAppStore((state) => state.theme);
+  const setTheme = useAppStore((state) => state.setTheme);
   const enablePageTransitions = useAppStore(
     (state) => state.enablePageTransitions,
   );
@@ -517,6 +520,13 @@ export const Settings = () => {
             <span>{_i18n.t("界面")}</span>
           </div>
           <div className="settings-card">
+            <div className="theme-setting">
+              <div className="setting-description">
+                <strong>{_i18n.t("主题")}</strong>
+                <small>{_i18n.t("选择一套完整的界面设计风格")}</small>
+              </div>
+              <ThemePicker value={theme} onChange={setTheme} />
+            </div>
             <SettingToggle
               title={_i18n.t("启用亚克力效果")}
               description={_i18n.t("使用系统窗口模糊和半透明背景")}

@@ -48,6 +48,32 @@
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
   }
 
+  .theme-setting {
+    padding: 14px 15px 16px;
+    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
+
+    .setting-description {
+      margin-bottom: 12px;
+
+      strong,
+      small {
+        display: block;
+      }
+
+      strong {
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      small {
+        margin-top: 4px;
+        color: theme.$fg3;
+        font-size: 10px;
+        line-height: 1.35;
+      }
+    }
+  }
+
   .setting-toggle-row,
   .setting-select-row,
   .font-scale-row,
