@@ -1,0 +1,160 @@
+:root { --md-motion-standard: cubic-bezier(0.2, 0, 0, 1); --md-motion-emphasized: cubic-bezier(0.2, 0, 0, 1); }
+
+html[data-theme="material-you"] {
+  /* Material 3 dark scheme (tonal roles) */
+  --md-primary: #d0bcff;
+  --md-on-primary: #381e72;
+  --md-primary-container: #4f378b;
+  --md-on-primary-container: #eaddff;
+  --md-secondary: #ccc2dc;
+  --md-on-secondary: #332d41;
+  --md-secondary-container: #4a4458;
+  --md-on-secondary-container: #e8def8;
+  --md-tertiary: #efb8c8;
+  --md-on-tertiary: #492532;
+  --md-surface: #141218;
+  --md-surface-dim: #141218;
+  --md-surface-bright: #3b383e;
+  --md-surface-container-lowest: #0f0d13;
+  --md-surface-container-low: #1d1b20;
+  --md-surface-container: #211f26;
+  --md-surface-container-high: #2b2930;
+  --md-surface-container-highest: #36343b;
+  --md-outline: #938f99;
+  --md-outline-variant: #49454f;
+  --md-on-surface: #e6e0e9;
+  --md-on-surface-variant: #cac4d0;
+  --md-error: #f2b8b5;
+  --md-on-error: #601410;
+  --md-shape-xs: 4px;
+  --md-shape-sm: 8px;
+  --md-shape-md: 12px;
+  --md-shape-lg: 16px;
+  --md-shape-xl: 28px;
+  --md-shape-full: 999px;
+  --md-elevation-1: 0 1px 3px rgb(0 0 0 / 30%), 0 1px 2px rgb(0 0 0 / 20%);
+  --md-elevation-2: 0 2px 6px rgb(0 0 0 / 32%), 0 1px 2px rgb(0 0 0 / 22%);
+  --md-elevation-3: 0 4px 12px rgb(0 0 0 / 34%), 0 2px 4px rgb(0 0 0 / 22%);
+  --md-state-hover: rgb(255 255 255 / 8%);
+  --md-state-focus: rgb(255 255 255 / 12%);
+  --md-state-pressed: rgb(255 255 255 / 12%);
+  --bg: var(--md-surface);
+  --bg1: var(--md-surface-container);
+  --bg2: var(--md-surface-container-high);
+  --bg3: var(--md-surface-container-highest);
+  --fg: var(--md-on-surface);
+  --fg1: var(--md-on-surface-variant);
+  --fg2: #938f99;
+  --fg3: #79747e;
+  --primary: var(--md-primary);
+  --radius: var(--md-shape-lg);
+  --elevation: var(--md-elevation-2);
+  --font: "Google Sans", "Noto Sans", system-ui, sans-serif;
+  color-scheme: dark;
+  font-family: var(--font);
+  background: var(--md-surface);
+  background-image: radial-gradient(900px 500px at 100% -10%, rgb(103 80 164 / 20%), transparent 72%), radial-gradient(700px 460px at -10% 100%, rgb(239 184 200 / 9%), transparent 72%);
+}
+
+html[data-theme="material-you"] body { color: var(--md-on-surface); background: transparent; font-family: var(--font); letter-spacing: 0.01em; }
+html[data-theme="material-you"] .app-frame { padding-inline: 20px; }
+html[data-theme="material-you"] .window-titlebar { flex-basis: 52px; min-height: 52px; }
+html[data-theme="material-you"] .window-caption { color: var(--md-on-surface); font-size: 15px; font-weight: 500; opacity: .92; }
+html[data-theme="material-you"] .caption-version { color: var(--md-on-surface-variant); }
+html[data-theme="material-you"] .caption-hash { color: var(--md-outline); }
+
+/* Navigation rail: 56dp destinations with active indicator pill. */
+html[data-theme="material-you"] .app-shell { grid-template-columns: 76px minmax(0, 1fr); gap: 12px; }
+html[data-theme="material-you"] .sidebar { width: 64px; margin-right: 0; align-items: center; }
+html[data-theme="material-you"] .sidebar-scroll { width: 64px; }
+html[data-theme="material-you"] .sidebar-items { width: 64px; align-items: center; gap: 6px; }
+html[data-theme="material-you"] .sidebar .navBtn,
+html[data-theme="material-you"] .downloadListBtn {
+  position: relative; width: 56px; height: 56px; min-height: 56px; margin: 0; padding: 0; border: 0; border-radius: var(--md-shape-xl) !important;
+  color: var(--md-on-surface-variant); background: transparent; box-shadow: none; font-size: 13px; transition: background-color 180ms var(--md-motion-standard), color 180ms var(--md-motion-standard), transform 180ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] .sidebar .navBtn::before { content: ""; position: absolute; inset: 5px 8px 27px; border-radius: var(--md-shape-full); background: transparent; transition: background-color 180ms var(--md-motion-standard); }
+html[data-theme="material-you"] .sidebar .navBtn .icon { position: relative; z-index: 1; width: 22px; height: 22px; margin-top: 3px; }
+html[data-theme="material-you"] .sidebar .title { position: relative; z-index: 1; width: auto; margin-top: 4px; color: inherit; font-size: 11px; font-weight: 500; opacity: 1; }
+html[data-theme="material-you"] .sidebar .navBtn.selected { color: var(--md-on-secondary-container); background: transparent; box-shadow: none; }
+html[data-theme="material-you"] .sidebar .navBtn.selected::before { background: var(--md-secondary-container); }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { color: var(--md-on-surface); background: var(--md-state-hover); transform: translateY(-1px); }
+html[data-theme="material-you"] .sidebar .navBtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
+html[data-theme="material-you"] .downloadListBtn { margin-top: 12px; color: var(--md-on-surface-variant); background: var(--md-surface-container); box-shadow: var(--md-elevation-1); }
+html[data-theme="material-you"] .downloadListBtn:hover { color: var(--md-on-surface); background: var(--md-surface-container-high); }
+
+/* Typography scale */
+html[data-theme="material-you"] h1 { font-size: 28px; line-height: 1.2; font-weight: 500; letter-spacing: -0.01em; }
+html[data-theme="material-you"] h2 { font-size: 22px; line-height: 1.25; font-weight: 500; }
+html[data-theme="material-you"] h3 { font-size: 16px; line-height: 1.3; font-weight: 600; }
+html[data-theme="material-you"] p, html[data-theme="material-you"] small { color: var(--md-on-surface-variant); }
+
+/* Filled / outlined / tonal button families with state layers and ripple. */
+html[data-theme="material-you"] button {
+  position: relative; isolation: isolate; overflow: hidden; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard), transform 150ms var(--md-motion-standard);
+}
+html[data-theme="material-you"] button::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: currentColor; opacity: 0; transform: scale(.75); transition: opacity 160ms ease, transform 260ms var(--md-motion-emphasized); pointer-events: none; }
+html[data-theme="material-you"] button:hover { background: color-mix(in srgb, var(--md-secondary-container) 88%, white); box-shadow: var(--md-elevation-1); }
+html[data-theme="material-you"] button:hover::after { opacity: .08; transform: scale(1); }
+html[data-theme="material-you"] button:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
+html[data-theme="material-you"] button:active { background: color-mix(in srgb, var(--md-secondary-container) 80%, black); transform: scale(.98); box-shadow: none; }
+html[data-theme="material-you"] button:active::after { opacity: .12; transform: scale(1.08); transition-duration: 80ms; }
+html[data-theme="material-you"] button.primary, html[data-theme="material-you"] button[class*="primary"] { color: var(--md-on-primary) !important; background: var(--md-primary) !important; box-shadow: var(--md-elevation-1); }
+html[data-theme="material-you"] button.primary:hover, html[data-theme="material-you"] button[class*="primary"]:hover { background: color-mix(in srgb, var(--md-primary) 92%, white) !important; box-shadow: var(--md-elevation-2); }
+html[data-theme="material-you"] button.large { min-height: 56px; padding-inline: 28px; font-size: 16px; }
+html[data-theme="material-you"] .home-community button, html[data-theme="material-you"] .manage-search button, html[data-theme="material-you"] .search-submit, html[data-theme="material-you"] .toolbar-icon-button { min-height: 40px; box-shadow: none; }
+
+/* Tonal surfaces and cards across routes */
+html[data-theme="material-you"] .settings-card,
+html[data-theme="material-you"] .home-active-mods,
+html[data-theme="material-you"] .home-profiles-section .profile,
+html[data-theme="material-you"] .manage-filter-popup,
+html[data-theme="material-you"] .manage-action-menu,
+html[data-theme="material-you"] .filter-popup,
+html[data-theme="material-you"] .popup-content,
+html[data-theme="material-you"] .downloadList,
+html[data-theme="material-you"] .multiplayer-settings-card,
+html[data-theme="material-you"] .multiplayer-account-card {
+  border: 1px solid var(--md-outline-variant) !important; border-radius: var(--md-shape-lg) !important; background: var(--md-surface-container) !important; box-shadow: var(--md-elevation-1); color: var(--md-on-surface);
+}
+html[data-theme="material-you"] .settings-card:hover,
+html[data-theme="material-you"] .home-profiles-section .profile:hover { background: var(--md-surface-container-high) !important; box-shadow: var(--md-elevation-2); }
+html[data-theme="material-you"] .settings-section-title { color: var(--md-on-surface-variant) !important; letter-spacing: .04em; }
+html[data-theme="material-you"] .theme-setting,
+html[data-theme="material-you"] .setting-toggle-row,
+html[data-theme="material-you"] .setting-select-row,
+html[data-theme="material-you"] .font-scale-row { border-color: var(--md-outline-variant) !important; }
+html[data-theme="material-you"] .home-page, html[data-theme="material-you"] .settings-page { padding-top: 20px; }
+html[data-theme="material-you"] .home-section-heading h2, html[data-theme="material-you"] .settings-header h1 { color: var(--md-on-surface); }
+
+/* Text fields and selects use M3 outlined field treatment. */
+html[data-theme="material-you"] input:not([type="checkbox"]),
+html[data-theme="material-you"] textarea,
+html[data-theme="material-you"] select {
+  min-height: 40px; border: 1px solid var(--md-outline) !important; border-radius: var(--md-shape-xs) !important; color: var(--md-on-surface) !important; background: var(--md-surface-container-lowest) !important; box-shadow: none !important; transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+html[data-theme="material-you"] input:not([type="checkbox"]):hover, html[data-theme="material-you"] textarea:hover, html[data-theme="material-you"] select:hover { border-color: var(--md-on-surface) !important; background: var(--md-surface-container) !important; }
+html[data-theme="material-you"] input:not([type="checkbox"]):focus, html[data-theme="material-you"] textarea:focus, html[data-theme="material-you"] select:focus { border-color: var(--md-primary) !important; box-shadow: 0 0 0 1px var(--md-primary) !important; outline: none; }
+html[data-theme="material-you"] input[type="checkbox"] { width: 20px; height: 20px; border: 2px solid var(--md-outline) !important; border-radius: var(--md-shape-xs) !important; background: transparent !important; opacity: 1; }
+html[data-theme="material-you"] input[type="checkbox"]:checked { border-color: var(--md-primary) !important; background-color: var(--md-primary) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23381e72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important; }
+
+/* Theme picker follows M3 card + selection indicator */
+html[data-theme="material-you"] .theme-picker { gap: 16px; }
+html[data-theme="material-you"] .theme-option { border: 1px solid var(--md-outline-variant) !important; border-radius: var(--md-shape-xl) !important; background: var(--md-surface-container) !important; box-shadow: none; }
+html[data-theme="material-you"] .theme-option:hover { transform: translateY(-2px); background: var(--md-surface-container-high) !important; box-shadow: var(--md-elevation-2); }
+html[data-theme="material-you"] .theme-option.selected { border: 3px solid var(--md-primary) !important; box-shadow: 0 0 0 1px var(--md-primary); }
+html[data-theme="material-you"] .theme-option-copy strong { color: var(--md-on-surface); font-size: 15px; font-weight: 600; }
+html[data-theme="material-you"] .theme-option-copy small { color: var(--md-on-surface-variant); font-size: 11px; }
+html[data-theme="material-you"] .theme-option-check { top: 12px; right: 12px; width: 28px; height: 28px; border-radius: var(--md-shape-full); background: var(--md-primary); color: var(--md-on-primary); font-size: 16px; }
+
+/* Menus/dialogs and FAB-like floating actions */
+html[data-theme="material-you"] .popup-container { backdrop-filter: blur(4px); }
+html[data-theme="material-you"] .popup-content { padding: 24px; border-radius: var(--md-shape-xl) !important; box-shadow: var(--md-elevation-3); }
+html[data-theme="material-you"] .popup-content .title { font-size: 24px; font-weight: 500; }
+html[data-theme="material-you"] .popup-content .buttons { gap: 8px; }
+html[data-theme="material-you"] .popup-content .buttons button { min-height: 40px; }
+html[data-theme="material-you"] .page { scrollbar-color: var(--md-outline) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
