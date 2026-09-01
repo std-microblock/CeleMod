@@ -11,8 +11,6 @@ html[data-theme="fluent"] [role="menu"] {
   background: var(--fluent-acrylic-strong) !important;
   box-shadow: var(--fluent-shadow-flyout) !important;
   backdrop-filter: blur(30px) saturate(140%);
-  transform-origin: var(--fluent-overlay-origin, top right);
-  animation: fluent-flyout-in var(--fluent-duration-normal) var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .filter-popup {
@@ -67,7 +65,6 @@ html[data-theme="fluent"] [role="dialog"] {
   border-radius: 8px !important;
   background: var(--fluent-acrylic-strong) !important;
   box-shadow: var(--fluent-shadow-dialog) !important;
-  animation: fluent-dialog-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .popup-content .title,
@@ -138,7 +135,6 @@ html[data-theme="fluent"] [role="status"] {
   background: var(--fluent-acrylic-strong);
   box-shadow: var(--fluent-shadow-flyout);
   backdrop-filter: blur(24px) saturate(135%);
-  animation: fluent-snackbar-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .toast.success,
@@ -201,28 +197,3 @@ html[data-theme="fluent"] .manage-detail-popup footer {
   border-top-color: var(--fluent-stroke-divider) !important;
 }
 
-@keyframes fluent-flyout-in {
-  from { opacity: 0; transform: translateY(-6px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes fluent-dialog-in {
-  from { opacity: 0; transform: translateY(16px) scale(.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes fluent-snackbar-in {
-  from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-theme="fluent"] *,
-  html[data-theme="fluent"] *::before,
-  html[data-theme="fluent"] *::after {
-    scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-  }
-}

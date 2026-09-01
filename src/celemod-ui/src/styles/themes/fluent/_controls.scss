@@ -8,7 +8,7 @@ html[data-theme="fluent"] textarea {
   color: var(--fluent-text-primary) !important;
   background: var(--fluent-fill-control) !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
-  transition: border-color var(--fluent-duration-fast) var(--fluent-ease-standard), background-color var(--fluent-duration-fast) var(--fluent-ease-standard), box-shadow var(--fluent-duration-fast) var(--fluent-ease-standard), transform var(--fluent-duration-fast) var(--fluent-ease-standard);
+  transition: border-color var(--fluent-duration-fast) var(--fluent-ease-standard), background-color var(--fluent-duration-fast) var(--fluent-ease-standard), box-shadow var(--fluent-duration-fast) var(--fluent-ease-standard);
 }
 
 html[data-theme="fluent"] button {
@@ -35,7 +35,6 @@ html[data-theme="fluent"] button:hover {
 }
 
 html[data-theme="fluent"] button:active {
-  transform: scale(.985);
   background: var(--fluent-fill-control-pressed) !important;
 }
 
@@ -43,7 +42,6 @@ html[data-theme="fluent"] button:disabled {
   color: var(--fluent-text-disabled) !important;
   border-color: var(--fluent-stroke-subtle) !important;
   background: var(--fluent-fill-disabled) !important;
-  transform: none;
 }
 
 html[data-theme="fluent"] button.primary,
@@ -112,7 +110,7 @@ html[data-theme="fluent"] input[type="checkbox"] {
   border-radius: 3px;
   background: var(--fluent-fill-control);
   opacity: 1;
-  transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast), transform var(--fluent-duration-fast);
+  transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast);
 }
 
 html[data-theme="fluent"] input[type="checkbox"]:hover {
@@ -127,7 +125,6 @@ html[data-theme="fluent"] input[type="checkbox"]:checked {
 }
 
 html[data-theme="fluent"] input[type="checkbox"]:active {
-  transform: scale(.92);
 }
 
 html[data-theme="fluent"] input[type="checkbox"]:disabled {

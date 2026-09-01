@@ -83,7 +83,7 @@ html[data-theme="fluent"] .downloadListBtn {
   background: transparent;
   box-shadow: none;
   overflow: hidden;
-  transition: background-color var(--fluent-duration-fast) var(--fluent-ease-standard), color var(--fluent-duration-fast) var(--fluent-ease-standard), transform var(--fluent-duration-fast) var(--fluent-ease-standard);
+  transition: background-color var(--fluent-duration-fast) var(--fluent-ease-standard), color var(--fluent-duration-fast) var(--fluent-ease-standard);
 }
 
 html[data-theme="fluent"] .sidebar .navBtn::before,
@@ -105,7 +105,6 @@ html[data-theme="fluent"] .downloadListBtn:hover {
 
 html[data-theme="fluent"] .sidebar .navBtn:active,
 html[data-theme="fluent"] .downloadListBtn:active {
-  transform: scale(.97);
   background: var(--fluent-fill-control-pressed);
 }
 
@@ -126,7 +125,6 @@ html[data-theme="fluent"] .sidebar .navBtn.selected::after {
   border-radius: 0 2px 2px 0;
   background: var(--fluent-accent);
   box-shadow: 0 0 10px rgba(96,205,255,.42);
-  animation: fluent-nav-indicator-in var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .sidebar .navBtn .icon {
@@ -162,30 +160,13 @@ html[data-theme="fluent"] .page {
 }
 
 html[data-theme="fluent"] .page-entering {
-  animation: fluent-page-enter var(--fluent-duration-slow) var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .page-leaving {
-  animation: fluent-page-leave var(--fluent-duration-fast) var(--fluent-ease-accelerate) both;
 }
 
 html[data-theme="fluent"][data-fluent-keyboard="true"] :focus-visible {
   outline: 2px solid var(--fluent-focus) !important;
   outline-offset: 2px;
   box-shadow: 0 0 0 1px var(--fluent-bg), 0 0 0 4px rgba(96,205,255,.24) !important;
-}
-
-@keyframes fluent-nav-indicator-in {
-  from { opacity: 0; transform: scaleY(.35); }
-  to { opacity: 1; transform: scaleY(1); }
-}
-
-@keyframes fluent-page-enter {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fluent-page-leave {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-3px); }
 }
