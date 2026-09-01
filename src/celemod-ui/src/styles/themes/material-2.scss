@@ -925,3 +925,15 @@ html[data-theme="material-2"] .field.invalid .helper { color: var(--md2-error); 
 html[data-theme="material-2"] input::placeholder,
 html[data-theme="material-2"] textarea::placeholder { color: var(--md2-on-surface-disabled); opacity: 1; }
 html[data-theme="material-2"] input:disabled::placeholder { color: var(--md2-on-surface-disabled); }
+html[data-theme="material-2"] .md2-snackbar-action:focus-visible { outline: 2px solid var(--md2-secondary); outline-offset: -2px; }
+html[data-theme="material-2"] .md2-snackbar-action:active { background: rgba(3,218,198,.20); }
+html[data-theme="material-2"] .settings-card > .theme-setting { background: var(--md2-surface); }
+html[data-theme="material-2"] .settings-card > .theme-setting + * { border-top: 1px solid var(--md2-divider); }
+html[data-theme="material-2"] .settings-card select { background-color: var(--md2-surface-1) !important; }
+html[data-theme="material-2"] .settings-card input[type="number"] { background-color: var(--md2-surface-1) !important; }
+html[data-theme="material-2"] .settings-card .segmented-setting { background: var(--md2-background); }
+html[data-theme="material-2"] .settings-card .segmented-setting button.selected { box-shadow: inset 0 0 0 1px var(--md2-primary); }
+html[data-theme="material-2"] .manage-toolbar .toolbar-count { color: var(--md2-on-surface-medium); font-size: 12px; font-variant-numeric: tabular-nums; }
+html[data-theme="material-2"] .manage-toolbar .toolbar-count strong { color: var(--md2-on-surface); font-weight: 500; }
+html[data-theme="material-2"] .search-page .view-toggle button { width: 40px; min-width: 40px; min-height: 40px; padding: 0; border-radius: 50%; }
+html[data-theme="material-2"] .search-page .view-toggle button.active { color: var(--md2-primary); background: rgba(187,134,252,.16); }
