@@ -7,7 +7,7 @@ html[data-theme="win10"] .everest {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest:hover,
 html[data-theme="win10"] .everest:hover {
@@ -23,7 +23,7 @@ html[data-theme="win10"] .everest-header {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-header:hover,
 html[data-theme="win10"] .everest-header:hover {
@@ -39,7 +39,7 @@ html[data-theme="win10"] .everest-list {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-list:hover,
 html[data-theme="win10"] .everest-list:hover {
@@ -55,7 +55,7 @@ html[data-theme="win10"] .everest-card {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-card:hover,
 html[data-theme="win10"] .everest-card:hover {
@@ -71,7 +71,7 @@ html[data-theme="win10"] .everest-version {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-version:hover,
 html[data-theme="win10"] .everest-version:hover {
@@ -87,7 +87,7 @@ html[data-theme="win10"] .everest-actions {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-actions:hover,
 html[data-theme="win10"] .everest-actions:hover {
@@ -103,7 +103,7 @@ html[data-theme="win10"] .everest-empty {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .everest-empty:hover,
 html[data-theme="win10"] .everest-empty:hover {
@@ -120,7 +120,7 @@ html[data-theme="win10"] .keybindings-page {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-page:hover,
 html[data-theme="win10"] .keybindings-page:hover {
@@ -136,7 +136,7 @@ html[data-theme="win10"] .keybindings-sources {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-sources:hover,
 html[data-theme="win10"] .keybindings-sources:hover {
@@ -152,7 +152,7 @@ html[data-theme="win10"] .keybindings-main {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-main:hover,
 html[data-theme="win10"] .keybindings-main:hover {
@@ -168,7 +168,7 @@ html[data-theme="win10"] .keybindings-toolbar {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-toolbar:hover,
 html[data-theme="win10"] .keybindings-toolbar:hover {
@@ -184,7 +184,7 @@ html[data-theme="win10"] .keybindings-actions {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-actions:hover,
 html[data-theme="win10"] .keybindings-actions:hover {
@@ -200,7 +200,7 @@ html[data-theme="win10"] .keybindings-title {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-title:hover,
 html[data-theme="win10"] .keybindings-title:hover {
@@ -216,7 +216,7 @@ html[data-theme="win10"] .keybindings-search {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-search:hover,
 html[data-theme="win10"] .keybindings-search:hover {
@@ -232,7 +232,7 @@ html[data-theme="win10"] .binding-row {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-row:hover,
 html[data-theme="win10"] .binding-row:hover {
@@ -248,7 +248,7 @@ html[data-theme="win10"] .binding-info {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-info:hover,
 html[data-theme="win10"] .binding-info:hover {
@@ -264,7 +264,7 @@ html[data-theme="win10"] .binding-devices {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-devices:hover,
 html[data-theme="win10"] .binding-devices:hover {
@@ -280,7 +280,7 @@ html[data-theme="win10"] .binding-device {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-device:hover,
 html[data-theme="win10"] .binding-device:hover {
@@ -296,7 +296,7 @@ html[data-theme="win10"] .binding-values {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-values:hover,
 html[data-theme="win10"] .binding-values:hover {
@@ -312,7 +312,7 @@ html[data-theme="win10"] .binding-chip {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-chip:hover,
 html[data-theme="win10"] .binding-chip:hover {
@@ -328,7 +328,7 @@ html[data-theme="win10"] .binding-add {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-add:hover,
 html[data-theme="win10"] .binding-add:hover {
@@ -344,7 +344,7 @@ html[data-theme="win10"] .conflict-detail {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .conflict-detail:hover,
 html[data-theme="win10"] .conflict-detail:hover {
@@ -360,7 +360,7 @@ html[data-theme="win10"] .conflict-action-row {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .conflict-action-row:hover,
 html[data-theme="win10"] .conflict-action-row:hover {
@@ -376,7 +376,7 @@ html[data-theme="win10"] .keybindings-empty {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .keybindings-empty:hover,
 html[data-theme="win10"] .keybindings-empty:hover {
@@ -393,7 +393,7 @@ html[data-theme="win10"] .downloadListBackdrop {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .downloadListBackdrop:hover,
 html[data-theme="win10"] .downloadListBackdrop:hover {
@@ -409,7 +409,7 @@ html[data-theme="win10"] .downloadList {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .downloadList:hover,
 html[data-theme="win10"] .downloadList:hover {
@@ -425,7 +425,7 @@ html[data-theme="win10"] .download-list-header {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-list-header:hover,
 html[data-theme="win10"] .download-list-header:hover {
@@ -441,7 +441,7 @@ html[data-theme="win10"] .download-list-heading {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-list-heading:hover,
 html[data-theme="win10"] .download-list-heading:hover {
@@ -457,7 +457,7 @@ html[data-theme="win10"] .download-list-close {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-list-close:hover,
 html[data-theme="win10"] .download-list-close:hover {
@@ -473,7 +473,7 @@ html[data-theme="win10"] .taskList {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .taskList:hover,
 html[data-theme="win10"] .taskList:hover {
@@ -489,7 +489,7 @@ html[data-theme="win10"] .download-task {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task:hover,
 html[data-theme="win10"] .download-task:hover {
@@ -505,7 +505,7 @@ html[data-theme="win10"] .download-task-topline {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-topline:hover,
 html[data-theme="win10"] .download-task-topline:hover {
@@ -521,7 +521,7 @@ html[data-theme="win10"] .download-task-toggle {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-toggle:hover,
 html[data-theme="win10"] .download-task-toggle:hover {
@@ -537,7 +537,7 @@ html[data-theme="win10"] .download-task-title {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-title:hover,
 html[data-theme="win10"] .download-task-title:hover {
@@ -553,7 +553,7 @@ html[data-theme="win10"] .download-task-status-text {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-status-text:hover,
 html[data-theme="win10"] .download-task-status-text:hover {
@@ -569,7 +569,7 @@ html[data-theme="win10"] .download-task-actions {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-actions:hover,
 html[data-theme="win10"] .download-task-actions:hover {
@@ -585,7 +585,7 @@ html[data-theme="win10"] .download-task-progress {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-progress:hover,
 html[data-theme="win10"] .download-task-progress:hover {
@@ -601,7 +601,7 @@ html[data-theme="win10"] .download-task-summary {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-task-summary:hover,
 html[data-theme="win10"] .download-task-summary:hover {
@@ -617,7 +617,7 @@ html[data-theme="win10"] .download-dependency-list {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-dependency-list:hover,
 html[data-theme="win10"] .download-dependency-list:hover {
@@ -633,7 +633,7 @@ html[data-theme="win10"] .download-dependency-heading {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-dependency-heading:hover,
 html[data-theme="win10"] .download-dependency-heading:hover {
@@ -649,7 +649,7 @@ html[data-theme="win10"] .download-detail-row {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-detail-row:hover,
 html[data-theme="win10"] .download-detail-row:hover {
@@ -665,7 +665,7 @@ html[data-theme="win10"] .download-dependency-main {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-dependency-main:hover,
 html[data-theme="win10"] .download-dependency-main:hover {
@@ -681,7 +681,7 @@ html[data-theme="win10"] .download-dependency-actions {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-dependency-actions:hover,
 html[data-theme="win10"] .download-dependency-actions:hover {
@@ -697,7 +697,7 @@ html[data-theme="win10"] .download-list-empty {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .download-list-empty:hover,
 html[data-theme="win10"] .download-list-empty:hover {
@@ -714,7 +714,7 @@ html[data-theme="win10"] .search-page {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-page:hover,
 html[data-theme="win10"] .search-page:hover {
@@ -730,7 +730,7 @@ html[data-theme="win10"] .search-empty-state {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-empty-state:hover,
 html[data-theme="win10"] .search-empty-state:hover {
@@ -746,7 +746,7 @@ html[data-theme="win10"] .search-skeleton {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-skeleton:hover,
 html[data-theme="win10"] .search-skeleton:hover {
@@ -762,7 +762,7 @@ html[data-theme="win10"] .search-skeleton-grid {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-skeleton-grid:hover,
 html[data-theme="win10"] .search-skeleton-grid:hover {
@@ -778,7 +778,7 @@ html[data-theme="win10"] .search-skeleton-card {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-skeleton-card:hover,
 html[data-theme="win10"] .search-skeleton-card:hover {
@@ -794,7 +794,7 @@ html[data-theme="win10"] .skeleton-preview {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-preview:hover,
 html[data-theme="win10"] .skeleton-preview:hover {
@@ -810,7 +810,7 @@ html[data-theme="win10"] .skeleton-content {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-content:hover,
 html[data-theme="win10"] .skeleton-content:hover {
@@ -826,7 +826,7 @@ html[data-theme="win10"] .skeleton-block {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-block:hover,
 html[data-theme="win10"] .skeleton-block:hover {
@@ -842,7 +842,7 @@ html[data-theme="win10"] .skeleton-badge {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-badge:hover,
 html[data-theme="win10"] .skeleton-badge:hover {
@@ -858,7 +858,7 @@ html[data-theme="win10"] .skeleton-title {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-title:hover,
 html[data-theme="win10"] .skeleton-title:hover {
@@ -874,7 +874,7 @@ html[data-theme="win10"] .skeleton-author {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-author:hover,
 html[data-theme="win10"] .skeleton-author:hover {
@@ -890,7 +890,7 @@ html[data-theme="win10"] .skeleton-meta {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .skeleton-meta:hover,
 html[data-theme="win10"] .skeleton-meta:hover {
@@ -906,7 +906,7 @@ html[data-theme="win10"] .search-page .filter {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-page .filter:hover,
 html[data-theme="win10"] .search-page .filter:hover {
@@ -922,7 +922,7 @@ html[data-theme="win10"] .search-page .searchinput {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .search-page .searchinput:hover,
 html[data-theme="win10"] .search-page .searchinput:hover {
@@ -939,7 +939,7 @@ html[data-theme="win10"] .home-language select {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .home-language select:hover,
 html[data-theme="win10"] .home-language select:hover {
@@ -955,7 +955,7 @@ html[data-theme="win10"] .manage-search input {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-search input:hover,
 html[data-theme="win10"] .manage-search input:hover {
@@ -971,7 +971,7 @@ html[data-theme="win10"] .manage-filter-popup select {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-filter-popup select:hover,
 html[data-theme="win10"] .manage-filter-popup select:hover {
@@ -987,7 +987,7 @@ html[data-theme="win10"] .profile-create input {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .profile-create input:hover,
 html[data-theme="win10"] .profile-create input:hover {
@@ -1003,7 +1003,7 @@ html[data-theme="win10"] .profile-editor-field input {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .profile-editor-field input:hover,
 html[data-theme="win10"] .profile-editor-field input:hover {
@@ -1019,7 +1019,7 @@ html[data-theme="win10"] .profile-editor-field textarea {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .profile-editor-field textarea:hover,
 html[data-theme="win10"] .profile-editor-field textarea:hover {
@@ -1035,7 +1035,7 @@ html[data-theme="win10"] .popup-content input {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content input:hover,
 html[data-theme="win10"] .popup-content input:hover {
@@ -1051,7 +1051,7 @@ html[data-theme="win10"] .popup-content textarea {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content textarea:hover,
 html[data-theme="win10"] .popup-content textarea:hover {
@@ -1067,7 +1067,7 @@ html[data-theme="win10"] .popup-content select {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content select:hover,
 html[data-theme="win10"] .popup-content select:hover {
@@ -1083,7 +1083,7 @@ html[data-theme="win10"] .settings-card select {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .settings-card select:hover,
 html[data-theme="win10"] .settings-card select:hover {
@@ -1099,7 +1099,7 @@ html[data-theme="win10"] .settings-card input[type="number"] {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .settings-card input[type="number"]:hover,
 html[data-theme="win10"] .settings-card input[type="number"]:hover {
@@ -1116,7 +1116,7 @@ html[data-theme="win10"] .popup-container {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-container:hover,
 html[data-theme="win10"] .popup-container:hover {
@@ -1132,7 +1132,7 @@ html[data-theme="win10"] .popup-content {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content:hover,
 html[data-theme="win10"] .popup-content:hover {
@@ -1148,7 +1148,7 @@ html[data-theme="win10"] .popup-content .title {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content .title:hover,
 html[data-theme="win10"] .popup-content .title:hover {
@@ -1164,7 +1164,7 @@ html[data-theme="win10"] .popup-content .content {
   background-color: var(--metro-surface);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content .content:hover,
 html[data-theme="win10"] .popup-content .content:hover {
@@ -1180,7 +1180,7 @@ html[data-theme="win10"] .popup-content .buttons {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .popup-content .buttons:hover,
 html[data-theme="win10"] .popup-content .buttons:hover {
@@ -1196,7 +1196,7 @@ html[data-theme="win10"] .manage-detail-popup {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-detail-popup:hover,
 html[data-theme="win10"] .manage-detail-popup:hover {
@@ -1212,7 +1212,7 @@ html[data-theme="win10"] .manage-detail-popup .detail-close {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-detail-popup .detail-close:hover,
 html[data-theme="win10"] .manage-detail-popup .detail-close:hover {
@@ -1228,7 +1228,7 @@ html[data-theme="win10"] .manage-detail-popup .detail-heading {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-detail-popup .detail-heading:hover,
 html[data-theme="win10"] .manage-detail-popup .detail-heading:hover {
@@ -1244,7 +1244,7 @@ html[data-theme="win10"] .manage-detail-popup .detail-stats {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-detail-popup .detail-stats:hover,
 html[data-theme="win10"] .manage-detail-popup .detail-stats:hover {
@@ -1260,7 +1260,7 @@ html[data-theme="win10"] .manage-detail-popup .detail-images {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-detail-popup .detail-images:hover,
 html[data-theme="win10"] .manage-detail-popup .detail-images:hover {
@@ -1276,7 +1276,7 @@ html[data-theme="win10"] .filter-popup {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .filter-popup:hover,
 html[data-theme="win10"] .filter-popup:hover {
@@ -1292,7 +1292,7 @@ html[data-theme="win10"] .manage-filter-popup {
   background-color: var(--metro-surface-2);
   box-shadow: var(--metro-shadow);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-filter-popup:hover,
 html[data-theme="win10"] .manage-filter-popup:hover {
@@ -1308,7 +1308,7 @@ html[data-theme="win10"] .manage-action-menu {
   background-color: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .manage-action-menu:hover,
 html[data-theme="win10"] .manage-action-menu:hover {
@@ -1324,7 +1324,7 @@ html[data-theme="win10"] .profile-import-menu {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .profile-import-menu:hover,
 html[data-theme="win10"] .profile-import-menu:hover {
@@ -1340,7 +1340,7 @@ html[data-theme="win10"] .binding-capture-popup {
   background-color: var(--metro-surface-2);
   box-shadow: 2px 2px 0 rgba(0,0,0,.3);
   font-family: var(--font);
-  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease, transform 100ms ease;
+  transition: background-color 100ms ease, border-color 100ms ease, color 100ms ease;
 }
 html[data-theme="metro"] .binding-capture-popup:hover,
 html[data-theme="win10"] .binding-capture-popup:hover {

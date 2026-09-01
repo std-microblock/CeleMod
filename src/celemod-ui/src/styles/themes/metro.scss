@@ -106,8 +106,8 @@ html[data-theme="win10"] .downloadListBtn {
   color: var(--metro-muted);
   background: var(--metro-surface);
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.24);
-  transform-origin: left center;
-  transition: transform 120ms cubic-bezier(.2, .8, .2, 1), background 120ms ease, box-shadow 120ms ease;
+  
+  transition: background 120ms ease, box-shadow 120ms ease, outline-color 120ms ease;
 }
 html[data-theme="metro"] .sidebar .navBtn::after,
 html[data-theme="win10"] .sidebar .navBtn::after {
@@ -124,7 +124,7 @@ html[data-theme="win10"] .sidebar .navBtn:hover {
   color: var(--metro-ink);
   background: var(--metro-surface-2);
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.34), 0 0 12px rgba(0, 120, 212, 0.26);
-  transform: perspective(420px) rotateY(-5deg) translateX(3px);
+  
 }
 html[data-theme="metro"] .sidebar .navBtn:hover::after,
 html[data-theme="win10"] .sidebar .navBtn:hover::after { opacity: 1; }
@@ -134,14 +134,14 @@ html[data-theme="metro"] .downloadListBtn:active,
 html[data-theme="win10"] .downloadListBtn:active {
   background: var(--metro-accent);
   box-shadow: 1px 1px 0 rgba(0,0,0,.4);
-  transform: translate(3px, 3px);
+  
 }
 html[data-theme="metro"] .sidebar .navBtn.selected,
 html[data-theme="win10"] .sidebar .navBtn.selected {
   color: #fff;
   background: var(--metro-accent) !important;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, .42), 0 0 20px rgba(0, 120, 212, .52);
-  transform: translateZ(0);
+  
 }
 html[data-theme="metro"] .sidebar .navBtn.selected::before,
 html[data-theme="win10"] .sidebar .navBtn.selected::before {
@@ -229,7 +229,7 @@ html[data-theme="win10"] textarea {
   color: var(--metro-ink) !important;
   background: var(--metro-surface-2) !important;
   box-shadow: 2px 2px 0 rgba(0,0,0,.36);
-  transition: background 100ms ease, border-color 100ms ease, transform 100ms ease, box-shadow 100ms ease;
+  transition: background 100ms ease, border-color 100ms ease, box-shadow 100ms ease;
 }
 html[data-theme="metro"] button:hover,
 html[data-theme="win10"] button:hover,
@@ -238,7 +238,7 @@ html[data-theme="win10"] select:hover,
 html[data-theme="metro"] input:not([type="checkbox"]):hover,
 html[data-theme="win10"] input:not([type="checkbox"]):hover { border-color: var(--metro-accent-bright) !important; background: var(--metro-surface-3) !important; }
 html[data-theme="metro"] button:active,
-html[data-theme="win10"] button:active { transform: translate(2px, 2px); box-shadow: none; }
+html[data-theme="win10"] button:active {  box-shadow: none; }
 html[data-theme="metro"] button.primary,
 html[data-theme="win10"] button.primary,
 html[data-theme="metro"] button[class*="primary"],
@@ -285,7 +285,7 @@ html[data-theme="win10"] .manage-side { border-left: 1px solid var(--metro-borde
 html[data-theme="metro"] .profile-row.selected,
 html[data-theme="win10"] .profile-row.selected { border-color: var(--metro-accent); border-radius: 0; background: var(--metro-surface-2); }
 html[data-theme="metro"] .search-result-card:hover,
-html[data-theme="win10"] .search-result-card:hover { border-color: var(--metro-accent-bright) !important; box-shadow: 5px 5px 0 #005a9e !important; transform: translate(-2px, -2px); }
+html[data-theme="win10"] .search-result-card:hover { border-color: var(--metro-accent-bright) !important; box-shadow: 5px 5px 0 #005a9e !important;  }
 /* Pointer coordinates/tilt are supplied by metro.ts.  The pseudo-element is
    an ink-like accent flash, the Metro equivalent of a touch acknowledgement. */
 html[data-theme="metro"] .home-profiles-section .profile,
@@ -296,7 +296,7 @@ html[data-theme="metro"] .recommended-map-card,
 html[data-theme="win10"] .recommended-map-card {
   position: relative;
   overflow: hidden;
-  transform-style: preserve-3d;
+  
 }
 html[data-theme="metro"] .home-profiles-section .profile::after,
 html[data-theme="win10"] .home-profiles-section .profile::after,
@@ -318,7 +318,7 @@ html[data-theme="metro"] .search-result-card:hover,
 html[data-theme="win10"] .search-result-card:hover,
 html[data-theme="metro"] .recommended-map-card:hover,
 html[data-theme="win10"] .recommended-map-card:hover {
-  transform: perspective(700px) rotateX(var(--metro-tilt-x, 0deg)) rotateY(var(--metro-tilt-y, 0deg)) translate(-2px, -2px);
+  
 }
 html[data-theme="metro"] .home-profiles-section .profile:hover::after,
 html[data-theme="win10"] .home-profiles-section .profile:hover::after,
@@ -338,13 +338,13 @@ html[data-theme="win10"] .metro-ink-pulse::before {
   border-radius: 50%;
   background: rgba(255,255,255,.8);
   box-shadow: 0 0 0 0 rgba(0,164,239,.65);
-  transform: translate(-50%, -50%);
+  
   animation: metro-ink-pulse 260ms ease-out both;
   pointer-events: none;
 }
 html[data-theme="metro"] .metro-key-press,
 html[data-theme="win10"] .metro-key-press {
-  transform: translate(3px, 3px) !important;
+  
   box-shadow: 0 0 0 rgba(0,0,0,0) !important;
   background: var(--metro-accent) !important;
 }
@@ -363,6 +363,98 @@ html[data-theme="metro"] .manage-filter-popup,
 html[data-theme="win10"] .manage-filter-popup,
 html[data-theme="metro"] .manage-action-menu,
 html[data-theme="win10"] .manage-action-menu { border: 2px solid var(--metro-accent) !important; border-radius: 0 !important; background: var(--metro-surface) !important; box-shadow: 8px 8px 0 rgba(0,0,0,.5), 0 0 20px rgba(0,120,212,.28) !important; backdrop-filter: none; }
+
+/* Start-menu composition: a flat canvas with a few purposeful live tiles,
+   rather than a stack of rounded cards. */
+html[data-theme="metro"] .settings-card,
+html[data-theme="win10"] .settings-card {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+html[data-theme="metro"] .theme-picker,
+html[data-theme="win10"] .theme-picker {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+html[data-theme="metro"] .theme-option,
+html[data-theme="win10"] .theme-option {
+  min-height: 184px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--metro-surface-2) !important;
+  box-shadow: none !important;
+  transition: background 100ms ease, outline-color 100ms ease;
+}
+html[data-theme="metro"] .theme-option:hover,
+html[data-theme="win10"] .theme-option:hover {
+  background: var(--metro-surface-3) !important;
+  outline: 2px solid var(--metro-accent-bright);
+  outline-offset: -2px;
+}
+html[data-theme="metro"] .theme-option.selected,
+html[data-theme="win10"] .theme-option.selected {
+  outline: 4px solid var(--metro-accent);
+  outline-offset: -4px;
+  box-shadow: inset 0 -5px 0 var(--metro-accent) !important;
+}
+html[data-theme="metro"] .theme-option img,
+html[data-theme="win10"] .theme-option img { aspect-ratio: 16 / 8; filter: saturate(.9) contrast(1.06); }
+html[data-theme="metro"] .theme-option-copy,
+html[data-theme="win10"] .theme-option-copy { gap: 5px; padding: 10px 12px 12px; }
+html[data-theme="metro"] .theme-option-copy strong,
+html[data-theme="win10"] .theme-option-copy strong { font-size: 15px; font-weight: 400; }
+html[data-theme="metro"] .theme-option-copy small,
+html[data-theme="win10"] .theme-option-copy small { color: var(--metro-muted); font-size: 10px; line-height: 1.35; }
+html[data-theme="metro"] .theme-option-check,
+html[data-theme="win10"] .theme-option-check {
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
+  background: var(--metro-accent);
+  color: #fff;
+}
+html[data-theme="metro"] .settings-card .theme-setting,
+html[data-theme="win10"] .settings-card .theme-setting { padding: 0 0 20px; border-bottom: 1px solid var(--metro-border) !important; }
+html[data-theme="metro"] .settings-card .setting-toggle-row,
+html[data-theme="win10"] .settings-card .setting-toggle-row,
+html[data-theme="metro"] .settings-card .setting-select-row,
+html[data-theme="win10"] .settings-card .setting-select-row,
+html[data-theme="metro"] .settings-card .font-scale-row,
+html[data-theme="win10"] .settings-card .font-scale-row {
+  margin-top: 2px;
+  border: 0 !important;
+  background: var(--metro-surface) !important;
+}
+html[data-theme="metro"] .settings-card .setting-toggle-row:hover,
+html[data-theme="win10"] .settings-card .setting-toggle-row:hover,
+html[data-theme="metro"] .settings-card .setting-select-row:hover,
+html[data-theme="win10"] .settings-card .setting-select-row:hover,
+html[data-theme="metro"] .settings-card .font-scale-row:hover,
+html[data-theme="win10"] .settings-card .font-scale-row:hover { background: var(--metro-surface-2) !important; }
+
+/* Metro is deliberately planar: neutralise legacy page/card motion while
+   retaining colour, outline and shadow state changes. */
+html[data-theme="metro"] *,
+html[data-theme="win10"] * {
+  transform: none !important;
+  transition-property: background-color, border-color, color, box-shadow, opacity, outline-color !important;
+}
+html[data-theme="metro"] .page-entering,
+html[data-theme="metro"] .page-leaving,
+html[data-theme="win10"] .page-entering,
+html[data-theme="win10"] .page-leaving {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 860px) {
+  html[data-theme="metro"] .theme-picker,
+  html[data-theme="win10"] .theme-picker { grid-template-columns: repeat(2, minmax(170px, 1fr)); }
+}
 
 @media (max-width: 760px) {
   html[data-theme="metro"] .app-shell,
@@ -397,5 +489,5 @@ html[data-theme="metro"] .downloadList:hover,
 html[data-theme="win10"] .downloadList:hover {
   border-color: var(--metro-border) !important;
   background: var(--metro-surface) !important;
-  transform: none;
+  
 }

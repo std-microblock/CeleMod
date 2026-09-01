@@ -1,8 +1,7 @@
 /** Runtime interaction layer for the Metro theme.
  *
- * Metro motion is deliberately mechanical: tiles tilt a few degrees toward
- * the pointer, press states move to the hard shadow's origin, and a short
- * accent "flash" confirms activation. The delegated listeners keep this
+ * Metro motion is deliberately mechanical: pointer highlights, hard press
+ * states and a short accent "flash" confirm activation. The delegated listeners keep this
  * independent of React route mounts and are removed by the returned cleanup.
  */
 export function mountMetroInteractions(root: Document = document): () => void {
@@ -24,17 +23,12 @@ export function mountMetroInteractions(root: Document = document): () => void {
   const onPointerMove = (event: PointerEvent) => {
     if (!isMetro()) return;
     const target = (event.target as Element | null)?.closest<HTMLElement>(tileSelector);
-    if (!target || target.dataset.metroTilt === "off") return;
+    if (!target) return;
     const rect = target.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-    target.style.setProperty("--metro-pointer-x", `${Math.round(x * 100)}%`);
-    target.style.setProperty("--metro-pointer-y", `${Math.round(y * 100)}%`);
-    // Cards use CSS :hover for the actual transform.  These variables let the
-    // highlight follow the pointer without forcing layout or React updates.
-    target.style.setProperty("--metro-tilt-x", `${((y - 0.5) * -2.4).toFixed(2)}deg`);
-    target.style.setProperty("--metro-tilt-y", `${((x - 0.5) * 2.4).toFixed(2)}deg`);
+    target.style.setProperty("--metro-pointer-x", `${Math.round(event.clientX - rect.left)}px`);
+    target.style.setProperty("--metro-pointer-y", `${Math.round(event.clientY - rect.top)}px`);
+    // Highlight follows pointer coordinates without changing geometry.
   };
 
   const onPointerLeave = (event: PointerEvent) => {
@@ -44,8 +38,6 @@ export function mountMetroInteractions(root: Document = document): () => void {
     if (related && target.contains(related)) return;
     target.style.removeProperty("--metro-pointer-x");
     target.style.removeProperty("--metro-pointer-y");
-    target.style.removeProperty("--metro-tilt-x");
-    target.style.removeProperty("--metro-tilt-y");
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
