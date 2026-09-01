@@ -21,10 +21,7 @@ export const ThemePicker = ({ value, onChange, compact = false }: ThemePickerPro
         onClick={() => onChange(theme.id as ThemeId)}
       >
         <img src={theme.preview} alt="" loading="lazy" />
-        <span className="theme-option-copy">
-          <strong>{theme.name}</strong>
-          {!compact && <small>{theme.description}</small>}
-        </span>
+        <span className="theme-option-copy"><strong>{theme.name}</strong></span>
         {value === theme.id && <span className="theme-option-check" aria-hidden="true">✓</span>}
       </button>
     ))}

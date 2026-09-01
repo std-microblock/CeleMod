@@ -64,23 +64,23 @@ html[data-theme="material-you"] .caption-version { color: var(--md-on-surface-va
 html[data-theme="material-you"] .caption-hash { color: var(--md-outline); }
 
 /* Navigation rail: 56dp destinations with active indicator pill. */
-html[data-theme="material-you"] .app-shell { grid-template-columns: 76px minmax(0, 1fr); gap: 12px; }
-html[data-theme="material-you"] .sidebar { width: 64px; margin-right: 0; align-items: center; }
-html[data-theme="material-you"] .sidebar-scroll { width: 64px; }
-html[data-theme="material-you"] .sidebar-items { width: 64px; align-items: center; gap: 6px; }
+html[data-theme="material-you"] .app-shell { grid-template-columns: 88px minmax(0, 1fr); gap: 20px; }
+html[data-theme="material-you"] .sidebar { width: 80px; margin-right: 0; align-items: center; }
+html[data-theme="material-you"] .sidebar-scroll { width: 80px; }
+html[data-theme="material-you"] .sidebar-items { width: 80px; align-items: center; gap: 8px; }
 html[data-theme="material-you"] .sidebar .navBtn,
 html[data-theme="material-you"] .downloadListBtn {
-  position: relative; width: 56px; height: 56px; min-height: 56px; margin: 0; padding: 0; border: 0; border-radius: var(--md-shape-xl) !important;
-  color: var(--md-on-surface-variant); background: transparent; box-shadow: none; font-size: 13px; transition: background-color 180ms var(--md-motion-standard), color 180ms var(--md-motion-standard), transform 180ms var(--md-motion-standard);
+  position: relative; display: flex; width: 72px; height: 64px; min-height: 64px; margin: 0; padding: 5px 0 4px; border: 0 !important; border-radius: 16px !important;
+  flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--md-on-surface-variant); background: transparent !important; box-shadow: none !important; font-size: 12px; transition: background-color 180ms var(--md-motion-standard), color 180ms var(--md-motion-standard);
 }
-html[data-theme="material-you"] .sidebar .navBtn::before { content: ""; position: absolute; inset: 5px 8px 27px; border-radius: var(--md-shape-full); background: transparent; transition: background-color 180ms var(--md-motion-standard); }
-html[data-theme="material-you"] .sidebar .navBtn .icon { position: relative; z-index: 1; width: 22px; height: 22px; margin-top: 3px; }
-html[data-theme="material-you"] .sidebar .title { position: relative; z-index: 1; width: auto; margin-top: 4px; color: inherit; font-size: 11px; font-weight: 500; opacity: 1; }
+html[data-theme="material-you"] .sidebar .navBtn::before { content: ""; position: absolute; inset: 4px 11px 31px; border-radius: var(--md-shape-full); background: transparent; transition: background-color 180ms var(--md-motion-standard); }
+html[data-theme="material-you"] .sidebar .navBtn .icon { position: relative; z-index: 1; width: 24px; height: 24px; margin: 0; }
+html[data-theme="material-you"] .sidebar .title { position: relative; z-index: 1; width: auto; margin: 0; color: inherit; font-size: 11px; font-weight: 500; opacity: 1; line-height: 16px; }
 html[data-theme="material-you"] .sidebar .navBtn.selected { color: var(--md-on-secondary-container); background: transparent; box-shadow: none; }
 html[data-theme="material-you"] .sidebar .navBtn.selected::before { background: var(--md-secondary-container); }
-html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { color: var(--md-on-surface); background: var(--md-state-hover); transform: translateY(-1px); }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { color: var(--md-on-surface); background: var(--md-state-hover); }
 html[data-theme="material-you"] .sidebar .navBtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
-html[data-theme="material-you"] .downloadListBtn { margin-top: 12px; color: var(--md-on-surface-variant); background: var(--md-surface-container); box-shadow: var(--md-elevation-1); }
+html[data-theme="material-you"] .downloadListBtn { margin-top: 12px; color: var(--md-on-surface-variant); background: var(--md-surface-container) !important; box-shadow: var(--md-elevation-1) !important; }
 html[data-theme="material-you"] .downloadListBtn:hover { color: var(--md-on-surface); background: var(--md-surface-container-high); }
 
 /* Typography scale */
@@ -104,8 +104,6 @@ html[data-theme="material-you"] .md-ripple {
   border-radius: 50%;
   background: currentColor;
   opacity: 0.18;
-  transform: translate(-50%, -50%) scale(0.08);
-  transform-origin: center;
   pointer-events: none;
   animation: md-ripple-expand 520ms var(--md-motion-emphasized, cubic-bezier(.2, 0, 0, 1)) forwards;
 }
@@ -119,19 +117,18 @@ html[data-theme="material-you"] .md-ripple-host > :not(.md-ripple) {
   z-index: 1;
 }
 @keyframes md-ripple-expand {
-  0% { opacity: 0.2; transform: translate(-50%, -50%) scale(0.08); }
-  65% { opacity: 0.12; transform: translate(-50%, -50%) scale(0.86); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  0% { opacity: 0.2; }
+  100% { opacity: 0; }
 }
 html[data-theme="material-you"] button {
-  position: relative; isolation: isolate; overflow: hidden; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard), transform 150ms var(--md-motion-standard);
+  position: relative; isolation: isolate; overflow: hidden; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard);
 }
-html[data-theme="material-you"] button::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: currentColor; opacity: 0; transform: scale(.75); transition: opacity 160ms ease, transform 260ms var(--md-motion-emphasized); pointer-events: none; }
+html[data-theme="material-you"] button::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: currentColor; opacity: 0; transition: opacity 160ms ease; pointer-events: none; }
 html[data-theme="material-you"] button:hover { background: color-mix(in srgb, var(--md-secondary-container) 88%, white); box-shadow: var(--md-elevation-1); }
-html[data-theme="material-you"] button:hover::after { opacity: .08; transform: scale(1); }
+html[data-theme="material-you"] button:hover::after { opacity: .08; }
 html[data-theme="material-you"] button:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
-html[data-theme="material-you"] button:active { background: color-mix(in srgb, var(--md-secondary-container) 80%, black); transform: scale(.98); box-shadow: none; }
-html[data-theme="material-you"] button:active::after { opacity: .12; transform: scale(1.08); transition-duration: 80ms; }
+html[data-theme="material-you"] button:active { background: color-mix(in srgb, var(--md-secondary-container) 80%, black); box-shadow: none; }
+html[data-theme="material-you"] button:active::after { opacity: .12; transition-duration: 80ms; }
 html[data-theme="material-you"] button.primary, html[data-theme="material-you"] button[class*="primary"] { color: var(--md-on-primary) !important; background: var(--md-primary) !important; box-shadow: var(--md-elevation-1); }
 html[data-theme="material-you"] button.primary:hover, html[data-theme="material-you"] button[class*="primary"]:hover { background: color-mix(in srgb, var(--md-primary) 92%, white) !important; box-shadow: var(--md-elevation-2); }
 html[data-theme="material-you"] button.large { min-height: 56px; padding-inline: 28px; font-size: 16px; }
@@ -181,7 +178,7 @@ html[data-theme="material-you"] input[type="checkbox"]:checked { border-color: v
 /* Theme picker follows M3 card + selection indicator */
 html[data-theme="material-you"] .theme-picker { gap: 16px; }
 html[data-theme="material-you"] .theme-option { border: 1px solid var(--md-outline-variant) !important; border-radius: var(--md-shape-xl) !important; background: var(--md-surface-container) !important; box-shadow: none; }
-html[data-theme="material-you"] .theme-option:hover { transform: translateY(-2px); background: var(--md-surface-container-high) !important; box-shadow: var(--md-elevation-2); }
+html[data-theme="material-you"] .theme-option:hover { background: var(--md-surface-container-high) !important; box-shadow: var(--md-elevation-2); }
 html[data-theme="material-you"] .theme-option.selected { border: 3px solid var(--md-primary) !important; box-shadow: 0 0 0 1px var(--md-primary); }
 html[data-theme="material-you"] .theme-option-copy strong { color: var(--md-on-surface); font-size: 15px; font-weight: 600; }
 html[data-theme="material-you"] .theme-option-copy small { color: var(--md-on-surface-variant); font-size: 11px; }
@@ -3061,6 +3058,6 @@ html[data-theme="material-you"] .md-density-220 {
   border-radius: var(--md-shape-xs);
 }
 @keyframes md-ripple-expand {
-  0% { transform: translate(-50%,-50%) scale(0); opacity:.24; }
-  100% { transform: translate(-50%,-50%) scale(1); opacity:0; }
+  0% { opacity:.24; }
+  100% { opacity:0; }
 }
