@@ -452,38 +452,6 @@
   font-family: inherit;
 }
 
-.conflict-group {
-  margin: 0;
-  padding: 0;
-}
-.conflict-group-heading {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  min-height: 31px;
-  padding: 0 11px;
-  gap: 8px;
-  border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.13);
-  background: color.change(theme.$bg1, $alpha: 0.96);
-  backdrop-filter: blur(12px);
-  span {
-    color: theme.$fg3;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
-  }
-  strong {
-    color: #efc16c;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: calc(9px * var(--keybindings-font-scale, 1));
-  }
-  small {
-    margin-left: auto;
-    color: color.change(theme.$fg, $alpha: 0.38);
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
-  }
-}
-
 .conflict-detail {
   min-height: 100%;
 }

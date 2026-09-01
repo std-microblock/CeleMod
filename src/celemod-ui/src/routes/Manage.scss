@@ -730,29 +730,6 @@
 }
 
 .side-title,
-.side-panel-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-height: 32px;
-  padding: 0 4px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: theme.$fg3;
-  font-size: calc(9px * var(--manage-font-scale, 1));
-  font-weight: 650;
-  letter-spacing: 0;
-  box-sizing: border-box;
-  small {
-    padding: 2px 6px;
-    border-radius: 99px;
-    background: theme.$bg2;
-    font-size: calc(8px * var(--manage-font-scale, 1));
-  }
-}
-
 .profile-title-actions {
   display: flex;
   align-items: center;
@@ -972,13 +949,6 @@
   }
 }
 
-.profile-install-discovered {
-  max-width: 420px;
-  color: theme.$fg3;
-  overflow-wrap: anywhere;
-  text-align: center;
-}
-
 .profile-mod-list-popup,
 .profile-export-popup {
   width: min(720px, calc(100vw - 64px));
@@ -1031,18 +1001,6 @@
 }
 
 .profile-editor-label-row,
-.profile-export-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  span,
-  small {
-    color: theme.$fg3;
-    font-size: 11px;
-  }
-}
-
 .profile-inline-editor {
   position: relative;
 }

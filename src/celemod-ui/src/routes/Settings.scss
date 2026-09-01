@@ -334,30 +334,6 @@
     }
   }
 
-  .cache-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 12px 15px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
-
-    span {
-      min-width: 0;
-      overflow: hidden;
-      color: theme.$fg3;
-      font-size: 9px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    button {
-      flex: 0 0 auto;
-      min-height: 30px;
-      padding: 0 12px;
-      font-size: 10px;
-    }
-  }
-
   .settings-error {
     padding: 0 15px 12px;
     color: #ff8a94;
