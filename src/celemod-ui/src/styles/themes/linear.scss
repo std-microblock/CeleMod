@@ -1,0 +1,143 @@
+/* Linear / NextUI inspired product workspace
+   A high-density, keyboard-first system: graphite canvas, hairline dividers,
+   compact controls, gradient focus rings and restrained depth. */
+html[data-theme="linear"] {
+  color-scheme: dark;
+  --linear-canvas: #08090a;
+  --linear-surface: #101114;
+  --linear-surface-raised: #17181c;
+  --linear-surface-hover: #1d1f24;
+  --linear-line: rgba(255,255,255,.095);
+  --linear-line-strong: rgba(255,255,255,.16);
+  --linear-text: #f4f5f6;
+  --linear-muted: #8b8f98;
+  --linear-subtle: #5f646e;
+  --linear-accent: #7c6df2;
+  --linear-accent-2: #56a8ff;
+  --linear-focus: 0 0 0 1px #8b7cff, 0 0 0 4px rgba(124,109,242,.18);
+  --linear-shadow: 0 16px 36px rgba(0,0,0,.36);
+  --linear-radius: 8px;
+  --linear-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --color-canvas: var(--linear-canvas);
+  --color-surface: var(--linear-canvas);
+  --color-surface-elevated: var(--linear-surface);
+  --color-surface-hover: var(--linear-surface-hover);
+  --color-surface-active: #252832;
+  --color-fg: var(--linear-text);
+  --color-fg-muted: #b2b5bc;
+  --color-fg-subtle: var(--linear-muted);
+  --color-fg-disabled: var(--linear-subtle);
+  --color-primary: var(--linear-accent);
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --shadow-button: 0 1px 2px rgba(0,0,0,.45);
+  --shadow-elevated: var(--linear-shadow);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--linear-canvas);
+  background-image:
+    radial-gradient(ellipse 75% 42% at 50% -16%, rgba(124,109,242,.14), transparent 72%),
+    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+
+html[data-theme="linear"] body { color: var(--linear-text); background: transparent; font-size: 13px; letter-spacing: -.005em; }
+html[data-theme="linear"] .app-frame { padding: 0 18px 0 16px; }
+html[data-theme="linear"] .window-titlebar { flex-basis: 42px; min-height: 42px; }
+html[data-theme="linear"] .window-caption { color: #d5d7dc; font-size: 13px; font-weight: 600; letter-spacing: -.02em; }
+html[data-theme="linear"] .caption-version { color: var(--linear-muted); font-size: 9px; }
+html[data-theme="linear"] .caption-hash { color: var(--linear-subtle); font-size: 8px; }
+
+/* Linear uses a real workspace rail rather than a floating icon strip. */
+html[data-theme="linear"] .app-shell { grid-template-columns: 176px minmax(0,1fr); column-gap: 18px; }
+html[data-theme="linear"] .sidebar { width: 176px; margin-right: 0; padding: 8px 10px 12px 0; box-sizing: border-box; }
+html[data-theme="linear"] .sidebar-scroll, html[data-theme="linear"] .sidebar-items { width: 100%; }
+html[data-theme="linear"] .sidebar-items { gap: 2px; }
+html[data-theme="linear"] .sidebar .navBtn,
+html[data-theme="linear"] .downloadListBtn {
+  position: relative; display: flex; flex-direction: row; align-items: center; justify-content: flex-start;
+  width: 100%; height: 34px; min-height: 34px; margin: 0; padding: 0 10px; border: 1px solid transparent;
+  border-radius: 6px; box-sizing: border-box; color: var(--linear-muted); background: transparent;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; gap: 10px; transition: color .14s ease, background .14s ease, border-color .14s ease;
+}
+html[data-theme="linear"] .sidebar .navBtn .icon, html[data-theme="linear"] .downloadListBtn .icon { width: 15px; height: 15px; color: #858995; }
+html[data-theme="linear"] .sidebar .title { width: auto; margin: 0; color: inherit; font-size: 12px; line-height: 1; opacity: 1; text-align: left; }
+html[data-theme="linear"] .sidebar .navBtn.selected { color: var(--linear-text); background: linear-gradient(90deg, rgba(124,109,242,.2), rgba(124,109,242,.06)); border-color: rgba(124,109,242,.3); box-shadow: inset 2px 0 0 var(--linear-accent); }
+html[data-theme="linear"] .sidebar .navBtn.selected .icon { color: #a79cff; }
+html[data-theme="linear"] .sidebar .navBtn:not(.selected):hover, html[data-theme="linear"] .downloadListBtn:hover { color: var(--linear-text); background: rgba(255,255,255,.055); border-color: var(--linear-line); box-shadow: none; }
+html[data-theme="linear"] .sidebar .navBtn:focus-visible, html[data-theme="linear"] .downloadListBtn:focus-visible { outline: none; box-shadow: var(--linear-focus); }
+html[data-theme="linear"] .downloadListBtn { margin-top: 8px; }
+
+/* Pages sit on one quiet surface; sections are separated by 1px rules. */
+html[data-theme="linear"] .app-content { min-width: 0; }
+html[data-theme="linear"] .page { width: 100%; }
+html[data-theme="linear"] .home-page,
+html[data-theme="linear"] .settings-page,
+html[data-theme="linear"] .manage-page { width: min(1080px, 100%); padding: 20px 26px 48px; }
+html[data-theme="linear"] .home-header, html[data-theme="linear"] .settings-page .settings-header { padding: 8px 0 24px; margin-bottom: 16px; }
+html[data-theme="linear"] h1, html[data-theme="linear"] h2, html[data-theme="linear"] h3 { color: var(--linear-text); letter-spacing: -.035em; }
+html[data-theme="linear"] h1 { font-size: 24px; font-weight: 650; }
+html[data-theme="linear"] h2 { font-size: 16px; font-weight: 620; }
+html[data-theme="linear"] p, html[data-theme="linear"] small { color: var(--linear-muted); }
+
+/* Unified controls: 32px high, tight radii, no inflated shadows. */
+html[data-theme="linear"] button,
+html[data-theme="linear"] select,
+html[data-theme="linear"] input:not([type="checkbox"]),
+html[data-theme="linear"] textarea {
+  min-height: 32px; border: 1px solid var(--linear-line) !important; border-radius: var(--linear-radius) !important;
+  background: var(--linear-surface) !important; color: var(--linear-text) !important; box-shadow: 0 1px 1px rgba(0,0,0,.24);
+  font-family: inherit; font-size: 12px; transition: border-color .14s ease, background .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+html[data-theme="linear"] button { padding: 0 12px; font-weight: 550; }
+html[data-theme="linear"] button:hover, html[data-theme="linear"] select:hover, html[data-theme="linear"] input:not([type="checkbox"]):hover, html[data-theme="linear"] textarea:hover { border-color: var(--linear-line-strong) !important; background: var(--linear-surface-hover) !important; }
+html[data-theme="linear"] button:focus-visible, html[data-theme="linear"] select:focus-visible, html[data-theme="linear"] input:focus-visible, html[data-theme="linear"] textarea:focus-visible { outline: none; box-shadow: var(--linear-focus) !important; }
+html[data-theme="linear"] button:active { transform: translateY(1px); }
+html[data-theme="linear"] button.primary, html[data-theme="linear"] button[class*="primary"] { border-color: transparent !important; color: #fff !important; background: linear-gradient(135deg, #7768ec, #5e6ad2) !important; box-shadow: 0 2px 8px rgba(94,106,210,.32); }
+html[data-theme="linear"] button.primary:hover, html[data-theme="linear"] button[class*="primary"]:hover { background: linear-gradient(135deg, #8779f5, #6c79e8) !important; box-shadow: 0 4px 14px rgba(94,106,210,.4); }
+html[data-theme="linear"] input[type="checkbox"] { width: 15px; height: 15px; border-radius: 4px; border-color: var(--linear-line-strong); background: var(--linear-surface); }
+html[data-theme="linear"] input[type="checkbox"]:checked { border-color: var(--linear-accent); background-color: var(--linear-accent); }
+
+/* Settings: dense two-column cards with clear key/value alignment. */
+html[data-theme="linear"] .settings-columns { gap: 18px; }
+html[data-theme="linear"] .settings-section-title { margin: 0 0 7px 1px; color: var(--linear-subtle); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+html[data-theme="linear"] .settings-card { overflow: hidden; border: 1px solid var(--linear-line); border-radius: 9px; background: rgba(16,17,20,.9); box-shadow: var(--linear-shadow); }
+html[data-theme="linear"] .theme-setting, html[data-theme="linear"] .setting-toggle-row, html[data-theme="linear"] .setting-select-row, html[data-theme="linear"] .font-scale-row, html[data-theme="linear"] .download-default-head { min-height: 54px; padding: 10px 14px; border-color: var(--linear-line); }
+html[data-theme="linear"] .theme-setting strong, html[data-theme="linear"] .setting-toggle-row strong, html[data-theme="linear"] .setting-select-row strong, html[data-theme="linear"] .font-scale-row strong { font-size: 12px; font-weight: 560; }
+html[data-theme="linear"] .theme-setting small, html[data-theme="linear"] .setting-toggle-row small, html[data-theme="linear"] .setting-select-row small, html[data-theme="linear"] .font-scale-row small { margin-top: 3px; color: var(--linear-muted); font-size: 10px; }
+html[data-theme="linear"] .segmented-setting { padding: 2px; border: 1px solid var(--linear-line); border-radius: 7px; background: #0b0c0f; }
+html[data-theme="linear"] .segmented-setting button { min-height: 27px; border: 0 !important; border-radius: 5px !important; background: transparent !important; color: var(--linear-muted) !important; box-shadow: none; }
+html[data-theme="linear"] .segmented-setting button.selected { color: var(--linear-text) !important; background: var(--linear-surface-hover) !important; box-shadow: inset 0 0 0 1px var(--linear-line-strong), 0 1px 3px rgba(0,0,0,.3); }
+
+/* Search and manage toolbars read as command surfaces. */
+html[data-theme="linear"] .filter, html[data-theme="linear"] .manage-toolbar { padding: 8px 0 12px; border-bottom: 1px solid var(--linear-line); gap: 6px; }
+html[data-theme="linear"] .searchinput, html[data-theme="linear"] .manage-search input { height: 32px; border-radius: 6px !important; background: #0d0e11 !important; }
+html[data-theme="linear"] .searchinput:focus, html[data-theme="linear"] .manage-search input:focus { box-shadow: var(--linear-focus) !important; }
+html[data-theme="linear"] .search-submit, html[data-theme="linear"] .filter-toggle, html[data-theme="linear"] .view-toggle, html[data-theme="linear"] .toolbar-icon-button, html[data-theme="linear"] .toolbar-action-button { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 6px !important; }
+html[data-theme="linear"] .filter-popup, html[data-theme="linear"] .manage-filter-popup, html[data-theme="linear"] .manage-action-menu, html[data-theme="linear"] .popup-content { border: 1px solid var(--linear-line-strong); border-radius: 9px; background: rgba(16,17,20,.97); box-shadow: 0 20px 50px rgba(0,0,0,.56); backdrop-filter: blur(18px); }
+html[data-theme="linear"] .filter-popup label > span { color: var(--linear-subtle); font-size: 10px; }
+html[data-theme="linear"] .manage-main { min-width: 0; }
+html[data-theme="linear"] .manage-tree-scroll { border: 1px solid var(--linear-line); border-radius: 8px; background: rgba(16,17,20,.72); }
+html[data-theme="linear"] .manage-tree-row { min-height: 36px; border-bottom-color: var(--linear-line); }
+html[data-theme="linear"] .manage-tree-row:hover { background: rgba(124,109,242,.07); }
+html[data-theme="linear"] .tree-name { color: var(--linear-text); font-size: 12px; }
+html[data-theme="linear"] .tree-version, html[data-theme="linear"] .tree-mod-name, html[data-theme="linear"] .tree-secondary-line { color: var(--linear-muted); font-family: var(--linear-mono); font-size: 10px; }
+html[data-theme="linear"] .profile-row, html[data-theme="linear"] .profile-select { border-color: var(--linear-line); border-radius: 6px; background: var(--linear-surface); }
+
+/* Mod cards become quiet data tiles, reserving accent for status/actions. */
+html[data-theme="linear"] .mod { border-color: var(--linear-line); border-radius: 8px; background: var(--linear-surface); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+html[data-theme="linear"] .mod:hover { border-color: rgba(124,109,242,.58); box-shadow: 0 12px 26px rgba(0,0,0,.4), 0 0 0 1px rgba(124,109,242,.16); transform: translateY(-2px); }
+html[data-theme="linear"] .mod .operations button { border-radius: 6px; background: rgba(8,9,10,.78); }
+html[data-theme="linear"] .mod .operations button:hover { background: var(--linear-accent); }
+html[data-theme="linear"] .mod-info-backdrop { opacity: .78; }
+
+/* Lightweight command-hint affordance used by keyboard-first surfaces. */
+html[data-theme="linear"] .manage-search::after, html[data-theme="linear"] .search-field::after { content: "⌘ K"; position: absolute; right: 9px; top: 50%; transform: translateY(-50%); padding: 2px 5px; border: 1px solid var(--linear-line); border-radius: 4px; color: var(--linear-subtle); background: rgba(255,255,255,.03); font-family: var(--linear-mono); font-size: 9px; pointer-events: none; }
+html[data-theme="linear"] .search-field::after { right: 10px; }
+
+html[data-theme="linear"] ::selection { color: #fff; background: rgba(124,109,242,.48); }
+html[data-theme="linear"] ::-webkit-scrollbar { width: 8px; height: 8px; }
+html[data-theme="linear"] ::-webkit-scrollbar-track { background: transparent; }
+html[data-theme="linear"] ::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: rgba(255,255,255,.16); background-clip: padding-box; }
+html[data-theme="linear"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.26); background-clip: padding-box; }
