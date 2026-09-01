@@ -1,0 +1,152 @@
+/* Distinctive theme treatments. Each theme intentionally changes geometry, depth and motion,
+   not only the color palette. Applied by the theme provider through html[data-theme]. */
+
+@mixin theme-vars($bg, $surface, $surface2, $fg, $muted, $primary, $radius, $font) {
+  --theme-bg: #{$bg};
+  --theme-surface: #{$surface};
+  --theme-surface-2: #{$surface2};
+  --theme-fg: #{$fg};
+  --theme-muted: #{$muted};
+  --theme-primary: #{$primary};
+  --theme-radius: #{$radius};
+  --theme-font: #{$font};
+}
+
+/* Material You — expressive rounded surfaces, tonal elevation and touch ripple. */
+html[data-theme="material-you"] {
+  @include theme-vars(#141218, #211f26, #302d36, #f4eff7, #cac4d0, #d0bcff, 24px, "Google Sans", system-ui, sans-serif);
+  color-scheme: dark;
+  font-family: var(--theme-font);
+  background:
+    radial-gradient(60% 80% at 100% 0%, rgba(208,188,255,.20), transparent 65%),
+    radial-gradient(50% 70% at 0% 100%, rgba(255,180,171,.14), transparent 70%),
+    var(--theme-bg);
+}
+html[data-theme="material-you"] body { background: transparent; color: var(--theme-fg); }
+html[data-theme="material-you"] .app-shell { gap: 16px; }
+html[data-theme="material-you"] .sidebar .navBtn,
+html[data-theme="material-you"] .downloadListBtn { border-radius: 18px !important; transition: transform .2s, background .2s, box-shadow .2s; }
+html[data-theme="material-you"] .sidebar .navBtn.selected { background: color-mix(in srgb, var(--theme-primary) 24%, var(--theme-surface)); border-color: transparent; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+html[data-theme="material-you"] .sidebar .navBtn:hover { transform: translateY(-2px); }
+html[data-theme="material-you"] button,
+html[data-theme="material-you"] select,
+html[data-theme="material-you"] input:not([type="checkbox"]),
+html[data-theme="material-you"] textarea { border-radius: var(--theme-radius) !important; background: var(--theme-surface) !important; color: var(--theme-fg) !important; border: 1px solid color-mix(in srgb, var(--theme-fg) 12%, transparent) !important; box-shadow: 0 2px 6px rgba(0,0,0,.24); }
+html[data-theme="material-you"] button.primary,
+html[data-theme="material-you"] button[class*="primary"] { background: var(--theme-primary) !important; color: #332d40 !important; border: 0 !important; }
+html[data-theme="material-you"] button:active { background: radial-gradient(circle at center, rgba(255,255,255,.35), transparent 55%), var(--theme-primary) !important; transform: scale(.97); }
+html[data-theme="material-you"] .popup-content,
+html[data-theme="material-you"] .card,
+html[data-theme="material-you"] [class*="panel"],
+html[data-theme="material-you"] [class*="Card"] { border-radius: var(--theme-radius) !important; background: color-mix(in srgb, var(--theme-surface) 92%, transparent) !important; box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+
+/* Fluent Design — acrylic translucency, reveal lighting and compact corners. */
+html[data-theme="fluent"] {
+  @include theme-vars(#202020, rgba(45,45,45,.72), rgba(63,63,63,.78), #fff, #c8c8c8, #60cdff, 6px, "Segoe UI Variable", "Segoe UI", sans-serif);
+  color-scheme: dark;
+  font-family: var(--theme-font);
+  background: linear-gradient(135deg,#202020 0%,#1b1b1b 60%,#252525 100%);
+}
+html[data-theme="fluent"] body { color: var(--theme-fg); background: transparent; }
+html[data-theme="fluent"] .app-frame { backdrop-filter: blur(28px) saturate(130%); }
+html[data-theme="fluent"] .sidebar .navBtn,
+html[data-theme="fluent"] .downloadListBtn { border-radius: var(--theme-radius) !important; position: relative; overflow: hidden; transition: background .18s, transform .18s; }
+html[data-theme="fluent"] .sidebar .navBtn::before,
+html[data-theme="fluent"] button::before { content: ""; position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at var(--reveal-x,50%) var(--reveal-y,50%), rgba(255,255,255,.18), transparent 55%); opacity:0; transition: opacity .2s; }
+html[data-theme="fluent"] .sidebar .navBtn:hover::before,
+html[data-theme="fluent"] button:hover::before { opacity:1; }
+html[data-theme="fluent"] .sidebar .navBtn.selected { background: rgba(255,255,255,.12) !important; border-left: 2px solid var(--theme-primary); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+html[data-theme="fluent"] button,
+html[data-theme="fluent"] select,
+html[data-theme="fluent"] input:not([type="checkbox"]),
+html[data-theme="fluent"] textarea { border-radius: var(--theme-radius) !important; color: var(--theme-fg) !important; background: var(--theme-surface) !important; border: 1px solid rgba(255,255,255,.14) !important; box-shadow: 0 2px 4px rgba(0,0,0,.28); }
+html[data-theme="fluent"] button:hover { background: var(--theme-surface-2) !important; transform: translateY(-1px); }
+html[data-theme="fluent"] button.primary { background: var(--theme-primary) !important; color: #003747 !important; border-color: transparent !important; }
+html[data-theme="fluent"] .popup-content,
+html[data-theme="fluent"] [class*="panel"],
+html[data-theme="fluent"] [class*="Card"] { background: var(--theme-surface) !important; backdrop-filter: blur(32px) saturate(140%); border: 1px solid rgba(255,255,255,.16) !important; border-radius: 8px !important; box-shadow: 0 12px 36px rgba(0,0,0,.42); }
+
+/* Linear / NextUI — dense dark canvas, hairline borders and gradient focus. */
+html[data-theme="linear"], html[data-theme="nextui"] {
+  @include theme-vars(#0a0a0b, #111113, #19191d, #f5f5f7, #8b8b93, #8b5cf6, 10px, Inter, system-ui, sans-serif);
+  color-scheme: dark;
+  font-family: var(--theme-font);
+  background-color: var(--theme-bg);
+  background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg,rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+html[data-theme="linear"] body, html[data-theme="nextui"] body { background: transparent; color: var(--theme-fg); }
+html[data-theme="linear"] .sidebar .navBtn,
+html[data-theme="nextui"] .sidebar .navBtn { border-radius: 8px !important; transition: all .16s ease; }
+html[data-theme="linear"] .sidebar .navBtn.selected,
+html[data-theme="nextui"] .sidebar .navBtn.selected { background: linear-gradient(120deg, rgba(139,92,246,.24), rgba(59,130,246,.16)) !important; border: 1px solid rgba(139,92,246,.55) !important; box-shadow: 0 0 20px rgba(139,92,246,.16); }
+html[data-theme="linear"] button,
+html[data-theme="linear"] select,
+html[data-theme="linear"] input:not([type="checkbox"]),
+html[data-theme="linear"] textarea,
+html[data-theme="nextui"] button,
+html[data-theme="nextui"] select,
+html[data-theme="nextui"] input:not([type="checkbox"]),
+html[data-theme="nextui"] textarea { border-radius: var(--theme-radius) !important; background: var(--theme-surface) !important; border: 1px solid rgba(255,255,255,.10) !important; color: var(--theme-fg) !important; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+html[data-theme="linear"] button.primary,
+html[data-theme="nextui"] button.primary { background: linear-gradient(135deg,#8b5cf6,#6366f1) !important; border: 0 !important; color: white !important; box-shadow: 0 4px 14px rgba(99,102,241,.38); }
+html[data-theme="linear"] button:hover,
+html[data-theme="nextui"] button:hover { border-color: rgba(139,92,246,.7) !important; box-shadow: 0 0 0 3px rgba(139,92,246,.12); }
+html[data-theme="linear"] .popup-content,
+html[data-theme="nextui"] .popup-content,
+html[data-theme="linear"] [class*="panel"],
+html[data-theme="nextui"] [class*="panel"] { background: var(--theme-surface) !important; border: 1px solid rgba(255,255,255,.12) !important; border-radius: 12px !important; box-shadow: 0 18px 50px rgba(0,0,0,.58); }
+
+/* Windows 10 Metro — square tiles, hard edges, glow and 3-D press depth. */
+html[data-theme="metro"], html[data-theme="win10"] {
+  @include theme-vars(#111820, #1f2b35, #283944, #fff, #c4d3dc, #0078d7, 0, "Segoe UI", sans-serif);
+  color-scheme: dark;
+  font-family: var(--theme-font);
+  background: linear-gradient(145deg,#0f171d,#152631 55%,#0d1318);
+}
+html[data-theme="metro"] body, html[data-theme="win10"] body { color: var(--theme-fg); background: transparent; }
+html[data-theme="metro"] .sidebar .navBtn,
+html[data-theme="win10"] .sidebar .navBtn,
+html[data-theme="metro"] .downloadListBtn,
+html[data-theme="win10"] .downloadListBtn { border-radius: 0 !important; width: 50px; height: 50px; margin-bottom: 6px; background: var(--theme-surface); transition: transform .15s, box-shadow .15s, background .15s; }
+html[data-theme="metro"] .sidebar .navBtn.selected,
+html[data-theme="win10"] .sidebar .navBtn.selected { background: var(--theme-primary) !important; border: 0 !important; box-shadow: 5px 5px 0 rgba(0,0,0,.35), 0 0 16px rgba(0,120,215,.5); transform: translateZ(8px); }
+html[data-theme="metro"] .sidebar .navBtn:hover,
+html[data-theme="win10"] .sidebar .navBtn:hover { transform: perspective(300px) rotateY(-8deg) translateZ(4px); box-shadow: 4px 4px 0 rgba(0,0,0,.4), 0 0 12px rgba(0,120,215,.45); }
+html[data-theme="metro"] button,
+html[data-theme="metro"] select,
+html[data-theme="metro"] input:not([type="checkbox"]),
+html[data-theme="metro"] textarea,
+html[data-theme="win10"] button,
+html[data-theme="win10"] select,
+html[data-theme="win10"] input:not([type="checkbox"]),
+html[data-theme="win10"] textarea { border-radius: 0 !important; background: var(--theme-surface) !important; color: var(--theme-fg) !important; border: 2px solid transparent !important; box-shadow: 3px 3px 0 rgba(0,0,0,.35); }
+html[data-theme="metro"] button.primary,
+html[data-theme="win10"] button.primary { background: var(--theme-primary) !important; border-color: #3aa0ef !important; box-shadow: 4px 4px 0 rgba(0,0,0,.42), 0 0 12px rgba(0,120,215,.45); }
+html[data-theme="metro"] button:active,
+html[data-theme="win10"] button:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(0,0,0,.4); }
+html[data-theme="metro"] .popup-content,
+html[data-theme="win10"] .popup-content,
+html[data-theme="metro"] [class*="panel"],
+html[data-theme="win10"] [class*="panel"] { border-radius: 0 !important; background: var(--theme-surface) !important; border: 2px solid var(--theme-primary) !important; box-shadow: 8px 8px 0 rgba(0,0,0,.45), 0 0 22px rgba(0,120,215,.38); }
+
+/* Material Design 2 — classic elevation, compact 4px controls and uppercase action labels. */
+html[data-theme="material-2"] {
+  @include theme-vars(#121212, #1e1e1e, #2a2a2a, #fff, #bdbdbd, #bb86fc, 4px, Roboto, system-ui, sans-serif);
+  color-scheme: dark;
+  font-family: var(--theme-font);
+  background: var(--theme-bg);
+}
+html[data-theme="material-2"] body { background: transparent; color: var(--theme-fg); }
+html[data-theme="material-2"] .sidebar .navBtn { border-radius: 4px !important; transition: background .2s, box-shadow .2s; }
+html[data-theme="material-2"] .sidebar .navBtn.selected { background: rgba(187,134,252,.20) !important; border-left: 3px solid var(--theme-primary) !important; box-shadow: none; }
+html[data-theme="material-2"] button,
+html[data-theme="material-2"] select,
+html[data-theme="material-2"] input:not([type="checkbox"]),
+html[data-theme="material-2"] textarea { border-radius: var(--theme-radius) !important; background: var(--theme-surface) !important; color: var(--theme-fg) !important; border: 1px solid rgba(255,255,255,.12) !important; box-shadow: 0 2px 5px rgba(0,0,0,.3); }
+html[data-theme="material-2"] button { text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+html[data-theme="material-2"] button.primary { background: var(--theme-primary) !important; color: #1c1029 !important; border: 0 !important; box-shadow: 0 3px 8px rgba(187,134,252,.35); }
+html[data-theme="material-2"] button:active { box-shadow: 0 1px 3px rgba(0,0,0,.45); transform: translateY(1px); }
+html[data-theme="material-2"] .popup-content,
+html[data-theme="material-2"] [class*="panel"],
+html[data-theme="material-2"] [class*="Card"] { border-radius: 4px !important; background: var(--theme-surface) !important; box-shadow: 0 8px 18px rgba(0,0,0,.5); }
