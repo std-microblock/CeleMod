@@ -77,6 +77,7 @@ html[data-theme="fluent"] button,
 html[data-theme="fluent"] select,
 html[data-theme="fluent"] input:not([type="checkbox"]),
 html[data-theme="fluent"] textarea { border-radius: var(--theme-radius) !important; color: var(--theme-fg) !important; background: var(--theme-surface) !important; border: 1px solid rgba(255,255,255,.14) !important; box-shadow: 0 2px 4px rgba(0,0,0,.28); }
+html[data-theme="fluent"] button { position: relative; }
 html[data-theme="fluent"] button:hover { background: var(--theme-surface-2) !important; transform: translateY(-1px); }
 html[data-theme="fluent"] button.primary { background: var(--theme-primary) !important; color: #003747 !important; border-color: transparent !important; }
 html[data-theme="fluent"] .popup-content,
