@@ -7,6 +7,7 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, anyhow, bail};
+use url::Url;
 
 pub struct DownloadCallbackInfo {
     pub progress: f32,
@@ -32,6 +33,51 @@ fn make_request(url: &str) -> ureq::Request {
         .set("User-Agent", &user_agent())
         .set("Accept", "*/*")
         .set("Accept-Encoding", "identity")
+}
+
+/// WEGFan's API redirects downloads to `celeste-mirror-cdn-2`, whose CDN
+/// currently advertises `Accept-Ranges` but answers Range requests with a
+/// full `200` response.  The canonical WEGFan CDN hostname serves the same
+/// objects and supports real byte ranges, so resolve the redirect and use it
+/// before starting a parallel download.
+fn canonicalize_wegfan_cdn_url(url: &str) -> String {
+    let Ok(mut parsed) = Url::parse(url) else {
+        return url.to_string();
+    };
+
+    let host = parsed.host_str().unwrap_or_default();
+    if host == "celeste-mirror-cdn-2.wegfan.com" {
+        let _ = parsed.set_host(Some("celeste-mirror-cdn.wegfan.com"));
+        return parsed.to_string();
+    }
+    if host != "celeste.weg.fan" {
+        return url.to_string();
+    }
+
+    let Ok(response) = ureq::head(url)
+        .set("User-Agent", &user_agent())
+        .set("Accept", "*/*")
+        .set("Accept-Encoding", "identity")
+        .call()
+    else {
+        return url.to_string();
+    };
+
+    let Ok(mut redirected) = Url::parse(response.get_url()) else {
+        return url.to_string();
+    };
+    if redirected
+        .host_str()
+        .is_some_and(|host| host == "celeste-mirror-cdn-2.wegfan.com")
+    {
+        let _ = redirected.set_host(Some("celeste-mirror-cdn.wegfan.com"));
+        let redirected = redirected.to_string();
+        crate::logging::info(format_args!(
+            "Using Range-capable WEGFan CDN URL: {url} -> {redirected}"
+        ));
+        return redirected;
+    }
+    url.to_string()
 }
 
 fn parse_content_range(value: &str) -> Option<(u64, u64, u64)> {
@@ -426,11 +472,22 @@ pub fn download_file_to_path_with_progress(
         std::fs::create_dir_all(parent)?;
     }
 
-    let result = if multi_thread {
-        download_multi_thread(url, output, progress_callback, cancel_flag)
+    let resolved_url = canonicalize_wegfan_cdn_url(url);
+    let mut result = if multi_thread {
+        download_multi_thread(&resolved_url, output, progress_callback, cancel_flag)
     } else {
-        download_single(url, output, progress_callback, cancel_flag)
+        download_single(&resolved_url, output, progress_callback, cancel_flag)
     };
+    if result.is_err() && resolved_url != url {
+        crate::logging::warn(format_args!(
+            "Range-capable WEGFan CDN failed; retrying original URL: {resolved_url}"
+        ));
+        result = if multi_thread {
+            download_multi_thread(url, output, progress_callback, cancel_flag)
+        } else {
+            download_single(url, output, progress_callback, cancel_flag)
+        };
+    }
 
     match result {
         Ok(()) => {
@@ -497,7 +554,21 @@ mod tests {
     use std::net::{TcpListener, TcpStream};
     use std::sync::{Arc, atomic::AtomicBool};
 
-    use super::{download_single, parse_content_range};
+    use super::{canonicalize_wegfan_cdn_url, download_single, parse_content_range};
+
+    #[test]
+    fn canonicalizes_wegfan_cdn_hostname() {
+        assert_eq!(
+            canonicalize_wegfan_cdn_url(
+                "https://celeste-mirror-cdn-2.wegfan.com/gamebanana-file/a.zip"
+            ),
+            "https://celeste-mirror-cdn.wegfan.com/gamebanana-file/a.zip"
+        );
+        assert_eq!(
+            canonicalize_wegfan_cdn_url("https://example.com/file.zip"),
+            "https://example.com/file.zip"
+        );
+    }
 
     fn read_request(stream: &mut TcpStream) -> String {
         let mut request = Vec::new();

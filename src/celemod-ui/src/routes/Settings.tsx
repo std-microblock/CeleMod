@@ -295,7 +295,6 @@ export const Settings = () => {
               title={_i18n.t("多线程下载")}
               description={_i18n.t("使用 ureq 并行下载大文件")}
               checked={useMultiThread}
-              disabled={mirror === "wegfan"}
               onChange={setUseMultiThread}
             />
 
