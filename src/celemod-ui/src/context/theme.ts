@@ -21,6 +21,21 @@ export const createThemeContext = () => {
       root.style.setProperty(`--${name}`, value);
       root.style.setProperty(`--theme-${name}`, value);
     }
+    // Backwards-compatible semantic aliases used by the consolidated styles.
+    const aliases: Record<string, string> = {
+      "--color-canvas": definition.variables.bg,
+      "--color-surface": definition.variables.bg,
+      "--color-surface-elevated": definition.variables.bg1,
+      "--color-surface-hover": definition.variables.bg2,
+      "--color-surface-active": definition.variables.bg3,
+      "--color-fg": definition.variables.fg,
+      "--color-fg-muted": definition.variables.fg1,
+      "--color-fg-subtle": definition.variables.fg2,
+      "--color-fg-disabled": definition.variables.fg3,
+      "--color-primary": definition.variables.primary,
+    };
+    for (const [name, value] of Object.entries(aliases))
+      root.style.setProperty(name, value);
     // Keep the semantic aliases used by consolidated component styles in
     // sync with the active theme as well.
     const aliases: Record<string, string> = {
