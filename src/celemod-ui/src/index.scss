@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "./styles/theme" as *;
 @use "./styles/theme-system";
+@use "./styles/theme-variants";
 
 :root {
   /* Runtime theme tokens. Theme providers can override these values on
