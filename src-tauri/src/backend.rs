@@ -50,6 +50,7 @@ extern crate lazy_static;
 
 lazy_static::lazy_static! {
     static ref DOWNLOAD_CANCEL_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
+    static ref DOWNLOAD_PAUSE_FLAGS: Mutex<HashMap<String, Arc<AtomicBool>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_DESTINATION_LOCKS: Mutex<HashMap<String, Arc<Mutex<()>>>> = Mutex::new(HashMap::new());
     static ref MOD_DEPENDENCY_GRAPH: Mutex<Option<ModDependencyGraphCache>> = Mutex::new(None);
     static ref PENDING_DEEP_LINKS: ParkingMutex<Vec<String>> = ParkingMutex::new(Vec::new());
@@ -1634,6 +1635,7 @@ fn download_mod_archive_with_cancel(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<Vec<EverestModMetadata>> {
     let destination = Path::new(dest);
     let destination_lock = DOWNLOAD_DESTINATION_LOCKS
@@ -1663,6 +1665,7 @@ fn download_mod_archive_with_cancel(
             progress_callback,
             multi_thread,
             cancel_flag,
+            pause_flag,
         )?;
 
         commit_downloaded_mod_archive(&temporary, destination)?
@@ -2267,6 +2270,7 @@ struct ModTaskInfo {
     dest: String,
     requested: bool,
     dependencies: Vec<String>,
+    cancel_key: String,
     status: DownloadStatus,
     data: String,
     downloaded_bytes: u64,
@@ -2319,6 +2323,7 @@ fn emit_download_failure(
             .to_string(),
         requested: true,
         dependencies: Vec::new(),
+        cancel_key: name.to_string(),
         status: DownloadStatus::Failed,
         data: error,
         downloaded_bytes: 0,
@@ -2335,6 +2340,13 @@ fn expand_dependency_graph(
     graph: &HashMap<String, GraphMod>,
     mods_dir: &str,
 ) -> anyhow::Result<()> {
+    let cancel_key = tasks
+        .first()
+        .map(|task| task.cancel_key.clone())
+        .unwrap_or_default();
+    for task in tasks.iter_mut() {
+        task.cancel_key = cancel_key.clone();
+    }
     let mut queued = tasks
         .iter()
         .enumerate()
@@ -2394,6 +2406,7 @@ fn expand_dependency_graph(
                         .to_string(),
                     requested: false,
                     dependencies: Vec::new(),
+                    cancel_key: cancel_key.clone(),
                     status: DownloadStatus::Waiting,
                     data: "0".to_string(),
                     downloaded_bytes: 0,
@@ -3481,6 +3494,7 @@ mod local_package_tests {
                 dest: root.join("A.zip").to_string_lossy().to_string(),
                 requested: true,
                 dependencies: Vec::new(),
+                cancel_key: name.clone(),
                 status: DownloadStatus::Waiting,
                 data: "0".to_string(),
                 downloaded_bytes: 0,
