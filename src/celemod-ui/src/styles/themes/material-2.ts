@@ -68,6 +68,7 @@ export function mountMaterial2Interactions(root: Material2InteractionRoot = docu
     ripple.style.top = `${event.clientY - rect.top - diameter / 2}px`;
     button.querySelectorAll(`:scope > .${RIPPLE_CLASS}`).forEach((node) => node.remove());
     button.appendChild(ripple);
+    requestAnimationFrame(() => { ripple.style.opacity = "0"; });
     window.setTimeout(() => ripple.remove(), 450);
   };
 
@@ -219,6 +220,7 @@ export function rippleMaterial2Control(control: HTMLElement, key = "Enter"): () 
     ripple.style.top = `${(rect.height - diameter) / 2}px`;
     control.querySelectorAll(`:scope > .${RIPPLE_CLASS}`).forEach((node) => node.remove());
     control.append(ripple);
+    requestAnimationFrame(() => { ripple.style.opacity = "0"; });
     window.setTimeout(() => ripple.remove(), 450);
   };
   control.addEventListener("keydown", onKeyDown);
