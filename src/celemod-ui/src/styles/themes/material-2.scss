@@ -1,0 +1,375 @@
+/*
+ * Material Design 2 theme
+ *
+ * Based on the M2 visual language: 4dp corner radius, an 8dp spacing grid,
+ * Roboto type, tonal elevation (white overlays on dark surfaces), all-caps
+ * action labels, outlined fields and restrained state-layer/ripple feedback.
+ * This file intentionally scopes every rule to html[data-theme="material-2"]
+ * so it can be loaded after the shared theme variants without leaking.
+ */
+
+html[data-theme="material-2"] {
+  /* M2 dark color roles (Material baseline palette). */
+  --md2-background: #121212;
+  --md2-surface: #1e1e1e;
+  --md2-surface-1: #252525;
+  --md2-surface-2: #292929;
+  --md2-surface-3: #2f2f2f;
+  --md2-on-surface: #ffffff;
+  --md2-on-surface-medium: rgba(255, 255, 255, 0.70);
+  --md2-on-surface-disabled: rgba(255, 255, 255, 0.38);
+  --md2-primary: #bb86fc;
+  --md2-primary-variant: #3700b3;
+  --md2-secondary: #03dac6;
+  --md2-error: #cf6679;
+  --md2-divider: rgba(255, 255, 255, 0.12);
+  --md2-radius: 4px;
+  --md2-unit: 8px;
+
+  /* Runtime aliases consumed by legacy component styles. */
+  --bg: var(--md2-background);
+  --bg1: var(--md2-surface);
+  --bg2: var(--md2-surface-1);
+  --bg3: var(--md2-surface-2);
+  --fg: var(--md2-on-surface);
+  --fg1: var(--md2-on-surface-medium);
+  --fg2: var(--md2-on-surface-medium);
+  --fg3: var(--md2-on-surface-disabled);
+  --primary: var(--md2-primary);
+  --radius: var(--md2-radius);
+  --radius-sm: var(--md2-radius);
+  --radius-md: var(--md2-radius);
+  --radius-lg: var(--md2-radius);
+  --color-canvas: var(--md2-background);
+  --color-surface: var(--md2-background);
+  --color-surface-elevated: var(--md2-surface);
+  --color-surface-hover: var(--md2-surface-2);
+  --color-surface-active: var(--md2-surface-3);
+  --color-fg: var(--md2-on-surface);
+  --color-fg-muted: var(--md2-on-surface-medium);
+  --color-fg-subtle: var(--md2-on-surface-medium);
+  --color-fg-disabled: var(--md2-on-surface-disabled);
+  --color-primary: var(--md2-primary);
+  --elevation: 0 2px 4px rgba(0, 0, 0, .30), 0 1px 5px rgba(0, 0, 0, .20);
+
+  color-scheme: dark;
+  color: var(--md2-on-surface);
+  background: var(--md2-background);
+  font-family: Roboto, "Noto Sans SC", system-ui, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+html[data-theme="material-2"] body {
+  color: var(--md2-on-surface);
+  background: var(--md2-background);
+  font-family: inherit;
+}
+
+/* 56dp toolbar / app-bar treatment. */
+html[data-theme="material-2"] .app-frame {
+  padding: 0 16px;
+  background: var(--md2-background);
+}
+html[data-theme="material-2"] .window-titlebar {
+  flex-basis: 56px;
+  min-height: 56px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--md2-divider);
+  background: var(--md2-surface);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .30);
+}
+html[data-theme="material-2"] .window-caption {
+  color: var(--md2-on-surface);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+  opacity: 1;
+}
+html[data-theme="material-2"] .caption-version,
+html[data-theme="material-2"] .caption-hash {
+  color: var(--md2-on-surface-medium);
+}
+
+/* Navigation rail follows M2 56dp icon buttons and clear active indicator. */
+html[data-theme="material-2"] .app-shell {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+html[data-theme="material-2"] .sidebar {
+  width: 64px;
+  margin-right: 0;
+  padding-top: 8px;
+}
+html[data-theme="material-2"] .sidebar-scroll,
+html[data-theme="material-2"] .sidebar-items {
+  width: 64px;
+}
+html[data-theme="material-2"] .sidebar .navBtn {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--md2-radius);
+  color: var(--md2-on-surface-medium);
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+html[data-theme="material-2"] .sidebar .navBtn::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--md2-primary);
+  content: "";
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+html[data-theme="material-2"] .sidebar .navBtn:hover::before { opacity: .08; }
+html[data-theme="material-2"] .sidebar .navBtn:active::before { opacity: .16; }
+html[data-theme="material-2"] .sidebar .navBtn.selected {
+  border: 0 !important;
+  color: var(--md2-primary);
+  background: rgba(187, 134, 252, .16) !important;
+  box-shadow: inset 3px 0 0 var(--md2-primary);
+}
+html[data-theme="material-2"] .sidebar .navBtn .icon { z-index: 1; font-size: 21px; }
+html[data-theme="material-2"] .sidebar .title { z-index: 1; color: inherit; font-size: 10px; opacity: 1; }
+html[data-theme="material-2"] .downloadListBtn {
+  width: 56px;
+  height: 56px;
+  margin: 8px 0;
+  border-radius: 50%;
+  color: var(--md2-on-surface);
+  background: var(--md2-primary);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, .40), 0 1px 10px rgba(0, 0, 0, .24);
+}
+html[data-theme="material-2"] .downloadListBtn:hover { box-shadow: 0 5px 8px rgba(0, 0, 0, .42), 0 2px 12px rgba(0, 0, 0, .28); }
+
+/* M2 cards use 4dp corners and tonal elevation rather than glass gradients. */
+html[data-theme="material-2"] .settings-card,
+html[data-theme="material-2"] .home-active-mods,
+html[data-theme="material-2"] .home-profiles-section .profile,
+html[data-theme="material-2"] .channel-card,
+html[data-theme="material-2"] .version-item,
+html[data-theme="material-2"] .download-task,
+html[data-theme="material-2"] .gameSelector,
+html[data-theme="material-2"] [class*="-card"] {
+  border: 1px solid var(--md2-divider);
+  border-radius: var(--md2-radius);
+  background: var(--md2-surface);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .30), 0 1px 5px rgba(0, 0, 0, .20);
+}
+html[data-theme="material-2"] .settings-page,
+html[data-theme="material-2"] .home-page { padding-top: 16px; }
+html[data-theme="material-2"] .settings-section-title,
+html[data-theme="material-2"] .home-section-heading h2 {
+  color: var(--md2-on-surface-medium);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* Buttons: text button / contained button with M2 state layers. */
+html[data-theme="material-2"] button {
+  position: relative;
+  min-height: 36px;
+  padding: 0 16px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--md2-radius);
+  color: var(--md2-primary);
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease;
+}
+html[data-theme="material-2"] button::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+html[data-theme="material-2"] button:hover::after { opacity: .08; }
+html[data-theme="material-2"] button:focus-visible { outline: 2px solid var(--md2-primary); outline-offset: 2px; }
+html[data-theme="material-2"] button:active { transform: translateY(1px); }
+html[data-theme="material-2"] button:active::after { opacity: .16; }
+html[data-theme="material-2"] button.primary,
+html[data-theme="material-2"] button[class*="primary"] {
+  color: #1b1028;
+  background: var(--md2-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .35);
+}
+html[data-theme="material-2"] button.primary:hover,
+html[data-theme="material-2"] button[class*="primary"]:hover { box-shadow: 0 4px 5px rgba(0, 0, 0, .40); }
+html[data-theme="material-2"] button:disabled { color: var(--md2-on-surface-disabled); background: transparent; box-shadow: none; }
+
+/* Outlined fields and selects follow M2 56dp controls with 2px focus ring. */
+html[data-theme="material-2"] input:not([type="checkbox"]),
+html[data-theme="material-2"] textarea,
+html[data-theme="material-2"] select {
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, .54) !important;
+  border-radius: var(--md2-radius) !important;
+  outline: none;
+  color: var(--md2-on-surface) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: inherit;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+html[data-theme="material-2"] input:not([type="checkbox"]):hover,
+html[data-theme="material-2"] textarea:hover,
+html[data-theme="material-2"] select:hover { border-color: var(--md2-on-surface) !important; background: rgba(255, 255, 255, .04) !important; }
+html[data-theme="material-2"] input:not([type="checkbox"]):focus,
+html[data-theme="material-2"] textarea:focus,
+html[data-theme="material-2"] select:focus { border: 2px solid var(--md2-primary) !important; }
+html[data-theme="material-2"] select option { color: var(--md2-on-surface); background: var(--md2-surface-2); }
+
+/* M2 checkbox/radio state layers. */
+html[data-theme="material-2"] input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--md2-on-surface-medium);
+  border-radius: 2px;
+  background: transparent;
+  opacity: 1;
+}
+html[data-theme="material-2"] input[type="checkbox"]:checked {
+  border-color: var(--md2-primary);
+  background-color: var(--md2-primary);
+  background-size: 12px 10px;
+}
+
+/* Tabs: text labels plus a 2px indicator, no pill-shaped segmented controls. */
+html[data-theme="material-2"] .centered-tab-buttons {
+  justify-content: flex-start;
+  gap: 0;
+  border-bottom: 1px solid var(--md2-divider);
+}
+html[data-theme="material-2"] .centered-tab-buttons > button {
+  min-width: 96px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 0;
+  color: var(--md2-on-surface-medium);
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+}
+html[data-theme="material-2"] .centered-tab-buttons > button::after { inset: auto 0 0; height: 2px; background: var(--md2-primary); }
+html[data-theme="material-2"] .centered-tab-buttons > button:hover { color: var(--md2-on-surface); }
+html[data-theme="material-2"] .centered-tab-buttons > button.active,
+html[data-theme="material-2"] .centered-tab-buttons > button.selected { color: var(--md2-primary); }
+html[data-theme="material-2"] .centered-tab-buttons > button.active::after,
+html[data-theme="material-2"] .centered-tab-buttons > button.selected::after { opacity: 1; }
+
+/* Dialogs, menus and transient feedback use stepped elevation. */
+html[data-theme="material-2"] .popup-container {
+  background: rgba(0, 0, 0, .60);
+  backdrop-filter: none;
+}
+html[data-theme="material-2"] .popup-content {
+  max-width: 480px;
+  padding: 24px;
+  border: 0;
+  border-radius: var(--md2-radius);
+  color: var(--md2-on-surface);
+  background: var(--md2-surface-2);
+  box-shadow: 0 8px 10px rgba(0, 0, 0, .40), 0 3px 14px rgba(0, 0, 0, .28);
+  text-align: left;
+}
+html[data-theme="material-2"] .popup-content .title { margin-bottom: 16px; font-size: 20px; font-weight: 500; }
+html[data-theme="material-2"] .popup-content .content { color: var(--md2-on-surface-medium); line-height: 1.5; }
+html[data-theme="material-2"] .popup-content .buttons { justify-content: flex-end; gap: 8px; }
+html[data-theme="material-2"] .popup-content .buttons button { margin: 0; }
+html[data-theme="material-2"] .snackbar,
+html[data-theme="material-2"] [class*="snackbar"],
+html[data-theme="material-2"] [class*="toast"] {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--md2-radius);
+  color: #fff;
+  background: #323232;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, .40), 0 1px 10px rgba(0, 0, 0, .24);
+}
+
+/* Floating action affordances (if present in a route/component). */
+html[data-theme="material-2"] .fab,
+html[data-theme="material-2"] [class*="fab"] {
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  color: #1b1028;
+  background: var(--md2-secondary);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, .40), 0 3px 14px rgba(0, 0, 0, .28);
+}
+html[data-theme="material-2"] .fab:hover,
+html[data-theme="material-2"] [class*="fab"]:hover { box-shadow: 0 8px 10px rgba(0, 0, 0, .45), 0 4px 16px rgba(0, 0, 0, .30); }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="material-2"] *,
+  html[data-theme="material-2"] *::before,
+  html[data-theme="material-2"] *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* Event-created ink ripple and snackbar primitives. */
+html[data-theme="material-2"] button,
+html[data-theme="material-2"] [role="button"],
+html[data-theme="material-2"] .fab,
+html[data-theme="material-2"] [class*="fab"] { position: relative; overflow: hidden; }
+html[data-theme="material-2"] .md2-ripple {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .22;
+  pointer-events: none;
+  transform: scale(0);
+  animation: md2-ripple 450ms ease-out forwards;
+}
+@keyframes md2-ripple {
+  to { opacity: 0; transform: scale(1); }
+}
+html[data-theme="material-2"] .md2-snackbar {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  min-width: 288px;
+  max-width: min(560px, calc(100vw - 48px));
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: var(--md2-radius);
+  color: #fff;
+  background: #323232;
+  box-shadow: 0 3px 5px rgba(0, 0, 0, .40), 0 1px 10px rgba(0, 0, 0, .24);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+html[data-theme="material-2"] .md2-snackbar.is-visible { opacity: 1; transform: translateY(0); }
+html[data-theme="material-2"] [role="dialog"].is-visible,
+html[data-theme="material-2"] .md2-dialog.is-visible { animation: md2-dialog-enter 180ms ease-out both; }
+@keyframes md2-dialog-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
