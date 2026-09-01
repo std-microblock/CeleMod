@@ -21,6 +21,27 @@ export const createThemeContext = () => {
       root.style.setProperty(`--${name}`, value);
       root.style.setProperty(`--theme-${name}`, value);
     }
+    // Keep the semantic aliases used by consolidated component styles in
+    // sync with the active theme as well.
+    const aliases: Record<string, string> = {
+      "--color-canvas": "--bg",
+      "--color-surface": "--bg",
+      "--color-surface-elevated": "--bg1",
+      "--color-surface-hover": "--bg2",
+      "--color-surface-active": "--bg3",
+      "--color-fg": "--fg",
+      "--color-fg-muted": "--fg1",
+      "--color-fg-subtle": "--fg2",
+      "--color-fg-disabled": "--fg3",
+      "--color-primary": "--primary",
+      "--radius-sm": "--radius",
+      "--radius-md": "--radius",
+      "--shadow-card": "--elevation",
+      "--shadow-button": "--elevation",
+      "--scrollbar-thumb": "--bg3",
+    };
+    for (const [alias, token] of Object.entries(aliases))
+      root.style.setProperty(alias, `var(${token})`);
     root.style.setProperty("--theme-features", definition.features.join(" "));
   }, [theme]);
 
