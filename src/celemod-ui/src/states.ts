@@ -5,7 +5,11 @@ import { immer } from "zustand/middleware/immer";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ModBlacklistProfile } from "./ipc/blacklist";
 import { callRemote } from "./utils";
-import { DEFAULT_THEME_ID, type ThemeId } from "./themes/registry";
+import {
+  DEFAULT_THEME_ID,
+  THEME_REGISTRY,
+  type ThemeId,
+} from "./themes/registry";
 
 export interface BackendDep {
   name: string;
@@ -79,6 +83,10 @@ const normalizeFontScale = (value: unknown): FontScale => {
     ? Math.min(200, Math.max(50, Math.round(scale)))
     : 100;
 };
+const normalizeTheme = (value: unknown): ThemeId =>
+  typeof value === "string" && THEME_REGISTRY.some((theme) => theme.id === value)
+    ? (value as ThemeId)
+    : DEFAULT_THEME_ID;
 
 interface AppState {
   currentProfileName: string;
@@ -355,6 +363,7 @@ export const useAppStore = create<AppState>()(
           keyBindingsFontScale: normalizeFontScale(
             persisted.keyBindingsFontScale,
           ),
+          theme: normalizeTheme(persisted.theme),
           orphanActionTypes: normalizeModTypes(
             persisted.orphanActionTypes ??
               obsoleteAutoDisableTypes ??
