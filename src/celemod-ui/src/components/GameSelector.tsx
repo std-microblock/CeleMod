@@ -2,7 +2,7 @@ import _i18n from "src/i18n";
 import { Icon } from "./Icon";
 import "./GameSelector.scss";
 import { callRemote } from "../utils";
-import { useGamePath } from "src/states";
+import { useCurrentEverestUltra, useGamePath } from "src/states";
 
 export const GameSelector = (props: {
   paths: string[];
@@ -10,6 +10,7 @@ export const GameSelector = (props: {
   launchGame: (v: string) => void;
 }) => {
   const [gamePath] = useGamePath();
+  const { currentEverestIsUltra } = useCurrentEverestUltra();
   const paths = props.paths.includes(gamePath)
     ? props.paths
     : [...props.paths, gamePath].filter(Boolean);
@@ -36,6 +37,19 @@ export const GameSelector = (props: {
         >
           {_i18n.t("Everest")}
         </button>
+
+        {currentEverestIsUltra ? (
+          <button
+            title={_i18n.t(
+              "仅本次禁用 EverestUltra 的并行加载、ILHook 启动事务和 PGO 重排",
+            )}
+            onClick={() => {
+              props.launchGame("legacy");
+            }}
+          >
+            {_i18n.t("慢速启动")}
+          </button>
+        ) : null}
 
         <button
           onClick={() => {

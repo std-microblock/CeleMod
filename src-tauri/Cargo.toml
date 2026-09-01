@@ -50,7 +50,7 @@ whoami = "1"
 tauri-plugin-single-instance = { version = "2.4.3", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["wincon", "consoleapi", "libloaderapi", "winuser"] }
+winapi = { version = "0.3", features = ["commctrl", "wincon", "consoleapi", "libloaderapi", "winuser"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 window-vibrancy = "0.8"

@@ -189,6 +189,7 @@ export const Home = () => {
                 "start_game_directly",
                 gamePath || gamePaths[0],
                 v === "origin",
+                v === "legacy",
               );
               setTimeout(() => {
                 mask.setMaskEnabled(false);
