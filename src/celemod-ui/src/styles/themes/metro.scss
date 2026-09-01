@@ -385,3 +385,17 @@ html[data-theme="win10"] .manage-action-menu { border: 2px solid var(--metro-acc
   html[data-theme="metro"] *, html[data-theme="metro"] *::before, html[data-theme="metro"] *::after,
   html[data-theme="win10"] *, html[data-theme="win10"] *::before, html[data-theme="win10"] *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Root containers should not flash when the pointer crosses their children. */
+html[data-theme="metro"] .everest:hover,
+html[data-theme="win10"] .everest:hover,
+html[data-theme="metro"] .keybindings-page:hover,
+html[data-theme="win10"] .keybindings-page:hover,
+html[data-theme="metro"] .search-page:hover,
+html[data-theme="win10"] .search-page:hover,
+html[data-theme="metro"] .downloadList:hover,
+html[data-theme="win10"] .downloadList:hover {
+  border-color: var(--metro-border) !important;
+  background: var(--metro-surface) !important;
+  transform: none;
+}
