@@ -1,23 +1,22 @@
 @use "../styles/theme" as theme;
 
 button {
-  color: theme.$fg;
-  background: theme.$bg1;
-  border: none;
-  font-size: 12px;
-  border-radius: 5px;
   display: inline-block;
-  text-align: center;
-  letter-spacing: 1.5px;
-  color: #fff;
-  background-color: #222;
-  border: none;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px #00000040;
-  // transition: background .2s ease-in-out;
-  padding: 3px 15px;
   min-height: 30px;
+  padding: 3px 15px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-fg, #{theme.$fg});
+  background: var(--color-surface-elevated, #{theme.$bg1});
+  box-shadow: var(--shadow-button, 0 2px 5px #00000040);
   cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-align: center;
+  transition:
+    background-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease;
 }
 
 button.large {
@@ -27,13 +26,19 @@ button.large {
 }
 
 button.primary {
-  border: 1px theme.$primary solid;
+  border: 1px solid var(--color-primary, #{theme.$primary});
 }
 
 button:hover {
-  background: theme.$bg2;
+  background: var(--color-surface-hover, #{theme.$bg2});
 }
 
 button:active {
-  background: theme.$bg3;
+  background: var(--color-surface-active, #{theme.$bg3});
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
 }

@@ -9,8 +9,14 @@
     "Segoe UI",
     sans-serif;
   scroll-behavior: smooth;
-  scrollbar-color: #56525f transparent;
+  scrollbar-color: var(--scrollbar-thumb, #56525f) transparent;
   scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
+  }
 }
 
 *::-webkit-scrollbar {
@@ -24,5 +30,5 @@
 
 *::-webkit-scrollbar-thumb {
   border-radius: 10px;
-  background: #56525f;
+  background: var(--scrollbar-thumb, #56525f);
 }
