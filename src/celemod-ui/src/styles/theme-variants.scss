@@ -27,7 +27,7 @@
 
 /* Material You — expressive rounded surfaces, tonal elevation and touch ripple. */
 html[data-theme="material-you"] {
-  @include theme-vars(#141218, #211f26, #302d36, #f4eff7, #cac4d0, #d0bcff, 24px, "Google Sans, system-ui, sans-serif");
+  @include theme-vars(#141218, #211f26, #302d38, #e6e0e9, #938f99, #d0bcff, 20px, "Google Sans, system-ui, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background:
@@ -55,7 +55,7 @@ html[data-theme="material-you"] [class*="Card"] { border-radius: var(--theme-rad
 
 /* Fluent Design — acrylic translucency, reveal lighting and compact corners. */
 html[data-theme="fluent"] {
-  @include theme-vars(#202020, rgba(45,45,45,.72), rgba(63,63,63,.78), #fff, #c8c8c8, #60cdff, 6px, "Segoe UI Variable, Segoe UI, sans-serif");
+  @include theme-vars(#0f1115, rgba(26,28,32,.76), rgba(37,40,45,.84), #f5f5f5, #a8a8a8, #4cc2ff, 8px, "Segoe UI Variable, Segoe UI, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background: linear-gradient(135deg,#202020 0%,#1b1b1b 60%,#252525 100%);
@@ -81,7 +81,7 @@ html[data-theme="fluent"] [class*="Card"] { background: var(--theme-surface) !im
 
 /* Linear / NextUI — dense dark canvas, hairline borders and gradient focus. */
 html[data-theme="linear"], html[data-theme="nextui"] {
-  @include theme-vars(#0a0a0b, #111113, #19191d, #f5f5f7, #8b8b93, #8b5cf6, 10px, "Inter, system-ui, sans-serif");
+  @include theme-vars(#0b0d12, #111318, #191b23, #f7f8f8, #9b9da7, #5e6ad2, 8px, "Inter, system-ui, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background-color: var(--theme-bg);
@@ -102,7 +102,7 @@ html[data-theme="nextui"] select,
 html[data-theme="nextui"] input:not([type="checkbox"]),
 html[data-theme="nextui"] textarea { border-radius: var(--theme-radius) !important; background: var(--theme-surface) !important; border: 1px solid rgba(255,255,255,.10) !important; color: var(--theme-fg) !important; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
 html[data-theme="linear"] button.primary,
-html[data-theme="nextui"] button.primary { background: linear-gradient(135deg,#8b5cf6,#6366f1) !important; border: 0 !important; color: white !important; box-shadow: 0 4px 14px rgba(99,102,241,.38); }
+html[data-theme="nextui"] button.primary { background: linear-gradient(135deg,var(--theme-primary), color-mix(in srgb, var(--theme-primary) 65%, #6366f1)) !important; border: 0 !important; color: white !important; box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-primary) 38%, transparent); }
 html[data-theme="linear"] button:hover,
 html[data-theme="nextui"] button:hover { border-color: rgba(139,92,246,.7) !important; box-shadow: 0 0 0 3px rgba(139,92,246,.12); }
 html[data-theme="linear"] .popup-content,
@@ -112,7 +112,7 @@ html[data-theme="nextui"] [class*="panel"] { background: var(--theme-surface) !i
 
 /* Windows 10 Metro — square tiles, hard edges, glow and 3-D press depth. */
 html[data-theme="metro"], html[data-theme="win10"] {
-  @include theme-vars(#111820, #1f2b35, #283944, #fff, #c4d3dc, #0078d7, 0, "Segoe UI, sans-serif");
+  @include theme-vars(#101820, #17232f, #203243, #fff, #b7c9d9, #0078d4, 0, "Segoe UI, sans-serif");
   color-scheme: dark;
   font-family: var(--theme-font);
   background: linear-gradient(145deg,#0f171d,#152631 55%,#0d1318);
