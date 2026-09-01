@@ -732,7 +732,7 @@ html[data-theme="material-2"] .detail-loading::before { width: 28px; height: 28p
 html[data-theme="material-2"] .blocking-mask { background: rgba(18,18,18,.88); }
 html[data-theme="material-2"] .blocking-mask-spinner { border-color: rgba(255,255,255,.20); border-top-color: var(--md2-primary); }
 html[data-theme="material-2"] .blocking-mask-text { color: var(--md2-on-surface); font-size: 14px; font-weight: 500; }
-html[data-theme="material-2"] .page-entering { animation: none; opacity: 1; }
+html[data-theme="material-2"] .page-entering { opacity: 1; }
 
 /* Keep touch targets at least 48dp on pointer devices. */
 @media (pointer: coarse) {
