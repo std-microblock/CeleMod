@@ -5,6 +5,7 @@ import { immer } from "zustand/middleware/immer";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ModBlacklistProfile } from "./ipc/blacklist";
 import { callRemote } from "./utils";
+import { DEFAULT_THEME_ID, type ThemeId } from "./themes/registry";
 
 export interface BackendDep {
   name: string;
@@ -117,6 +118,7 @@ interface AppState {
   fontScale: FontScale;
   manageFontScale: FontScale;
   keyBindingsFontScale: FontScale;
+  theme: ThemeId;
   modPageSource: ModPageSource;
   page: string;
   downloadMenuOpen: boolean;
@@ -159,6 +161,7 @@ interface AppState {
   setFontScale: (value: FontScale) => void;
   setManageFontScale: (value: FontScale) => void;
   setKeyBindingsFontScale: (value: FontScale) => void;
+  setTheme: (value: ThemeId) => void;
   setModPageSource: (value: ModPageSource) => void;
   setPage: (value: string) => void;
   setDownloadMenuOpen: (value: boolean) => void;
@@ -214,6 +217,7 @@ const setters = {
   setFontScale: "fontScale",
   setManageFontScale: "manageFontScale",
   setKeyBindingsFontScale: "keyBindingsFontScale",
+  setTheme: "theme",
   setModPageSource: "modPageSource",
   setPage: "page",
   setDownloadMenuOpen: "downloadMenuOpen",
@@ -271,6 +275,7 @@ export const useAppStore = create<AppState>()(
         fontScale: 100,
         manageFontScale: 100,
         keyBindingsFontScale: 100,
+        theme: DEFAULT_THEME_ID,
         modPageSource: "wegfan",
         page: "Home",
         downloadMenuOpen: false,
@@ -392,6 +397,7 @@ export const useAppStore = create<AppState>()(
         fontScale,
         manageFontScale,
         keyBindingsFontScale,
+        theme,
         modPageSource,
         currentLang,
       }) => ({
@@ -423,6 +429,7 @@ export const useAppStore = create<AppState>()(
         fontScale,
         manageFontScale,
         keyBindingsFontScale,
+        theme,
         modPageSource,
         currentLang,
       }),

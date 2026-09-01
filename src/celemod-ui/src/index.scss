@@ -1,8 +1,26 @@
 @use "sass:color";
 @use "./styles/theme" as *;
+@use "./styles/theme-system";
 
 :root {
-  color: $fg;
+  /* Runtime theme tokens. Theme providers can override these values on
+     [data-theme] without recompiling component styles. */
+  --color-canvas: #{$bg};
+  --color-surface: #{$bg};
+  --color-surface-elevated: #{$bg1};
+  --color-surface-hover: #{$bg2};
+  --color-surface-active: #{$bg3};
+  --color-fg: #{$fg};
+  --color-fg-muted: #{$fg1};
+  --color-fg-subtle: #{$fg2};
+  --color-fg-disabled: #{$fg3};
+  --color-primary: #{$primary};
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --shadow-button: 0 2px 5px #00000040;
+  --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
+  color: var(--color-fg);
   color-scheme: dark;
 }
 
@@ -16,7 +34,7 @@ body,
 }
 
 html {
-  background: #050505;
+  background: var(--color-canvas, #050505);
 }
 
 html[window-blurbehind] {
@@ -26,7 +44,7 @@ html[window-blurbehind] {
 }
 
 body {
-  color: $fg;
+  color: var(--color-fg, #{$fg});
   background: transparent;
   font-size: 14px;
 }
@@ -58,7 +76,7 @@ textarea,
 .window-caption {
   flex: 0 0 auto;
   padding: 0;
-  color: $fg;
+  color: var(--color-fg, #{$fg});
   font-size: 14px;
   font-weight: 400;
   opacity: 0.8;
@@ -210,7 +228,7 @@ html[data-platform="macos"] .app-shell {
   margin: 0 0 10px;
   padding: 7px 0 0;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: var(--radius-md, 7px);
   background: transparent;
   box-shadow: none;
   cursor: pointer;
@@ -218,21 +236,21 @@ html[data-platform="macos"] .app-shell {
   font-size: 15px;
   letter-spacing: normal;
   text-transform: none;
-  transition: background 0.3s ease-in-out;
+  transition: background-color 180ms ease, border-color 180ms ease;
 }
 
 .sidebar .navBtn.selected {
-  border-color: $bg2;
-  background: $bg1;
-  box-shadow: 0 2px 10px $bg1;
+  border-color: var(--color-surface-hover, #{$bg2});
+  background: var(--color-surface-elevated, #{$bg1});
+  box-shadow: 0 2px 10px var(--color-surface-elevated, #{$bg1});
 }
 
 .sidebar .navBtn:not(.selected):hover {
-  background: $bg2;
+  background: var(--color-surface-hover, #{$bg2});
 }
 
 .sidebar .navBtn:active {
-  background: $bg3;
+  background: var(--color-surface-active, #{$bg3});
 }
 
 .sidebar .navBtn .icon {
@@ -278,34 +296,28 @@ html[data-platform="macos"] .app-shell {
 }
 
 .downloadListBtn:hover {
-  background: $bg2;
-  box-shadow: 0 2px 10px $bg1;
+  background: var(--color-surface-hover, #{$bg2});
+  box-shadow: 0 2px 10px var(--color-surface-elevated, #{$bg1});
   opacity: 1;
 }
 
 .app-content {
   position: relative;
-  min-width: 0;
-  min-height: 0;
   width: 100%;
   height: 100%;
-}
-
-.page {
-  position: absolute;
-  inset: 0;
   min-width: 0;
   min-height: 0;
-  width: calc(100vw - 150px);
-  height: 100%;
-}
-
-.app-content {
   overflow: hidden;
 }
 
 .page {
   overflow: auto;
+  position: absolute;
+  inset: 0;
+  width: calc(100vw - 150px);
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   transform-origin: 50% 42%;
   will-change: opacity, transform;
 }
@@ -403,16 +415,16 @@ input[type="checkbox"] {
   width: 15px;
   height: 15px;
   margin: 0 4px 0 0;
-  border: 1px solid $bg3;
-  border-radius: 3px;
+  border: 1px solid var(--color-surface-active, #{$bg3});
+  border-radius: var(--radius-sm, 4px);
   box-sizing: border-box;
-  background: $bg1;
+  background: var(--color-surface-elevated, #{$bg1});
   opacity: 0.7;
   vertical-align: middle;
 }
 
 input[type="checkbox"]:checked {
-  background-color: $bg1;
+  background-color: var(--color-surface-elevated, #{$bg1});
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23d1d1d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: center;
@@ -445,19 +457,19 @@ select {
   min-height: 30px;
   padding: 4px 26px 4px 8px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 4px);
   box-sizing: border-box;
-  color: $fg;
-  background: $bg1;
+  color: var(--color-fg, #{$fg});
+  background: var(--color-surface-elevated, #{$bg1});
 }
 
 select:hover {
-  background: $bg2;
+  background: var(--color-surface-hover, #{$bg2});
 }
 
 select option {
-  color: $fg;
-  background: $bg1;
+  color: var(--color-fg, #{$fg});
+  background: var(--color-surface-elevated, #{$bg1});
 }
 
 .blocking-mask {
@@ -470,7 +482,7 @@ select option {
   margin: 0;
   padding: 24px;
   overflow: hidden;
-  color: $fg;
+  color: var(--color-fg, #{$fg});
   text-align: center;
   background: rgba(5, 5, 7, 0.82);
   opacity: 0;
@@ -483,7 +495,7 @@ select option {
   height: 18px;
   flex: 0 0 auto;
   border: 2px solid rgba(255, 255, 255, 0.18);
-  border-top-color: $primary;
+  border-top-color: var(--color-primary, #{$primary});
   border-radius: 50%;
   animation: blocking-mask-spin 700ms linear infinite;
 }
@@ -516,7 +528,7 @@ select option {
     align-items: center;
     justify-content: center;
     padding: 0 16px;
-    border: 1px solid color.change($fg, $alpha: 0.1);
+      border: 1px solid color.change($fg, $alpha: 0.1);
     border-radius: 8px;
     color: $fg2;
     background: color.change($fg, $alpha: 0.025);
@@ -564,24 +576,24 @@ select option {
   max-width: 400px;
   margin: 0 auto;
   padding: 30px;
-  border: 1px solid $bg2;
-  border-radius: 10px;
-  color: $fg;
+  border: 1px solid var(--color-surface-hover, #{$bg2});
+  border-radius: var(--radius-lg, 10px);
+  color: var(--color-fg, #{$fg});
   text-align: center;
-  background: $bg1;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: var(--color-surface-elevated, #{$bg1});
+  box-shadow: var(--shadow-elevated, 0 4px 20px rgba(0, 0, 0, 0.5));
 }
 
 .popup-content .title {
   margin-bottom: 15px;
-  color: $fg;
+  color: var(--color-fg, #{$fg});
   font-size: 18px;
   font-weight: 500;
 }
 
 .popup-content .content {
   margin-bottom: 25px;
-  color: $fg1;
+  color: var(--color-fg-muted, #{$fg1});
   line-height: 1.5;
 }
 
