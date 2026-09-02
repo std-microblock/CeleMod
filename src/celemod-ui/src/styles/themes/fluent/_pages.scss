@@ -588,7 +588,35 @@ html[data-theme="fluent"] .version-card:hover {
 }
 
 html[data-theme="fluent"] .keybindings-page {
+  grid-template-columns: 180px minmax(0, 1fr);
   background: transparent;
+}
+
+html[data-theme="fluent"] .keybindings-toolbar {
+  grid-template-columns: auto minmax(180px, 1fr) auto;
+  gap: 8px;
+  padding-inline: 12px;
+}
+
+html[data-theme="fluent"] .keybindings-actions {
+  gap: 6px;
+  overflow: hidden;
+}
+
+html[data-theme="fluent"] .keybindings-actions button {
+  min-width: 0;
+  padding-inline: 10px;
+  white-space: nowrap;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-panel {
+  margin: 8px 0 0;
+  border-radius: 6px;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-board {
+  width: min(920px, 100%);
+  min-width: 776px;
 }
 
 html[data-theme="fluent"] .keybindings-list,

@@ -1,4 +1,5 @@
 import { THEME_REGISTRY, type ThemeId } from "../themes/registry";
+import { Icon } from "./Icon";
 import "./ThemePicker.scss";
 
 export interface ThemePickerProps {
@@ -22,7 +23,7 @@ export const ThemePicker = ({ value, onChange, compact = false }: ThemePickerPro
       >
         <img src={theme.preview} alt="" loading="lazy" />
         <span className="theme-option-copy"><strong>{theme.name}</strong></span>
-        {value === theme.id && <span className="theme-option-check" aria-hidden="true">✓</span>}
+        {value === theme.id && <span className="theme-option-check" aria-hidden="true"><Icon name="i-tick" /></span>}
       </button>
     ))}
   </div>
