@@ -238,6 +238,11 @@ export const Home = () => {
                     </span>
                   </div>
                 </div>
+                {activeProfileNames.includes(v.name) && (
+                  <span className="profile-active-indicator" aria-label={_i18n.t("已启用")}>
+                    {_i18n.t("已启用")}
+                  </span>
+                )}
               </button>
             ))}
           </div>
