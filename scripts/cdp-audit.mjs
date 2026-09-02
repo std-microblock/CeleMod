@@ -34,7 +34,6 @@ await wait(250);
 
 const themes = [
   ["vanilla", "Vanilla"], ["material-you", "Material You"], ["fluent", "Fluent Design"],
-  ["linear", "Linear / NextUI"], ["metro", "Windows 10 Metro"], ["material-2", "Material Design 2"],
 ];
 const pages = [["Home", "主页"], ["Everest", "Everest"], ["Search", "搜索"], ["Manage", "管理"], ["KeyBindings", "按键"], ["Multiplayer", "联机相关"], ["RecommendMods", "推荐模组"], ["Loenn", "Loenn"], ["Settings", "设置"]];
 const outputDir = process.argv[2] ?? "D:/CeleMod/tauri-audit";
