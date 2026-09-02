@@ -67,6 +67,166 @@ html[data-theme="fluent"] [role="dialog"] {
   box-shadow: var(--fluent-shadow-dialog) !important;
 }
 
+/* Detail views are wide content dialogs, not the compact 400px popup card. */
+html[data-theme="fluent"] .popup-container:has(.mod-detail-popup),
+html[data-theme="fluent"] .popup-container:has(.manage-detail-popup) {
+  inset: 46px 12px 12px;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+html[data-theme="fluent"] .popup-content.mod-detail-popup {
+  width: min(1080px, calc(100vw - 88px)) !important;
+  max-width: none !important;
+  height: calc(100vh - 112px);
+  max-height: none;
+  margin: 0 auto;
+  padding: 24px 28px 40px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+html[data-theme="fluent"] .mod-detail-popup .images {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 188px;
+  max-height: 240px;
+  margin: 18px 0 20px;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+html[data-theme="fluent"] .mod-detail-popup .images img {
+  flex: 0 0 auto;
+  width: min(420px, 72vw);
+  min-width: 260px;
+  height: 220px;
+  max-height: 220px;
+  margin: 0;
+  border: 1px solid var(--fluent-stroke-control);
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+html[data-theme="fluent"] .mod-detail-popup .content,
+html[data-theme="fluent"] .mod-detail-popup .content * {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+html[data-theme="fluent"] .mod-detail-popup .content img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  object-fit: contain;
+}
+
+html[data-theme="fluent"] .mod-detail-popup .credits {
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+html[data-theme="fluent"] .manage-detail-popup {
+  width: min(920px, calc(100vw - 96px)) !important;
+  max-width: none !important;
+  max-height: calc(100vh - 108px);
+  margin: 0 auto;
+  padding: 26px 30px 34px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-heading {
+  padding-right: 44px;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0 20px;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-stats > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 4px;
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-images {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-height: 164px;
+  max-height: 230px;
+  gap: 10px;
+  margin: 18px 0 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-images img {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 260px;
+  max-width: 420px;
+  height: 210px;
+  max-height: 210px;
+  border: 1px solid var(--fluent-stroke-control);
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-description,
+html[data-theme="fluent"] .manage-detail-popup .detail-description * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-description img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  object-fit: contain;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-files {
+  min-width: 0;
+}
+
+html[data-theme="fluent"] .manage-detail-popup .detail-files span {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (max-width: 720px) {
+  html[data-theme="fluent"] .popup-content.mod-detail-popup,
+  html[data-theme="fluent"] .manage-detail-popup {
+    width: calc(100vw - 28px) !important;
+    padding: 20px 18px 28px;
+  }
+
+  html[data-theme="fluent"] .manage-detail-popup .detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 html[data-theme="fluent"] .popup-content .title,
 html[data-theme="fluent"] .dialog-title {
   color: var(--fluent-text-primary);
@@ -196,4 +356,3 @@ html[data-theme="fluent"] .crash-assistant footer,
 html[data-theme="fluent"] .manage-detail-popup footer {
   border-top-color: var(--fluent-stroke-divider) !important;
 }
-

@@ -119,6 +119,22 @@ html[data-theme="fluent"] .theme-option.selected {
   box-shadow: inset 0 0 0 1px var(--fluent-accent) !important;
 }
 
+html[data-theme="fluent"] .theme-option.selected::after {
+  content: "Selected";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 7px;
+  border: 1px solid rgba(8,38,48,.24);
+  border-radius: 3px;
+  color: var(--fluent-accent-fg);
+  background: var(--fluent-accent);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.2;
+}
+
 html[data-theme="fluent"] .theme-option img {
   aspect-ratio: 16 / 8;
   opacity: .9;
