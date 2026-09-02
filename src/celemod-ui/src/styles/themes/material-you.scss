@@ -193,6 +193,31 @@ html[data-theme="material-you"] .popup-content .buttons { gap: 8px; }
 html[data-theme="material-you"] .popup-content .buttons button { min-height: 40px; }
 html[data-theme="material-you"] .page { scrollbar-color: var(--md-outline) transparent; }
 
+/* Dense data routes use compact controls rather than filled M3 buttons. */
+html[data-theme="material-you"] .manage-page,
+html[data-theme="material-you"] .keybindings-page { min-width: 0; }
+html[data-theme="material-you"] .manage-page button,
+html[data-theme="material-you"] .keybindings-page button { min-height: 30px; padding: 0 10px; border-radius: 8px !important; box-shadow: none; }
+html[data-theme="material-you"] .manage-page .manage-tree-row { min-height: 40px; grid-template-columns: calc(var(--indent) + 28px) minmax(0, 1fr) auto; }
+html[data-theme="material-you"] .manage-page .tree-expander { width: 28px; height: 28px; min-height: 28px; padding: 0; border-radius: 8px !important; background: transparent !important; }
+html[data-theme="material-you"] .manage-page .state-switch { min-height: 24px; height: 24px; padding: 0 8px; border-radius: 8px !important; background: transparent !important; }
+html[data-theme="material-you"] .manage-page .tree-name { min-height: 28px; height: 28px; padding: 0 8px; border-radius: 8px !important; background: transparent !important; font-size: 13px; }
+html[data-theme="material-you"] .manage-page .mod-row-menu button,
+html[data-theme="material-you"] .manage-page .toolbar-icon-button,
+html[data-theme="material-you"] .manage-page .toolbar-action-button { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 10px !important; }
+html[data-theme="material-you"] .manage-page input[type="checkbox"],
+html[data-theme="material-you"] .keybindings-page input[type="checkbox"] { width: 18px; height: 18px; margin: 0; align-self: center; }
+html[data-theme="material-you"] .keybindings-page { grid-template-columns: 160px minmax(0, 1fr); width: 100%; }
+html[data-theme="material-you"] .keybindings-sources { padding: 10px 8px 40px; }
+html[data-theme="material-you"] .keybindings-sources > button { min-height: 36px; height: 36px; padding: 0 10px; border-radius: 8px !important; background: transparent !important; }
+html[data-theme="material-you"] .keybindings-sources > button.selected { background: var(--md-surface-container-high) !important; border-color: var(--md-outline-variant); }
+html[data-theme="material-you"] .keybindings-toolbar { min-height: 56px; padding: 8px 12px; gap: 8px; }
+html[data-theme="material-you"] .keybindings-actions button,
+html[data-theme="material-you"] .keybindings-actions .input-mode-switch button { min-height: 36px; height: 36px; padding: 0 12px; border-radius: 10px !important; }
+html[data-theme="material-you"] .binding-row { min-height: 58px; padding: 8px 12px; gap: 18px; }
+html[data-theme="material-you"] .binding-chip { min-height: 32px !important; height: 32px; padding: 0 10px !important; border-radius: 10px !important; background: var(--md-surface-container-high) !important; }
+html[data-theme="material-you"] .binding-add { width: 32px; min-width: 32px; min-height: 32px !important; height: 32px; padding: 0 !important; border-radius: 50% !important; }
+
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

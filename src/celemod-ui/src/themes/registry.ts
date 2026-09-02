@@ -1,7 +1,6 @@
-const svg = (bg: string, accent: string, shape: string) =>
-  `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${bg}"/><stop offset="1" stop-color="${accent}"/></linearGradient></defs><rect width="320" height="180" rx="16" fill="url(#g)"/><rect x="20" y="24" width="280" height="132" rx="12" fill="rgba(0,0,0,.2)"/><rect x="36" y="42" width="90" height="12" rx="6" fill="rgba(255,255,255,.85)"/><rect x="36" y="66" width="180" height="8" rx="4" fill="rgba(255,255,255,.4)"/>${shape}</svg>`
-  )}`;
+import vanillaPreview from "../assets/theme-previews/vanilla.png";
+import materialYouPreview from "../assets/theme-previews/material-you.png";
+import fluentPreview from "../assets/theme-previews/fluent.png";
 
 export interface ThemeDefinition {
   id: string;
@@ -17,11 +16,7 @@ export const THEME_REGISTRY = [
     id: "vanilla",
     name: "Vanilla",
     description: "CeleMod classic dark glass interface",
-    preview: svg(
-      "#18181b",
-      "#a77fdb",
-      '<rect x="36" y="94" width="116" height="42" rx="8" fill="rgba(255,255,255,.12)"/><rect x="164" y="94" width="120" height="42" rx="8" fill="rgba(255,255,255,.08)"/>'
-    ),
+    preview: vanillaPreview,
     variables: {
       bg: "#131313",
       bg1: "#222222",
@@ -42,11 +37,7 @@ export const THEME_REGISTRY = [
     id: "material-you",
     name: "Material You",
     description: "Expressive surfaces, dynamic color and playful ripple motion",
-    preview: svg(
-      "#6750a4",
-      "#d0bcff",
-      '<circle cx="254" cy="74" r="28" fill="rgba(255,255,255,.3)"/><rect x="36" y="96" width="248" height="40" rx="20" fill="rgba(255,255,255,.2)"/>'
-    ),
+    preview: materialYouPreview,
     variables: {
       bg: "#141218",
       bg1: "#211f26",
@@ -68,11 +59,7 @@ export const THEME_REGISTRY = [
     name: "Fluent Design",
     description:
       "Windows Fluent translucency, soft depth and reveal highlights",
-    preview: svg(
-      "#0b1728",
-      "#4cc2ff",
-      '<circle cx="250" cy="102" r="54" fill="rgba(76,194,255,.35)"/><rect x="38" y="96" width="132" height="40" rx="4" fill="rgba(255,255,255,.14)"/>'
-    ),
+    preview: fluentPreview,
     variables: {
       bg: "#0f1115",
       bg1: "#1a1c20",
