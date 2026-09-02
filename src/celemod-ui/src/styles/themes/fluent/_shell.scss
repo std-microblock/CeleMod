@@ -50,35 +50,38 @@ html[data-theme="fluent"] .caption-hash {
 }
 
 html[data-theme="fluent"] .app-shell {
-  grid-template-columns: 68px minmax(0, 1fr);
-  gap: 4px;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 12px;
 }
 
 html[data-theme="fluent"] .sidebar {
-  width: 64px;
+  width: 208px;
   margin-right: 0;
-  padding: 4px 4px 0;
+  padding: 8px 8px 0 0;
   box-sizing: border-box;
 }
 
 html[data-theme="fluent"] .sidebar-scroll {
-  width: 60px;
+  width: 200px;
 }
 
 html[data-theme="fluent"] .sidebar-items {
-  width: 60px;
-  gap: 2px;
+  width: 200px;
+  gap: 1px;
 }
 
 html[data-theme="fluent"] .sidebar .navBtn,
 html[data-theme="fluent"] .downloadListBtn {
   position: relative;
-  width: 56px;
-  height: 48px;
-  margin: 0 0 3px;
-  padding: 4px 0 2px;
+  width: 196px;
+  height: 40px;
+  margin: 0 0 2px;
+  padding: 0 14px;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
   border: 1px solid transparent;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   color: var(--fluent-text-secondary);
   background: transparent;
   box-shadow: none;
@@ -118,8 +121,8 @@ html[data-theme="fluent"] .sidebar .navBtn.selected {
 html[data-theme="fluent"] .sidebar .navBtn.selected::after {
   content: "";
   position: absolute;
-  top: 12px;
-  bottom: 12px;
+  top: 7px;
+  bottom: 7px;
   left: -1px;
   width: 3px;
   border-radius: 0 2px 2px 0;
@@ -133,15 +136,18 @@ html[data-theme="fluent"] .sidebar .navBtn .icon {
 }
 
 html[data-theme="fluent"] .sidebar .title {
-  width: 54px;
+  width: auto;
   color: inherit;
-  font-size: 10px;
-  opacity: .78;
+  font-size: 13px;
+  opacity: .9;
+  text-align: left;
 }
 
 html[data-theme="fluent"] .downloadListBtn {
   margin-top: 8px;
   border-color: var(--fluent-stroke-control);
+  justify-content: flex-start;
+  padding-inline: 14px;
   background: var(--fluent-fill-control);
 }
 
