@@ -14,11 +14,8 @@ export const installMaterialYouInteractions = () => {
     target.classList.remove("md-ripple-active");
     const ripple = document.createElement("span");
     ripple.className = "md-ripple";
-    ripple.style.left = `${event.clientX - rect.left}px`;
-    ripple.style.top = `${event.clientY - rect.top}px`;
-    const diameter = Math.max(rect.width, rect.height) * 1.8;
-    ripple.style.width = `${diameter}px`;
-    ripple.style.height = `${diameter}px`;
+    ripple.style.setProperty("--md-pointer-x", `${event.clientX - rect.left}px`);
+    ripple.style.setProperty("--md-pointer-y", `${event.clientY - rect.top}px`);
     target.appendChild(ripple);
     target.classList.add("md-ripple-active", "md-shape-morph");
     const remove = () => { ripple.remove(); target.classList.remove("md-ripple-active"); };

@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { THEME_REGISTRY, type ThemeId } from "./themes/registry";
 import { installMaterialYouInteractions } from "./styles/themes/material-you";
-import { mountMetroInteractions } from "./styles/themes/metro";
-import { mountMaterial2Interactions } from "./styles/themes/material-2";
 import { mountFluentInteractions } from "./styles/themes/fluent/runtime";
-import { mountLinearInteractions } from "./styles/themes/linear";
 
 const applyTheme = (id: ThemeId) => {
   const root = document.documentElement;
@@ -21,9 +18,6 @@ export function ThemePreview() {
     applyTheme(theme);
     const cleanup = theme === "material-you" ? installMaterialYouInteractions()
       : theme === "fluent" ? mountFluentInteractions()
-      : theme === "linear" ? mountLinearInteractions()
-      : theme === "metro" ? mountMetroInteractions()
-      : theme === "material-2" ? mountMaterial2Interactions()
       : undefined;
     return cleanup;
   }, [theme]);

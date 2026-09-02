@@ -5,9 +5,6 @@ import { detectDesktopPlatform } from "../tauri/window";
 import { getTheme, THEME_REGISTRY, type ThemeId } from "../themes/registry";
 import { mountFluentInteractions } from "../styles/themes/fluent/runtime";
 import { installMaterialYouInteractions } from "../styles/themes/material-you";
-import { mountMetroInteractions } from "../styles/themes/metro";
-import { mountMaterial2Interactions } from "../styles/themes/material-2";
-import { mountLinearInteractions } from "../styles/themes/linear";
 
 export { useEnableAcrylic } from "../states";
 export { THEME_REGISTRY, getTheme };
@@ -56,12 +53,6 @@ export const createThemeContext = () => {
         return mountFluentInteractions();
       case "material-you":
         return installMaterialYouInteractions();
-      case "metro":
-        return mountMetroInteractions();
-      case "material-2":
-        return mountMaterial2Interactions();
-      case "linear":
-        return mountLinearInteractions();
       default:
         return undefined;
     }

@@ -1,6 +1,9 @@
 html[data-theme="fluent"] .settings-page {
-  width: min(1040px, 100%);
-  padding: 18px 24px 60px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 28px 56px;
+  box-sizing: border-box;
 }
 
 html[data-theme="fluent"] .settings-header {
@@ -20,7 +23,7 @@ html[data-theme="fluent"] .settings-header p {
 }
 
 html[data-theme="fluent"] .settings-columns {
-  gap: 24px;
+  gap: 20px;
 }
 
 html[data-theme="fluent"] .settings-section-title {
@@ -38,6 +41,18 @@ html[data-theme="fluent"] .settings-card {
   background: var(--fluent-acrylic-base) !important;
   box-shadow: var(--fluent-shadow-card) !important;
   backdrop-filter: blur(24px) saturate(135%);
+}
+
+html[data-theme="fluent"] .settings-card .settings-card,
+html[data-theme="fluent"] .settings-card [class*="card"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .settings-card .theme-setting {
+  background: transparent;
 }
 
 html[data-theme="fluent"] .settings-card > *,
@@ -75,19 +90,6 @@ html[data-theme="fluent"] .settings-card small {
 
 html[data-theme="fluent"] .theme-setting {
   padding: 16px;
-}
-
-html[data-theme="fluent"] .theme-picker-card {
-  border-radius: 6px !important; transition: border-color var(--fluent-duration-normal), background var(--fluent-duration-normal);
-}
-
-html[data-theme="fluent"] .theme-picker-card:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-}
-
-html[data-theme="fluent"] .theme-picker-card.selected {
-  border-color: var(--fluent-accent) !important;
-  box-shadow: 0 0 0 1px var(--fluent-accent), 0 8px 20px rgba(0,0,0,.25) !important;
 }
 
 html[data-theme="fluent"] .theme-picker {
@@ -156,6 +158,156 @@ html[data-theme="fluent"] .theme-option-check {
   font-size: 12px;
 }
 
+/* Preview harness and Home profile grid use an explicit Fluent layout grid. */
+html[data-theme="fluent"] .theme-preview-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 3px;
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: 6px;
+  background: rgba(0,0,0,.16);
+}
+
+html[data-theme="fluent"] .theme-preview-switcher button {
+  min-height: 30px;
+  padding: 0 14px;
+  border-color: transparent !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .theme-preview-switcher button.selected {
+  color: var(--fluent-text-primary) !important;
+  border-color: var(--fluent-stroke-control) !important;
+  background: var(--fluent-fill-control-selected) !important;
+}
+
+html[data-theme="fluent"] .card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+html[data-theme="fluent"] .card-grid .mod-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  width: auto;
+  min-height: 132px;
+  padding: 14px;
+}
+
+html[data-theme="fluent"] .card-grid .mod-card h2 {
+  margin: 0 0 8px;
+  overflow: hidden;
+  color: var(--fluent-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme="fluent"] .card-grid .mod-card p {
+  min-height: 34px;
+  margin: 0 0 12px;
+  color: var(--fluent-text-tertiary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+html[data-theme="fluent"] .card-grid .mod-card button {
+  min-height: 28px;
+  padding-inline: 12px;
+  font-size: 11px;
+}
+
+html[data-theme="fluent"] .linear-command-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .linear-command-bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+}
+
+html[data-theme="fluent"] .linear-command-bar button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding-inline: 13px;
+}
+
+html[data-theme="fluent"] .mod-list {
+  display: grid;
+  gap: 0;
+  padding: 4px 12px 12px;
+}
+
+html[data-theme="fluent"] .mod-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .mod-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+html[data-theme="fluent"] .mod-row strong {
+  overflow: hidden;
+  color: var(--fluent-text-primary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-theme="fluent"] .mod-row small {
+  color: var(--fluent-text-tertiary);
+  font-size: 10px;
+}
+
+html[data-theme="fluent"] .mod-row button {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding-inline: 12px;
+  font-size: 11px;
+}
+
+html[data-theme="fluent"] .theme-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 16px;
+}
+
+@media (max-width: 820px) {
+  html[data-theme="fluent"] .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  html[data-theme="fluent"] .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   html[data-theme="fluent"] .theme-picker {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -179,8 +331,11 @@ html[data-theme="fluent"] .download-type-grid label:hover {
 }
 
 html[data-theme="fluent"] .home-page {
-  width: min(880px, 100%);
-  padding: 20px 28px 56px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px 32px 56px;
+  box-sizing: border-box;
 }
 
 html[data-theme="fluent"] .home-header {
@@ -225,6 +380,12 @@ html[data-theme="fluent"] .home-community button:hover {
 html[data-theme="fluent"] .home-section {
   margin-bottom: 22px;
   padding: 0 8px;
+}
+
+html[data-theme="fluent"] .home-game-section,
+html[data-theme="fluent"] .home-profiles-section {
+  max-width: 960px;
+  margin-inline: auto;
 }
 
 html[data-theme="fluent"] .home-section-heading h2 {
@@ -315,6 +476,21 @@ html[data-theme="fluent"] .mod-card:hover {
 html[data-theme="fluent"] .manage-page {
   grid-template-columns: minmax(0, 1fr) 248px;
   background: transparent;
+}
+
+html[data-theme="fluent"] .theme-preview-content .manage-page {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  min-height: 260px;
+}
+
+html[data-theme="fluent"] .theme-preview-content .manage-page .linear-command-bar {
+  flex: 0 0 auto;
+}
+
+html[data-theme="fluent"] .theme-preview-content .manage-page .mod-list {
+  flex: 1 1 auto;
 }
 
 html[data-theme="fluent"] .manage-main {
