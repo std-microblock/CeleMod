@@ -4,6 +4,7 @@ import {
   collectOrphanDependencyNames,
   collectSwitchNames,
   normalizeManageDependencies,
+  selectVisibleRootNames,
   type ManageNode,
 } from "./stores/manage";
 
@@ -94,8 +95,6 @@ test("keeps a categorized dependency excluded by the orphan type setting", () =>
     ["Root"],
   );
 });
-
-
 test("does not treat optional dependencies as orphan deletion candidates", () => {
   const nodes = {
     Root: node("Root", {
@@ -133,5 +132,37 @@ test("collects transitive required orphan dependencies", () => {
   assert.deepEqual(
     collectOrphanDependencyNames({ name: "Root", nodes }),
     ["RequiredMod", "NestedMod"],
+  );
+});
+
+test("shows only Mods with duplicate installed files", () => {
+  const nodes = {
+    Duplicate: node("Duplicate", {
+      duplicateFiles: [
+        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false },
+        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false },
+      ],
+    }),
+    Single: node("Single"),
+  };
+
+  assert.deepEqual(
+    selectVisibleRootNames({
+      nodes,
+      filters: {
+        query: "",
+        enabled: "all",
+        health: "all",
+        types: [],
+        updateOnly: false,
+        duplicateOnly: true,
+        showHiddenTypes: false,
+      },
+      rootOnly: false,
+      includeOptional: false,
+      hiddenTypes: [],
+      updateNames: new Set(),
+    }),
+    ["Duplicate"],
   );
 });

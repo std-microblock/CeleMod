@@ -106,6 +106,7 @@ interface ManageFilters {
   health: ManageHealthFilter;
   types: string[];
   updateOnly: boolean;
+  duplicateOnly: boolean;
   showHiddenTypes: boolean;
 }
 
@@ -132,6 +133,7 @@ interface ManageTreeState {
   setHealthFilter: (health: ManageHealthFilter) => void;
   toggleType: (type: string) => void;
   setUpdateOnly: (value: boolean) => void;
+  setDuplicateOnly: (value: boolean) => void;
   setShowHiddenTypes: (value: boolean) => void;
   resetFilters: () => void;
   setFilterOpen: (value: boolean) => void;
@@ -146,6 +148,7 @@ const defaultFilters: ManageFilters = {
   health: "all",
   types: [],
   updateOnly: false,
+  duplicateOnly: false,
   showHiddenTypes: false,
 };
 
@@ -265,6 +268,11 @@ export const useManageStore = create<ManageTreeState>()(
       setUpdateOnly(value) {
         set((state) => {
           state.filters.updateOnly = value;
+        });
+      },
+      setDuplicateOnly(value) {
+        set((state) => {
+          state.filters.duplicateOnly = value;
         });
       },
       setShowHiddenTypes(value) {
@@ -536,6 +544,7 @@ export const selectVisibleRootNames = ({
     if (filters.enabled === "enabled" && !node.enabled) return false;
     if (filters.enabled === "disabled" && node.enabled) return false;
     if (filters.updateOnly && !updateNames.has(node.name)) return false;
+    if (filters.duplicateOnly && node.duplicateFiles.length < 2) return false;
     const health = getDependencyHealth(node.name, nodes, includeOptional);
     if (filters.health === "healthy" && health.status !== "healthy")
       return false;
