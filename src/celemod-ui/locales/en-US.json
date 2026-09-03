@@ -587,5 +587,8 @@
   "重命名预设": "Rename preset",
   "全选": "Select all",
   "全不选": "Select none",
-  "不删除已启用的 Mod": "Do not delete enabled mods"
+  "不删除已启用的 Mod": "Do not delete enabled mods",
+  "已暂停": "Paused",
+  "继续": "Resume",
+  "项": "items"
 }

@@ -33,6 +33,8 @@ import {
   FaTrash,
   FaStar,
   FaTriangleExclamation,
+  FaPause,
+  FaPlay,
   FaEye,
   FaXmark,
 } from "react-icons/fa6";
@@ -71,6 +73,8 @@ const icons: Record<string, IconType> = {
   "i-tick": FaCheck,
   fail: FaCircleExclamation,
   replay: FaRotateRight,
+  pause: FaPause,
+  play: FaPlay,
   settings: FaGear,
   keyboard: FaKeyboard,
   gamepad: FaGamepad,

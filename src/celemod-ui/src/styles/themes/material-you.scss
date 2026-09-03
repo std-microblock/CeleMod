@@ -1,7 +1,17 @@
 :root { --md-motion-standard: cubic-bezier(0.2, 0, 0, 1); --md-motion-emphasized: cubic-bezier(0.2, 0, 0, 1); }
 
+@supports (color: AccentColor) {
+  html[data-theme="material-you"] {
+    --md-primary: AccentColor;
+    --md-on-primary: AccentColorText;
+    --md-primary-container: color-mix(in srgb, AccentColor 62%, #000);
+    --md-secondary-container: color-mix(in srgb, AccentColor 24%, #4a4458);
+  }
+}
+
 html[data-theme="material-you"] {
   /* Material 3 dark scheme (tonal roles) */
+  /* Defaults are replaced with the platform accent below when supported. */
   --md-primary: #d0bcff;
   --md-on-primary: #381e72;
   --md-primary-container: #4f378b;
@@ -72,15 +82,39 @@ html[data-theme="material-you"] {
 }
 
 html[data-theme="material-you"] body { color: var(--md-on-surface); background: transparent; font-family: var(--font); letter-spacing: 0.01em; }
-html[data-theme="material-you"] .app-frame { padding-inline: 20px; }
+html[data-theme="material-you"] .app-frame { padding-inline: 0; }
+html[data-theme="material-you"] .window-titlebar {
+  padding-inline: 0;
+  box-sizing: border-box;
+}
+html[data-theme="material-you"] .window-titlebar::before {
+  display: block;
+  width: 72px;
+  height: 100%;
+  flex: 0 0 72px;
+  margin-right: 20px;
+  background: var(--md-surface-container-low);
+  content: "";
+}
 html[data-theme="material-you"] .window-titlebar { flex-basis: 52px; min-height: 52px; }
 html[data-theme="material-you"] .window-caption { color: var(--md-on-surface); font-size: 15px; font-weight: 500; opacity: .92; }
 html[data-theme="material-you"] .caption-version { color: var(--md-on-surface-variant); }
 html[data-theme="material-you"] .caption-hash { color: var(--md-outline); }
 
 /* Navigation rail: 56dp destinations with active indicator pill. */
-html[data-theme="material-you"] .app-shell { grid-template-columns: 88px minmax(0, 1fr); gap: 20px; }
-html[data-theme="material-you"] .sidebar { width: 80px; margin-right: 0; align-items: center; }
+html[data-theme="material-you"] .app-shell { grid-template-columns: 72px minmax(0, 1fr); gap: 0; }
+html[data-theme="material-you"] .sidebar {
+  position: relative;
+  top: -102px;
+  z-index: 90;
+  width: 72px;
+  height: calc(100% + 102px);
+  margin-right: 0;
+  padding-top: 52px;
+  align-items: center;
+  box-sizing: border-box;
+  background: var(--md-surface-container-low);
+}
 html[data-theme="material-you"] .sidebar-scroll { width: 80px; }
 html[data-theme="material-you"] .sidebar-items { width: 80px; align-items: center; gap: 8px; }
 html[data-theme="material-you"] .sidebar .navBtn,
@@ -89,11 +123,25 @@ html[data-theme="material-you"] .downloadListBtn {
   flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--md-on-surface-variant); background: transparent !important; box-shadow: none !important; font-size: 12px; transition: background-color 180ms var(--md-motion-standard), color 180ms var(--md-motion-standard);
 }
 html[data-theme="material-you"] .sidebar .navBtn::before { content: ""; position: absolute; inset: 4px 11px 31px; border-radius: var(--md-shape-full); background: transparent; transition: background-color 180ms var(--md-motion-standard); }
-html[data-theme="material-you"] .sidebar .navBtn .icon { position: relative; z-index: 1; width: 24px; height: 24px; margin: 0; }
+html[data-theme="material-you"] .sidebar .navBtn .icon { position: relative; z-index: 1; width: 20px; height: 20px; margin: 0; }
 html[data-theme="material-you"] .sidebar .title { position: relative; z-index: 1; width: auto; margin: 0; color: inherit; font-size: 11px; font-weight: 500; opacity: 1; line-height: 16px; }
 html[data-theme="material-you"] .sidebar .navBtn.selected { color: var(--md-on-secondary-container); background: transparent; box-shadow: none; }
 html[data-theme="material-you"] .sidebar .navBtn.selected::before { background: var(--md-secondary-container); }
-html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { color: var(--md-on-surface); background: var(--md-state-hover); }
+html[data-theme="material-you"] .sidebar .navBtn.selected,
+html[data-theme="material-you"] .sidebar .navBtn.selected:hover,
+html[data-theme="material-you"] .sidebar .navBtn.selected:active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html[data-theme="material-you"] .sidebar .navBtn.selected::after { opacity: 0 !important; }
+html[data-theme="material-you"] .sidebar .navBtn,
+html[data-theme="material-you"] .sidebar .navBtn:hover,
+html[data-theme="material-you"] .sidebar .navBtn:active,
+html[data-theme="material-you"] .sidebar .navBtn.selected { background: transparent !important; }
+html[data-theme="material-you"] .sidebar .navBtn:hover::after,
+html[data-theme="material-you"] .sidebar .navBtn::after { opacity: 0 !important; }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { color: var(--md-on-surface); }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover::before { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
 html[data-theme="material-you"] .sidebar .navBtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
 html[data-theme="material-you"] .downloadListBtn { margin-top: 12px; color: var(--md-on-surface-variant); background: var(--md-surface-container) !important; box-shadow: var(--md-elevation-1) !important; }
 html[data-theme="material-you"] .downloadListBtn:hover { color: var(--md-on-surface); background: var(--md-surface-container-high); }
@@ -111,30 +159,28 @@ html[data-theme="material-you"] button {
 }
 html[data-theme="material-you"] .md-ripple {
   position: absolute;
-  inset: 0;
+  inset: auto;
   z-index: 0;
   display: block;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: inherit;
+  border-radius: 50%;
   background: currentColor;
   opacity: 0.18;
+  filter: blur(1px);
   pointer-events: none;
-  clip-path: circle(0 at var(--md-pointer-x, 50%) var(--md-pointer-y, 50%));
   animation: md-ripple-reveal 520ms var(--md-motion-emphasized, cubic-bezier(.2, 0, 0, 1)) forwards;
 }
-html[data-theme="material-you"] button > .md-ripple,
-html[data-theme="material-you"] .md-ripple-host > .md-ripple { inset: 0; }
 html[data-theme="material-you"] button > :not(.md-ripple),
 html[data-theme="material-you"] .md-ripple-host > :not(.md-ripple) {
   position: relative;
   z-index: 1;
 }
 @keyframes md-ripple-reveal {
-  0% { opacity: .2; clip-path: circle(0 at var(--md-pointer-x, 50%) var(--md-pointer-y, 50%)); }
-  55% { opacity: .12; clip-path: circle(90% at var(--md-pointer-x, 50%) var(--md-pointer-y, 50%)); }
-  100% { opacity: 0; clip-path: circle(150% at var(--md-pointer-x, 50%) var(--md-pointer-y, 50%)); }
+  0% { opacity: .2; transform: scale(.05); }
+  55% { opacity: .12; transform: scale(.72); }
+  100% { opacity: 0; transform: scale(1); }
 }
 html[data-theme="material-you"] button {
   position: relative; isolation: isolate; overflow: hidden; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard);
@@ -220,6 +266,28 @@ html[data-theme="material-you"] .manage-page .tree-name { min-height: 28px; heig
 html[data-theme="material-you"] .manage-page .mod-row-menu button,
 html[data-theme="material-you"] .manage-page .toolbar-icon-button,
 html[data-theme="material-you"] .manage-page .toolbar-action-button { width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: 10px !important; }
+html[data-theme="material-you"] .manage-page .tree-row-actions > button {
+  box-sizing: border-box;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+html[data-theme="material-you"] .manage-page .profile-export,
+html[data-theme="material-you"] .manage-page .profile-rename,
+html[data-theme="material-you"] .manage-page .profile-delete,
+html[data-theme="material-you"] .manage-page .profile-import,
+html[data-theme="material-you"] .manage-page .profile-folder {
+  box-sizing: border-box;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+}
 html[data-theme="material-you"] .manage-page input[type="checkbox"],
 html[data-theme="material-you"] .keybindings-page input[type="checkbox"] { width: 18px; height: 18px; margin: 0; align-self: center; }
 html[data-theme="material-you"] .keybindings-page { grid-template-columns: 160px minmax(0, 1fr); width: 100%; }
@@ -244,19 +312,46 @@ html[data-theme="material-you"] .icon { display: inline-flex; align-items: cente
   html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 
-/* Final M3 layout guardrails: predictable rail, bounded content and flat
-   section rhythm. These rules intentionally avoid nested surface stacks. */
-html[data-theme="material-you"] .app-shell { grid-template-columns: 80px minmax(0, 1fr); gap: 16px; }
-html[data-theme="material-you"] .sidebar { width: 72px; margin: 0; }
+html[data-theme="material-you"] .app-shell { grid-template-columns: 72px minmax(0, 1fr); gap: 0; }
+html[data-theme="material-you"] .sidebar { width: 78px; margin: 0; background: var(--md-surface-container-low); }
 html[data-theme="material-you"] .sidebar-scroll,
 html[data-theme="material-you"] .sidebar-items { width: 72px; }
 html[data-theme="material-you"] .sidebar-items { gap: 4px; }
+html[data-theme="material-you"] .sidebar-brand {
+  display: flex;
+  width: 64px;
+  height: 60px;
+  margin: 4px 0 8px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+html[data-theme="material-you"] .sidebar-brand img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  align-self: center;
+  border-radius: 14px;
+  object-fit: cover;
+}
+html[data-theme="material-you"] .sidebar-footer {
+  display: flex;
+  width: 72px;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+}
 html[data-theme="material-you"] .sidebar .navBtn {
   width: 64px; height: 60px; min-height: 60px; margin: 0 0 2px; padding: 4px 0;
   border-radius: 16px !important; background: transparent !important; box-shadow: none !important;
 }
 html[data-theme="material-you"] .sidebar .navBtn::before { inset: 3px 9px 29px; }
-html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { background: color-mix(in srgb, var(--md-on-surface) 6%, transparent) !important; }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover { background: transparent !important; }
+html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover::before { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
 html[data-theme="material-you"] .downloadListBtn { width: 64px; min-height: 52px; margin: 10px 0 8px; }
 html[data-theme="material-you"] .page { width: 100%; max-width: none; }
 html[data-theme="material-you"] .home-page,
@@ -284,11 +379,60 @@ html[data-theme="material-you"] .sidebar .navBtn,
 html[data-theme="material-you"] .downloadListBtn,
 html[data-theme="material-you"] .toolbar-icon-button,
 html[data-theme="material-you"] .search-submit { overflow: visible; box-sizing: border-box; }
-html[data-theme="material-you"] .sidebar .navBtn .icon,
+html[data-theme="material-you"] .sidebar .navBtn .icon {
+  flex: 0 0 auto;
+  display: block;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin-top: -5px;
+  line-height: 1;
+}
 html[data-theme="material-you"] .toolbar-icon-button .icon,
-html[data-theme="material-you"] .search-submit .icon { flex: 0 0 auto; width: 24px; height: 24px; min-width: 24px; min-height: 24px; line-height: 1; }
+html[data-theme="material-you"] .search-submit .icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  line-height: 1;
+}
 html[data-theme="material-you"] .sidebar .title { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html[data-theme="material-you"] .window-titlebar #tbo-controls { overflow: visible; }
+html[data-theme="material-you"] .sidebar .nav-badge,
+html[data-theme="material-you"] .manage-page .toolbar-count { position: absolute !important; }
+
+/* The rail uses a fixed outer size.  Without border-box, the vertical
+   padding is added on top of the declared height and pushes labels into the
+   neighbouring destination (most visible on the selected Search item). */
+html[data-theme="material-you"] .sidebar .navBtn,
+html[data-theme="material-you"] .downloadListBtn {
+  box-sizing: border-box;
+}
+
+/* Keep rail destinations on a deterministic two-row baseline.  Font glyphs
+   have different intrinsic ascenders; grid rows prevent the Search icon (and
+   similarly shaped glyphs) from appearing visually off-centre. */
+html[data-theme="material-you"] .sidebar .navBtn {
+  display: grid;
+  grid-template-rows: 28px 16px;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+}
+html[data-theme="material-you"] .sidebar .navBtn::before {
+  inset: 3px 9px auto;
+  height: 28px;
+}
+html[data-theme="material-you"] .sidebar .navBtn .icon {
+  align-self: center;
+  justify-self: center;
+}
+html[data-theme="material-you"] .sidebar .title {
+  align-self: center;
+  line-height: 16px;
+}
 
 /* Settings theme picker remains readable at narrow widths. */
 html[data-theme="material-you"] .theme-picker { width: 100%; min-width: 0; }
@@ -301,7 +445,12 @@ html[data-theme="material-you"] .theme-option-copy small { overflow-wrap: anywhe
 
 /* Manage and KeyBindings toolbars wrap instead of clipping actions. */
 html[data-theme="material-you"] .manage-toolbar,
-html[data-theme="material-you"] .keybindings-toolbar { flex-wrap: wrap; min-width: 0; row-gap: 8px; }
+html[data-theme="material-you"] .keybindings-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  row-gap: 8px;
+}
 html[data-theme="material-you"] .manage-toolbar .manage-title-block { min-width: 120px; }
 html[data-theme="material-you"] .manage-toolbar .manage-search,
 html[data-theme="material-you"] .keybindings-toolbar .keybindings-search { min-width: 180px; flex: 1 1 220px; }
@@ -311,6 +460,52 @@ html[data-theme="material-you"] .manage-main,
 html[data-theme="material-you"] .keybindings-main { min-width: 0; overflow: hidden; }
 html[data-theme="material-you"] .manage-tree-scroll,
 html[data-theme="material-you"] .keybindings-scroll { min-width: 0; overflow: auto; }
+
+/* Generic M3 buttons are deliberately roomy; virtual keyboard/controller
+   buttons are dense diagram cells and must retain their own geometry. */
+html[data-theme="material-you"] .keybindings-page .virtual-keyboard-key {
+  box-sizing: border-box;
+  min-height: var(--keyboard-key-height) !important;
+  height: var(--keyboard-key-height);
+  padding: 0 3px !important;
+  border-radius: 4px !important;
+  font-size: calc(6.8px * var(--keybindings-font-scale, 1)) !important;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-keyboard-key > small {
+  position: absolute !important;
+  top: 2px;
+  right: 2px;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-controller-button {
+  box-sizing: border-box;
+  min-height: 28px !important;
+  height: 28px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  font-size: calc(7px * var(--keybindings-font-scale, 1)) !important;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-controller-button > small {
+  position: absolute !important;
+  top: -5px;
+  right: -5px;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-controller-button.pill {
+  min-height: 22px !important;
+  height: 22px;
+  border-radius: 99px !important;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-controller-button.menu {
+  min-height: 21px !important;
+  height: 21px;
+  border-radius: 99px !important;
+}
+html[data-theme="material-you"] .keybindings-page .virtual-controller-layout-switch button {
+  min-height: 20px !important;
+  height: 20px;
+  padding: 0 6px !important;
+  border-radius: 4px !important;
+  font-size: calc(6.5px * var(--keybindings-font-scale, 1)) !important;
+}
 
 /* Keep the virtual keyboard inside the available pane at desktop widths;
    individual keys may still scroll on very narrow windows, but the initial
@@ -344,4 +539,122 @@ html[data-theme="material-you"] .virtual-keyboard-function-group .virtual-keyboa
   html[data-theme="material-you"] .manage-toolbar .manage-search,
   html[data-theme="material-you"] .keybindings-toolbar .keybindings-search { flex-basis: 100%; order: 3; }
   html[data-theme="material-you"] .home-brand p { max-width: 100%; }
+}
+
+/* Control sizing isolation.  The theme's generic button/input treatment is
+   intentionally broad, but must not add button padding to icon controls or
+   turn compact fields into oversized controls. */
+html[data-theme="material-you"] .filter .search-submit,
+html[data-theme="material-you"] .filter .view-toggle,
+html[data-theme="material-you"] .filter .filter-toggle {
+  box-sizing: border-box;
+  flex: 0 0 40px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+html[data-theme="material-you"] .filter .search-field {
+  min-width: 0;
+}
+
+html[data-theme="material-you"] .filter .searchinput {
+  box-sizing: border-box;
+  min-height: 40px !important;
+  height: 40px;
+  padding: 0 16px 0 44px;
+  border-radius: var(--md-shape-full) !important;
+  border-color: var(--md-outline) !important;
+  background: var(--md-surface-container-lowest) !important;
+}
+
+html[data-theme="material-you"] .filter .search-submit .icon {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+html[data-theme="material-you"] .keybindings-search input {
+  box-sizing: border-box;
+  min-height: 40px !important;
+  height: 40px;
+}
+
+/* Theme cards are buttons, but their image must remain edge-to-edge and the
+   selection mark must stay anchored to the card rather than entering flex
+   layout as a regular child. */
+html[data-theme="material-you"] .theme-picker .theme-option {
+  box-sizing: border-box;
+  min-height: 0 !important;
+  padding: 0 !important;
+  align-items: stretch;
+}
+
+html[data-theme="material-you"] .theme-picker .theme-option-check {
+  position: absolute !important;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  min-height: 0 !important;
+  padding: 0 !important;
+  place-items: center;
+  border-radius: var(--md-shape-full);
+}
+
+html[data-theme="material-you"] .theme-picker .theme-option-check .icon {
+  position: static;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+}
+
+/* Keep native-looking M3 checkboxes stable in rows and prevent the checked
+   glyph from changing the row's intrinsic size. */
+html[data-theme="material-you"] input[type="checkbox"] {
+  display: inline-block;
+  box-sizing: border-box;
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  vertical-align: middle;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 12px 10px !important;
+}
+
+html[data-theme="material-you"] .manage-page input[type="checkbox"],
+html[data-theme="material-you"] .keybindings-page input[type="checkbox"] {
+  flex-basis: 18px;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+}
+
+@media (max-width: 560px) {
+  html[data-theme="material-you"] .filter {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  html[data-theme="material-you"] .filter .search-field {
+    flex: 1 1 100%;
+    order: 1;
+  }
+  html[data-theme="material-you"] .filter .search-submit,
+  html[data-theme="material-you"] .filter .view-toggle,
+  html[data-theme="material-you"] .filter .filter-menu-wrap {
+    order: 2;
+  }
 }

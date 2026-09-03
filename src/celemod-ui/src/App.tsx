@@ -22,7 +22,8 @@ import {
   useInitializeAppStore,
 } from "./states";
 import { createModManageContext } from "./context/modManage";
-import { DownloadListMenu } from "./components/DownloadList";
+import { DownloadListPage } from "./components/DownloadList";
+import { useDownloadStore } from "./stores/download";
 import { useEverestCtx as createEverestContext } from "./context/everest";
 import { Everest } from "./routes/Everest";
 import { checkUpdate } from "./components/SelfUpdate";
@@ -36,6 +37,7 @@ import { Loenn } from "./routes/Loenn";
 import { KeyBindings } from "./routes/KeyBindings";
 import { featureVisible, useUpdateInfo } from "./api/updateInfo";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import celemodLogo from "./resources/Celemod.png";
 
 const pages = {
   Search: memo(Search),
@@ -47,6 +49,7 @@ const pages = {
   Loenn: memo(Loenn),
   Settings: memo(Settings),
   KeyBindings: memo(KeyBindings),
+  Downloads: memo(DownloadListPage),
 };
 
 type Services = {
@@ -71,15 +74,19 @@ export default function App() {
 
   const page = useAppStore((state) => state.page);
   const setPage = useAppStore((state) => state.setPage);
-  const downloadMenuOpen = useAppStore((state) => state.downloadMenuOpen);
-  const setDownloadMenuOpen = useAppStore((state) => state.setDownloadMenuOpen);
+  const activeDownloadCount = useDownloadStore(
+    (state) =>
+      Object.values(state.tasks).filter(
+        (task) => task.state === "pending" && !task.canceled
+      ).length
+  );
   const fontScale = useAppStore((state) => state.fontScale);
   const manageFontScale = useAppStore((state) => state.manageFontScale);
   const keyBindingsFontScale = useAppStore(
-    (state) => state.keyBindingsFontScale,
+    (state) => state.keyBindingsFontScale
   );
   const enablePageTransitions = useAppStore(
-    (state) => state.enablePageTransitions,
+    (state) => state.enablePageTransitions
   );
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
@@ -106,7 +113,7 @@ export default function App() {
     setSidebarFade((current) =>
       current.top === top && current.bottom === bottom
         ? current
-        : { top, bottom },
+        : { top, bottom }
     );
   }, []);
 
@@ -139,11 +146,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--manage-font-scale",
-      String(manageFontScale / 100),
+      String(manageFontScale / 100)
     );
     document.documentElement.style.setProperty(
       "--keybindings-font-scale",
-      String(keyBindingsFontScale / 100),
+      String(keyBindingsFontScale / 100)
     );
   }, [keyBindingsFontScale, manageFontScale]);
 
@@ -189,10 +196,12 @@ export default function App() {
     icon,
     name,
     title,
+    badge,
   }: {
     icon: string;
     name: string;
     title: string;
+    badge?: number;
   }) => (
     <button
       className={`navBtn ${name === page ? "selected" : ""}`}
@@ -200,6 +209,14 @@ export default function App() {
     >
       <Icon name={icon} />
       <span className="title">{title}</span>
+      {badge && badge > 0 ? (
+        <span
+          className="nav-badge"
+          aria-label={`${badge} ${_i18n.t("下载中")}`}
+        >
+          {badge > 99 ? "99+" : badge}
+        </span>
+      ) : null}
     </button>
   );
 
@@ -207,10 +224,6 @@ export default function App() {
     <div className="app-frame">
       <WindowTitlebar />
       <div className="app-shell">
-        <DownloadListMenu
-          open={downloadMenuOpen}
-          onClose={() => setDownloadMenuOpen(false)}
-        />
         <DropInstaller />
         <CrashAssistant />
         <nav className="sidebar">
@@ -222,6 +235,11 @@ export default function App() {
             onScroll={updateSidebarFade}
           >
             <div className="sidebar-items">
+              {theme.theme === "material-you" && (
+                <div className="sidebar-brand" aria-label="CeleMod">
+                  <img src={celemodLogo} alt="CeleMod" />
+                </div>
+              )}
               <SidebarButton icon="home" name="Home" title={_i18n.t("主页")} />
               {gamePath && (
                 <Fragment>
@@ -262,19 +280,21 @@ export default function App() {
               {showLoenn && (
                 <SidebarButton icon="edit" name="Loenn" title="Loenn" />
               )}
-              <SidebarButton
-                icon="settings"
-                name="Settings"
-                title={_i18n.t("设置")}
-              />
             </div>
           </div>
-          <button
-            className="downloadListBtn"
-            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-          >
-            <Icon name="download" />
-          </button>
+          <div className="sidebar-footer">
+            <SidebarButton
+              icon="download"
+              name="Downloads"
+              title={_i18n.t("下载任务")}
+              badge={activeDownloadCount}
+            />
+            <SidebarButton
+              icon="settings"
+              name="Settings"
+              title={_i18n.t("设置")}
+            />
+          </div>
         </nav>
         <main className="app-content">
           {Object.entries(pages).map(([name, Page]) => (

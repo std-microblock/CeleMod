@@ -5,117 +5,185 @@
   position: fixed;
   inset: 0;
   z-index: 1050;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.download-page {
+  width: min(980px, 100%);
+  height: 100%;
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+  overflow: auto;
+  box-sizing: border-box;
+  color: theme.$fg1;
+}
+
+.download-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 4px 2px 18px;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
+}
+
+.download-page-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  .download-page-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 13px;
+    color: theme.$primary;
+    background: color.change(theme.$primary, $alpha: 0.15);
+    font-size: 19px;
+  }
+
+  h1 {
+    margin: 0;
+    color: theme.$fg;
+    font-size: 26px;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: theme.$fg3;
+    font-size: 12px;
+  }
+}
+
+.download-page-list {
+  min-height: 180px;
+  padding: 0;
+}
+
+.download-page-list .download-task {
+  margin-bottom: 12px;
+  padding: 17px 18px 15px;
+  border-radius: 16px;
 }
 
 .downloadList {
   position: absolute;
-  bottom: 10px;
-  left: 66px;
+  right: 20px;
+  bottom: 20px;
   display: flex;
-  width: min(340px, calc(100vw - 82px));
-  max-height: min(480px, calc(100vh - 64px));
+  width: min(430px, calc(100vw - 32px));
+  max-height: min(620px, calc(100vh - 40px));
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid theme.$bg2;
-  border-radius: 9px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.12);
+  border-radius: 18px;
   color: theme.$fg1;
-  background: theme.$bg1;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+  background: color.mix(theme.$bg1, #16151b, 78%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48), 0 3px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
 }
 
 .download-list-header {
   display: flex;
-  min-height: 43px;
+  min-height: 72px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px 0 12px;
-  border-bottom: 1px solid theme.$bg2;
-}
-
-.download-list-heading,
-.download-list-tools {
-  display: flex;
-  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  background: linear-gradient(
+    135deg,
+    color.change(theme.$primary, $alpha: 0.13),
+    transparent 62%
+  );
 }
 
 .download-list-heading {
+  display: flex;
+  align-items: center;
   min-width: 0;
-  gap: 8px;
+  gap: 12px;
 
   > .icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
     color: theme.$primary;
-    font-size: 13px;
+    background: color.change(theme.$primary, $alpha: 0.14);
+    font-size: 15px;
   }
 
   h2 {
-    margin: 0;
+    margin: 0 0 3px;
     color: theme.$fg;
-    font-size: 12px;
-    font-weight: 650;
-    letter-spacing: 0;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  span {
+    color: theme.$fg3;
+    font-size: 10px;
   }
 }
 
-.download-list-tools {
-  gap: 7px;
+.download-list-close,
+.download-task-action {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: theme.$fg3;
+  background: transparent;
+  box-shadow: none;
+  font-size: 11px;
+  transition: 140ms ease;
 
-  > span {
-    color: theme.$fg3;
-    font-size: 9px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  button {
-    display: grid;
-    width: 25px;
-    min-height: 25px;
-    padding: 0;
-    place-items: center;
-    border: 0;
-    border-radius: 5px;
-    color: theme.$fg3;
-    background: transparent;
+  &:hover {
+    color: theme.$fg;
+    background: color.change(theme.$fg, $alpha: 0.1);
     box-shadow: none;
-    font-size: 10px;
-
-    &:hover {
-      color: theme.$fg;
-      background: theme.$bg2;
-      box-shadow: none;
-    }
   }
 }
 
 .taskList {
   min-height: 74px;
+  padding: 10px;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .download-task {
-  padding: 7px 10px 6px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
+  margin-bottom: 8px;
+  padding: 14px 14px 12px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  border-radius: 14px;
+  background: color.change(theme.$bg1, $alpha: 0.72);
 
   &:last-child {
-    border-bottom: 0;
+    margin-bottom: 0;
   }
 }
 
 .download-task-topline {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 25px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .download-task-toggle {
   display: grid;
-  grid-template-columns: 17px minmax(0, 1fr) auto 12px;
+  grid-template-columns: 22px minmax(0, 1fr) auto 13px;
   min-width: 0;
-  min-height: 25px;
+  min-height: 28px;
   align-items: center;
   padding: 0;
   border: 0;
@@ -123,7 +191,7 @@
   background: transparent;
   box-shadow: none;
   text-align: left;
-  gap: 6px;
+  gap: 8px;
 
   &:hover {
     color: theme.$fg;
@@ -134,103 +202,108 @@
   > .icon {
     justify-self: end;
     color: theme.$fg3;
-    font-size: 8px;
+    font-size: 9px;
   }
 }
 
 .download-task-status-icon {
   display: grid;
-  width: 17px;
-  height: 17px;
+  width: 22px;
+  height: 22px;
   place-items: center;
-  color: theme.$fg3;
-  font-size: 8px;
-}
-
-.download-task-active .download-task-status-icon {
-  color: color.adjust(theme.$primary, $lightness: 14%);
+  border-radius: 7px;
+  color: theme.$primary;
+  background: color.change(theme.$primary, $alpha: 0.13);
+  font-size: 10px;
 }
 
 .download-task-failed .download-task-status-icon {
-  color: #ed737d;
+  color: #f08b93;
+  background: color.change(#f08b93, $alpha: 0.13);
+}
+
+.download-task-canceled .download-task-status-icon,
+.download-task-paused .download-task-status-icon {
+  color: theme.$fg3;
+  background: color.change(theme.$fg3, $alpha: 0.13);
 }
 
 .download-task-title {
   min-width: 0;
   overflow: hidden;
   color: theme.$fg;
-  font-size: 10px;
-  font-weight: 550;
+  font-size: 12px;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .download-task-status-text {
   color: theme.$fg3;
-  font-size: 8px;
+  font-size: 10px;
   white-space: nowrap;
 }
 
-.download-task-action {
-  display: grid;
-  width: 25px;
-  min-height: 25px;
-  padding: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 5px;
-  color: theme.$fg3;
-  background: transparent;
-  box-shadow: none;
-  font-size: 9px;
-
-  &:hover {
-    color: theme.$fg;
-    background: theme.$bg2;
-    box-shadow: none;
-  }
+.download-task-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
-.download-task-progress {
+.download-task-cancel:hover {
+  color: #f08b93;
+  background: color.change(#f08b93, $alpha: 0.13);
+}
+
+.download-task-progress,
+.download-dependency-progress {
+  height: 5px;
   overflow: hidden;
-  background: theme.$bg3;
+  border-radius: 99px;
+  background: color.change(theme.$fg, $alpha: 0.12);
 
   > span {
     display: block;
     height: 100%;
-    background: theme.$primary;
-    transition: width 160ms ease-out;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      theme.$primary,
+      color.adjust(theme.$primary, $lightness: 15%)
+    );
+    transition: width 180ms ease-out;
   }
 }
 
 .download-task-progress {
-  height: 3px;
-  margin: 5px 0 4px 23px;
+  margin: 11px 0 8px 30px;
 }
 
-.download-task-failed .download-task-progress > span {
-  background: #d95c66;
+.download-task-failed .download-task-progress > span,
+.download-detail-row-failed .download-dependency-progress > span {
+  background: #e56d78;
 }
 
-.download-task-canceled .download-task-progress > span {
-  background: #6f6f76;
+.download-task-canceled .download-task-progress > span,
+.download-task-paused .download-task-progress > span {
+  background: theme.$fg3;
 }
 
 .download-task-summary {
   display: flex;
   min-width: 0;
   align-items: center;
-  margin-left: 23px;
+  margin-left: 30px;
   overflow: hidden;
   color: theme.$fg3;
-  font-size: 8px;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
-  gap: 8px;
+  gap: 9px;
 
   strong {
     color: theme.$fg2;
-    font-size: 8px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
   }
 
   > span:last-child {
@@ -238,54 +311,230 @@
   }
 }
 
-.download-task-error {
-  min-width: 0;
-  margin: 0 0 0 auto;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  color: #ed737d;
-  background: transparent;
-  box-shadow: none;
-  font: inherit;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover {
-    color: #ff8b94;
-    background: transparent;
-    box-shadow: none;
-    text-decoration: underline;
-  }
-}
-
-.download-dependencies {
-  margin: 6px 0 0 23px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.055);
-}
-
 .download-task-error-details {
-  padding: 6px 0 1px;
-  color: #ed737d;
-  font-size: 8px;
-  line-height: 1.4;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  color: #f08b93;
+  font-size: 10px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
   user-select: text;
   white-space: pre-wrap;
 }
 
+.download-dependency-list {
+  margin: 13px 0 0 30px;
+  padding-top: 10px;
+  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+}
+
+.download-dependency-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  color: theme.$fg3;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+
+  span {
+    min-width: 18px;
+    padding: 2px 5px;
+    border-radius: 99px;
+    color: theme.$fg2;
+    background: color.change(theme.$fg, $alpha: 0.1);
+    text-align: center;
+    letter-spacing: 0;
+  }
+}
+
+.download-detail-row {
+  margin-top: 7px;
+  padding: 8px 9px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  border-radius: 9px;
+  background: color.change(theme.$bg, $alpha: 0.24);
+}
+
+.download-dependency-main {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  align-items: center;
+  color: theme.$fg2;
+  font-size: 10px;
+  gap: 7px;
+
+  > .icon {
+    color: theme.$primary;
+    font-size: 9px;
+  }
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: theme.$fg3;
+    font-size: 9px;
+    font-weight: 600;
+  }
+}
+
+.download-dependency-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  button {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    color: theme.$fg3;
+    background: transparent;
+    box-shadow: none;
+    font-size: 8px;
+
+    &:hover {
+      color: theme.$fg;
+      background: color.change(theme.$fg, $alpha: 0.1);
+      box-shadow: none;
+    }
+  }
+}
+
+.download-detail-row-failed .download-dependency-main > .icon {
+  color: #e56d78;
+}
+
+.download-dependency-progress {
+  height: 3px;
+  margin: 7px 0 0 23px;
+}
+
+.download-dependency-error {
+  margin: 6px 0 0 23px;
+  color: #f08b93;
+  font-size: 9px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.download-detail-summary {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0 0 23px;
+  color: theme.$fg3;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
 .download-list-empty {
   display: flex;
-  min-height: 98px;
+  min-height: 280px;
   align-items: center;
   justify-content: center;
   color: theme.$fg3;
-  font-size: 9px;
-  gap: 7px;
+  font-size: 14px;
+  gap: 10px;
 
   .icon {
+    color: theme.$fg3;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 700px) {
+  .download-page {
+    padding: 16px 14px 32px;
+  }
+
+  .download-page-heading h1 {
+    font-size: 22px;
+  }
+}
+
+// Downloads follow the flat, divider-based layout used by the other routes
+// instead of presenting each task as a floating card.
+.download-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 8px 16px 40px;
+}
+
+.download-page-header {
+  justify-content: flex-start;
+  margin-bottom: 0;
+  padding: 7px 6px 10px;
+}
+
+.download-page-heading {
+  gap: 9px;
+
+  .download-page-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
     font-size: 12px;
-    opacity: 0.55;
+  }
+
+  h1 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 3px;
+    font-size: 9px;
+  }
+}
+
+.download-page-list {
+  min-height: 160px;
+  padding: 0;
+}
+
+.download-page-list .download-task {
+  margin: 0;
+  padding: 11px 8px 10px;
+  border: 0;
+  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  border-radius: 0;
+  background: transparent;
+
+  &:hover {
+    background: color.change(theme.$fg, $alpha: 0.025);
+  }
+}
+
+.download-page-list .download-dependency-list {
+  margin-top: 9px;
+  padding-top: 8px;
+}
+
+.download-page-list .download-detail-row {
+  margin-top: 5px;
+  padding: 5px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.download-page-list .download-task-error-details {
+  margin-left: 30px;
+}
+
+@media (max-width: 700px) {
+  .download-page {
+    padding: 8px 10px 28px;
   }
 }

@@ -106,6 +106,19 @@ fn wait_before_retry(retries_used: usize, cancel_flag: &Arc<AtomicBool>) -> anyh
     Ok(())
 }
 
+fn wait_if_paused(
+    cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
+) -> anyhow::Result<()> {
+    while pause_flag.load(Ordering::Relaxed) {
+        if cancel_flag.load(Ordering::Relaxed) {
+            bail!("Download canceled");
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    Ok(())
+}
+
 fn report_progress(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     downloaded: u64,
@@ -133,6 +146,7 @@ fn download_single(
     output_path: &Path,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     let mut file = std::fs::OpenOptions::new()
         .create(true)
@@ -150,6 +164,7 @@ fn download_single(
         if cancel_flag.load(Ordering::Relaxed) {
             bail!("Download canceled");
         }
+        wait_if_paused(cancel_flag, pause_flag)?;
 
         let mut resume = false;
         if retrying {
@@ -226,6 +241,7 @@ fn download_single(
             if cancel_flag.load(Ordering::Relaxed) {
                 bail!("Download canceled");
             }
+            wait_if_paused(cancel_flag, pause_flag)?;
             let n = match reader.read(&mut buffer) {
                 Ok(0) if total_size > 0 && downloaded < total_size => {
                     break Some(anyhow!(
@@ -270,6 +286,7 @@ fn download_range_part(
     content_length: u64,
     downloaded_bytes: &Arc<Mutex<u64>>,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     let mut file = std::fs::OpenOptions::new().write(true).open(output_path)?;
     let mut offset = start;
@@ -279,6 +296,7 @@ fn download_range_part(
         if cancel_flag.load(Ordering::Relaxed) {
             bail!("Download canceled");
         }
+        wait_if_paused(cancel_flag, pause_flag)?;
 
         let range = format!("bytes={offset}-{end}");
         let response = match make_request(url).set("Range", &range).call() {
@@ -315,6 +333,7 @@ fn download_range_part(
             if cancel_flag.load(Ordering::Relaxed) {
                 bail!("Download canceled");
             }
+            wait_if_paused(cancel_flag, pause_flag)?;
             let remaining = (end - offset + 1) as usize;
             let read_length = remaining.min(buffer.len());
             let n = match reader.read(&mut buffer[..read_length]) {
@@ -352,6 +371,7 @@ fn download_multi_thread(
     output_path: &Path,
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     let head = ureq::head(url)
         .set("User-Agent", &user_agent())
@@ -378,7 +398,7 @@ fn download_multi_thread(
     };
 
     if !supports_range || content_length == 0 {
-        return download_single(url, output_path, progress_callback, cancel_flag);
+        return download_single(url, output_path, progress_callback, cancel_flag, pause_flag);
     }
 
     let file = std::fs::File::create(output_path)?;
@@ -401,6 +421,7 @@ fn download_multi_thread(
         let downloaded_bytes = Arc::clone(&downloaded_bytes);
         let errors = Arc::clone(&errors);
         let cancel_flag = Arc::clone(cancel_flag);
+        let pause_flag = Arc::clone(pause_flag);
 
         handles.push(std::thread::spawn(move || {
             if let Err(error) = download_range_part(
@@ -411,6 +432,7 @@ fn download_multi_thread(
                 content_length,
                 &downloaded_bytes,
                 &cancel_flag,
+                &pause_flag,
             ) {
                 errors
                     .lock()
@@ -464,6 +486,7 @@ pub fn download_file_to_path_with_progress(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     crate::logging::info(format_args!("[ DOWNLOAD ] {} -> {}", url, output_path));
 
@@ -474,18 +497,30 @@ pub fn download_file_to_path_with_progress(
 
     let resolved_url = canonicalize_wegfan_cdn_url(url);
     let mut result = if multi_thread {
-        download_multi_thread(&resolved_url, output, progress_callback, cancel_flag)
+        download_multi_thread(
+            &resolved_url,
+            output,
+            progress_callback,
+            cancel_flag,
+            pause_flag,
+        )
     } else {
-        download_single(&resolved_url, output, progress_callback, cancel_flag)
+        download_single(
+            &resolved_url,
+            output,
+            progress_callback,
+            cancel_flag,
+            pause_flag,
+        )
     };
     if result.is_err() && resolved_url != url {
         crate::logging::warn(format_args!(
             "Range-capable WEGFan CDN failed; retrying original URL: {resolved_url}"
         ));
         result = if multi_thread {
-            download_multi_thread(url, output, progress_callback, cancel_flag)
+            download_multi_thread(url, output, progress_callback, cancel_flag, pause_flag)
         } else {
-            download_single(url, output, progress_callback, cancel_flag)
+            download_single(url, output, progress_callback, cancel_flag, pause_flag)
         };
     }
 
@@ -519,6 +554,7 @@ pub fn download_file_with_progress(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
     let output = Path::new(output_path);
     let temporary = sidecar_download_path(output);
@@ -528,6 +564,7 @@ pub fn download_file_with_progress(
         progress_callback,
         multi_thread,
         cancel_flag,
+        pause_flag,
     );
 
     match result {
@@ -630,6 +667,7 @@ mod tests {
             &format!("http://{address}"),
             &output_path,
             &mut |_| {},
+            &Arc::new(AtomicBool::new(false)),
             &Arc::new(AtomicBool::new(false)),
         );
 

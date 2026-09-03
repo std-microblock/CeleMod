@@ -15,6 +15,7 @@ const parameterNames: Record<string, string[]> = {
     "multiThread",
   ],
   cancel_mod_download: ["name"],
+  set_mod_download_paused: ["name", "paused"],
   cleanup_mod_download_temp_files: ["gamePath"],
   get_celeste_dirs: [],
   take_pending_deep_links: [],

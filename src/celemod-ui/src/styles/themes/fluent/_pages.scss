@@ -444,6 +444,19 @@ html[data-theme="fluent"] .filter {
   gap: 6px;
 }
 
+/* Keep the command buttons on the search bar on one Fluent control grid. */
+html[data-theme="fluent"] .filter .search-submit,
+html[data-theme="fluent"] .filter .filter-toggle,
+html[data-theme="fluent"] .filter .view-toggle {
+  width: 36px;
+  min-width: 36px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 4px !important;
+}
+
 html[data-theme="fluent"] .search-field .icon,
 html[data-theme="fluent"] .manage-search .icon,
 html[data-theme="fluent"] .keybindings-search .icon {
@@ -487,6 +500,59 @@ html[data-theme="fluent"] .search-result-card:hover,
 html[data-theme="fluent"] .mod-card:hover {
   border-color: var(--fluent-stroke-strong) !important;
   background: var(--fluent-fill-control-hover) !important;
+}
+
+/* ModList renders cards with the `.mod` class (rather than `.mod-card`).
+   Apply the same Fluent surface treatment to the real runtime cards. */
+html[data-theme="fluent"] .mod {
+  border-color: var(--fluent-stroke-subtle) !important;
+  border-radius: var(--fluent-radius-card) !important;
+  background: var(--fluent-fill-subtle) !important;
+  box-shadow: var(--fluent-shadow-card) !important;
+}
+
+html[data-theme="fluent"] .mod:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+  box-shadow: var(--fluent-shadow-card) !important;
+}
+
+html[data-theme="fluent"] .mod .mod-badges > span {
+  height: 22px;
+  border-radius: 4px;
+  border-color: var(--fluent-stroke-control);
+  background: var(--fluent-fill-control);
+  backdrop-filter: blur(14px) saturate(125%);
+}
+
+html[data-theme="fluent"] .mod .mod-badges .mod-installed-badge {
+  border-color: color-mix(in srgb, var(--fluent-accent) 55%, transparent);
+  color: var(--fluent-accent-fg);
+  background: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .mod .operations button {
+  border-radius: var(--fluent-radius-control);
+  border-color: var(--fluent-stroke-control);
+  background: var(--fluent-fill-control);
+  box-shadow: none;
+  backdrop-filter: blur(14px) saturate(125%);
+}
+
+html[data-theme="fluent"] .mod .operations button:hover {
+  border-color: var(--fluent-stroke-strong);
+  background: var(--fluent-fill-control-hover);
+}
+
+/* The media preview remains visible, while the information area uses a
+   restrained acrylic surface instead of a saturated image wash. */
+html[data-theme="fluent"] .mod .mod-info-backdrop {
+  background: var(--fluent-acrylic-base) !important;
+}
+
+html[data-theme="fluent"] .mod .mod-info-backdrop img {
+  opacity: .28;
+  filter: blur(42px) brightness(.34) saturate(.72);
 }
 
 html[data-theme="fluent"] .manage-page {
@@ -585,6 +651,34 @@ html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button:hover {
   background: var(--fluent-fill-control-hover) !important;
 }
 
+/* Status text is a compact Fluent badge, not an unframed text button. */
+html[data-theme="fluent"] .manage-tree-row .state-switch {
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--fluent-stroke-control) !important;
+  border-radius: 999px !important;
+  color: var(--fluent-text-tertiary);
+  background: var(--fluent-fill-subtle) !important;
+  font-size: 10px;
+  line-height: 1;
+}
+
+html[data-theme="fluent"] .manage-tree-row .state-switch.enabled {
+  border-color: rgba(91, 209, 117, .42) !important;
+  color: #9be6a4;
+  background: rgba(65, 184, 117, .14) !important;
+}
+
+html[data-theme="fluent"] .manage-tree-row .state-switch.always {
+  border-color: rgba(96, 205, 255, .42) !important;
+  color: #9cddff;
+  background: rgba(96, 205, 255, .12) !important;
+}
+
+html[data-theme="fluent"] .manage-tree-row .state-switch:not(.enabled):not(.always) {
+  background: rgba(255, 255, 255, .045) !important;
+}
+
 html[data-theme="fluent"] .manage-tree-row:hover {
   background: var(--fluent-fill-control-hover) !important;
 }
@@ -609,6 +703,8 @@ html[data-theme="fluent"] .manage-side {
 }
 
 html[data-theme="fluent"] .manage-side .profile-row {
+  position: relative;
+  box-sizing: border-box;
   min-height: 38px;
   border: 0 !important;
   border-bottom: 1px solid var(--fluent-stroke-divider) !important;
@@ -617,8 +713,54 @@ html[data-theme="fluent"] .manage-side .profile-row {
 }
 
 html[data-theme="fluent"] .manage-side .profile-row.selected {
-  border-left: 3px solid var(--fluent-accent) !important;
+  /* Draw the selection indicator without changing the grid's content box;
+     adding a real left border shifted the selected profile and its actions
+     a few pixels to the right of the other rows. */
+  border-left: 0 !important;
   background: var(--fluent-fill-control-selected) !important;
+}
+
+html[data-theme="fluent"] .manage-side .profile-row.selected::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--fluent-accent);
+  pointer-events: none;
+}
+
+/* Profile command buttons are icon affordances, not individual Fluent cards.
+   Use a stronger selector than the global button treatment so their borders
+   and fills cannot reappear. */
+html[data-theme="fluent"] .manage-side .profile-select,
+html[data-theme="fluent"] .manage-side .profile-export,
+html[data-theme="fluent"] .manage-side .profile-rename,
+html[data-theme="fluent"] .manage-side .profile-delete,
+html[data-theme="fluent"] .manage-side .profile-folder,
+html[data-theme="fluent"] .manage-side .profile-import {
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .manage-side .profile-export,
+html[data-theme="fluent"] .manage-side .profile-rename,
+html[data-theme="fluent"] .manage-side .profile-delete,
+html[data-theme="fluent"] .manage-side .profile-folder,
+html[data-theme="fluent"] .manage-side .profile-import {
+  width: 32px;
+  height: 32px;
+}
+
+html[data-theme="fluent"] .manage-side .profile-select:hover,
+html[data-theme="fluent"] .manage-side .profile-export:hover,
+html[data-theme="fluent"] .manage-side .profile-rename:hover,
+html[data-theme="fluent"] .manage-side .profile-delete:hover,
+html[data-theme="fluent"] .manage-side .profile-folder:hover,
+html[data-theme="fluent"] .manage-side .profile-import:hover {
+  background: var(--fluent-fill-control-hover) !important;
 }
 
 html[data-theme="fluent"] .manage-side section,
@@ -645,8 +787,26 @@ html[data-theme="fluent"] .version-card:hover {
 }
 
 html[data-theme="fluent"] .keybindings-page {
+  width: 100%;
   grid-template-columns: 180px minmax(0, 1fr);
   background: transparent;
+}
+
+html[data-theme="fluent"] .keybindings-main {
+  width: 100%;
+}
+
+/* Keep the source list flat; only the selected source gets a surface tint. */
+html[data-theme="fluent"] .keybindings-sources > button {
+  min-height: 32px;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .keybindings-sources > button.selected {
+  background: var(--fluent-fill-control-selected) !important;
 }
 
 html[data-theme="fluent"] .keybindings-toolbar {
@@ -663,6 +823,10 @@ html[data-theme="fluent"] .keybindings-actions {
 html[data-theme="fluent"] .keybindings-actions button {
   min-width: 0;
   padding-inline: 10px;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
   white-space: nowrap;
 }
 
@@ -672,10 +836,19 @@ html[data-theme="fluent"] .virtual-keyboard-panel {
 }
 
 html[data-theme="fluent"] .virtual-keyboard-board {
-  width: min(920px, 100%);
-  min-width: 0;
-  max-width: 920px;
+  /* Keep the keyboard's intrinsic layout intact and let the surrounding
+     scroll viewport handle narrow windows. Shrinking the board itself makes
+     the fixed-width key groups overlap and clips the rightmost keys. */
+  width: 776px;
+  min-width: 776px;
+  max-width: none;
+  margin-inline: 0;
+  overflow: visible;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-scroll {
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 html[data-theme="fluent"] .keybindings-list,
@@ -696,9 +869,35 @@ html[data-theme="fluent"] .keybindings-row:hover {
 }
 
 html[data-theme="fluent"] .keybinding-key,
-html[data-theme="fluent"] .binding-chip {
-  border: 1px solid var(--fluent-stroke-control);
+html[data-theme="fluent"] .binding-chip,
+html[data-theme="fluent"] .binding-add {
+  border: 0 !important;
   border-radius: 4px;
-  background: var(--fluent-fill-control);
-  box-shadow: inset 0 -1px rgba(0,0,0,.35);
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-key {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-key.used {
+  border: 1px solid color-mix(in srgb, var(--fluent-accent) 42%, transparent) !important;
+  background: color-mix(in srgb, var(--fluent-accent) 11%, transparent) !important;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-key.multiple {
+  border: 1px solid color-mix(in srgb, var(--fluent-warning) 42%, transparent) !important;
+  background: color-mix(in srgb, var(--fluent-warning) 11%, transparent) !important;
+}
+
+html[data-theme="fluent"] .virtual-keyboard-key:hover,
+html[data-theme="fluent"] .virtual-keyboard-key.selected,
+html[data-theme="fluent"] .binding-chip:hover,
+html[data-theme="fluent"] .binding-add:hover {
+  border-color: var(--fluent-stroke-strong);
+  background: var(--fluent-fill-control-hover) !important;
+  box-shadow: none;
 }

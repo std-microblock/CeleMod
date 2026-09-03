@@ -56,7 +56,7 @@ export const handleCeleModDeepLink = async (raw: string) => {
   const mod = await findCatalogMod(link.value);
   if (!mod) throw new Error(`找不到 Mod：${link.value}`);
   await installSingleMod(mod, () => {
-    useAppStore.getState().setDownloadMenuOpen(true);
+    useAppStore.getState().setPage("Downloads");
   });
 };
 
@@ -79,7 +79,7 @@ export const initializeCeleModDeepLinks = () => {
   };
 
   listening = listen<string[]>(DEEP_LINK_EVENT, (event) =>
-    enqueue(event.payload),
+    enqueue(event.payload)
   ).then(async (dispose) => {
     enqueue(await callRemote<string[]>("take_pending_deep_links"));
     return dispose;

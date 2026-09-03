@@ -494,6 +494,7 @@ pub fn download_and_install_everest(
     let temp_path = std::env::temp_dir().join("everest.zip");
     let game_path = std::path::Path::new(game_path);
     let cancel_flag = Arc::new(AtomicBool::new(false));
+    let pause_flag = Arc::new(AtomicBool::new(false));
 
     ureq::download_file_with_progress(
         url,
@@ -503,6 +504,7 @@ pub fn download_and_install_everest(
         },
         false,
         &cancel_flag,
+        &pause_flag,
     )?;
 
     install_everest_archive_with_steps(

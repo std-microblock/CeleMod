@@ -103,12 +103,18 @@ html[data-theme="fluent"] select option {
 }
 
 html[data-theme="fluent"] input[type="checkbox"] {
+  appearance: none;
   width: 18px;
   height: 18px;
   margin: 0;
   border: 1px solid var(--fluent-stroke-strong);
   border-radius: 3px;
   background: var(--fluent-fill-control);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 10px;
+  box-sizing: border-box;
+  cursor: pointer;
   opacity: 1;
   transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast);
 }

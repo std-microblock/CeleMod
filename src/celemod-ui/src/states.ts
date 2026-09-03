@@ -129,7 +129,6 @@ interface AppState {
   theme: ThemeId;
   modPageSource: ModPageSource;
   page: string;
-  downloadMenuOpen: boolean;
   setCurrentProfileName: (value: string) => void;
   setActiveProfileNames: (value: string[]) => void;
   setProfiles: (value: ModBlacklistProfile[]) => void;
@@ -172,7 +171,6 @@ interface AppState {
   setTheme: (value: ThemeId) => void;
   setModPageSource: (value: ModPageSource) => void;
   setPage: (value: string) => void;
-  setDownloadMenuOpen: (value: boolean) => void;
 }
 
 const AUTO_DISABLE_NEW_MODS_STORAGE_KEY = "celemod-auto-disable-new-mods";
@@ -228,7 +226,6 @@ const setters = {
   setTheme: "theme",
   setModPageSource: "modPageSource",
   setPage: "page",
-  setDownloadMenuOpen: "downloadMenuOpen",
 } as const;
 
 export const useAppStore = create<AppState>()(
@@ -286,7 +283,6 @@ export const useAppStore = create<AppState>()(
         theme: DEFAULT_THEME_ID,
         modPageSource: "wegfan",
         page: "Home",
-        downloadMenuOpen: false,
         ...actions,
         setProfileEnabled: (value) =>
           set((state) => {

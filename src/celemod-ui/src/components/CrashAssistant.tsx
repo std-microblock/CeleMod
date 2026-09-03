@@ -716,10 +716,21 @@ export const CrashAssistant = () => {
     };
 
     void check();
-    const timer = window.setInterval(() => void check(), 4000);
+    // Crash analysis reads the game's log history and can involve several
+    // megabytes of files.  Do not poll while the app is idle: that caused
+    // periodic WebView stalls on machines with a large CrashLogs directory.
+    // Re-check when the app regains focus/visibility, which is also when a
+    // game launched from CeleMod normally exits.
+    const onFocus = () => void check();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       active = false;
-      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [gamePath]);
 

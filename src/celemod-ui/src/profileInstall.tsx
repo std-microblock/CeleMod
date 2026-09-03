@@ -192,6 +192,7 @@ const downloadPlannedMods = async (
         dest: string;
         requested: boolean;
         dependencies: string[];
+        cancel_key: string;
         status: "Waiting" | "Downloading" | "Finished" | "Failed";
         data: string;
         downloaded_bytes: number;
@@ -204,23 +205,40 @@ const downloadPlannedMods = async (
         reject(new Error(`Invalid download status: ${String(error)}`));
         return;
       }
-      snapshot = backendTasks.map((task, index) => ({
+      const mapped: Download.TaskInfo[] = backendTasks.map((task, index) => ({
         name: task.name,
         progress: task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
         requested: task.requested,
         dependencies: task.dependencies ?? [],
+        cancelKey: task.cancel_key,
         source: task.url,
         mod: { name: task.name },
-        state: state === "finished" || task.status === "Finished"
+        state: (state === "finished" || task.status === "Finished"
           ? "finished"
-          : task.status === "Failed" ? "failed" : "pending",
+          : task.status === "Failed" ? "failed" : "pending") as Download.TaskInfo["state"],
         error: task.status === "Failed" ? task.data : undefined,
         downloadedBytes: task.downloaded_bytes || 0,
         totalBytes: task.total_bytes || 0,
         speedBytesPerSec: task.speed_bytes_per_sec || 0,
         canceled: task.status === "Failed" && task.data === "Download canceled",
+        paused: false,
         attemptId: -1000 - index,
       }));
+      const byName = new Map(mapped.map((task) => [task.name.toLocaleLowerCase(), task]));
+      const aggregate = (task: Download.TaskInfo, seen = new Set<string>()): number => {
+        const key = task.name.toLocaleLowerCase();
+        if (seen.has(key)) return 0;
+        seen.add(key);
+        const dependencies = task.dependencies
+          .map((name) => byName.get(name.toLocaleLowerCase()))
+          .filter((value): value is Download.TaskInfo => Boolean(value));
+        if (dependencies.length === 0) return task.progress;
+        return [task.progress, ...dependencies.map((dependency) => aggregate(dependency, seen))]
+          .reduce((sum, value) => sum + value, 0) / (dependencies.length + 1);
+      };
+      snapshot = mapped.map((task) =>
+        task.requested ? { ...task, progress: aggregate(task) } : task,
+      );
       report();
       if (state === "finished") resolve();
       if (state === "failed") reject(new Error(snapshot.find((task) => task.error)?.error || "Download failed"));
@@ -302,6 +320,11 @@ const ProfileInstallProgress = ({
   }, []);
 
   const running = progress.tasks.some((task) => task.state === "pending");
+  const taskMap = new Map(
+    progress.tasks.map((task) => [task.name.toLocaleLowerCase(), task]),
+  );
+  const rootTasks = progress.tasks.filter((task) => task.requested);
+  const visibleTasks = rootTasks.length > 0 ? rootTasks : progress.tasks;
   return (
     <div className="popup-content profile-install-progress-popup">
       <div className="title">{_i18n.t("正在安装 Profile")}</div>
@@ -313,12 +336,16 @@ const ProfileInstallProgress = ({
           </span>
         </div>
         <div className="profile-install-task-list">
-          {progress.tasks.map((task) => (
+          {visibleTasks.map((task) => (
             <DownloadTask
               key={`${task.name}-${task.attemptId}`}
               task={task}
+              dependencyTasks={task.dependencies
+                .map((name) => taskMap.get(name.toLocaleLowerCase()))
+                .filter((value): value is Download.TaskInfo => Boolean(value))}
               initialExpanded
               allowRetry={false}
+              allowControl={false}
             />
           ))}
         </div>

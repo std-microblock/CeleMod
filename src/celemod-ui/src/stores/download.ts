@@ -11,6 +11,7 @@ export namespace Download {
     name: string;
     requested: boolean;
     dependencies: string[];
+    cancelKey: string;
     source?: string;
     ownerId?: string;
     mod: { name: string; id?: string };
@@ -21,6 +22,7 @@ export namespace Download {
     totalBytes: number;
     speedBytesPerSec: number;
     canceled?: boolean;
+    paused?: boolean;
     attemptId: number;
   }
 }
@@ -31,6 +33,7 @@ interface BackendModTaskInfo {
   dest: string;
   requested: boolean;
   dependencies: string[];
+  cancel_key: string;
   status: "Waiting" | "Downloading" | "Finished" | "Failed";
   data: string;
   downloaded_bytes: number;
@@ -61,6 +64,7 @@ interface BatchDownloadOptions {
 interface DownloadStore {
   tasks: Record<string, Download.TaskInfo>;
   cancelDownload: (name: string) => boolean;
+  togglePauseDownload: (name: string) => boolean;
   downloadMods: (
     items: Array<{ name: string; source: string }>,
     options?: BatchDownloadOptions,
@@ -85,6 +89,22 @@ const replaceTasks = (
   return next;
 };
 
+const aggregateProgress = (
+  root: Download.TaskInfo,
+  byName: Map<string, Download.TaskInfo>,
+  seen = new Set<string>(),
+): number => {
+  const key = normalizeName(root.name);
+  if (seen.has(key)) return 0;
+  seen.add(key);
+  const children = root.dependencies
+    .map((name) => byName.get(normalizeName(name)))
+    .filter((task): task is Download.TaskInfo => Boolean(task));
+  if (children.length === 0) return root.progress;
+  const values = [root.progress, ...children.map((task) => aggregateProgress(task, byName, seen))];
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+};
+
 export const useDownloadStore = create<DownloadStore>((set, get) => ({
   tasks: {},
 
@@ -98,7 +118,25 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         [key]: { ...task, canceled: true },
       },
     }));
-    void callRemote("cancel_mod_download", name);
+    void callRemote("cancel_mod_download", task.cancelKey || name);
+    return true;
+  },
+
+  togglePauseDownload(name) {
+    const key = normalizeName(name);
+    const task = get().tasks[key];
+    if (!task || task.state !== "pending") return false;
+    const paused = !task.paused;
+    void callRemote("set_mod_download_paused", task.cancelKey || name, paused);
+    set((state) => ({
+      tasks: Object.fromEntries(
+        Object.entries(state.tasks).map(([entryKey, entry]) =>
+          (entry.cancelKey || entry.name) === (task.cancelKey || name)
+            ? [entryKey, { ...entry, paused }]
+            : [entryKey, entry],
+        ),
+      ),
+    }));
     return true;
   },
 
@@ -128,6 +166,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       name,
       requested: true,
       dependencies: [],
+      cancelKey: items[0]?.name ?? "",
       source,
       ownerId,
       mod: { name },
@@ -158,6 +197,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           name: task.name,
           requested: Boolean(task.requested),
           dependencies: task.dependencies ?? [],
+          cancelKey: task.cancel_key,
           source: task.url,
           ownerId,
           mod: { name: task.name },
@@ -168,21 +208,31 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
           canceled: task.status === "Failed" && task.data === "Download canceled",
+          paused: get().tasks[normalizeName(task.name)]?.paused,
           attemptId: attemptId + index,
         }));
-        set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
-        const progress = mapped.length ? mapped.reduce((sum, task) => sum + task.progress, 0) / mapped.length : 0;
-        onProgress?.(mapped, progress);
+        const byName = new Map(mapped.map((task) => [normalizeName(task.name), task]));
+        const aggregated = mapped.map((task) =>
+          task.requested
+            ? { ...task, progress: aggregateProgress(task, byName) }
+            : task,
+        );
+        set((store) => ({ tasks: replaceTasks(store.tasks, aggregated) }));
+        const progress = aggregated.length
+          ? aggregated.filter((task) => task.requested).reduce((sum, task) => sum + task.progress, 0) /
+            Math.max(1, aggregated.filter((task) => task.requested).length)
+          : 0;
+        onProgress?.(aggregated, progress);
         if (state === "finished") {
           void reloadInstalledMods()
             .then(() => reloadBlacklistState(appState.gamePath))
             .finally(() => {
-              onFinished?.(mapped);
-              resolve(mapped);
+              onFinished?.(aggregated);
+              resolve(aggregated);
             });
         } else if (state === "failed") {
-          const message = mapped.find((task) => task.error)?.error || "Download failed";
-          onFailed?.(mapped, message);
+          const message = aggregated.find((task) => task.error)?.error || "Download failed";
+          onFailed?.(aggregated, message);
           reject(new Error(message));
         }
       };
@@ -241,6 +291,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         name,
         requested: true,
         dependencies: [],
+        cancelKey: name,
         source,
         ownerId: ownerId ?? existingTask?.ownerId,
         mod: { name },
@@ -265,6 +316,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       name,
       requested: true,
       dependencies: [],
+      cancelKey: name,
       source,
       ownerId: ownerId ?? existingTask?.ownerId,
       mod: { name },
@@ -311,6 +363,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           name: task.name,
           requested: Boolean(task.requested),
           dependencies: task.dependencies ?? [],
+          cancelKey: task.cancel_key,
           source: task.url,
           ownerId: previous?.ownerId ?? (taskKey === key ? ownerId : undefined),
           mod: { name: task.name },
@@ -324,16 +377,21 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
           canceled: task.status === "Failed" && task.data === "Download canceled",
+          paused: previous?.paused,
           attemptId: previous?.attemptId ?? attemptId,
         } satisfies Download.TaskInfo;
       });
-      set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
+      const byName = new Map(mapped.map((task) => [normalizeName(task.name), task]));
+      const aggregated = mapped.map((task) =>
+        task.requested
+          ? { ...task, progress: aggregateProgress(task, byName) }
+          : task,
+      );
+      set((store) => ({ tasks: replaceTasks(store.tasks, aggregated) }));
 
       const currentRoot =
-        mapped.find((task) => normalizeName(task.name) === key) ?? current;
-      const overallProgress = mapped.length
-        ? mapped.reduce((sum, task) => sum + task.progress, 0) / mapped.length
-        : currentRoot.progress;
+        aggregated.find((task) => normalizeName(task.name) === key) ?? current;
+      const overallProgress = currentRoot.progress;
       const rootTask = {
         ...currentRoot,
         state,

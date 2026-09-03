@@ -9,14 +9,26 @@ export const installMaterialYouInteractions = () => {
     const target = (event.target as HTMLElement | null)?.closest<HTMLElement>("button, [role='button'], .md-ripple-host");
     if (!target || target.matches(":disabled, [aria-disabled='true']")) return;
     const rect = target.getBoundingClientRect();
-    target.style.setProperty("--md-pointer-x", `${event.clientX - rect.left}px`);
-    target.style.setProperty("--md-pointer-y", `${event.clientY - rect.top}px`);
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const radius = Math.hypot(
+      Math.max(x, rect.width - x),
+      Math.max(y, rect.height - y),
+    );
+    const isRailButton = target.matches(".sidebar .navBtn");
+    const rippleRadius = isRailButton ? 23 : radius;
+    const rippleX = isRailButton ? Math.min(55, Math.max(9, x)) : x;
+    const rippleY = isRailButton ? Math.min(31, Math.max(3, y)) : y;
+    target.style.setProperty("--md-pointer-x", `${x}px`);
+    target.style.setProperty("--md-pointer-y", `${y}px`);
     target.classList.remove("md-ripple-active");
     target.querySelectorAll(":scope > .md-ripple").forEach((node) => node.remove());
     const ripple = document.createElement("span");
     ripple.className = "md-ripple";
-    ripple.style.setProperty("--md-pointer-x", `${event.clientX - rect.left}px`);
-    ripple.style.setProperty("--md-pointer-y", `${event.clientY - rect.top}px`);
+    ripple.style.width = `${rippleRadius * 2}px`;
+    ripple.style.height = `${rippleRadius * 2}px`;
+    ripple.style.left = `${rippleX - rippleRadius}px`;
+    ripple.style.top = `${rippleY - rippleRadius}px`;
     target.appendChild(ripple);
     target.classList.add("md-ripple-active", "md-shape-morph");
     const remove = () => { ripple.remove(); target.classList.remove("md-ripple-active"); };

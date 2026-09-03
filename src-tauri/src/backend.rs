@@ -1805,30 +1805,12 @@ fn modified_at_millis(metadata: &fs::Metadata) -> u64 {
 
 fn mod_path_stats(path: &Path) -> anyhow::Result<(u64, u64)> {
     let metadata = fs::symlink_metadata(path).context("Failed to read Mod metadata")?;
-    let mut size = if metadata.is_dir() { 0 } else { metadata.len() };
-    let mut modified_at = modified_at_millis(&metadata);
-    if !metadata.is_dir() {
-        return Ok((size, modified_at));
-    }
-
-    let mut directories = vec![path.to_path_buf()];
-    while let Some(directory) = directories.pop() {
-        for entry in fs::read_dir(&directory)
-            .with_context(|| format!("Failed to read Mod directory {}", directory.display()))?
-        {
-            let entry = entry.context("Failed to read an entry in the Mod directory")?;
-            let entry_metadata = fs::symlink_metadata(entry.path())
-                .context("Failed to read metadata in the Mod directory")?;
-            modified_at = modified_at.max(modified_at_millis(&entry_metadata));
-            if entry_metadata.is_dir() {
-                directories.push(entry.path());
-            } else {
-                size = size.saturating_add(entry_metadata.len());
-            }
-        }
-    }
-
-    Ok((size, modified_at))
+    // Directory Mods can contain tens of thousands of map/assets files.  A
+    // recursive size walk makes every installed-Mod IPC scan needlessly slow,
+    // so directory size is intentionally reported as zero.  Keep only the
+    // directory's own mtime; it is cheap and still useful for display/sorting.
+    let size = if metadata.is_dir() { 0 } else { metadata.len() };
+    Ok((size, modified_at_millis(&metadata)))
 }
 
 fn read_to_string_bom(path: &Path) -> anyhow::Result<String> {
@@ -2014,8 +1996,16 @@ fn download_mod_file(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
-    download_mod_archive_with_cancel(url, dest, progress_callback, multi_thread, cancel_flag)?;
+    download_mod_archive_with_cancel(
+        url,
+        dest,
+        progress_callback,
+        multi_thread,
+        cancel_flag,
+        pause_flag,
+    )?;
     Ok(())
 }
 
@@ -2432,6 +2422,7 @@ fn start_waiting_mod_downloads(
     handles: &mut Vec<std::thread::JoinHandle<()>>,
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> usize {
     let waiting = tasks
         .iter()
@@ -2458,6 +2449,7 @@ fn start_waiting_mod_downloads(
         let task_url = tasks[index].url.clone();
         let task_dest = tasks[index].dest.clone();
         let cancel_flag = Arc::clone(cancel_flag);
+        let pause_flag = Arc::clone(pause_flag);
         handles.push(std::thread::spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let progress_sender = sender.clone();
@@ -2470,6 +2462,7 @@ fn start_waiting_mod_downloads(
                     },
                     multi_thread,
                     &cancel_flag,
+                    &pause_flag,
                 )
                 .map_err(|error| format!("{error:#}"))
             }))
@@ -2491,6 +2484,7 @@ fn download_mod_queue(
     on_event: &Channel<IpcEvent>,
     multi_thread: bool,
     cancel_flag: &Arc<AtomicBool>,
+    pause_flag: &Arc<AtomicBool>,
 ) -> bool {
     let graph = match load_mod_dependency_graph() {
         Ok(graph) => graph,
@@ -2522,6 +2516,7 @@ fn download_mod_queue(
         &mut handles,
         multi_thread,
         cancel_flag,
+        pause_flag,
     );
     emit_download_tasks(tasks, on_event, "pending");
 
@@ -2573,6 +2568,7 @@ fn download_mod_queue(
                     &mut handles,
                     multi_thread,
                     cancel_flag,
+                    pause_flag,
                 );
                 emit_download_tasks(tasks, on_event, "pending");
             }
@@ -2848,6 +2844,7 @@ fn download_and_install_crash_mod_fix_impl(
     ));
     fs::remove_file(&download_path).ok();
     let cancel_flag = Arc::new(AtomicBool::new(false));
+    let pause_flag = Arc::new(AtomicBool::new(false));
     let result = (|| {
         ureq::download_file_with_progress(
             url,
@@ -2855,6 +2852,7 @@ fn download_and_install_crash_mod_fix_impl(
             &mut |callback| progress_callback("download".to_string(), callback.progress),
             false,
             &cancel_flag,
+            &pause_flag,
         )?;
         progress_callback("verify".to_string(), 0.0);
         verify_file_sha256(&download_path, sha256)?;
@@ -3141,7 +3139,7 @@ mod local_package_tests {
     }
 
     #[test]
-    fn scans_and_deletes_directory_mods_with_recursive_stats() {
+    fn scans_and_deletes_directory_mods_without_recursive_stats() {
         let root = test_dir("directory-mod");
         let mods_path = root.join("Mods");
         let mod_path = mods_path.join("DirectoryMod");
@@ -3153,7 +3151,6 @@ mod local_package_tests {
         std::thread::sleep(std::time::Duration::from_millis(20));
         fs::write(&nested_path, b"updated contents").unwrap();
 
-        let nested_modified_at = modified_at_millis(&fs::metadata(&nested_path).unwrap());
         let installed =
             get_installed_mods_sync_with_catalog(mods_path.to_string_lossy().into_owned(), None);
 
@@ -3161,11 +3158,8 @@ mod local_package_tests {
         assert_eq!(installed[0].name, "DirectoryMod");
         assert_eq!(installed[0].file, "DirectoryMod");
         assert!(installed[0].is_directory);
-        assert_eq!(
-            installed[0].size,
-            yaml.len() as u64 + b"updated contents".len() as u64
-        );
-        assert!(installed[0].modified_at >= nested_modified_at);
+        assert_eq!(installed[0].size, 0);
+        assert!(installed[0].modified_at > 0);
 
         delete_mod_files_sync(&mods_path.to_string_lossy(), &["DirectoryMod".to_string()]).unwrap();
         assert!(!mod_path.exists());
@@ -3494,7 +3488,7 @@ mod local_package_tests {
                 dest: root.join("A.zip").to_string_lossy().to_string(),
                 requested: true,
                 dependencies: Vec::new(),
-                cancel_key: name.clone(),
+                cancel_key: "A".to_string(),
                 status: DownloadStatus::Waiting,
                 data: "0".to_string(),
                 downloaded_bytes: 0,
@@ -3507,6 +3501,7 @@ mod local_package_tests {
                 dest: root.join("B.zip").to_string_lossy().to_string(),
                 requested: true,
                 dependencies: Vec::new(),
+                cancel_key: "A".to_string(),
                 status: DownloadStatus::Waiting,
                 data: "0".to_string(),
                 downloaded_bytes: 0,
@@ -3536,6 +3531,18 @@ mod local_package_tests {
         )
         .unwrap();
         assert_eq!(graph["demo"].url, "https://example.invalid/demo.zip");
+    }
+
+    #[test]
+    fn dependency_graph_preserves_apostrophe_names_and_edges() {
+        let graph = parse_mod_dependency_graph(
+            "Monika's D-Sides:\n  URL: https://example.invalid/root.zip\n  Dependencies:\n  - Name: Monika's D-Sides Audio\n    Version: 1.4.0\n  OptionalDependencies: []\nMonika's D-Sides Audio:\n  URL: https://example.invalid/audio.zip\n  Dependencies: []\n  OptionalDependencies: []\n",
+        )
+        .unwrap();
+        assert_eq!(
+            graph["monika's d-sides"].dependencies[0].name,
+            "Monika's D-Sides Audio"
+        );
     }
 
     #[test]
@@ -3735,6 +3742,16 @@ mod local_package_tests {
 fn cancel_mod_download(name: String) -> bool {
     if let Some(flag) = DOWNLOAD_CANCEL_FLAGS.lock().unwrap().get(&name) {
         flag.store(true, Ordering::Relaxed);
+        true
+    } else {
+        false
+    }
+}
+
+#[tauri::command]
+fn set_mod_download_paused(name: String, paused: bool) -> bool {
+    if let Some(flag) = DOWNLOAD_PAUSE_FLAGS.lock().unwrap().get(&name) {
+        flag.store(paused, Ordering::Relaxed);
         true
     } else {
         false
@@ -4112,6 +4129,7 @@ fn install_loenn(
     std::fs::create_dir_all(&staging_dir)?;
 
     let cancel_flag = Arc::new(AtomicBool::new(false));
+    let pause_flag = Arc::new(AtomicBool::new(false));
     ureq::download_file_with_progress(
         package.url,
         download_path.to_string_lossy().as_ref(),
@@ -4120,6 +4138,7 @@ fn install_loenn(
         },
         false,
         &cancel_flag,
+        &pause_flag,
     )?;
     progress_callback("verify".to_string(), 0.0);
     verify_file_sha256(&download_path, package.sha256)?;
@@ -5288,10 +5307,15 @@ fn download_mod_with_roots(
             return;
         }
         let cancel_flag = Arc::new(AtomicBool::new(false));
+        let pause_flag = Arc::new(AtomicBool::new(false));
         DOWNLOAD_CANCEL_FLAGS
             .lock()
             .unwrap()
             .insert(name.clone(), Arc::clone(&cancel_flag));
+        DOWNLOAD_PAUSE_FLAGS
+            .lock()
+            .unwrap()
+            .insert(name.clone(), Arc::clone(&pause_flag));
         let mod_data = match get_mod_cached_new() {
             Ok(data) => data,
             Err(error) => {
@@ -5303,6 +5327,7 @@ fn download_mod_with_roots(
                     &on_event,
                 );
                 DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
+                DOWNLOAD_PAUSE_FLAGS.lock().unwrap().remove(&name);
                 return;
             }
         };
@@ -5329,6 +5354,7 @@ fn download_mod_with_roots(
                     .to_string(),
                 requested: true,
                 dependencies: Vec::new(),
+                cancel_key: name.clone(),
                 status: DownloadStatus::Waiting,
                 data: String::new(),
                 downloaded_bytes: 0,
@@ -5348,6 +5374,7 @@ fn download_mod_with_roots(
             &on_event,
             multi_thread,
             &cancel_flag,
+            &pause_flag,
         );
         if !failed {
             let game_path = Path::new(&mods_dir)
@@ -5412,6 +5439,7 @@ fn download_mod_with_roots(
             if failed { "failed" } else { "finished" },
         );
         DOWNLOAD_CANCEL_FLAGS.lock().unwrap().remove(&name);
+        DOWNLOAD_PAUSE_FLAGS.lock().unwrap().remove(&name);
     });
 }
 
@@ -5424,6 +5452,7 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
             "cele-mod"
         });
         let cancel_flag = Arc::new(AtomicBool::new(false));
+        let pause_flag = Arc::new(AtomicBool::new(false));
         let result = ureq::download_file_with_progress(
             &url,
             tmp.to_string_lossy().as_ref(),
@@ -5438,6 +5467,7 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
             },
             false,
             &cancel_flag,
+            &pause_flag,
         );
         match result {
             Ok(()) => {
@@ -5799,6 +5829,7 @@ pub fn run() {
             take_pending_deep_links,
             download_mod_batch,
             cancel_mod_download,
+            set_mod_download_paused,
             cleanup_mod_download_temp_files,
             get_celeste_dirs,
             get_installed_mod_ids,

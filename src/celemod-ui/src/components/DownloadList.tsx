@@ -1,6 +1,7 @@
 import _i18n from "src/i18n";
 import "./DownloadList.scss";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { Download, useDownloadStore } from "../stores/download";
 
@@ -18,48 +19,158 @@ const formatBytes = (bytes: number) => {
   } ${units[index]}`;
 };
 
-const formatSpeed = (bytesPerSec: number) => {
-  if (!bytesPerSec) return "0 B/s";
-  return `${formatBytes(bytesPerSec)}/s`;
+const formatSpeed = (bytesPerSec: number) =>
+  bytesPerSec ? `${formatBytes(bytesPerSec)}/s` : "0 B/s";
+
+const getMetrics = (tasks: Download.TaskInfo[]) => {
+  const downloadedBytes = tasks.reduce(
+    (sum, task) => sum + task.downloadedBytes,
+    0
+  );
+  const totalBytes = tasks.reduce((sum, task) => sum + task.totalBytes, 0);
+  const speedBytesPerSec = tasks.reduce(
+    (sum, task) => sum + task.speedBytesPerSec,
+    0
+  );
+  const progress =
+    totalBytes > 0
+      ? (downloadedBytes / totalBytes) * 100
+      : tasks.length > 0
+      ? tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length
+      : 0;
+  return {
+    downloadedBytes,
+    totalBytes,
+    speedBytesPerSec,
+    progress: Math.min(100, progress),
+  };
+};
+
+const collectDependencies = (
+  root: Download.TaskInfo,
+  taskMap: Map<string, Download.TaskInfo>
+) => {
+  const result: Download.TaskInfo[] = [];
+  const seen = new Set<string>();
+  const visit = (names: string[]) => {
+    for (const name of names) {
+      const key = name.toLocaleLowerCase();
+      if (seen.has(key)) continue;
+      const task = taskMap.get(key);
+      if (!task) continue;
+      seen.add(key);
+      result.push(task);
+      visit(task.dependencies);
+    }
+  };
+  visit(root.dependencies);
+  return result;
+};
+
+const stateLabel = (task: Download.TaskInfo) => {
+  if (task.canceled)
+    return { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" };
+  if (task.state === "failed")
+    return { label: _i18n.t("失败"), icon: "fail", tone: "failed" };
+  if (task.state === "finished")
+    return { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" };
+  if (task.paused)
+    return { label: _i18n.t("已暂停"), icon: "pause", tone: "paused" };
+  return { label: _i18n.t("下载中"), icon: "download", tone: "active" };
+};
+
+const DownloadDetailRow = ({
+  task,
+  children,
+  allowControl = true,
+  label,
+}: {
+  task: Download.TaskInfo;
+  children?: ReactNode;
+  allowControl?: boolean;
+  label?: string;
+}) => {
+  const cancelDownload = useDownloadStore((state) => state.cancelDownload);
+  const togglePauseDownload = useDownloadStore(
+    (state) => state.togglePauseDownload
+  );
+  const progress = Math.max(0, Math.min(100, task.progress || 0));
+  const status = stateLabel(task);
+  const canControl = allowControl && task.state === "pending" && !task.canceled;
+  return (
+    <div className={`download-detail-row download-detail-row-${status.tone}`}>
+      <div className="download-dependency-main">
+        <Icon name={status.icon} />
+        <span title={task.name}>{label ?? task.name}</span>
+        <strong>{Math.round(progress)}%</strong>
+        {canControl ? (
+          <span className="download-dependency-actions">
+            <button
+              title={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              aria-label={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              onClick={() => togglePauseDownload(task.name)}
+            >
+              <Icon name={task.paused ? "play" : "pause"} />
+            </button>
+            <button
+              title={_i18n.t("取消")}
+              aria-label={_i18n.t("取消")}
+              onClick={() => cancelDownload(task.name)}
+            >
+              <Icon name="i-cross" />
+            </button>
+          </span>
+        ) : null}
+      </div>
+      <div className="download-dependency-progress">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+      <div className="download-detail-summary">
+        <span>
+          {formatBytes(task.downloadedBytes)} / {formatBytes(task.totalBytes)}
+        </span>
+        <span>{formatSpeed(task.speedBytesPerSec)}</span>
+      </div>
+      {children}
+      {task.error ? (
+        <div className="download-dependency-error">{task.error}</div>
+      ) : null}
+    </div>
+  );
 };
 
 export const DownloadTask = ({
   task,
-  initialExpanded = false,
+  dependencyTasks = [],
+  initialExpanded = true,
   allowRetry = true,
+  allowControl = true,
 }: {
   task: Download.TaskInfo;
+  dependencyTasks?: Download.TaskInfo[];
   initialExpanded?: boolean;
   allowRetry?: boolean;
+  allowControl?: boolean;
 }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
+  const togglePauseDownload = useDownloadStore(
+    (state) => state.togglePauseDownload
+  );
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(initialExpanded);
-  const progress = Math.max(0, Math.min(100, Number(task.progress) || 0));
-  const status = task.canceled
-    ? { label: _i18n.t("已取消"), icon: "i-cross", tone: "canceled" }
-    : task.state === "failed"
-      ? { label: _i18n.t("失败"), icon: "fail", tone: "failed" }
-      : task.state === "finished"
-        ? { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" }
-        : task.state === "pending"
-          ? { label: _i18n.t("下载中"), icon: "download", tone: "active" }
-          : { label: _i18n.t("等待中"), icon: "clock", tone: "waiting" };
+  const metricTasks = [task, ...dependencyTasks];
+  const metrics = getMetrics(metricTasks);
+  const progress = Math.max(0, Math.min(100, Number(metrics.progress) || 0));
+  const status = stateLabel(task);
+  const canControl = allowControl && task.state === "pending" && !task.canceled;
   const action =
-    task.state === "pending" && !task.canceled
+    allowRetry && task.state === "failed" && task.source
       ? {
-          icon: "i-cross",
-          onClick: () => cancelDownload(task.name),
-          title: _i18n.t("取消"),
+          icon: "replay",
+          onClick: () => downloadMod(task.name, task.source!, { force: true }),
+          title: _i18n.t("重试"),
         }
-      : allowRetry && task.state === "failed" && task.source
-        ? {
-            icon: "replay",
-            onClick: () =>
-              downloadMod(task.name, task.source!, { force: true }),
-            title: _i18n.t("重试"),
-          }
-        : null;
+      : null;
 
   return (
     <article className={`download-task download-task-${status.tone}`}>
@@ -78,100 +189,139 @@ export const DownloadTask = ({
           <span className="download-task-status-text">{status.label}</span>
           <Icon name={expanded ? "i-down" : "i-right"} />
         </button>
-        {action ? (
-          <button
-            className="download-task-action"
-            title={action.title}
-            aria-label={action.title}
-            onClick={action.onClick}
-          >
-            <Icon name={action.icon} />
-          </button>
-        ) : null}
+        <div className="download-task-actions">
+          {canControl ? (
+            <button
+              className="download-task-action"
+              title={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              aria-label={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              onClick={() => togglePauseDownload(task.name)}
+            >
+              <Icon name={task.paused ? "play" : "pause"} />
+            </button>
+          ) : null}
+          {canControl ? (
+            <button
+              className="download-task-action download-task-cancel"
+              title={_i18n.t("取消")}
+              aria-label={_i18n.t("取消")}
+              onClick={() => cancelDownload(task.name)}
+            >
+              <Icon name="i-cross" />
+            </button>
+          ) : action ? (
+            <button
+              className="download-task-action"
+              title={action.title}
+              aria-label={action.title}
+              onClick={action.onClick}
+            >
+              <Icon name={action.icon} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="download-task-progress" aria-hidden="true">
         <span style={{ width: `${progress}%` }} />
       </div>
-
       <div className="download-task-summary">
         <strong>{Math.round(progress)}%</strong>
         <span>{task.requested ? _i18n.t("下载") : _i18n.t("依赖")}</span>
-        {task.state === "pending" ? (
-          <>
-            <span>
-              {formatBytes(task.downloadedBytes)} / {formatBytes(task.totalBytes)}
-            </span>
-            <span>{formatSpeed(task.speedBytesPerSec)}</span>
-          </>
-        ) : task.error && !expanded ? (
-          <button
-            type="button"
-            className="download-task-error"
-            title={task.error}
-            onClick={() => setExpanded(true)}
-          >
-            {task.error}
-          </button>
-        ) : null}
+        <span>
+          {formatBytes(metrics.downloadedBytes)} /{" "}
+          {formatBytes(metrics.totalBytes)}
+        </span>
+        <span>{formatSpeed(metrics.speedBytesPerSec)}</span>
       </div>
 
-      {expanded && task.dependencies.length > 0 ? (
-        <div className="download-dependencies">
-          <div className="download-task-error-details">
-            {_i18n.t("依赖")}: {task.dependencies.join(", ")}
+      {expanded && dependencyTasks.length > 0 ? (
+        <div className="download-dependency-list">
+          <div className="download-dependency-heading">{_i18n.t("主文件")}</div>
+          <DownloadDetailRow
+            task={task}
+            allowControl={allowControl}
+            label={_i18n.t("主文件")}
+          />
+          <div className="download-dependency-heading">
+            {_i18n.t("依赖")} <span>{dependencyTasks.length}</span>
           </div>
+          {dependencyTasks.map((dependency) => (
+            <DownloadDetailRow
+              key={dependency.name}
+              task={dependency}
+              allowControl={allowControl}
+            />
+          ))}
         </div>
+      ) : expanded ? (
+        <div className="download-dependency-list download-main-file-only">
+          <DownloadDetailRow
+            task={task}
+            allowControl={allowControl}
+            label={_i18n.t("主文件")}
+          />
+        </div>
+      ) : null}
+      {task.error && expanded ? (
+        <div className="download-task-error-details">{task.error}</div>
       ) : null}
     </article>
   );
 };
 
-export const DownloadListMenu = ({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) => {
+export const DownloadListPage = () => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
-  const visibleTasks = Object.values(downloadTasks).filter(
-    (task) => task.state !== "finished" || task.canceled,
+  const allTasks = Object.values(downloadTasks);
+  const taskMap = new Map(
+    allTasks.map((task) => [task.name.toLocaleLowerCase(), task])
   );
+  const roots = allTasks.filter((task) => task.requested);
+  const visibleRoots = roots.length > 0 ? roots : allTasks;
+  const visibleCount = allTasks.filter(
+    (task) => task.state !== "finished" || task.canceled
+  ).length;
 
-  if (!open) return null;
   return (
-    <div className="downloadListBackdrop" onClick={onClose}>
-      <aside
-        className="downloadList"
-        aria-label={_i18n.t("下载任务")}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="download-list-header">
-          <div className="download-list-heading">
+    <div className="download-page">
+      <header className="download-page-header">
+        <div className="download-page-heading">
+          <span className="download-page-icon">
             <Icon name="download" />
-            <h2>{_i18n.t("下载任务")}</h2>
+          </span>
+          <div>
+            <h1>{_i18n.t("下载任务")}</h1>
+            <p>
+              {visibleCount} {_i18n.t("项")}
+            </p>
           </div>
-          <div className="download-list-tools">
-            <span>{visibleTasks.length}</span>
-            <button onClick={onClose} aria-label={_i18n.t("关闭")}>
-              <Icon name="i-cross" />
-            </button>
-          </div>
-        </header>
-        <div className="taskList">
-          {visibleTasks.length > 0 ? (
-            visibleTasks.map((task) => (
-              <DownloadTask key={task.name} task={task} />
-            ))
-          ) : (
-            <div className="download-list-empty">
-              <Icon name="download" />
-              <span>{_i18n.t("无数据")}</span>
-            </div>
-          )}
         </div>
-      </aside>
+      </header>
+      <div className="taskList download-page-list">
+        {visibleRoots.length > 0 ? (
+          visibleRoots.map((task) => (
+            <DownloadTask
+              key={task.name}
+              task={task}
+              dependencyTasks={(() => {
+                const dependencies = collectDependencies(task, taskMap);
+                return dependencies.length > 0
+                  ? dependencies
+                  : allTasks.filter(
+                      (candidate) =>
+                        !candidate.requested &&
+                        candidate.cancelKey === task.cancelKey
+                    );
+              })()}
+            />
+          ))
+        ) : (
+          <div className="download-list-empty">
+            <Icon name="download" />
+            <span>{_i18n.t("无数据")}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
