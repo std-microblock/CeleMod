@@ -300,6 +300,7 @@
   "有问题": "Something went wrong",
   "缺失依赖": "Missing dependencies",
   "仅显示可更新": "Show updatable only",
+  "仅显示重复 Mod": "Show duplicate Mods only",
   "显示设置中隐藏的类型": "Types hidden in display settings",
   "操作": "Actions",
   "展开全部": "Expand all",

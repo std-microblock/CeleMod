@@ -1134,6 +1134,10 @@ export const Manage = () => {
   const setEnabledFilter = useManageStore((state) => state.setEnabledFilter);
   const setHealthFilter = useManageStore((state) => state.setHealthFilter);
   const toggleType = useManageStore((state) => state.toggleType);
+  const setUpdateOnly = useManageStore((state) => state.setUpdateOnly);
+  const setDuplicateOnly = useManageStore(
+    (state) => state.setDuplicateOnly,
+  );
   const setShowHiddenTypes = useManageStore(
     (state) => state.setShowHiddenTypes,
   );
@@ -1297,6 +1301,7 @@ export const Manage = () => {
       health: "all" as const,
       types: [],
       updateOnly: false,
+      duplicateOnly: false,
       showHiddenTypes: true,
     }),
     [filters],
@@ -2021,6 +2026,7 @@ export const Manage = () => {
     Number(filters.enabled !== "all") +
     Number(filters.health !== "all") +
     Number(filters.updateOnly) +
+    Number(filters.duplicateOnly) +
     Number(filters.showHiddenTypes) +
     Number(rootOnly) +
     Number(fullTree);
@@ -2112,6 +2118,26 @@ export const Manage = () => {
                     </select>
                   </label>
                   <div className="filter-checks">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={filters.updateOnly}
+                        onChange={(event) =>
+                          setUpdateOnly(event.target.checked)
+                        }
+                      />
+                      {_i18n.t("仅显示可更新")}
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={filters.duplicateOnly}
+                        onChange={(event) =>
+                          setDuplicateOnly(event.target.checked)
+                        }
+                      />
+                      {_i18n.t("仅显示重复 Mod")}
+                    </label>
                     <label>
                       <input
                         type="checkbox"
