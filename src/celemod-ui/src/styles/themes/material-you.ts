@@ -12,6 +12,7 @@ export const installMaterialYouInteractions = () => {
     target.style.setProperty("--md-pointer-x", `${event.clientX - rect.left}px`);
     target.style.setProperty("--md-pointer-y", `${event.clientY - rect.top}px`);
     target.classList.remove("md-ripple-active");
+    target.querySelectorAll(":scope > .md-ripple").forEach((node) => node.remove());
     const ripple = document.createElement("span");
     ripple.className = "md-ripple";
     ripple.style.setProperty("--md-pointer-x", `${event.clientX - rect.left}px`);
@@ -47,6 +48,10 @@ export const installMaterialYouInteractions = () => {
   const observer = new MutationObserver(() => {
     const active = isMaterialYou();
     document.querySelectorAll<HTMLElement>(".md-tonal-surface").forEach((node) => node.classList.toggle("md-tonal-active", active));
+    if (!active) {
+      document.querySelectorAll<HTMLElement>(".md-ripple").forEach((node) => node.remove());
+      document.querySelectorAll<HTMLElement>(".md-ripple-active, .md-shape-morph").forEach((node) => node.classList.remove("md-ripple-active", "md-shape-morph"));
+    }
   });
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   cleanups.push(() => observer.disconnect());
