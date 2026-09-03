@@ -217,6 +217,13 @@ html[data-theme="material-you"] .keybindings-actions .input-mode-switch button {
 html[data-theme="material-you"] .binding-row { min-height: 58px; padding: 8px 12px; gap: 18px; }
 html[data-theme="material-you"] .binding-chip { min-height: 32px !important; height: 32px; padding: 0 10px !important; border-radius: 10px !important; background: var(--md-surface-container-high) !important; }
 html[data-theme="material-you"] .binding-add { width: 32px; min-width: 32px; min-height: 32px !important; height: 32px; padding: 0 !important; border-radius: 50% !important; }
+html[data-theme="material-you"] .celemod-version,
+html[data-theme="material-you"] #tbo-controls,
+html[data-theme="material-you"] #tbo-controls .tbo-btn { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html[data-theme="material-you"] .manage-toolbar .toolbar-action-button { min-width: 72px; white-space: nowrap; }
+html[data-theme="material-you"] .manage-toolbar .toolbar-icon-button { width: 40px; min-width: 40px; }
+html[data-theme="material-you"] .manage-toolbar button { flex: 0 0 auto; }
+html[data-theme="material-you"] .icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; overflow: visible; }
 
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
