@@ -491,7 +491,19 @@ html[data-theme="fluent"] .mod-card:hover {
 
 html[data-theme="fluent"] .manage-page {
   grid-template-columns: minmax(0, 1fr) 248px;
+  min-width: 0;
   background: transparent;
+}
+
+html[data-theme="fluent"] .manage-main,
+html[data-theme="fluent"] .manage-side,
+html[data-theme="fluent"] .manage-tree-scroll {
+  min-width: 0;
+}
+
+html[data-theme="fluent"] .manage-tree-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 html[data-theme="fluent"] .theme-preview-content .manage-page {
@@ -661,7 +673,9 @@ html[data-theme="fluent"] .virtual-keyboard-panel {
 
 html[data-theme="fluent"] .virtual-keyboard-board {
   width: min(920px, 100%);
-  min-width: 776px;
+  min-width: 0;
+  max-width: 920px;
+  overflow-x: auto;
 }
 
 html[data-theme="fluent"] .keybindings-list,
