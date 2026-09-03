@@ -50,31 +50,31 @@ html[data-theme="fluent"] .caption-hash {
 }
 
 html[data-theme="fluent"] .app-shell {
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
 }
 
 html[data-theme="fluent"] .sidebar {
-  width: 212px;
+  width: 112px;
   margin-right: 0;
-  padding: 8px 0 0;
+  padding: 6px 4px 0 0;
   box-sizing: border-box;
 }
 
-html[data-theme="fluent"] .sidebar-scroll { width: 212px; }
+html[data-theme="fluent"] .sidebar-scroll { width: 112px; }
 
-html[data-theme="fluent"] .sidebar-items { width: 212px; gap: 2px; }
+html[data-theme="fluent"] .sidebar-items { width: 112px; gap: 2px; }
 
 html[data-theme="fluent"] .sidebar .navBtn,
 html[data-theme="fluent"] .downloadListBtn {
   position: relative;
-  width: 204px;
-  height: 40px;
+  width: 104px;
+  height: 42px;
   margin: 0 0 2px;
-  padding: 0 14px;
+  padding: 0 12px;
   flex-direction: row;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 10px;
   border: 0 !important;
   border-radius: 4px !important;
   color: var(--fluent-text-secondary);
@@ -107,7 +107,7 @@ html[data-theme="fluent"] .downloadListBtn::before {
 html[data-theme="fluent"] .sidebar .navBtn:hover,
 html[data-theme="fluent"] .downloadListBtn:hover {
   color: var(--fluent-text-primary);
-  background: var(--fluent-fill-control-hover);
+  background: rgba(255,255,255,.055) !important;
 }
 
 html[data-theme="fluent"] .sidebar .navBtn:active,
@@ -118,7 +118,7 @@ html[data-theme="fluent"] .downloadListBtn:active {
 html[data-theme="fluent"] .sidebar .navBtn.selected {
   color: var(--fluent-text-primary);
   border-color: transparent !important;
-  background: var(--fluent-fill-control-selected) !important;
+  background: rgba(255,255,255,.1) !important;
   box-shadow: none !important;
 }
 
@@ -142,7 +142,7 @@ html[data-theme="fluent"] .sidebar .navBtn .icon {
 html[data-theme="fluent"] .sidebar .title {
   width: auto;
   color: inherit;
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1.2;
   opacity: .9;
   text-align: left;
@@ -152,9 +152,9 @@ html[data-theme="fluent"] .downloadListBtn {
   margin-top: 8px;
   border: 0 !important;
   justify-content: flex-start;
-  gap: 12px;
-  padding-inline: 14px;
-  background: var(--fluent-fill-control) !important;
+  gap: 10px;
+  padding-inline: 12px;
+  background: transparent !important;
 }
 
 html[data-theme="fluent"] .app-content {
