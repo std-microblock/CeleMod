@@ -532,13 +532,45 @@ html[data-theme="fluent"] .manage-filter-hint {
 }
 
 html[data-theme="fluent"] .manage-tree-scroll {
-  padding: 6px 8px 14px;
+  padding: 0 8px 14px 0;
 }
 
 html[data-theme="fluent"] .manage-tree-row {
   position: relative;
-  border-radius: 4px;
+  min-height: 38px;
+  border-radius: 0;
   transition: background var(--fluent-duration-fast), color var(--fluent-duration-fast);
+}
+
+/* Fluent ListView rows use one flat surface; inline controls must not become
+   a stack of tiny cards. */
+html[data-theme="fluent"] .manage-tree-row .tree-expander,
+html[data-theme="fluent"] .manage-tree-row .state-switch,
+html[data-theme="fluent"] .manage-tree-row .tree-name,
+html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button {
+  border: 0 !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .manage-tree-row .tree-expander,
+html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+html[data-theme="fluent"] .manage-tree-row .tree-name {
+  min-height: 32px;
+  padding-inline: 4px;
+}
+
+html[data-theme="fluent"] .manage-tree-row .tree-expander:hover,
+html[data-theme="fluent"] .manage-tree-row .state-switch:hover,
+html[data-theme="fluent"] .manage-tree-row .tree-name:hover,
+html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button:hover {
+  background: var(--fluent-fill-control-hover) !important;
 }
 
 html[data-theme="fluent"] .manage-tree-row:hover {
@@ -562,6 +594,19 @@ html[data-theme="fluent"] .manage-tree-row.selected::before {
 
 html[data-theme="fluent"] .manage-side {
   background: rgba(0,0,0,.08);
+}
+
+html[data-theme="fluent"] .manage-side .profile-row {
+  min-height: 38px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--fluent-stroke-divider) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html[data-theme="fluent"] .manage-side .profile-row.selected {
+  border-left: 3px solid var(--fluent-accent) !important;
+  background: var(--fluent-fill-control-selected) !important;
 }
 
 html[data-theme="fluent"] .manage-side section,
