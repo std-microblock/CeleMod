@@ -297,6 +297,27 @@ html[data-theme="material-you"] .keybindings-main { min-width: 0; overflow: hidd
 html[data-theme="material-you"] .manage-tree-scroll,
 html[data-theme="material-you"] .keybindings-scroll { min-width: 0; overflow: auto; }
 
+/* Keep the virtual keyboard inside the available pane at desktop widths;
+   individual keys may still scroll on very narrow windows, but the initial
+   viewport never clips the right edge of the board. */
+html[data-theme="material-you"] .virtual-keyboard-board {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+html[data-theme="material-you"] .virtual-keyboard-function-row {
+  gap: 4px;
+}
+html[data-theme="material-you"] .virtual-keyboard-function-group {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+html[data-theme="material-you"] .virtual-keyboard-function-group .virtual-keyboard-key {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0 !important;
+}
+
 /* Home content adapts before controls can overlap at compact widths. */
 @media (max-width: 840px) {
   html[data-theme="material-you"] .home-header { gap: 16px; }
