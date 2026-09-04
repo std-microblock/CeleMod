@@ -212,12 +212,14 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           attemptId: attemptId + index,
         }));
         const byName = new Map(mapped.map((task) => [normalizeName(task.name), task]));
+        // Keep each task's own progress in the store. The aggregate is only
+        // needed for callbacks and must not leak into the "主文件" row.
         const aggregated = mapped.map((task) =>
           task.requested
             ? { ...task, progress: aggregateProgress(task, byName) }
             : task,
         );
-        set((store) => ({ tasks: replaceTasks(store.tasks, aggregated) }));
+        set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
         const progress = aggregated.length
           ? aggregated.filter((task) => task.requested).reduce((sum, task) => sum + task.progress, 0) /
             Math.max(1, aggregated.filter((task) => task.requested).length)
@@ -387,11 +389,14 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           ? { ...task, progress: aggregateProgress(task, byName) }
           : task,
       );
-      set((store) => ({ tasks: replaceTasks(store.tasks, aggregated) }));
+      // Store per-file progress; use the aggregate only for the callback.
+      set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
 
       const currentRoot =
-        aggregated.find((task) => normalizeName(task.name) === key) ?? current;
-      const overallProgress = currentRoot.progress;
+        mapped.find((task) => normalizeName(task.name) === key) ?? current;
+      const overallProgress =
+        aggregated.find((task) => normalizeName(task.name) === key)?.progress ??
+        currentRoot.progress;
       const rootTask = {
         ...currentRoot,
         state,

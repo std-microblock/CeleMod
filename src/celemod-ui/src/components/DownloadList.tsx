@@ -22,6 +22,21 @@ const formatBytes = (bytes: number) => {
 const formatSpeed = (bytesPerSec: number) =>
   bytesPerSec ? `${formatBytes(bytesPerSec)}/s` : "0 B/s";
 
+// Prefer byte counters over the streamed percentage: the latter can lag
+// behind and is also used for aggregate root progress in the store.
+const getTaskProgress = (task: Download.TaskInfo) => {
+  if (task.totalBytes > 0) {
+    return Math.max(
+      0,
+      Math.min(100, (task.downloadedBytes / task.totalBytes) * 100)
+    );
+  }
+  return Math.max(
+    0,
+    Math.min(100, task.state === "finished" ? 100 : task.progress || 0)
+  );
+};
+
 const getMetrics = (tasks: Download.TaskInfo[]) => {
   const downloadedBytes = tasks.reduce(
     (sum, task) => sum + task.downloadedBytes,
@@ -79,6 +94,24 @@ const stateLabel = (task: Download.TaskInfo) => {
   return { label: _i18n.t("下载中"), icon: "download", tone: "active" };
 };
 
+const getRootStatus = (task: Download.TaskInfo, dependencyTasks: Download.TaskInfo[]) => {
+  if (task.canceled) return task;
+  if (dependencyTasks.some((dependency) => dependency.canceled)) {
+    return { ...task, canceled: true };
+  }
+  if (dependencyTasks.some((dependency) => dependency.state === "failed")) {
+    return { ...task, state: "failed" as const };
+  }
+  // A root may finish before its dependencies; keep it active until all are done.
+  if (
+    task.state === "finished" &&
+    dependencyTasks.some((dependency) => dependency.state !== "finished")
+  ) {
+    return { ...task, state: "pending" as const };
+  }
+  return task;
+};
+
 const DownloadDetailRow = ({
   task,
   children,
@@ -94,7 +127,7 @@ const DownloadDetailRow = ({
   const togglePauseDownload = useDownloadStore(
     (state) => state.togglePauseDownload
   );
-  const progress = Math.max(0, Math.min(100, task.progress || 0));
+  const progress = getTaskProgress(task);
   const status = stateLabel(task);
   const canControl = allowControl && task.state === "pending" && !task.canceled;
   return (
@@ -161,8 +194,10 @@ export const DownloadTask = ({
   const metricTasks = [task, ...dependencyTasks];
   const metrics = getMetrics(metricTasks);
   const progress = Math.max(0, Math.min(100, Number(metrics.progress) || 0));
-  const status = stateLabel(task);
-  const canControl = allowControl && task.state === "pending" && !task.canceled;
+  const displayTask = getRootStatus(task, dependencyTasks);
+  const status = stateLabel(displayTask);
+  const canControl =
+    allowControl && displayTask.state === "pending" && !displayTask.canceled;
   const action =
     allowRetry && task.state === "failed" && task.source
       ? {

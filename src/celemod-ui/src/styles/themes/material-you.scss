@@ -81,6 +81,7 @@ html[data-theme="material-you"] {
   background-image: radial-gradient(900px 500px at 100% -10%, rgb(103 80 164 / 20%), transparent 72%), radial-gradient(700px 460px at -10% 100%, rgb(239 184 200 / 9%), transparent 72%);
 }
 
+html[data-theme="material-you"] { --window-titlebar-height: 52px; }
 html[data-theme="material-you"] body { color: var(--md-on-surface); background: transparent; font-family: var(--font); letter-spacing: 0.01em; }
 html[data-theme="material-you"] .app-frame { padding-inline: 0; }
 html[data-theme="material-you"] .window-titlebar {
@@ -307,6 +308,185 @@ html[data-theme="material-you"] .manage-toolbar .toolbar-action-button { min-wid
 html[data-theme="material-you"] .manage-toolbar .toolbar-icon-button { width: 40px; min-width: 40px; }
 html[data-theme="material-you"] .manage-toolbar button { flex: 0 0 auto; }
 html[data-theme="material-you"] .icon { display: inline-flex; align-items: center; justify-content: center; line-height: 1; overflow: visible; }
+
+/* Downloads are an M3 list: keep one continuous surface and reserve cards for
+   pages that actually represent independent objects. Nested file rows should
+   read as list items, not another stack of outlined containers. */
+html[data-theme="material-you"] .page-Downloads {
+  background: transparent;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page {
+  width: min(1120px, 100%);
+  max-width: none;
+  margin: 0 auto;
+  padding: 24px 28px 48px;
+  box-sizing: border-box;
+  color: var(--md-on-surface-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-header {
+  margin-bottom: 16px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-heading {
+  gap: 14px;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--md-shape-md);
+  color: var(--md-on-primary-container);
+  background: var(--md-primary-container);
+  font-size: 20px;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-heading h1 {
+  color: var(--md-on-surface);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -.01em;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-heading p {
+  margin-top: 4px;
+  color: var(--md-on-surface-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task {
+  margin: 0;
+  padding: 16px 8px 15px;
+  border: 0;
+  border-bottom: 1px solid var(--md-outline-variant);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 4%, transparent);
+  box-shadow: none;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-toggle,
+html[data-theme="material-you"] .page-Downloads .download-task-action,
+html[data-theme="material-you"] .page-Downloads .download-dependency-actions button {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--md-shape-sm) !important;
+  color: var(--md-on-surface-variant) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-toggle {
+  width: 100%;
+  height: 32px;
+  justify-content: stretch;
+  font-size: inherit;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-toggle:hover,
+html[data-theme="material-you"] .page-Downloads .download-task-action:hover,
+html[data-theme="material-you"] .page-Downloads .download-dependency-actions button:hover {
+  color: var(--md-on-surface) !important;
+  background: var(--md-state-hover) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-action {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-shape-full) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-status-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--md-shape-sm);
+  color: var(--md-primary);
+  background: color-mix(in srgb, var(--md-primary) 16%, transparent);
+  font-size: 12px;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-title {
+  color: var(--md-on-surface);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-status-text,
+html[data-theme="material-you"] .page-Downloads .download-task-summary,
+html[data-theme="material-you"] .page-Downloads .download-detail-summary,
+html[data-theme="material-you"] .page-Downloads .download-dependency-heading {
+  color: var(--md-on-surface-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-progress,
+html[data-theme="material-you"] .page-Downloads .download-dependency-progress {
+  background: var(--md-surface-container-highest);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-progress > span,
+html[data-theme="material-you"] .page-Downloads .download-dependency-progress > span {
+  background: var(--md-primary);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-failed .download-task-progress > span,
+html[data-theme="material-you"] .page-Downloads .download-detail-row-failed .download-dependency-progress > span {
+  background: var(--md-error);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-canceled .download-task-progress > span,
+html[data-theme="material-you"] .page-Downloads .download-task-paused .download-task-progress > span {
+  background: var(--md-on-surface-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-failed .download-task-status-icon,
+html[data-theme="material-you"] .page-Downloads .download-detail-row-failed .download-dependency-main > .icon,
+html[data-theme="material-you"] .page-Downloads .download-task-error-details,
+html[data-theme="material-you"] .page-Downloads .download-dependency-error {
+  color: var(--md-error);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-canceled .download-task-status-icon,
+html[data-theme="material-you"] .page-Downloads .download-task-paused .download-task-status-icon {
+  color: var(--md-on-surface-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-cancel:hover {
+  color: var(--md-error) !important;
+  background: color-mix(in srgb, var(--md-error) 13%, transparent) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-dependency-list {
+  margin-left: 34px;
+  border-top-color: var(--md-outline-variant);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-detail-row {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--md-outline-variant) 62%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-detail-row:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 3%, transparent);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-detail-row:last-child {
+  border-bottom: 0;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-list-empty {
+  color: var(--md-on-surface-variant);
+}
 
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="material-you"] *, html[data-theme="material-you"] *::before, html[data-theme="material-you"] *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }

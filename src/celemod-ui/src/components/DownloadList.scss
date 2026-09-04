@@ -538,3 +538,80 @@
     padding: 8px 10px 28px;
   }
 }
+
+// Keep the full-page task list information-dense instead of card-like.
+.download-page {
+  padding: 4px 12px 24px;
+}
+
+.download-page-header {
+  padding: 4px 4px 7px;
+}
+
+.download-page-heading {
+  gap: 7px;
+
+  .download-page-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  h1 {
+    font-size: 14px;
+  }
+
+  p {
+    margin-top: 1px;
+    font-size: 9px;
+  }
+}
+
+.download-page-list .download-task {
+  padding: 8px 6px 7px;
+}
+
+.download-task-toggle {
+  min-height: 24px;
+  gap: 6px;
+}
+
+.download-task-status-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.download-task-progress {
+  height: 4px;
+  margin: 7px 0 6px 26px;
+}
+
+.download-task-summary {
+  margin-left: 26px;
+  gap: 7px;
+}
+
+.download-page-list .download-dependency-list {
+  margin: 7px 0 0 26px;
+  padding-top: 6px;
+}
+
+.download-dependency-heading {
+  margin-bottom: 4px;
+}
+
+.download-page-list .download-detail-row {
+  margin-top: 3px;
+  padding: 3px 0;
+}
+
+.download-dependency-progress {
+  height: 3px;
+  margin-top: 4px;
+}
+
+.download-detail-summary {
+  margin-top: 3px;
+}

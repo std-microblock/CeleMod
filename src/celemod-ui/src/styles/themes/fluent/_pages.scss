@@ -792,6 +792,172 @@ html[data-theme="fluent"] .keybindings-page {
   background: transparent;
 }
 
+/* Downloads are a ListView-style route, not a collection of Fluent buttons.
+   The generic control rules above intentionally target every button, so keep
+   the task toggles and icon actions on their own compact geometry. */
+html[data-theme="fluent"] .page-Downloads {
+  background: transparent;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 18px 28px 40px;
+  box-sizing: border-box;
+  color: var(--fluent-text-secondary);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-header {
+  margin-bottom: 0;
+  padding: 4px 6px 12px;
+  border-bottom-color: var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-heading {
+  gap: 10px;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-icon {
+  width: 28px;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--fluent-accent) 30%, transparent);
+  border-radius: 4px;
+  color: var(--fluent-accent);
+  background: color-mix(in srgb, var(--fluent-accent) 12%, transparent);
+  font-size: 13px;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-heading h1 {
+  color: var(--fluent-text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-heading p {
+  margin-top: 3px;
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task {
+  margin: 0;
+  padding: 12px 8px 11px;
+  border: 0;
+  border-bottom: 1px solid var(--fluent-stroke-divider);
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task:hover {
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-toggle,
+html[data-theme="fluent"] .page-Downloads .download-task-action,
+html[data-theme="fluent"] .page-Downloads .download-dependency-actions button {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  color: var(--fluent-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-toggle {
+  width: 100%;
+  height: 28px;
+  justify-content: stretch;
+  font-size: inherit;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-toggle:hover,
+html[data-theme="fluent"] .page-Downloads .download-task-action:hover,
+html[data-theme="fluent"] .page-Downloads .download-dependency-actions button:hover {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control-hover) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-status-icon {
+  width: 22px;
+  height: 22px;
+  border: 1px solid color-mix(in srgb, var(--fluent-accent) 28%, transparent);
+  border-radius: 4px;
+  color: var(--fluent-accent);
+  background: color-mix(in srgb, var(--fluent-accent) 11%, transparent);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-title {
+  color: var(--fluent-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-status-text,
+html[data-theme="fluent"] .page-Downloads .download-task-summary,
+html[data-theme="fluent"] .page-Downloads .download-detail-summary,
+html[data-theme="fluent"] .page-Downloads .download-dependency-heading {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-progress,
+html[data-theme="fluent"] .page-Downloads .download-dependency-progress {
+  background: var(--fluent-fill-control);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-progress > span,
+html[data-theme="fluent"] .page-Downloads .download-dependency-progress > span {
+  background: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-progress > span,
+html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-progress > span {
+  background: var(--fluent-danger);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-canceled .download-task-progress > span,
+html[data-theme="fluent"] .page-Downloads .download-task-paused .download-task-progress > span {
+  background: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-status-icon,
+html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-main > .icon,
+html[data-theme="fluent"] .page-Downloads .download-task-error-details,
+html[data-theme="fluent"] .page-Downloads .download-dependency-error {
+  color: var(--fluent-danger);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-canceled .download-task-status-icon,
+html[data-theme="fluent"] .page-Downloads .download-task-paused .download-task-status-icon {
+  color: var(--fluent-text-tertiary);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-cancel:hover {
+  color: var(--fluent-danger) !important;
+  background: color-mix(in srgb, var(--fluent-danger) 13%, transparent) !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-dependency-list {
+  margin-left: 30px;
+  border-top-color: var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-detail-row {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-detail-row:hover {
+  background: var(--fluent-fill-subtle);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-list-empty {
+  color: var(--fluent-text-tertiary);
+}
+
 html[data-theme="fluent"] .keybindings-main {
   width: 100%;
 }

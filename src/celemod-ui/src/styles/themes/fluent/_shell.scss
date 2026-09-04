@@ -26,6 +26,10 @@ html[data-theme="fluent"] .app-frame::after {
   mix-blend-mode: soft-light;
 }
 
+html[data-theme="fluent"] {
+  --window-titlebar-height: 46px;
+}
+
 html[data-theme="fluent"] .window-titlebar {
   flex-basis: 46px;
   min-height: 46px;

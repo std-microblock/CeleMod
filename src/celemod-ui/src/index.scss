@@ -4,6 +4,7 @@
 @use "./styles/themes/material-you";
 
 :root {
+  --window-titlebar-height: 45px;
   /* Runtime theme tokens. Theme providers can override these values on
      [data-theme] without recompiling component styles. */
   --color-canvas: #{$bg};
@@ -518,7 +519,7 @@ select option {
 
 .blocking-mask {
   position: fixed;
-  inset: 30px 0 0;
+  inset: var(--window-titlebar-height) 0 0;
   z-index: 1200;
   display: none;
   align-items: center;
