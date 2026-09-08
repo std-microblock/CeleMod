@@ -17,7 +17,8 @@ data class ControlState(
     val canTalk: Boolean = false,
     val keyboard: Boolean = false,
     val ui: String = "",
-    val bindings: Map<String, List<String>> = emptyMap()
+    val bindings: Map<String, List<String>> = emptyMap(),
+    val touch: TouchScene? = null
 )
 
 data class ControlProfile(
@@ -29,7 +30,7 @@ data class ControlProfile(
     val auxiliary: ControlAction? = null
 ) {
     companion object {
-        fun forState(state: ControlState, buttons: Boolean, joystick: Boolean): ControlProfile {
+        fun forState(state: ControlState, buttons: Boolean, joystick: Boolean, direct: Boolean = false): ControlProfile {
             val enabled = buttons || joystick
             val mode = state.mode
             val playing = mode in setOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)
@@ -75,10 +76,10 @@ data class ControlProfile(
             }
             return ControlProfile(
                 stick = enabled && playing && joystick,
-                directions = enabled && (navigation || playing && !joystick),
+                directions = enabled && !direct && (navigation || playing && !joystick),
                 menuDirections = !playing,
                 top = top.takeIf { enabled },
-                actions = actions.takeIf { enabled } ?: emptyList(),
+                actions = actions.takeIf { enabled && !direct } ?: emptyList(),
                 auxiliary = auxiliary.takeIf { enabled }
             )
         }

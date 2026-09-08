@@ -78,6 +78,51 @@ one-tap resume.
 - Layout tests cover round-trip persistence, corrupt input, cancel/reset isolation,
   drag cancellation, geometry scaling, screen edges, and toolbar protection.
 
+## Direct UI touch
+
+Supported menus default to direct touch when either touch preference is enabled.
+The fixed **按键 / 触屏** switch beside Edit/Exit can restore the virtual D-pad and
+actions at any time; that choice persists. The position editor always previews the
+virtual controls, independently of this switch. Gameplay keeps its original controls.
+
+| UI | Direct interaction |
+| --- | --- |
+| Title / main menu | Tap to start; tap actual buttons; swipe to move selection using the menu's own neighbor links (including Everest row layouts) |
+| Pause / options / ordinary mod TextMenus | Tap a visible enabled row; drag option values horizontally; slide vertically to scroll selection without confirming |
+| Save slots | Tap a card and its actions; swipe to change selection; delete still opens the game's own confirmation |
+| Chapters | Tap visible unlocked/assist-unlockable icons; swipe left/right for chapters, up/down for Everest level sets; tap journal/map-list/search shortcuts |
+| Chapter panel | Tap actual mode/checkpoint tabs; swipe left/right between choices |
+| Journal | Swipe left/right to turn pages; vertical swipes are passed to page navigation; retain Back |
+| Dialogue / postcards / completion / credits | Short tap sends one semantic confirm; drags/long holds never confirm; no direct skip-cutscene calls |
+| File naming / Everest string and number entry | Tap the displayed name/value for a native text editor; alphabet and finish/backspace/back options also accept taps |
+| Everest map search | Tap the actual search field for native keyboard entry, then tap results or slide the result list |
+
+Architecture: the CeleMod startup hook installs **runtime-only Harmony hooks** in
+Engine.Update and VirtualButton.Pressed/consumption. It does not rewrite Celeste or
+Everest DLLs on disk. Game-side adapters read live objects, positions, texture/font
+sizes, menu spacing, and the actual Engine viewport/backbuffer; Android maps into
+that viewport, excluding letterboxing. HUD-relative constants used by specific
+vanilla/Everest widgets are not hardcoded Android screen coordinates. Mod render
+overrides with a different layout are best-effort and can use the explicit fallback.
+
+Reflection and callbacks only run on the game thread. The Android writer publishes
+a bounded, atomic command journal off the UI thread; the game reads it in the
+background and processes commands in Engine.Update. Commands carry a session/UI
+epoch and sequence, expire after 1.5 seconds, and are checked against fresh targets.
+Changing scenes, modal dialogs, item identity, or availability invalidates old
+gestures. Geometry movement alone does not invalidate a scrolling gesture. Disabled,
+hidden, inactive or ambiguous menus never expose underlying actions. Expanded
+custom submenus and unknown overlays retain virtual navigation instead of guessed
+child targets.
+
+Swipes respond when the drag threshold is crossed rather than waiting for release;
+page changes occur at most once per finger gesture. Continuous menu scrolling uses
+shorter steps. Input is single-finger: adding another finger cancels the gesture.
+The game keeps its own selection animation; no flashing rectangular overlay is drawn.
+Native text is a draft until the dialog is accepted; Cancel/Back makes no game change.
+Accepted text is passed through the game's character validation and finish logic,
+without changing global keyboard settings.
+
 ## Regression checks
 
 Managed classification tests (synthetic types; no game files required):
@@ -106,6 +151,19 @@ manager button or normal game exit. Use test saves for any progress-changing che
 For the editor: drag jump and stick, switch preview and drag confirm, Save, reopen
 and verify, Cancel a second edit, verify Back cancels without unpausing, and test
 Reset both with Cancel and Save. Relaunch to verify positions persist.
+For direct touch: initial title tap; main-menu button tap and swipe; pause row tap;
+horizontal slider drag followed by vertical list drag; verify no release-confirm;
+both chapter swipe axes and map-search shortcut; native text Cancel/accept; journal
+page swipe; two-finger cancellation; letterbox touches; explicit key fallback;
+controller-opened modal during a touch; background/return with no delayed input.
 
 Custom non-Oui mod scenes and mods that entirely replace keyboard input remain
 best-effort fallback, not a claim that every mod's UI has a specialized profile.
+
+Adapter regression details: reflection resolves overloads by argument type (in
+particular `ActiveFont.Measure(string)`, not `Measure(char)`). File selection uses
+the focused controller and visible slot entities; the controller itself is normally
+invisible. Main-menu buttons follow the parent's direct-render rules. Chapter
+sidebar hit regions are limited to their 128-HUD-pixel spacing rather than the
+overlapping 164-pixel artwork, and retain the game's journal-dependent placement:
+map list sends ESC, while search sends Everest's MenuSearch binding.

@@ -43,6 +43,7 @@ Mode(new LevelExit(), "complete");
 Mode(new Credits(), "complete");
 Mode(new object(), "fallback");
 Console.WriteLine($"PASS: {count} managed scene classification cases.");
+DirectTouchTests.Run();
 
 class CustomLevel : Level { }
 class CustomMenu : TextMenu { }
@@ -57,14 +58,14 @@ namespace Celeste {
         public object? Overlay { get; set; }
         public List<Monocle.Entity> Entities { get; set; } = new();
     }
-    class Overworld { public object? Current; public object? Next; public object? Last; public object? Overlay; }
+    class Overworld { public object? Current; public object? Next; public object? Last; public object? Overlay; public List<Monocle.Entity> Entities = new(); }
     class Textbox : Monocle.Entity { public bool Opened { get; set; } }
-    class TextMenu : Monocle.Entity { public bool Focused; }
-    class OuiTitleScreen { }
-    class OuiChapterSelect { }
-    class OuiChapterPanel { }
-    class OuiJournal { }
-    class OuiFileNaming { }
+    partial class TextMenu : Monocle.Entity { public bool Focused; }
+    class OuiTitleScreen : Monocle.Entity { public bool hideConfirmButton; }
+    partial class OuiChapterSelect : TestOui { }
+    partial class OuiChapterPanel : TestOui { }
+    class OuiJournal : TestOui { }
+    partial class OuiFileNaming : TestOui { }
     class GameLoader { }
     class LevelLoader { }
     class OverworldLoader { }

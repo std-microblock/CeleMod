@@ -8,5 +8,7 @@
   <ItemGroup>
     <Compile Include="../../managed/GameControls.cs" Link="GameControls.cs" />
     <Compile Include="../../managed/StartupHook.cs" Link="StartupHook.cs" />
+    <Compile Include="../../managed/GameTouch.cs" Link="GameTouch.cs" />
+    <Compile Include="../../managed/GameTouchAdapters.cs" Link="GameTouchAdapters.cs" />
   </ItemGroup>
 </Project>

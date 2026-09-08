@@ -10,6 +10,11 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
+import android.view.ViewConfiguration
+import android.view.WindowManager
+import android.text.InputFilter
+import android.text.InputType
+import android.widget.EditText
 import android.widget.Toast
 import org.libsdl.app.SDLActivity
 import kotlin.math.*
@@ -42,6 +47,16 @@ class TouchControls(
     private val density = resources.displayMetrics.density
     private val safe = Rect()
     private val preferences = context.getSharedPreferences("touch-layouts", Context.MODE_PRIVATE)
+    private val touchWriter = DirectTouchWriter(context.cacheDir)
+    private var directPreferred = preferences.getBoolean("direct-touch", true)
+    private val direct get() = !editing && directPreferred && (buttons || joystick) && state.touch != null
+    private var directGesture: DirectGesture? = null
+    private var directSequence = false
+    private var directPointer = -1
+    private var directStartTime = 0L
+    private var textDialog: AlertDialog? = null
+    private var textEpoch: String? = null
+    private var hintUntil = 0L
     private var orientation = ""
     private var savedPositions: Map<String, ControlPoint> = emptyMap()
     private var draft: ControlLayoutDraft? = null
@@ -62,6 +77,10 @@ class TouchControls(
 
     fun setState(next: ControlState) {
         if (state == next) return
+        if (next.touch?.epoch != state.touch?.epoch) {
+            if (textEpoch != null && textEpoch != next.touch?.epoch) { textDialog?.dismiss(); textDialog = null; textEpoch = null }
+            hintUntil = SystemClock.uptimeMillis() + 2500
+        }
         if (editing) {
             // A load may finish, or a controller may resume the level while the
             // editor is open. Keep the preview stable and request pause again.
@@ -72,10 +91,11 @@ class TouchControls(
         }
         // Merely walking into/out of Talk range must NOT drop a held climb/jump.
         // Changing scenes, input mode or bindings must not carry a hold into a menu.
-        if (state.mode != next.mode || state.ui != next.ui || state.bindings != next.bindings || state.keyboard != next.keyboard)
+        if (state.mode != next.mode || state.ui != next.ui || state.bindings != next.bindings || state.keyboard != next.keyboard ||
+            state.touch?.epoch != next.touch?.epoch)
             releaseAll()
         state = next
-        profile = ControlProfile.forState(state, buttons, joystick)
+        profile = ControlProfile.forState(state, buttons, joystick, direct)
         rebuild()
     }
 
@@ -119,10 +139,10 @@ class TouchControls(
         val margin = min(18 * density, size * .28f)
         val topSize = size * .78f
         layoutBounds = ControlBounds(safe.left + margin, safe.top + margin, w - margin, h - margin)
-        val toolbarCount = if (editing) 4 else 2
+        val toolbarCount = if (editing) 4 else if (state.touch != null) 3 else 2
         toolbarBounds = ControlBounds(safe.left.toFloat(), safe.top.toFloat(),
             safe.left + margin + toolbarCount * (topSize + margin), safe.top + topSize + 2 * margin)
-        profile = if (!editing) ControlProfile.forState(state, buttons, joystick)
+        profile = if (!editing) ControlProfile.forState(state, buttons, joystick, direct)
             else if (editingGame) ControlProfile.forState(ControlState(ControlMode.GAMEPLAY, canTalk = true), true, joystick)
             else ControlProfile.forState(ControlState(ControlMode.PAUSE), true, false).let {
                 it.copy(actions = it.actions + ControlAction("Pause", "完成", ControlIcon.CONFIRM),
@@ -141,7 +161,11 @@ class TouchControls(
             ControlAction("CancelLayout", "取消", ControlIcon.CLOSE),
             ControlAction("ResetLayout", "重置", ControlIcon.RESET),
             ControlAction("SwitchLayout", if (editingGame) "到菜单" else "到游戏")
-        ) else listOf(ControlAction("Edit", "编辑", ControlIcon.EDIT), ControlAction("Exit", "返回管理器", ControlIcon.EXIT))
+        ) else buildList {
+            add(ControlAction("Edit", "编辑", ControlIcon.EDIT))
+            add(ControlAction("Exit", "返回管理器", ControlIcon.EXIT))
+            if (state.touch != null) add(ControlAction("ToggleTouch", if (directPreferred) "按键" else "触屏"))
+        }
         toolbar.forEachIndexed { i, action ->
             key("fixed/${action.binding}", action, safe.left + margin + i * (topSize + margin), safe.top + margin,
                 topSize, iconOnly = action.binding == "Exit")
@@ -184,6 +208,22 @@ class TouchControls(
             ?: keys.lastOrNull { it.rect.contains(x, y) }
 
     override fun onDraw(canvas: Canvas) {
+        if (direct) {
+            val now = SystemClock.uptimeMillis()
+            if (now < hintUntil) {
+                paint.style = Paint.Style.FILL; paint.color = 0xCCFFFFFF.toInt()
+                paint.textSize = 12 * density; paint.textAlign = Paint.Align.CENTER
+                val hint = when (state.touch!!.kind) {
+                    "journal" -> "左右滑动翻页"
+                    "chapters" -> "点选章节 · 左右切换章节 · 上下切换地图集"
+                    "continue" -> "轻点继续"
+                    "text" -> "轻点文本使用手机键盘，也可点选字符"
+                    else -> "直接点选 · 滑动列表 · 左上角可切回按键"
+                }
+                canvas.drawText(hint, width / 2f, height - safe.bottom - 8 * density, paint)
+                postInvalidateDelayed(2500)
+            }
+        }
         if (editing) canvas.drawColor(0x66000000)
         if (profile.stick) {
             paint.style = Paint.Style.FILL
@@ -316,6 +356,7 @@ class TouchControls(
 
     private fun startEditing() {
         releaseAll()
+        textDialog?.dismiss(); textDialog = null; textEpoch = null
         editingGame = gameLayout(state.mode)
         draft = ControlLayoutDraft(savedPositions)
         // Pause known gameplay before editing. Never send Escape in an unknown
@@ -396,6 +437,23 @@ class TouchControls(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (editing) return editTouch(event)
+        if (directSequence) return directTouch(event)
+        if (direct && event.actionMasked == MotionEvent.ACTION_DOWN && keyAt(event.x, event.y) == null) {
+            directSequence = true
+            directPointer = event.getPointerId(0)
+            directStartTime = event.eventTime
+            val scene = state.touch!!
+            val screen = ControlPoint(event.x / width, event.y / height)
+            if (scene.viewport.contains(screen)) {
+                val point = scene.viewport.local(screen)
+                val target = scene.hit(point)
+                if (target != null) {
+                    directGesture = DirectGesture(scene, target, point, width * scene.viewport.w, height * scene.viewport.h,
+                        ViewConfiguration.get(context).scaledTouchSlop.toFloat())
+                }
+            }
+            return true
+        }
         val index = event.actionIndex
         val id = event.getPointerId(index)
         if (event.actionMasked == MotionEvent.ACTION_DOWN && !buttons && !joystick &&
@@ -436,8 +494,17 @@ class TouchControls(
                 if (id == stickPointer) { stickPointer = -1; sx = 0f; sy = 0f }
                 if (key?.rect?.contains(event.getX(index), event.getY(index)) == true) {
                     if (key.action.binding == "Exit") { releaseAll(); onExit() }
-                    if (key.action.binding == "Keyboard") { releaseAll(); onKeyboard() }
+                    if (key.action.binding == "Keyboard") {
+                        releaseAll()
+                        val target = state.touch?.targets?.firstOrNull { it.id == "text" }
+                        if (direct && target != null) showTextEditor(state.touch!!, target) else onKeyboard()
+                    }
                     if (key.action.binding == "Edit") startEditing()
+                    if (key.action.binding == "ToggleTouch") {
+                        releaseAll(); directPreferred = !directPreferred
+                        preferences.edit().putBoolean("direct-touch", directPreferred).apply()
+                        rebuild()
+                    }
                 }
                 performClick()
             }
@@ -447,12 +514,66 @@ class TouchControls(
         return true
     }
     override fun performClick(): Boolean { super.performClick(); return true }
+    private fun directTouch(event: MotionEvent): Boolean {
+        val scene = state.touch
+        when (event.actionMasked) {
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_CANCEL -> {
+                directGesture = null // No two-finger tap/drag can accidentally confirm a menu.
+                if (event.actionMasked == MotionEvent.ACTION_CANCEL) directSequence = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val index = event.findPointerIndex(directPointer)
+                if (index >= 0 && scene != null) {
+                    val point = scene.viewport.local(ControlPoint(event.getX(index) / width, event.getY(index) / height))
+                    directGesture?.move(point)?.let { touchWriter.send(it) }
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                val gesture = directGesture
+                if (gesture != null && scene != null) {
+                    val point = scene.viewport.local(ControlPoint(event.x / width, event.y / height))
+                    gesture.finish(point, scene, event.eventTime - directStartTime)?.let {
+                        if (it.action == "keyboard") showTextEditor(scene, gesture.target) else touchWriter.send(it)
+                    }
+                }
+                directGesture = null; directSequence = false; directPointer = -1
+                performClick()
+            }
+        }
+        return true
+    }
+    private fun showTextEditor(scene: TouchScene, target: TouchTarget) {
+        if (textDialog?.isShowing == true) return
+        releaseAll()
+        val edit = EditText(context).apply {
+            inputType = if (target.kind == "number") InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+                else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            isSingleLine = true
+            filters = arrayOf(InputFilter.LengthFilter(target.maxLength))
+            setText(target.text); selectAll()
+            setPadding((20 * density).toInt(), (12 * density).toInt(), (20 * density).toInt(), (12 * density).toInt())
+        }
+        textEpoch = scene.epoch
+        val dialog = AlertDialog.Builder(context).setTitle(target.label.ifBlank { "输入文本" }).setView(edit)
+            .setNegativeButton("取消", null)
+            .setPositiveButton(if (scene.kind == "search") "搜索" else "完成") { _, _ ->
+                if (state.touch?.epoch == scene.epoch)
+                    touchWriter.send(TouchIntent(scene.epoch, target.id, "text", text = edit.text.toString()))
+            }.create()
+        textDialog = dialog
+        dialog.setOnDismissListener { textDialog = null; textEpoch = null }
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog.show(); edit.requestFocus()
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+    }
     override fun onDetachedFromWindow() {
         releaseAll(); resetDialog?.dismiss(); resetDialog = null
+        textDialog?.dismiss(); textDialog = null; touchWriter.close()
         super.onDetachedFromWindow()
     }
     fun releaseAll() {
         cancelDrag()
+        directGesture = null; directSequence = false; directPointer = -1
         handler.removeCallbacksAndMessages(null)
         for (code in down) SDLActivity.onNativeKeyUp(code)
         down.clear(); pulses.clear(); pressedAt.clear(); pointers.clear(); directionPointers.clear()

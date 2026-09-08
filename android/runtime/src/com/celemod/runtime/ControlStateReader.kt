@@ -31,7 +31,8 @@ class ControlStateReader(private val file: File, private val onState: (ControlSt
                                 if (array != null) keys[name] = (0 until array.length()).map { array.getString(it) }
                             }
                             val state = ControlState(ControlMode.parse(value.optString("mode")),
-                                value.optBoolean("canTalk"), value.optBoolean("keyboard"), value.optString("ui"), keys)
+                                value.optBoolean("canTalk"), value.optBoolean("keyboard"), value.optString("ui"), keys,
+                                readTouch(value.optJSONObject("touch")))
                             main.post { if (running && session == generation) onState(state) }
                         }
                         last = raw
@@ -40,6 +41,26 @@ class ControlStateReader(private val file: File, private val onState: (ControlSt
             } catch (_: Exception) { /* Keep the last valid layout during an interrupted write. */ }
             if (running && session == generation) worker.postDelayed(this, 50)
         }
+    }
+    private fun readTouch(value: JSONObject?): TouchScene? {
+        if (value == null) return null
+        fun rect(json: JSONObject?): TouchRect? {
+            if (json == null) return null
+            return TouchRect(json.optDouble("x").toFloat(), json.optDouble("y").toFloat(),
+                json.optDouble("w").toFloat(), json.optDouble("h").toFloat()).takeIf { it.valid }
+        }
+        val viewport = rect(value.optJSONObject("viewport")) ?: return null
+        val epoch = value.optString("epoch").takeIf { it.isNotBlank() } ?: return null
+        val array = value.optJSONArray("targets") ?: return null
+        if (array.length() > 512) return null
+        val targets = (0 until array.length()).mapNotNull { i ->
+            val target = array.optJSONObject(i) ?: return@mapNotNull null
+            val box = rect(target.optJSONObject("rect")) ?: return@mapNotNull null
+            val id = target.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            TouchTarget(id, box, target.optString("kind"), target.optString("label"),
+                target.optString("text"), target.optInt("maxLength", 128).coerceIn(1, 1024))
+        }
+        return TouchScene(epoch, value.optString("kind"), viewport, targets).takeIf { targets.isNotEmpty() }
     }
     fun start() {
         if (!running) {

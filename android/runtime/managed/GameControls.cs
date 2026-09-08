@@ -31,6 +31,7 @@ internal static class GameControls
             talk = game.GetType("Celeste.TalkComponent");
             var update = engine!.GetMethods(Flags).Single(m => m.Name == "Update" && m.GetParameters().Length == 1);
             StartupHook.Patch(update, nameof(AfterUpdate), typeof(GameControls), postfix: true);
+            GameTouch.Install(game, engine, input!, path);
             Console.WriteLine("[CeleMod] Contextual touch controls connected to Engine.Update.");
         } catch (Exception e) {
             Console.WriteLine("[CeleMod] Contextual controls unavailable; using fallback controls: " + e);
@@ -118,6 +119,7 @@ internal static class GameControls
 
     private static void AfterUpdate()
     {
+        GameTouch.Pump();
         var now = Environment.TickCount64;
         if (now < nextSample) return;
         nextSample = now + 50;
@@ -131,7 +133,8 @@ internal static class GameControls
                 ui = current?.GetType().FullName ?? "",
                 canTalk = mode == "gameplay" && Read(talk, "PlayerOver") is object nearby && Yes(nearby, "Enabled"),
                 keyboard = mode == "naming" && Yes(current, "UseKeyboardInput") || mode == "search" && Yes(current, "Searching"),
-                bindings = Bindings()
+                bindings = Bindings(),
+                touch = GameTouch.Capture(scene)
             });
             if (json == lastJson) return;
             lastJson = json;
