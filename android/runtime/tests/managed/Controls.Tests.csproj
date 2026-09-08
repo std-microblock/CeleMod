@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../managed/GameControls.cs" Link="GameControls.cs" />
+    <Compile Include="../../managed/StartupHook.cs" Link="StartupHook.cs" />
+  </ItemGroup>
+</Project>
