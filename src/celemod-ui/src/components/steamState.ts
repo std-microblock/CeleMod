@@ -1,6 +1,7 @@
 export type SteamStatus = {
   account: string; steamId: string; busy: boolean; cloud: boolean; offline: boolean;
   pending: boolean; stage?: string; message?: string; done?: number; total?: number;
+  downloadedBytes?: number | null; transferredBytes?: number | null;
   pendingOtherAccount?: boolean;
   hasSavedPassword?: boolean;
   operation?: string; job?: string; revision?: string;
@@ -27,7 +28,7 @@ export function canUseSavedSteamPassword(status: SteamStatus | undefined, accoun
     status.account.toLowerCase() === account.trim().toLowerCase();
 }
 export function steamProgress(status?: SteamStatus) {
-  if (!status?.total || status.total <= 0) return undefined;
+  if (!status?.total || !Number.isFinite(status.total) || status.total <= 0 || !Number.isFinite(status.done ?? 0)) return undefined;
   return Math.round(Math.max(0, Math.min(1, (status.done ?? 0) / status.total)) * 100);
 }
 export function steamActivity(status?: SteamStatus) {

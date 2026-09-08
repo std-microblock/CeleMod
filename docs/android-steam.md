@@ -45,11 +45,15 @@ Android 通过已存在的 Everest/CoreCLR 路径运行，不执行 depot 内的
 - 账号设置与主要流程分离。错误显示可执行的建议，技术原因折叠；断线/取消不宣称已同步，退出账号不是错误。其他账号的 pending 目录不会被显示成当前账号已下载的游戏。
 - 异步操作优先于本地页面导航，旧轮询结果不能覆盖新命令。取消在原生运行时冷启动期间也会保留；收起面板不等于取消。
 - 小屏采用底部面板，桌面/横屏使用限高弹窗；适配安全区和软键盘 visual viewport，保留可滚动内容、原生焦点约束和明确关闭按钮。
+- 首页入口统一在「常用功能」上方。下载中直接显示进度条、速度和 ETA；进入面板后显示同一组统计，收起不停止采样。准备阶段显示不定进度，不伪造百分比或剩余时间。
+- 下载进度包含已校验的复用文件，速度只统计新完成的压缩 CDN 数据块；ETA 根据未压缩有效负载速率估算。八秒滑动窗口平滑变化，停滞时降为零且不显示虚假的 ETA；任务切换、计数回退、连接失败或长时间挂起后重新采样。不是包含协议开销和失败重传的系统网卡计量。
+- Fluent / Material You 的入口卡、开关、输入框和无边框操作使用局部样式隔离；主要操作跟随主题强调色，Material 波纹不参与文案排版。面板和遮罩都有开合动画，退场结束前保持原生模态和焦点约束；减少动态效果偏好下直接开合。
+- 原生 WebView 排除 Android Autofill 虚拟表单并禁用旧式密码/表单保存，登录字段也关闭浏览器自动完成。持久凭据仍由 SteamVault 自动保存，不显示浏览器保存提示或增加“记住密码”界面。
 
 状态逻辑单测：
 
 ```powershell
-pnpm --dir src/celemod-ui exec node --import tsx --test src/components/steamState.test.ts
+pnpm --dir src/celemod-ui exec node --import tsx --test src/components/steamState.test.ts src/components/steamDownload.test.ts
 ```
 
 安装 Debug APK 并打开主页后，可在真机 WebView 上运行确定性 UX 回归：
@@ -66,6 +70,8 @@ node scripts/android-steam-ux-e2e.mjs
 本次 UX 版本已通过 6 组状态逻辑单测、18 个真机 WebView 截图场景；另实测软键盘打开时面板不被遮挡、第一次系统返回收起键盘、第二次关闭面板，以及真实原生 worker 冷启动阶段取消匿名连接检查后回到 `cancelled`（不再等网络超时）。
 
 持久登录简化版增加账号匹配回归（共 7 组状态单测），并通过 `scripts/test-android-steam-vault.ps1` 验证真实 Keystore 加密落盘、不同进程读取已保存密码、拒绝跨账号复用、状态不返回密码/token，以及退出清除。测试只使用随机临时凭据，拒绝覆盖已有账号或待同步存档，完成后移除凭据和测试 APK。需要先安装 Debug APK 并退出游戏；它不验证真实 Steam 服务是否接受凭据。
+
+主题/下载体验修订版通过 14 组前端状态/速率单测、前端生产构建、Steam C# 构建和 101 项离线安全断言。新增 `src/celemod-ui/tests/steam-ui/` 本地浏览器夹具，使用真实 SteamAccount、主题 provider、全局/Android 样式和主题交互运行时，只替换原生 IPC。三主题分别通过 390×844、320×740、844×390 下的登录、开关双向切换、冲突确认、真实 pointer 波纹、下载/收起/重开、动画事件及控件几何检查。不能用仅修改 `data-theme` 的截图替代这组检查。此修订未重新部署手机；原生 Autofill 提示抑制还需安装新 APK 后在启用密码管理器的设备验收。
 
 ### 构建命令
 

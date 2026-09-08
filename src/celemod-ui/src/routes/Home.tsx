@@ -163,7 +163,6 @@ export const Home = () => {
         </div>
       </header>
 
-      {detectDesktopPlatform() === "android" && !gamePath && <SteamAccount />}
 
       {gamePath && newKeyboardInputEnabled === true ? (
         <aside className="home-keyboard-input-banner">
@@ -246,7 +245,7 @@ export const Home = () => {
         )}
       </section>
 
-      {detectDesktopPlatform() === "android" && gamePath && <SteamAccount />}
+      {detectDesktopPlatform() === "android" && <SteamAccount />}
 
       {profileEnabled && (
         <section className="home-section home-profiles-section">

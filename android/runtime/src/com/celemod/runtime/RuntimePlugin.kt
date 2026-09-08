@@ -22,6 +22,13 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     init { SteamBridge.initialize(activity.applicationContext) }
     override fun load(webView: WebView) {
         super.load(webView)
+        // SteamVault owns credentials. Exclude the WebView's virtual form fields
+        // from Android Autofill so submitting login cannot open a second save prompt.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            webView.importantForAutofill = android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        }
+        @Suppress("DEPRECATION")
+        webView.settings.apply { saveFormData = false; savePassword = false }
         val host = activity as? AppCompatActivity ?: return
         // Tauri disables WebView history navigation. Android Back must dismiss the
         // Steam sheet (or its confirmation step), not leave the manager underneath it.

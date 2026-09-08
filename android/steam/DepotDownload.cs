@@ -62,13 +62,19 @@ internal sealed class DepotDownload(Session session)
         Directory.CreateDirectory(stage);
         var total = files.Sum(f => checked((long)f.TotalSize));
         long done = 0;
+        // Separate verified cache hits, useful payload, and compressed CDN bytes.
+        // The UI must not report reused files as network throughput on a retry.
+        long downloadedBytes = 0, transferredBytes = 0;
+        void Progress(string file) => Program.Status("downloading", file, done, total,
+            downloadedBytes: downloadedBytes, transferredBytes: transferredBytes);
+        Progress("");
         foreach (var file in files)
         {
             Program.Cancel.ThrowIfCancellationRequested();
             var path = SafeFiles.Under(stage, file.FileName);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             if (File.Exists(path) && new FileInfo(path).Length == (long)file.TotalSize && SafeFiles.Hash(path) == Convert.ToHexString(file.FileHash)) {
-                done += (long)file.TotalSize; continue;
+                done += (long)file.TotalSize; Progress(file.FileName); continue;
             }
             var temp = path + ".celemod-part";
             using (var output = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None)) {
@@ -82,7 +88,9 @@ internal sealed class DepotDownload(Session session)
                     output.Position = checked((long)chunk.Offset);
                     await output.WriteAsync(buffer.AsMemory(0, count), Program.Cancel);
                     done += count;
-                    Program.Status("downloading", file.FileName, done, total);
+                    downloadedBytes += count;
+                    transferredBytes += chunk.CompressedLength;
+                    Progress(file.FileName);
                 }
                 output.Flush(true);
             }

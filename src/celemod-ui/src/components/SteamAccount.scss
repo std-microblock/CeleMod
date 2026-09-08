@@ -1,20 +1,42 @@
 .steam-entry, .steam-sheet {
   --steam-accent: #66c8f4;
+  --steam-on-accent: #082333;
+  --steam-control-radius: 12px;
   --steam-line: color-mix(in srgb, var(--color-fg) 13%, transparent);
   color: var(--color-fg); font: inherit; box-sizing: border-box;
 }
-button.steam-entry {
+html button.steam-entry.steam-entry {
   display: flex; align-items: center; gap: 14px;
   width: 100%; min-height: 88px; padding: 16px; margin: 16px 0;
   background: var(--color-surface-elevated) !important; border: 1px solid var(--steam-line) !important;
   border-radius: 16px !important; text-align: left; box-shadow: none; text-transform: none;
-  letter-spacing: normal; cursor: pointer;
+  letter-spacing: normal; cursor: pointer; color: var(--color-fg) !important;
   &:hover { background: var(--color-surface-hover) !important; }
   > svg { flex: 0 0 14px; color: var(--color-fg-muted); }
   .steam-mark { display: grid; place-items: center; flex: 0 0 48px; height: 48px; border-radius: 14px; background: #153346; color: #b8e6fa; font-size: 29px; }
   .steam-entry-copy { display: grid; gap: 5px; flex: 1; min-width: 0; }
   strong { font-size: 15px; overflow-wrap: anywhere; }
   .steam-entry-copy > span { font-size: 12px; line-height: 1.5; color: var(--color-fg-muted); }
+  .steam-entry-download { display: grid; gap: 7px; margin-top: 4px; }
+}
+html[data-theme="fluent"] :is(.steam-entry, .steam-sheet) {
+  --steam-accent: var(--fluent-accent);
+  --steam-on-accent: var(--fluent-accent-fg);
+  --steam-control-radius: 8px;
+}
+html[data-theme="material-you"] :is(.steam-entry, .steam-sheet) {
+  --steam-accent: var(--md-primary);
+  --steam-on-accent: var(--md-on-primary);
+  --steam-control-radius: 16px;
+}
+// Shared by the collapsed entry and the sheet; theme runtime ripples remain untouched.
+:is(.steam-entry, dialog.steam-sheet.steam-sheet) {
+  .steam-download-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 11px; line-height: 1.5; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+  progress.steam-download-bar { display: block; appearance: none; width: 100%; height: 6px; min-height: 0; border: 0; border-radius: 8px; accent-color: var(--steam-accent); overflow: hidden; }
+  progress.steam-download-bar::-webkit-progress-bar { background: var(--color-surface-active); border-radius: 8px; }
+  progress.steam-download-bar::-webkit-progress-value { background: var(--steam-accent); border-radius: 8px; transition: width .3s; }
+  progress.steam-download-bar::-moz-progress-bar { background: var(--steam-accent); }
+  progress.steam-download-bar:indeterminate { background: linear-gradient(90deg, var(--color-surface-active), var(--steam-accent), var(--color-surface-active)); }
 }
 // Outrank Android's generic input/button rules without changing other screens.
 dialog.steam-sheet.steam-sheet {
@@ -24,15 +46,19 @@ dialog.steam-sheet.steam-sheet {
   background: var(--color-surface); overflow: auto; overscroll-behavior: contain;
   box-shadow: 0 24px 100px #0008; color-scheme: inherit;
   &::backdrop { background: #060c17b8; backdrop-filter: blur(5px); }
+  &[open] { animation: steam-sheet-enter .24s cubic-bezier(.2, .8, .2, 1) both; }
+  &[open]::backdrop { animation: steam-backdrop-enter .24s ease both; }
+  &[data-closing] { animation: steam-sheet-exit .18s ease-in both; pointer-events: none; }
+  &[data-closing]::backdrop { animation: steam-backdrop-exit .18s ease-in both; }
   &, * { box-sizing: border-box; }
   button, input { font: inherit; }
   button {
-    min-height: 48px; padding: 12px 16px; border: 1px solid var(--steam-line);
-    border-radius: 12px !important; color: var(--color-fg) !important; background: var(--color-surface-elevated) !important;
+    min-height: 48px; padding: 12px 16px; border: 1px solid var(--steam-line) !important;
+    border-radius: var(--steam-control-radius) !important; color: var(--color-fg) !important; background: var(--color-surface-elevated) !important;
     box-shadow: none; letter-spacing: normal; text-transform: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     white-space: normal; line-height: 1.4;
-    &:hover { background: var(--color-surface-hover) !important; }
+    &:hover:not(:disabled) { background: var(--color-surface-hover) !important; }
     &:disabled { opacity: .45; cursor: default; }
   }
   :is(button, input, summary):focus-visible { outline: 2px solid var(--steam-accent); outline-offset: 3px; }
@@ -40,7 +66,7 @@ dialog.steam-sheet.steam-sheet {
   .steam-toolbar > svg { font-size: 24px; color: var(--color-fg-muted); }
   .steam-toolbar > span { flex: 1; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: var(--color-fg-muted); }
   .steam-toolbar-divider { opacity: .4; padding: 0 5px; }
-  button.steam-icon-button { flex: 0 0 44px; min-height: 44px; width: 44px; padding: 10px; background: transparent !important; border: 0; }
+  button.steam-icon-button { flex: 0 0 44px; min-height: 44px; width: 44px; padding: 10px; background: transparent !important; border: 0 !important; }
   .steam-back { display: flex; transform: rotate(180deg); }
   .steam-body { display: grid; gap: 20px; padding: 18px 28px 28px; }
   .steam-heading { display: grid; gap: 9px; }
@@ -53,15 +79,16 @@ dialog.steam-sheet.steam-sheet {
   .steam-footnote { text-align: center; }
   .steam-form { display: grid; gap: 10px; min-width: 0; }
   .steam-form > label { font-size: 12px; font-weight: 600; margin-top: 6px; }
-  input:not([type="checkbox"]) { width: 100%; min-width: 0; min-height: 50px; padding: 12px 14px; border: 1px solid var(--steam-line); border-radius: 10px; color: var(--color-fg); background: var(--color-surface-elevated); font-size: 16px; }
+  input:not([type="checkbox"]) { width: 100%; min-width: 0; min-height: 50px; padding: 12px 14px; border: 1px solid var(--steam-line) !important; border-radius: var(--steam-control-radius) !important; color: var(--color-fg) !important; background: var(--color-surface-elevated) !important; font-size: 16px; box-shadow: none !important; }
+  input:not([type="checkbox"]):focus { border-color: var(--steam-accent) !important; }
   input::placeholder { color: var(--color-fg-muted); opacity: .65; font-size: 14px; }
   .steam-password { display: flex; position: relative; }
   .steam-password input { padding-right: 52px; }
-  .steam-password button { position: absolute; right: 2px; top: 2px; bottom: 2px; min-height: 44px; width: 46px; padding: 10px; border: 0; background: transparent !important; }
-  button.steam-primary { width: 100%; background: #66c8f4 !important; color: #082333 !important; border-color: transparent; font-weight: 700; min-height: 50px; }
-  button.steam-primary:hover:not(:disabled) { background: #8dd8fa !important; }
+  .steam-password button { position: absolute; right: 2px; top: 2px; bottom: 2px; min-height: 44px; width: 46px; padding: 10px; border: 0 !important; background: transparent !important; }
+  button.steam-primary { width: 100%; background: var(--steam-accent) !important; color: var(--steam-on-accent) !important; border-color: transparent !important; font-weight: 700; min-height: 50px; }
+  button.steam-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--steam-accent) 84%, white) !important; }
   .steam-form > .steam-primary { margin-top: 12px; }
-  button.steam-text-button { border: 0; background: transparent !important; color: var(--color-fg-muted) !important; }
+  button.steam-text-button { border: 0 !important; background: transparent !important; color: var(--color-fg-muted) !important; }
   .steam-help { font-size: 12px; color: var(--color-fg-muted); min-width: 0; }
   summary { cursor: pointer; padding: 12px 0; min-height: 44px; line-height: 1.6; }
   .steam-help p { margin: 8px 0 12px; }
@@ -94,8 +121,8 @@ dialog.steam-sheet.steam-sheet {
   .steam-cloud-card { padding: 18px; border: 1px solid var(--steam-line); border-radius: 14px; display: grid; gap: 12px; }
   .steam-cloud-card > div { display: flex; align-items: center; gap: 10px; font-size: 14px; }
   .steam-cloud-card p { font-size: 12px; color: var(--color-fg-muted); }
-  button.steam-settings-link { justify-content: space-between; background: transparent !important; border: 0; padding: 8px 0; font-size: 13px; }
-  .steam-settings-link > span { display: flex; align-items: center; gap: 10px; }
+  button.steam-settings-link { justify-content: space-between; background: transparent !important; border: 0 !important; padding: 8px 0; font-size: 13px; }
+  .steam-settings-link > .steam-settings-copy { display: flex; align-items: center; gap: 10px; }
   .steam-steps { display: grid; gap: 22px; padding: 0; margin: 4px 0; list-style: none; }
   .steam-steps li { display: flex; gap: 14px; }
   .steam-steps li > span { display: grid; place-items: center; flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-fg-muted); font-size: 12px; }
@@ -106,21 +133,27 @@ dialog.steam-sheet.steam-sheet {
   .steam-profile > div { display: grid; gap: 5px; overflow-wrap: anywhere; min-width: 0; }
   .steam-profile small { color: var(--color-fg-muted); font-size: 10px; }
   .steam-setting { display: flex; gap: 16px; justify-content: space-between; align-items: center; min-height: 64px; cursor: pointer; }
-  .steam-setting > span { display: grid; gap: 7px; }
+  .steam-setting > span { display: grid; gap: 7px; min-width: 0; }
   .steam-setting strong { font-size: 14px; }
   .steam-setting small { font-size: 12px; color: var(--color-fg-muted); }
-  .steam-setting input { appearance: none; width: 44px; flex-basis: 44px; height: 26px; border-radius: 20px; background: var(--color-surface-active); border: 1px solid var(--steam-line); cursor: pointer; transition: background .15s; }
-  .steam-setting input::before { content: ""; display: block; width: 18px; height: 18px; border-radius: 50%; margin: 3px; background: var(--color-fg-muted); transition: transform .15s; }
-  .steam-setting input:checked { background: #66c8f4; }
-  .steam-setting input:checked::before { transform: translateX(18px); background: #082333; }
+  // A switch is not a theme checkbox: reset the checked glyph and geometry in all states.
+  .steam-setting input[role="switch"] { appearance: none; position: relative; width: 44px; min-width: 44px; flex: 0 0 44px; height: 26px; min-height: 26px; padding: 0; margin: 0; border-radius: 20px !important; background: var(--color-surface-active) !important; border: 1px solid var(--steam-line) !important; box-shadow: none; opacity: 1; cursor: pointer; transition: background .15s; }
+  .steam-setting input[role="switch"]::before { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-fg-muted); transition: transform .15s; }
+  .steam-setting input[role="switch"]:checked { background: var(--steam-accent) !important; border-color: transparent !important; }
+  .steam-setting input[role="switch"]:checked::before { transform: translateX(18px); background: var(--steam-on-accent); }
+  .steam-setting input[role="switch"]:disabled { opacity: .45; cursor: default; }
   button.steam-choice { text-align: left; justify-content: flex-start; padding: 18px 14px; }
   .steam-choice > svg { flex-shrink: 0; }
-  .steam-choice > span { flex: 1; display: grid; gap: 7px; }
+  .steam-choice > .steam-choice-copy { flex: 1; min-width: 0; display: grid; gap: 7px; }
   .steam-choice small { font-size: 11px; color: var(--color-fg-muted); }
   .steam-conflict-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-height: 220px; overflow: auto; }
   .steam-conflict-files li { display: grid; gap: 5px; overflow-wrap: anywhere; }
 }
 @keyframes steam-spin { to { transform: rotate(360deg); } }
+@keyframes steam-sheet-enter { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes steam-sheet-exit { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(36px); } }
+@keyframes steam-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes steam-backdrop-exit { from { opacity: 1; } to { opacity: 0; } }
 @media (max-width: 540px) {
   dialog.steam-sheet.steam-sheet {
     width: 100%; max-height: calc(var(--steam-viewport, 100dvh) - max(12px, env(safe-area-inset-top)));
@@ -134,5 +167,6 @@ dialog.steam-sheet.steam-sheet {
   dialog.steam-sheet .steam-tag { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  dialog.steam-sheet.steam-sheet, dialog.steam-sheet.steam-sheet::backdrop { animation: none; }
   dialog.steam-sheet *, dialog.steam-sheet *::before { animation-duration: 4s; transition: none; }
 }

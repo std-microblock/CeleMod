@@ -6,6 +6,7 @@ import { useGamePath } from "../states";
 import { useGlobalContext } from "../App";
 import { Icon } from "./Icon";
 import { canUseSavedSteamPassword, steamActivity, steamIssue, steamProgress, steamScreen, type SteamPanel, type SteamStatus } from "./steamState";
+import { SteamDownloadMeter, steamEta, steamSpeed, type SteamDownloadRate } from "./steamDownload";
 import "./SteamAccount.scss";
 
 const command = (request: Record<string, unknown>) => invoke<SteamStatus>("android_steam", { request });
@@ -13,6 +14,12 @@ const command = (request: Record<string, unknown>) => invoke<SteamStatus>("andro
 /** Compact Home/Settings entry. Sensitive forms only live in an open native dialog. */
 export function SteamAccount() {
   const [status, setStatus] = useState<SteamStatus>();
+  const meter = useRef(new SteamDownloadMeter());
+  const [rate, setRate] = useState<SteamDownloadRate>({});
+  function receiveStatus(next: SteamStatus) {
+    setStatus(next);
+    setRate(meter.current.sample(next, performance.now()));
+  }
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +33,8 @@ export function SteamAccount() {
   const [guardSubmitted, setGuardSubmitted] = useState("");
   const [panel, setPanel] = useState<SteamPanel>("main");
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -52,14 +61,16 @@ export function SteamAccount() {
         if (!inFlight.current) {
           const next = await command({ action: "status" });
           if (!stopped && version === requestVersion.current && !inFlight.current) {
-            setStatus(next); setConnectionError("");
+            receiveStatus(next); setConnectionError("");
           }
         }
-      } catch (e) { if (!stopped && version === requestVersion.current) setConnectionError(String(e)); }
+      } catch (e) { if (!stopped && version === requestVersion.current) {
+        setConnectionError(String(e)); setRate(meter.current.sample(undefined, performance.now()));
+      } }
       finally { if (!stopped) timer = setTimeout(() => void poll(), 1000); }
     };
     void poll();
-    return () => { stopped = true; alive.current = false; clearTimeout(timer); };
+    return () => { stopped = true; alive.current = false; clearTimeout(timer); clearTimeout(closeTimer.current); };
   }, []);
   useEffect(() => { if (!status?.busy) { setCanceling(false); setGuardSubmitted(""); } }, [status?.busy]);
   useEffect(() => { if (status?.account) setAccount(status.account); }, [status?.account]);
@@ -89,13 +100,22 @@ export function SteamAccount() {
     try {
       const next = await command({ action, ...fields });
       if (!alive.current) return false;
-      setStatus(next); setConnectionError("");
+      receiveStatus(next); setConnectionError("");
       return true;
     } catch (e) { if (alive.current) setError(String(e)); return false; }
     finally { inFlight.current = false; if (alive.current) setSending(false); }
   }
-  function close() { dialog.current?.close(); }
+  function finishClose() { clearTimeout(closeTimer.current); closeTimer.current = undefined; dialog.current?.close(); }
+  function close() {
+    if (closeTimer.current || !dialog.current?.open) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { finishClose(); return; }
+    setClosing(true);
+    // Keep the native dialog modal until its exit animation completes. Fallback
+    // handles interrupted animations/background tabs and leaves Back idempotent.
+    closeTimer.current = setTimeout(finishClose, 300);
+  }
   function closed() {
+    clearTimeout(closeTimer.current); closeTimer.current = undefined; setClosing(false);
     setOpen(false); setPassword(""); setCode(""); setShowPassword(false);
     setPanel("main"); setError(""); setNotice("");
     opener.current?.focus({ preventScroll: true });
@@ -116,6 +136,9 @@ export function SteamAccount() {
   const problem = error || connectionError || (!status?.busy && status?.stage === "error" ? status.message || "Steam 操作失败" : "");
   const issue = problem ? steamIssue(problem) : undefined;
   const activity = steamActivity(status);
+  const downloading = !!status?.busy && status.operation === "download" && status.stage === "downloading";
+  const downloadPending = !!status?.busy && status.operation === "download" && !["syncing", "guard-confirm", "guard-email", "guard-device", "downloaded"].includes(status.stage ?? "");
+  const downloadStats = <span className="steam-download-stats"><span>{steamSpeed(rate.bytesPerSecond)}</span><span>{steamEta(rate.secondsRemaining)}</span></span>;
   const cloudLabel = status?.offline ? "离线游玩" : !status?.cloud ? "自动同步已关闭" : status?.pending ? "存档等待同步" : "自动云存档已开启";
   const summary = !status ? connectionError ? "连接暂不可用 · 查看详情" : "正在读取账号状态…"
     : status.busy ? `${activity}${percent === undefined ? "" : ` · ${percent}%`}`
@@ -135,11 +158,17 @@ export function SteamAccount() {
     <button ref={opener} type="button" className="steam-entry" aria-haspopup="dialog" aria-controls={`${id}-dialog`}
       onClick={() => { setPanel("main"); setOpen(true); }}>
       <span className="steam-mark"><FaSteam aria-hidden="true" /></span>
-      <span className="steam-entry-copy"><strong>{status?.account ? `Steam · ${status.account}` : "从 Steam 获取游戏"}</strong><span>{summary}</span></span>
+      <span className="steam-entry-copy"><strong>{status?.account ? `Steam · ${status.account}` : "从 Steam 获取游戏"}</strong><span>{summary}</span>
+        {downloadPending && <span className="steam-entry-download">
+          <progress className="steam-download-bar" aria-label="Celeste 下载进度" max={100} value={downloading ? percent : undefined} />
+          {downloading && downloadStats}
+        </span>}
+      </span>
       <Icon name="i-right" />
     </button>
-    {createPortal(<dialog ref={dialog} id={`${id}-dialog`} className="steam-sheet" aria-labelledby={`${id}-title`}
-      onCancel={e => { if (canGoBack) { e.preventDefault(); navigate("main"); } }}
+    {createPortal(<dialog ref={dialog} id={`${id}-dialog`} className="steam-sheet" aria-labelledby={`${id}-title`} data-closing={closing || undefined}
+      onAnimationEnd={e => { if (e.target === e.currentTarget && e.animationName === "steam-sheet-exit") finishClose(); }}
+      onCancel={e => { e.preventDefault(); if (canGoBack && !closing) navigate("main"); else close(); }}
       onClose={closed} onClick={e => { if (e.target === e.currentTarget) {
         const r = e.currentTarget.getBoundingClientRect();
         if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) close();
@@ -165,16 +194,16 @@ export function SteamAccount() {
           {status?.operation === "probe" && status.stage === "complete" && !status.busy && <p className="steam-callout" role="status">Steam 连接正常。</p>}
           {screen === "loading" && <p className="steam-muted" role="status">{connectionError ? "暂时无法读取状态，将自动重试。" : "正在读取本机的 Steam 登录信息…"}</p>}
           {screen === "login" && <>
-            <form className="steam-form" onSubmit={e => {
+            <form className="steam-form" autoComplete="off" onSubmit={e => {
               e.preventDefault(); const secret = password; setPassword(""); setShowPassword(false);
               void start("login", { account: account.trim(), ...(secret ? { password: secret } : { useSavedPassword: savedPassword }), useGuardCode });
             }}>
               <label htmlFor={`${id}-account`}>账号</label>
-              <input id={`${id}-account`} name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+              <input id={`${id}-account`} name="username" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
                 value={account} onChange={e => { setAccount(e.target.value); setPassword(""); }} disabled={busy} required />
               <label htmlFor={`${id}-password`}>密码</label>
               <div className="steam-password"><input id={`${id}-password`} name="password" type={showPassword ? "text" : "password"}
-                autoComplete="current-password" placeholder={savedPassword ? "••••••••" : undefined}
+                autoComplete="off" placeholder={savedPassword ? "••••••••" : undefined}
                 value={password} onChange={e => setPassword(e.target.value)} disabled={busy} required={!savedPassword} />
                 <button type="button" aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword} disabled={!password} onClick={() => setShowPassword(!showPassword)}><Icon name="eye" /></button></div>
               <button className="steam-primary" type="submit" disabled={busy || !account.trim() || (!password && !savedPassword)}>{sending ? "正在登录…" : "登录 Steam"}<Icon name="i-right" /></button>
@@ -208,7 +237,8 @@ export function SteamAccount() {
             <div className="steam-transfer-art"><FaSteam aria-hidden="true" /><span className="steam-spinner" /></div>
             <p className="steam-intro">{status?.stage === "syncing" ? "正在比较并同步手机与 Steam 云端的进度。" : status?.operation === "download" ? "正在获取你已购买的游戏资源，请保持网络连接。" : status?.operation === "probe" ? "只检查与 Steam 的连接，不会登录你的账号。" : "正在与 Steam 建立安全连接，请稍候。"}</p>
             <div className="steam-progress" role="status"><div><span>{activity}</span>{percent !== undefined && <strong>{percent}%</strong>}</div>
-              <progress aria-label={activity} max={100} value={percent} />
+              <progress className="steam-download-bar" aria-label={activity} max={100} value={percent} />
+              {downloading && downloadStats}
               {status?.stage === "downloading" && !!status.total && <small>{Math.floor((status.done ?? 0) / 1048576)} / {Math.ceil(status.total / 1048576)} MiB</small>}
             </div>
             <button type="button" className="steam-primary" onClick={close}>收起面板</button>
@@ -225,7 +255,7 @@ export function SteamAccount() {
               {status?.game && <button type="button" disabled={busy || status.offline} onClick={() => void start("sync", { game: status.game })}>{status.pending || status.stage === "error" ? "重试同步" : "立即同步"}</button>}
               {(status?.offline || !status?.cloud) && <button type="button" disabled={busy} onClick={() => void act("settings", { offline: false, cloud: true })}>恢复自动同步</button>}
             </section>
-            <button type="button" className="steam-settings-link" onClick={() => navigate("settings")}><span><Icon name="settings" />账号与云存档设置</span><Icon name="i-right" /></button>
+            <button type="button" className="steam-settings-link" onClick={() => navigate("settings")}><span className="steam-settings-copy"><Icon name="settings" />账号与云存档设置</span><Icon name="i-right" /></button>
           </>}
           {screen === "download" && <>
             <p className="steam-intro">使用 <strong>{status?.account}</strong> 的 Steam 下载权限获取游戏，不覆盖已有的 ZIP 导入目录。</p>
@@ -248,8 +278,8 @@ export function SteamAccount() {
           {screen === "conflict" && <>
             <p className="steam-intro">手机和 Steam 云端都有变化，自动同步已暂停。选择你想继续游玩的那份进度。</p>
             <div className="steam-callout">继续前会备份两端版本，不会直接丢弃另一份存档。</div>
-            <button type="button" className="steam-choice" disabled={busy || !status?.game} onClick={() => navigate("local")}><Icon name="save" /><span><strong>保留手机进度</strong><small>将手机上的冲突版本上传到 Steam</small></span><Icon name="i-right" /></button>
-            <button type="button" className="steam-choice" disabled={busy || !status?.game} onClick={() => navigate("cloud")}><Icon name="download" /><span><strong>使用 Steam 云端进度</strong><small>将云端的冲突版本下载到手机</small></span><Icon name="i-right" /></button>
+            <button type="button" className="steam-choice" disabled={busy || !status?.game} onClick={() => navigate("local")}><Icon name="save" /><span className="steam-choice-copy"><strong>保留手机进度</strong><small>将手机上的冲突版本上传到 Steam</small></span><Icon name="i-right" /></button>
+            <button type="button" className="steam-choice" disabled={busy || !status?.game} onClick={() => navigate("cloud")}><Icon name="download" /><span className="steam-choice-copy"><strong>使用 Steam 云端进度</strong><small>将云端的冲突版本下载到手机</small></span><Icon name="i-right" /></button>
             <details className="steam-help"><summary>查看冲突文件（{status?.conflicts?.length ?? 0}）</summary><ul className="steam-conflict-files">{status?.conflicts?.map(f => <li key={f.name}><strong>{f.name}</strong><small>手机：{f.local ? "已修改" : "已删除"} · 云端：{f.remote ? "已修改" : "已删除"}</small></li>)}</ul></details>
             <p className="steam-footnote">不确定选哪份？可以先关闭面板；冲突解决前不会自动覆盖。</p>
             <button type="button" className="steam-text-button" onClick={() => navigate("settings")}>账号与云存档设置</button>

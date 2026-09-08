@@ -18,8 +18,9 @@ internal static class Program
         File.Move(path + ".tmp", path, true);
     }
 
-    internal static void Status(string stage, string message, long done = 0, long total = 0, object? conflicts = null) =>
-        Write(Path.Combine(Ipc, "status.json"), new { job = Job, revision = Guid.NewGuid().ToString("N"), stage, message, done, total, conflicts });
+    internal static void Status(string stage, string message, long done = 0, long total = 0, object? conflicts = null,
+        long? downloadedBytes = null, long? transferredBytes = null) =>
+        Write(Path.Combine(Ipc, "status.json"), new { job = Job, revision = Guid.NewGuid().ToString("N"), stage, message, done, total, conflicts, downloadedBytes, transferredBytes });
 
     public static async Task Main(string[] args)
     {
