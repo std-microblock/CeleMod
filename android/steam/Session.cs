@@ -107,6 +107,7 @@ internal sealed class Session : IDisposable, IAuthenticator
         while (!File.Exists(file)) await Task.Delay(150, timeout.Token);
         var code = JsonNode.Parse(await File.ReadAllTextAsync(file, timeout.Token))!["code"]!.GetValue<string>();
         File.Delete(file);
+        Program.Status("authenticating", "正在验证 Steam Guard 验证码…");
         return code;
     }
     public Task<string> GetDeviceCodeAsync(bool previousCodeWasIncorrect) => Guard("guard-device", previousCodeWasIncorrect);

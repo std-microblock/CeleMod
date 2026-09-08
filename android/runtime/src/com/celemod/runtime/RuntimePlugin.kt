@@ -3,6 +3,9 @@ package com.celemod.runtime
 import android.app.Activity
 import android.content.Intent
 import android.os.*
+import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.ActivityResult
 import app.tauri.annotation.ActivityCallback
 import app.tauri.annotation.Command
@@ -17,6 +20,34 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private var installing = false
     init { SteamBridge.initialize(activity.applicationContext) }
+    override fun load(webView: WebView) {
+        super.load(webView)
+        val host = activity as? AppCompatActivity ?: return
+        // Tauri disables WebView history navigation. Android Back must dismiss the
+        // Steam sheet (or its confirmation step), not leave the manager underneath it.
+        host.onBackPressedDispatcher.addCallback(host, object : OnBackPressedCallback(true) {
+            private var handling = false
+            override fun handleOnBackPressed() {
+                if (handling) return
+                handling = true
+                webView.evaluateJavascript("""
+                    (() => {
+                        const sheet = document.querySelector('dialog.steam-sheet[open]');
+                        if (!sheet) return false;
+                        if (sheet.dispatchEvent(new Event('cancel', { cancelable: true }))) sheet.close();
+                        return true;
+                    })()
+                """.trimIndent()) { handled ->
+                    handling = false
+                    if (handled != "true") {
+                        isEnabled = false
+                        host.onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            }
+        })
+    }
     override fun onResume() { super.onResume(); SteamBridge.recover(activity.applicationContext) }
     private fun gameRunning() = (activity.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
         .runningAppProcesses.orEmpty().any { it.uid == android.os.Process.myUid() && it.processName == activity.packageName + ":game" }

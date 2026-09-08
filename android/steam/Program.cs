@@ -19,7 +19,7 @@ internal static class Program
     }
 
     internal static void Status(string stage, string message, long done = 0, long total = 0, object? conflicts = null) =>
-        Write(Path.Combine(Ipc, "status.json"), new { job = Job, stage, message, done, total, conflicts });
+        Write(Path.Combine(Ipc, "status.json"), new { job = Job, revision = Guid.NewGuid().ToString("N"), stage, message, done, total, conflicts });
 
     public static async Task Main(string[] args)
     {

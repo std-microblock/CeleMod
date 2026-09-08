@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 object SteamBridge {
     private val worker = Executors.newSingleThreadExecutor()
     private val active = AtomicBoolean(false)
+    private val cancellationRequested = AtomicBoolean(false)
     private var runtimeStarted = false
     @Volatile private var runtimeError: String? = null
     private val main = Handler(Looper.getMainLooper())
@@ -27,6 +28,7 @@ object SteamBridge {
     private fun prefs(context: Context) = File(context.filesDir, "steam-settings.json")
     private fun pending(context: Context) = File(context.filesDir, "steam-pending.json")
     private fun links(context: Context) = File(context.filesDir, "steam-links.json")
+    private fun operation(context: Context) = File(ipc(context), "operation.json")
     @Synchronized fun initialize(context: Context) {
         if (initialized) return
         initialized = true
@@ -65,12 +67,16 @@ object SteamBridge {
         val result = try { json(File(ipc(context), "status.json")) } catch (_: Exception) { JSONObject() }
         val account = try { SteamVault.read(context) } catch (_: Exception) { null }
         val settings = json(prefs(context))
+        result.put("operation", json(operation(context)).optString("action"))
         result.put("busy", busy).put("account", account?.optString("account") ?: "")
             .put("steamId", account?.optString("steamId") ?: "").put("cloud", settings.optBoolean("cloud", true))
             .put("offline", settings.optBoolean("offline", false)).put("pending", pending(context).isFile)
         val linkedGames = json(links(context))
         val linked = linkedGames.keys().asSequence().firstOrNull { linkedGames.optString(it) == account?.optString("steamId") }
-        result.put("game", json(pending(context)).optString("game").ifEmpty { linked ?: "" })
+        val pendingGame = json(pending(context)).optString("game")
+        val pendingBelongsToAccount = pendingGame.isNotEmpty() && linkedGames.optString(pendingGame) == account?.optString("steamId")
+        result.put("game", if (pendingBelongsToAccount) pendingGame else linked ?: "")
+            .put("pendingOtherAccount", pendingGame.isNotEmpty() && !pendingBelongsToAccount)
         if (!busy && result.optString("stage") in listOf("connecting", "authenticating", "syncing", "downloading", "manifest", "guard-device", "guard-email", "guard-confirm"))
             result.put("stage", "interrupted").put("message", "上次操作被中断，请重试。未同步存档已保留。")
         runtimeError?.let { result.put("stage", "error").put("message", it) }
@@ -97,10 +103,12 @@ object SteamBridge {
         }, "CeleModSteamCLR").start()
     }
     private fun perform(context: Context, action: String, game: File? = null, args: JSONObject = JSONObject()): JSONObject {
+        check(!cancellationRequested.get()) { "操作已取消" }
         ensureRuntime(context)
         val dir = ipc(context)
         val readyDeadline = System.currentTimeMillis() + 60_000
         while (!File(dir, "ready.json").exists()) {
+            check(!cancellationRequested.get()) { "操作已取消" }
             runtimeError?.let { error(it) }
             check(System.currentTimeMillis() < readyDeadline) { "Steam 运行时启动超时" }; Thread.sleep(100)
         }
@@ -115,7 +123,9 @@ object SteamBridge {
             args.optString("choice").takeIf { it.isNotEmpty() }?.let { request.put("choice", it) }
             request.put("phase", args.optString("phase", "manual"))
         }
-        File(dir, "cancel").delete(); File(dir, "guard.json").delete(); File(dir, "result.json").delete()
+        // A cancel received while the native host starts must not be erased here.
+        File(dir, "guard.json").delete(); File(dir, "result.json").delete()
+        check(!cancellationRequested.get()) { "操作已取消" }
         atomic(File(dir, "request.json"), request)
         request.remove("password"); request.remove("token"); args.remove("password")
         val deadline = System.currentTimeMillis() + 92 * 60_000L
@@ -157,6 +167,8 @@ object SteamBridge {
     }
     private fun exclusive(context: Context, block: () -> Unit) {
         check(active.compareAndSet(false, true)) { "Steam 操作正在进行，请等待完成。" }
+        cancellationRequested.set(false); File(ipc(context), "cancel").delete()
+        atomic(operation(context), JSONObject().put("action", "sync"))
         try { service(context, true); block() }
         finally { service(context, false); active.set(false) }
     }
@@ -170,7 +182,10 @@ object SteamBridge {
                 require(code.matches(Regex("[a-zA-Z0-9]{5,8}"))) { "验证码格式无效" }
                 atomic(File(ipc(context), "guard.json"), JSONObject().put("code", code)); return status(context)
             }
-            "cancel" -> { if (busy) File(ipc(context), "cancel").writeText(""); return status(context) }
+            "cancel" -> {
+                if (busy) { cancellationRequested.set(true); File(ipc(context), "cancel").writeText("") }
+                return status(context)
+            }
         }
         check(!gameRunning(context) && !launching && !busy) { "请先退出游戏，并等待当前 Steam 操作完成。" }
         when (action) {
@@ -182,10 +197,14 @@ object SteamBridge {
             }
             "logout" -> {
                 SteamVault.clear(context)
-                failure(context, "已退出 Steam；本地游戏和待同步存档保留。重新登录原账号后可继续同步。")
+                atomic(operation(context), JSONObject().put("action", "logout"))
+                atomic(File(ipc(context), "status.json"), JSONObject().put("stage", "signed-out")
+                    .put("message", "已退出 Steam，本地游戏和存档已保留。"))
             }
             "login", "probe", "download", "sync", "resolve" -> {
                 check(active.compareAndSet(false, true)) { "Steam 操作正在进行" }
+                cancellationRequested.set(false); File(ipc(context), "cancel").delete()
+                atomic(operation(context), JSONObject().put("action", action))
                 atomic(File(ipc(context), "status.json"), JSONObject().put("stage", "connecting").put("message", "准备 Steam 操作…"))
                 worker.execute {
                     try {
@@ -207,7 +226,11 @@ object SteamBridge {
                             else -> sync(context, gamePath(context, args.getString("game")), args.optString("choice").takeIf { it.isNotEmpty() }, args.optString("phase", "manual"))
                         }
                     } catch (e: Exception) {
-                        if (status(context).optString("stage") != "conflict") failure(context, e.message ?: "Steam 操作失败")
+                        if (status(context).optString("stage") != "conflict") {
+                            if (cancellationRequested.get()) atomic(File(ipc(context), "status.json"), JSONObject()
+                                .put("stage", "cancelled").put("message", "已取消。本地游戏和未同步存档已保留。"))
+                            else failure(context, e.message ?: "Steam 操作失败")
+                        }
                     } finally {
                         args.remove("password"); service(context, false); active.set(false)
                         if (action == "login") main.post { recover(context) }

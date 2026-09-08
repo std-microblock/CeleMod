@@ -37,6 +37,36 @@ Android 通过已存在的 Everest/CoreCLR 路径运行，不执行 depot 内的
 
 ## 构建与验证
 
+### 手机交互
+
+- 主页和设置页只显示一张 Steam 状态入口卡，点开原生模态面板后才挂载账号/密码表单。关闭会清空密码并归还焦点，不会取消后台任务。
+- 登录、手机确认、邮件/令牌验证码、下载、云存档冲突分别显示独立步骤。验证码自动规整为大写，提交后避免重复发送；每次 Guard 请求带独立状态 revision，连续输错也能重新输入。
+- 默认手机确认；可改选验证码（取消当前登录，重新输入密码），不提供假的扫码登录入口。下载、关闭自动云存档、退出账号和解决冲突使用面板内的确认流程，不弹浏览器 confirm。
+- 账号设置与主要流程分离。错误显示可执行的建议，技术原因折叠；断线/取消不宣称已同步，退出账号不是错误。其他账号的 pending 目录不会被显示成当前账号已下载的游戏。
+- 异步操作优先于本地页面导航，旧轮询结果不能覆盖新命令。取消在原生运行时冷启动期间也会保留；收起面板不等于取消。
+- 小屏采用底部面板，桌面/横屏使用限高弹窗；适配安全区和软键盘 visual viewport，保留可滚动内容、原生焦点约束和明确关闭按钮。
+
+状态逻辑单测：
+
+```powershell
+pnpm --dir src/celemod-ui exec node --import tsx --test src/components/steamState.test.ts
+```
+
+安装 Debug APK 并打开主页后，可在真机 WebView 上运行确定性 UX 回归：
+
+```powershell
+. scripts/android-env.ps1
+$appPid = (adb shell pidof cc.microblock.celemod).Trim()
+adb forward tcp:9223 "localabstract:webview_devtools_remote_$appPid"
+node scripts/android-steam-ux-e2e.mjs
+```
+
+该脚本拦截 Tauri 的两个传输通道并先验证拦截生效，**不发送真实 Steam 登录、下载或云端读写请求**。覆盖分步登录、连续错误验证码、过期轮询竞态、收起/重开下载、取消、失败重试、冲突选择、设置确认、退出、Android 系统返回、三种主题与窄屏/横屏布局。截图和报告写入 `.local/steam-ux/`，最后重新加载页面移除 mock，不更改真实 Steam 凭据或存档。这是交互回归，不替代真实账号端到端验收。
+
+本次 UX 版本已通过 6 组状态逻辑单测、18 个真机 WebView 截图场景；另实测软键盘打开时面板不被遮挡、第一次系统返回收起键盘、第二次关闭面板，以及真实原生 worker 冷启动阶段取消匿名连接检查后回到 `cancelled`（不再等网络超时）。
+
+### 构建命令
+
 ```powershell
 .local/dotnet-sdk/dotnet.exe run --project android/steam-tests
 .local/dotnet-sdk/dotnet.exe build android/steam/CeleMod.Steam.csproj
