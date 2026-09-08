@@ -13,7 +13,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** Tokens never enter the WebView, public storage, preferences, logs, or Android backups. */
+/** Saved passwords/tokens never enter the WebView, public storage, logs, or Android backups. */
 internal object SteamVault {
     private const val ALIAS = "celemod.steam.refresh.v1"
     private fun file(context: Context) = File(context.filesDir, "steam-account.enc.json")
@@ -37,6 +37,11 @@ internal object SteamVault {
         val bytes = cipher.doFinal(account.toString().toByteArray())
         SteamBridge.atomic(file(context), JSONObject().put("iv", Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
             .put("data", Base64.encodeToString(bytes, Base64.NO_WRAP)))
+    }
+    @Synchronized fun passwordFor(context: Context, accountName: String): String {
+        val account = read(context) ?: error("请重新输入密码")
+        require(account.optString("account").equals(accountName.trim(), ignoreCase = true)) { "请为此账号输入密码" }
+        return account.optString("password").takeIf { it.isNotEmpty() } ?: error("请重新输入密码")
     }
     @Synchronized fun clear(context: Context) {
         AtomicFile(file(context)).delete()

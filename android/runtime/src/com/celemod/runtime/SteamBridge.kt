@@ -69,6 +69,7 @@ object SteamBridge {
         val settings = json(prefs(context))
         result.put("operation", json(operation(context)).optString("action"))
         result.put("busy", busy).put("account", account?.optString("account") ?: "")
+            .put("hasSavedPassword", !account?.optString("password").isNullOrEmpty())
             .put("steamId", account?.optString("steamId") ?: "").put("cloud", settings.optBoolean("cloud", true))
             .put("offline", settings.optBoolean("offline", false)).put("pending", pending(context).isFile)
         val linkedGames = json(links(context))
@@ -113,11 +114,15 @@ object SteamBridge {
             check(System.currentTimeMillis() < readyDeadline) { "Steam 运行时启动超时" }; Thread.sleep(100)
         }
         val account = if (action in listOf("login", "probe")) args else SteamVault.read(context) ?: error("请先登录 Steam 账号")
+        val password = if (action == "login") {
+            if (args.optBoolean("useSavedPassword")) SteamVault.passwordFor(context, args.getString("account"))
+            else args.getString("password")
+        } else null
         val id = UUID.randomUUID().toString()
         val request = JSONObject().put("job", id).put("action", action).put("account", account.optString("account"))
             .put("clientId", account.optString("clientId", "0"))
             .put("useGuardCode", args.optBoolean("useGuardCode", false))
-        if (action == "login") request.put("password", args.getString("password")) else if (action != "probe") request.put("token", account.getString("token"))
+        if (action == "login") request.put("password", password) else if (action != "probe") request.put("token", account.getString("token"))
         if (game != null) {
             request.put("game", game.absolutePath).put("state", state(context, game, account.getString("steamId")).absolutePath)
             args.optString("choice").takeIf { it.isNotEmpty() }?.let { request.put("choice", it) }
@@ -140,7 +145,9 @@ object SteamBridge {
                         try {
                             check(response.optBoolean("ok")) { response.optString("error", "Steam 操作失败") }
                             val result = response.getJSONObject("result")
-                            if (action == "login") SteamVault.write(context, result)
+                            // Only verified credentials replace the saved account. A failed
+                            // login or a cancelled account switch leaves its session intact.
+                            if (action == "login") SteamVault.write(context, JSONObject(result.toString()).put("password", password))
                             return result.apply { remove("token") }
                         } finally { resultFile.delete() }
                     }

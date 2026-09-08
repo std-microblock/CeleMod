@@ -5,7 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useGamePath } from "../states";
 import { useGlobalContext } from "../App";
 import { Icon } from "./Icon";
-import { steamActivity, steamIssue, steamProgress, steamScreen, type SteamPanel, type SteamStatus } from "./steamState";
+import { canUseSavedSteamPassword, steamActivity, steamIssue, steamProgress, steamScreen, type SteamPanel, type SteamStatus } from "./steamState";
 import "./SteamAccount.scss";
 
 const command = (request: Record<string, unknown>) => invoke<SteamStatus>("android_steam", { request });
@@ -40,6 +40,7 @@ export function SteamAccount() {
   const percent = steamProgress(status);
   const guardRevision = `${status?.job}:${status?.revision}:${status?.stage}:${status?.message}`;
   const waitingForCode = !!guardSubmitted && guardSubmitted === guardRevision;
+  const savedPassword = canUseSavedSteamPassword(status, account);
 
   useEffect(() => {
     alive.current = true;
@@ -61,6 +62,7 @@ export function SteamAccount() {
     return () => { stopped = true; alive.current = false; clearTimeout(timer); };
   }, []);
   useEffect(() => { if (!status?.busy) { setCanceling(false); setGuardSubmitted(""); } }, [status?.busy]);
+  useEffect(() => { if (status?.account) setAccount(status.account); }, [status?.account]);
   useEffect(() => {
     if (open) {
       dialog.current?.showModal();
@@ -128,12 +130,6 @@ export function SteamAccount() {
     logout: "退出 Steam？", "disable-cloud": "关闭自动云存档？",
   };
   const canGoBack = !status?.busy && panel !== "main";
-  const support = <details className="steam-help"><summary>登录与兼容性说明</summary>
-    <p>使用 Steam 登录账号（不是昵称）。支持手机确认、令牌和邮件验证码，暂不支持扫码登录。</p>
-    <p>密码不保存；登录令牌由 Android Keystore 加密保存在本机。账号信息仅用于直接连接 Steam。</p>
-    <p>需要拥有 Celeste 的下载权限。下载后需安装 Everest；Android 不模拟桌面 Steam DRM 或 Overlay，遇到不兼容版本会停止安装。ZIP 导入仍可使用。</p>
-    <button type="button" disabled={busy} onClick={() => void start("probe")}>检查 Steam 连接</button>
-  </details>;
 
   return <>
     <button ref={opener} type="button" className="steam-entry" aria-haspopup="dialog" aria-controls={`${id}-dialog`}
@@ -169,27 +165,21 @@ export function SteamAccount() {
           {status?.operation === "probe" && status.stage === "complete" && !status.busy && <p className="steam-callout" role="status">Steam 连接正常。</p>}
           {screen === "loading" && <p className="steam-muted" role="status">{connectionError ? "暂时无法读取状态，将自动重试。" : "正在读取本机的 Steam 登录信息…"}</p>}
           {screen === "login" && <>
-            <p className="steam-intro">登录已拥有 Celeste 的账号，直接下载游戏，无需再导入 ZIP。</p>
             <form className="steam-form" onSubmit={e => {
               e.preventDefault(); const secret = password; setPassword(""); setShowPassword(false);
-              void start("login", { account: account.trim(), password: secret, useGuardCode });
+              void start("login", { account: account.trim(), ...(secret ? { password: secret } : { useSavedPassword: savedPassword }), useGuardCode });
             }}>
-              <label htmlFor={`${id}-account`}>Steam 登录账号</label>
+              <label htmlFor={`${id}-account`}>账号</label>
               <input id={`${id}-account`} name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                placeholder="不是个人资料昵称" value={account} onChange={e => setAccount(e.target.value)} disabled={busy} required />
+                value={account} onChange={e => { setAccount(e.target.value); setPassword(""); }} disabled={busy} required />
               <label htmlFor={`${id}-password`}>密码</label>
               <div className="steam-password"><input id={`${id}-password`} name="password" type={showPassword ? "text" : "password"}
-                autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} disabled={busy} required />
-                <button type="button" aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><Icon name="eye" /></button></div>
-              <details className="steam-help"><summary>验证方式：{useGuardCode ? "输入验证码" : "优先手机确认"}</summary>
-                <label className="steam-check"><input type="checkbox" checked={useGuardCode} onChange={e => setUseGuardCode(e.target.checked)} disabled={busy} />使用 Steam Guard 验证码登录</label>
-                <p>没有 Steam 手机应用？可改用验证码；邮件验证由 Steam 按账号设置提供。</p>
-              </details>
-              <button className="steam-primary" type="submit" disabled={busy || !account.trim() || !password}>{sending ? "正在登录…" : "登录 Steam"}<Icon name="i-right" /></button>
+                autoComplete="current-password" placeholder={savedPassword ? "••••••••" : undefined}
+                value={password} onChange={e => setPassword(e.target.value)} disabled={busy} required={!savedPassword} />
+                <button type="button" aria-label={showPassword ? "隐藏密码" : "显示密码"} aria-pressed={showPassword} disabled={!password} onClick={() => setShowPassword(!showPassword)}><Icon name="eye" /></button></div>
+              <button className="steam-primary" type="submit" disabled={busy || !account.trim() || (!password && !savedPassword)}>{sending ? "正在登录…" : "登录 Steam"}<Icon name="i-right" /></button>
             </form>
-            <p className="steam-footnote">密码不保存 · 仅直接连接 Steam</p>
             {status?.account && <button type="button" className="steam-text-button" disabled={busy} onClick={() => navigate("settings")}>返回账号设置</button>}
-            {support}
           </>}
           {(screen === "approval" || screen === "code") && <>
             <div className="steam-verification"><Icon name={screen === "approval" ? "clock" : "keyboard"} /></div>
@@ -198,7 +188,7 @@ export function SteamAccount() {
               <div className="steam-wait" role="status"><span className="steam-spinner" />等待确认，完成后会自动继续</div>
               <button type="button" disabled={sending || canceling} onClick={async () => {
                 setUseGuardCode(true); await cancel(); setPanel("login");
-                setNotice("当前登录取消后，请重新输入密码，并使用 Steam Guard 验证码登录。");
+                setNotice("请继续登录");
               }}>改用验证码登录</button>
             </> : <form className="steam-form" onSubmit={async e => {
               e.preventDefault(); const value = code; setCode(""); setGuardSubmitted(guardRevision);
@@ -211,7 +201,6 @@ export function SteamAccount() {
                 maxLength={8} placeholder="输入验证码" value={code} disabled={sending || waitingForCode || canceling}
                 onChange={e => setCode(e.target.value.replace(/[^a-z0-9]/gi, "").toUpperCase())} />
               <button type="submit" className="steam-primary" disabled={sending || waitingForCode || canceling || !/^[A-Z0-9]{5,8}$/.test(code)}>{waitingForCode ? "正在验证…" : "验证并继续"}</button>
-              <p className="steam-footnote">{status?.stage === "guard-email" ? "没收到？检查垃圾邮件，或取消后重新登录。" : "验证码会定期更新，请使用当前显示的一组。"}</p>
             </form>}
             <button type="button" className="steam-text-button" disabled={sending || canceling} onClick={() => void cancel()}>{canceling ? "正在取消…" : "取消登录"}</button>
           </>}
@@ -244,7 +233,6 @@ export function SteamAccount() {
               <li><span>2</span><div><strong>安装 Everest</strong><p>下载完成后继续安装手机运行所需的模组加载器。</p></div></li>
               <li><span>3</span><div><strong>接着上次的进度玩</strong><p>{status?.cloud && !status.offline ? "自动同步已开启，将先检查 Steam 云存档。" : "当前未开启自动同步，可稍后在云存档设置中启用。"}</p></div></li></ol>
             <button type="button" className="steam-primary" disabled={busy} onClick={() => void start("download")}><Icon name="download" />开始下载</button>
-            {support}
           </>}
           {screen === "settings" && <>
             <div className="steam-profile"><FaSteam aria-hidden="true" /><div><strong>{status?.account}</strong><small>Steam ID · {status?.steamId}</small></div></div>

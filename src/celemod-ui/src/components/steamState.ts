@@ -2,6 +2,7 @@ export type SteamStatus = {
   account: string; steamId: string; busy: boolean; cloud: boolean; offline: boolean;
   pending: boolean; stage?: string; message?: string; done?: number; total?: number;
   pendingOtherAccount?: boolean;
+  hasSavedPassword?: boolean;
   operation?: string; job?: string; revision?: string;
   conflicts?: { name: string; local: string | null; remote: string | null }[];
   game?: string;
@@ -18,9 +19,12 @@ export function steamScreen(status: SteamStatus | undefined, panel: SteamPanel) 
   }
   if (!status.account) return "login";
   if (panel !== "main") return panel;
-  if (status.operation === "login" && ["error", "cancelled", "interrupted"].includes(status.stage || "")) return "login";
   if (status.stage === "conflict") return "conflict";
   return "overview";
+}
+export function canUseSavedSteamPassword(status: SteamStatus | undefined, account: string) {
+  return !!status?.hasSavedPassword && !!status.account &&
+    status.account.toLowerCase() === account.trim().toLowerCase();
 }
 export function steamProgress(status?: SteamStatus) {
   if (!status?.total || status.total <= 0) return undefined;

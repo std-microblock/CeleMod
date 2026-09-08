@@ -90,11 +90,11 @@ try {
       const m=window.__steamUX;
       if(r.action==='status')m.polls++;
       if(r.action==='status' && m.delayPoll){m.delayPoll=false;const snapshot=structuredClone(m.status);await new Promise(ok=>m.releasePoll=ok);return snapshot;}
-      if(r.action!=='status') m.commands.push({action:r.action,choice:r.choice,cloud:r.cloud,offline:r.offline,useGuardCode:r.useGuardCode,validCode:/^[A-Z0-9]{5,8}$/.test(r.code||'')});
+      if(r.action!=='status') m.commands.push({action:r.action,choice:r.choice,cloud:r.cloud,offline:r.offline,useGuardCode:r.useGuardCode,useSavedPassword:r.useSavedPassword,validCode:/^[A-Z0-9]{5,8}$/.test(r.code||'')});
       if(m.failNext && r.action!=='status'){m.failNext=false;throw new Error('Steam 连接中断，请检查网络后重试。');}
       if(r.action==='login')m.status={...m.status,busy:true,stage:'connecting',operation:'login',job:'mock-job'};
       if(r.action==='cancel')m.status={...m.status,busy:false,stage:'cancelled'};
-      if(r.action==='logout')m.status={...m.status,account:'',steamId:'',game:'',stage:'signed-out',operation:'logout'};
+      if(r.action==='logout')m.status={...m.status,account:'',steamId:'',game:'',hasSavedPassword:false,stage:'signed-out',operation:'logout'};
       if(r.action==='settings')m.status={...m.status,...('cloud'in r?{cloud:r.cloud}:{}),...('offline'in r?{offline:r.offline}:{})};
       if(['sync','resolve','download','probe'].includes(r.action))m.status={...m.status,busy:true,stage:'connecting',operation:r.action};
       return structuredClone(m.status);
@@ -120,6 +120,7 @@ try {
   await check(`!document.querySelector('.steam-sheet[open]') && !document.querySelector('.steam-sheet input')`, "credentials not mounted on Home");
   await capture("01-home");
   await click(".steam-entry"); await screen("login"); await capture("02-login");
+  await check(`!document.querySelector('.steam-sheet[open]').textContent.match(/密码不保存|Keystore|兼容性说明|验证方式|不是昵称|无需再导入 ZIP/)`, "login contains no explanatory clutter");
   await check(`document.activeElement.tagName==='H2'`, "opening should not summon keyboard");
   androidBack(); await wait(`!document.querySelector('.steam-sheet[open]')`);
   await click(".steam-entry"); await screen("login");
@@ -141,9 +142,9 @@ try {
   await setStatus({ ...idle, busy: true, operation: "login", stage: "guard-confirm", job: "mock-job" });
   await screen("approval"); await capture("03-approval");
   await button("改用验证码登录"); await screen("login");
-  await check(`document.querySelector('.steam-check input').checked`, "code fallback retained");
   await fill('.steam-sheet input[name="password"]', "dummy_not_a_real_password");
   await button("登录 Steam"); await screen("progress");
+  await check(`window.__steamUX.commands.at(-1).useGuardCode`, "code fallback retained without a settings checkbox");
   await setStatus({ ...idle, busy: true, operation: "login", stage: "guard-device", job: "mock-job", revision: "1" });
   await screen("code"); await capture("04-guard");
   await fill(".steam-code", "a1b2c"); await sleep(50);
@@ -158,6 +159,21 @@ try {
   await setStatus({ ...idle, busy: true, stage: "guard-email", revision: "4" });
   await screen("code"); await capture("05-email");
   await setStatus(signedIn); await screen("overview"); await capture("06-library");
+  const saved = { ...signedIn, hasSavedPassword: true };
+  await setStatus(saved);
+  await click('.steam-sheet button[aria-label="关闭 Steam 面板"]');
+  await click('.steam-entry'); await screen('overview');
+  await check(`!document.querySelector('.steam-sheet input[name="password"]')`, "restored session skips login");
+  await button('账号与云存档设置'); await button('重新登录 / 切换账号'); await screen('login');
+  await check(`document.querySelector('.steam-sheet input[name="username"]').value==='ux_test_account'`, "saved account is filled");
+  await check(`document.querySelector('.steam-sheet input[name="password"]').placeholder==='••••••••' && !document.querySelector('.steam-sheet button[type="submit"]').disabled`, "saved password can be reused without exposing it to WebView");
+  await fill('.steam-sheet input[name="username"]', 'another_account');
+  await check(`document.querySelector('.steam-sheet button[type="submit"]').disabled`, "saved password cannot be reused for another account");
+  await fill('.steam-sheet input[name="username"]', 'ux_test_account');
+  await button('登录 Steam'); await screen('progress');
+  await check(`window.__steamUX.commands.at(-1).useSavedPassword===true`, "native saved-password login requested");
+  await setStatus({ ...saved, stage: 'interrupted' }); await screen('overview');
+  await setStatus(saved);
   await button("下载游戏"); await screen("download"); await capture("07-download-confirm");
   androidBack(); await screen("overview"); // Back from confirmation returns a step, not to Android.
   await button("下载游戏"); await screen("download");

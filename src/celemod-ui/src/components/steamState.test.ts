@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { steamActivity, steamIssue, steamProgress, steamScreen, type SteamStatus } from "./steamState";
+import { canUseSavedSteamPassword, steamActivity, steamIssue, steamProgress, steamScreen, type SteamStatus } from "./steamState";
 
 const idle: SteamStatus = { account: "", steamId: "", busy: false, cloud: true, offline: false, pending: false };
 test("logged-out entry opens login, not settings or a fake connected state", () => {
@@ -29,7 +29,17 @@ test("cancelled/interrupted jobs do not leave a disabled busy form", () => {
   for (const stage of ["cancelled", "interrupted", "error"])
     assert.equal(steamScreen({ ...idle, stage }, "main"), "login");
   assert.equal(steamScreen({ ...idle, account: "test", stage: "cancelled" }, "main"), "overview");
-  assert.equal(steamScreen({ ...idle, account: "test", operation: "login", stage: "error" }, "main"), "login");
+  for (const stage of ["error", "cancelled", "interrupted", "complete"])
+    assert.equal(steamScreen({ ...idle, account: "test", operation: "login", stage }, "main"), "overview");
+});
+test("saved passwords are available only for the matching account", () => {
+  const saved = { ...idle, account: "MyAccount", hasSavedPassword: true };
+  assert.equal(canUseSavedSteamPassword(saved, " myaccount "), true);
+  assert.equal(canUseSavedSteamPassword(saved, "another_account"), false);
+  assert.equal(canUseSavedSteamPassword(saved, ""), false);
+  assert.equal(canUseSavedSteamPassword(undefined, "MyAccount"), false);
+  assert.equal(canUseSavedSteamPassword({ ...saved, hasSavedPassword: false }, "MyAccount"), false);
+  assert.equal(canUseSavedSteamPassword({ ...saved, account: "" }, ""), false);
 });
 test("progress is indeterminate without a total, and bounded when measured", () => {
   assert.equal(steamProgress(undefined), undefined);
