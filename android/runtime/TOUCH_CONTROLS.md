@@ -37,10 +37,10 @@ one-tap resume.
 - Android Back (key or predictive-back gesture) injects a single Esc pulse after
   startup. If the native text keyboard is open, Back dismisses it first. During
   startup it retains the cancel-launch confirmation.
-- The top-left exit icon is independent, **always asks for confirmation**, and is
+- The top-left edit button and adjacent exit icon are fixed. Exit **always asks for confirmation** and is
   available even when both touch options are off. It does not save the game for you.
 - Enabling only the stick still provides complete menu navigation and confirmation.
-  Disabling both options leaves only exit; other touches pass through.
+  Disabling both options leaves only edit/exit; other touches pass through.
 - Bindings are read from `Celeste.Input` and `Settings`, including menu directions,
   gameplay movement and interaction. Supported keyboard bindings use their first
   Android-representable key. Empty/controller-only/unsupported bindings fall back
@@ -52,6 +52,31 @@ one-tap resume.
   Short taps are held briefly so SDL keydown/up cannot vanish between FNA frames.
 - Native shapes draw all navigation/pause/resume/confirm icons, independent of
   installed fonts. Display cutouts and system bars are excluded from placement.
+
+## Position editor
+
+- Tap the permanent **编辑** pencil at the top left. Drag any outlined button or
+  the stick; these editor touches never inject game keys. Known gameplay receives
+  one pause request first; leaving the editor does not automatically resume play.
+- **到菜单 / 到游戏** previews both layouts without navigating the game. Game
+  actions/stick and menu actions/D-pad have separate positions; pause/resume and
+  auxiliary icons use shared positions. Menu primary/secondary positions remain
+  consistent when confirm changes to continue, character entry, or close.
+- **保存** applies and persists both previews. **取消** or Android Back discards
+  edits. **重置** asks for confirmation and resets the current orientation's draft;
+  it is not permanent until Save, and Cancel can still undo it.
+- Positions are stored as normalized safe-viewport centers in private Android
+  preferences, independently for landscape and portrait. They survive game and
+  app restarts, scale to screen-size/inset changes, and are clamped so buttons and
+  the stick stay visible. Custom controls cannot cover the fixed toolbar.
+- Editor controls are available even with touch gameplay disabled; previewing and
+  saving do not change the user's touch-enable settings. The editor shows the
+  selected gameplay direction style (stick or D-pad).
+- Incoming scene changes do not replace the editor preview. The latest real
+  scene is applied after Save/Cancel. A screen-orientation change cancels an
+  unsaved draft with a message; ordinary resizing retains normalized positions.
+- Layout tests cover round-trip persistence, corrupt input, cancel/reset isolation,
+  drag cancellation, geometry scaling, screen edges, and toolbar protection.
 
 ## Regression checks
 
@@ -78,6 +103,9 @@ hold movement while opening pause and verify no stuck selection; background/retu
 test journal, naming, dialogue, two-finger gameplay, fast taps, controller-opened
 menus, and both touch preference combinations. Exit only through the confirmed
 manager button or normal game exit. Use test saves for any progress-changing checks.
+For the editor: drag jump and stick, switch preview and drag confirm, Save, reopen
+and verify, Cancel a second edit, verify Back cancels without unpausing, and test
+Reset both with Cancel and Save. Relaunch to verify positions persist.
 
 Custom non-Oui mod scenes and mods that entirely replace keyboard input remain
 best-effort fallback, not a claim that every mod's UI has a specialized profile.

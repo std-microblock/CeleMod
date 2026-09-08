@@ -8,7 +8,7 @@ enum class ControlMode {
     }
 }
 
-enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, BOOK, EXIT, KEYBOARD, DELETE }
+enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, BOOK, EXIT, KEYBOARD, DELETE, EDIT, CLOSE, RESET }
 
 data class ControlAction(val binding: String, val label: String, val icon: ControlIcon = ControlIcon.NONE)
 
