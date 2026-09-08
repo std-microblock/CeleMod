@@ -1,0 +1,21 @@
+CeleMod Steam worker uses dynamically linked, unmodified NuGet assemblies:
+
+SteamKit2 3.4.0 — SteamRE contributors — LGPL-2.1-only
+Source: https://github.com/SteamRE/SteamKit/tree/1c7bc9c41a529e8fbb1e6890f1e4dbcdc5200cb7
+License and bundled third-party notices: licenses/SteamKit2-*.txt in CeleMod's source.
+SteamKit2.dll is a separate assembly. No proprietary Steam client or game files are bundled.
+Users may replace/rebuild the library and rebuild the APK using scripts/build-android-steam.ps1.
+
+protobuf-net / protobuf-net.Core 3.2.56 — Marc Gravell — Apache-2.0
+https://github.com/protobuf-net/protobuf-net/tree/dfdfce61a739cfd76f05fcdacf8a4b3b9e94e684
+
+ZstdSharp.Port 0.8.7 — Oleg Stepanischev and contributors — MIT
+https://github.com/oleg-st/ZstdSharp/tree/0ee6121aaa173b42e68d3c6c8816a68e910e0557
+
+System.IO.Hashing 10.0.1 — .NET Foundation and contributors — MIT
+https://github.com/dotnet/runtime
+
+Exact transitive dependencies and integrity hashes are pinned in packages.lock.json.
+Protocol reference: SteamKit generated Cloud unified messages and its authentication/CDN APIs.
+DepotDownloader (https://github.com/SteamRE/DepotDownloader) was consulted as an API usage reference;
+no DepotDownloader source or binaries are included.

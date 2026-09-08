@@ -17,6 +17,8 @@ import {
 } from "../states";
 import "./Home.scss";
 import { useGlobalContext } from "src/App";
+import { detectDesktopPlatform } from "../tauri/window";
+import { SteamAccount } from "../components/SteamAccount";
 
 export const Home = () => {
   const i18n = useI18N();
@@ -161,6 +163,8 @@ export const Home = () => {
         </div>
       </header>
 
+      {detectDesktopPlatform() === "android" && !gamePath && <SteamAccount />}
+
       {gamePath && newKeyboardInputEnabled === true ? (
         <aside className="home-keyboard-input-banner">
           <Icon name="warn" />
@@ -241,6 +245,8 @@ export const Home = () => {
           </div>
         )}
       </section>
+
+      {detectDesktopPlatform() === "android" && gamePath && <SteamAccount />}
 
       {profileEnabled && (
         <section className="home-section home-profiles-section">

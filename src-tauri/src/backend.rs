@@ -4210,6 +4210,15 @@ fn runtime_platform() -> &'static str {
 }
 
 #[tauri::command]
+async fn android_steam(request: serde_json::Value) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(move || crate::android::steam(request)).await
+        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    { let _ = request; Err("Android only".into()) }
+}
+
+#[tauri::command]
 fn get_loenn_state(install_root: String) -> LoennState {
     get_loenn_state_impl(&install_root)
 }
@@ -5858,6 +5867,7 @@ pub fn run() {
             get_installed_miaonet,
             start_game,
             runtime_platform,
+            android_steam,
             get_loenn_state,
             download_and_install_loenn,
             start_loenn,

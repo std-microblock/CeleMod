@@ -1,0 +1,27 @@
+.steam-account {
+  padding: 20px;
+  margin: 16px 0;
+  border: 1px solid var(--border-color, #8884);
+  border-radius: 14px;
+  background: var(--card-background, #8881);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  header, .steam-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  header span, small { opacity: .75; font-size: 12px; line-height: 1.6; }
+  form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+  form label { display: grid; gap: 5px; flex: 1 1 160px; }
+  form small { flex-basis: 100%; }
+  form .steam-guard-option { display: flex; align-items: center; flex-basis: 100%; font-size: 12px; }
+  input:not([type="checkbox"]) { min-width: 0; width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; border: 1px solid #8885; background: transparent; color: inherit; }
+  button { padding: 9px 12px; min-height: 40px; }
+  button:disabled { opacity: .5; }
+  .steam-toggles, .steam-status, .steam-conflict { display: grid; gap: 8px; }
+  .steam-toggles label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .steam-status { overflow-wrap: anywhere; font-size: 13px; }
+  .steam-status button { justify-self: start; }
+  progress { width: 100%; accent-color: #78a4f9; }
+  .steam-conflict { padding: 14px; border-radius: 9px; background: #e6a13620; }
+  .steam-conflict ul { padding-left: 20px; max-height: 160px; overflow: auto; }
+  p[role="alert"] { color: #e77575; margin: 0; }
+}

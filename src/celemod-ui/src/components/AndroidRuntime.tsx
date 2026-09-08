@@ -4,6 +4,7 @@ import { useAutoDisableNewMods, useGamePath, reloadBlacklistState } from "../sta
 import { useGlobalContext } from "../App";
 import { showLocalPackageInstaller } from "./DropInstaller";
 import { Icon } from "./Icon";
+import { SteamAccount } from "./SteamAccount";
 
 type RuntimeSettings = { gameRoot: string; runtime: string; buttons: boolean; joystick: boolean };
 
@@ -40,7 +41,7 @@ export function AndroidRuntime() {
     } catch (e) { setError(String(e)); }
     finally { setSaving(false); }
   }
-  return <section className="settings-section android-runtime">
+  return <><SteamAccount /><section className="settings-section android-runtime">
     <div className="settings-section-title"><Icon name="settings" /><span>Android 游戏运行时</span></div>
     <div className="settings-card">
       <div className="theme-setting">
@@ -66,5 +67,5 @@ export function AndroidRuntime() {
         {error && <p role="alert">{error}</p>}
       </div></div>
     </div>
-  </section>;
+  </section></>;
 }

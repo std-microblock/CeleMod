@@ -87,6 +87,34 @@ object RuntimeHost {
         }
     }
 
+    /** Network-only worker in the manager process. Never chdir, redirect stdio, initialize SDL, or install game hooks here. */
+    fun runSteam(context: Context, ipc: File): Int {
+        val root = runtimeRoot(context)
+        val steam = File(root, "steam").apply { mkdirs() }
+        for (name in context.assets.list("steam").orEmpty()) {
+            require(!name.contains('/') && !name.contains('\\'))
+            context.assets.open("steam/$name").use { input -> File(steam, name).outputStream().use { input.copyTo(it) } }
+        }
+        val assembly = File(steam, "CeleMod.Steam.dll")
+        check(assembly.isFile) { "Steam worker assets are missing; rebuild the APK" }
+        Os.setenv("DOTNET_ROOT", root.absolutePath, true)
+        Os.setenv("DOTNET_ROLL_FORWARD", "LatestMajor", true)
+        Os.setenv("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT", "1", true)
+        Os.setenv("DOTNET_EnableDiagnostics", "0", true)
+        Os.setenv("RALCORE_NATIVEDIR", context.applicationInfo.nativeLibraryDir, true)
+        System.loadLibrary("c++_shared")
+        System.loadLibrary("dotnethost")
+        // RAL exposes the hostfxr JNI entry points from libmain, whose link dependencies include SDL/FNA.
+        // Loading these libraries does not start an SDL Activity, renderer, audio device or game.
+        System.loadLibrary("SDL2")
+        System.loadLibrary("main")
+        CoreHostHooks.nativeInitCoreHostCompatHooks()
+        val shared = File(root, "shared/Microsoft.NETCore.App/10.0.4")
+        for (lib in arrayOf("libSystem.Native.so", "libSystem.IO.Compression.Native.so", "libSystem.Security.Cryptography.Native.Android.so"))
+            System.load(File(shared, lib).absolutePath)
+        return DotNetLauncher.nativeDotNetLauncherHostfxrLaunch(assembly.absolutePath, arrayOf(ipc.absolutePath), root.absolutePath)
+    }
+
     fun run(context: Context, assembly: File, installer: Boolean, vanilla: Boolean = false, legacy: Boolean = false): Int {
         val root = runtimeRoot(context)
         check(File(root, ".ready").isFile) { "Runtime has not been prepared" }

@@ -4,3 +4,7 @@ cele-mod.db
 mod-cache-*
 /mod_cache.json
 translate_script.js
+/android/steam/bin/
+/android/steam/obj/
+/android/steam-tests/bin/
+/android/steam-tests/obj/
