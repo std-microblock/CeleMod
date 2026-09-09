@@ -3,6 +3,7 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 type LegacyCallback = (...args: unknown[]) => void;
 
 const parameterNames: Record<string, string[]> = {
+  save_touch_buttons: ["gamePath", "buttons"],
   download_mod_batch: [
     "roots",
     "modsDir",

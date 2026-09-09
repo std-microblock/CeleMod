@@ -65,6 +65,7 @@ class TouchControls(
     private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
     private val contacts = ControlContacts()
     private val touchWriter = DirectTouchWriter(context.cacheDir)
+    private val modWriter = ModButtonWriter(context.cacheDir)
     private var directPreferred = preferences.getBoolean("direct-touch", true)
     private val direct get() = !editing && directPreferred && (buttons || joystick) && state.touch != null
     private var directGesture: DirectGesture? = null
@@ -97,7 +98,7 @@ class TouchControls(
     private val layoutGroup get() = if (if (editing) editingGame else gameLayout(state.mode)) "game" else "menu"
     private fun style(id: String) = if (editing) draft!!.style(id) else savedStyles[id] ?: ControlStyle()
     private val directionMode get() = style("game/stick").directionMode ?: DirectionControlMode.default(joystick)
-    private fun slideAction(key: Key) = key.id.startsWith("game/action/")
+    private fun slideAction(key: Key) = key.id.startsWith("game/action/") || key.id.contains("/custom/")
     private fun heldActionKeys(): List<Key> {
         val ids = actionPointers.values.flatMap { it.active() }.toSet()
         return keys.filter { it.id in ids }
@@ -120,7 +121,7 @@ class TouchControls(
         // Merely walking into/out of Talk range must NOT drop a held climb/jump.
         // Changing scenes, input mode or bindings must not carry a hold into a menu.
         if (state.mode != next.mode || state.ui != next.ui || state.bindings != next.bindings || state.keyboard != next.keyboard ||
-            state.touch?.epoch != next.touch?.epoch)
+            state.touch?.epoch != next.touch?.epoch || state.modEpoch != next.modEpoch || state.modButtons != next.modButtons)
             releaseAll()
         state = next
         profile = ControlProfile.forState(state, buttons, joystick, direct, directionMode)
@@ -181,12 +182,12 @@ class TouchControls(
                     auxiliary = ControlAction("MenuJournal", "日志", ControlIcon.BOOK))
             }
         fun key(id: String, action: ControlAction, x: Float, y: Float, side: Float = size,
-                direction: Boolean = false, iconOnly: Boolean = false) {
+                direction: Boolean = false, iconOnly: Boolean = false, codes: Set<Int>? = null) {
             val actualSide = if (id.startsWith("fixed/")) side else
                 (side * style(id).scale).coerceAtMost(min(layoutBounds.width, layoutBounds.height))
             val center = if (id.startsWith("fixed/")) ControlPoint(x + side / 2, y + side / 2)
                 else place(id, ControlPoint(x + side / 2, y + side / 2), actualSide / 2, actualSide / 2)
-            keys += Key(id, action, ControlKeys.resolveAll(state, action.binding),
+            keys += Key(id, action, codes ?: ControlKeys.resolveAll(state, action.binding),
                 RectF(center.x - actualSide / 2, center.y - actualSide / 2,
                     center.x + actualSide / 2, center.y + actualSide / 2), direction, iconOnly)
         }
@@ -212,6 +213,15 @@ class TouchControls(
             val row = i / 2
             val id = if (layoutGroup == "game") action.binding else i.toString()
             key("$layoutGroup/action/$id", action, w - (column + 1) * (size + margin), h - (row + 1) * (size + margin))
+        }
+        if (editing || ModButtons.visible(state.mode)) {
+            state.modButtons.filter { editing || it.available }.forEachIndexed { i, button ->
+                val columns = max(1, (layoutBounds.width * .5f / (size + margin)).toInt())
+                val x = layoutBounds.left + layoutBounds.width * .3f + (i % columns) * (size + margin)
+                val y = toolbarBounds.bottom + margin + (i / columns) * (size + margin)
+                key("$layoutGroup/custom/${button.id}", ControlAction("Custom/${button.id}", button.label, button.icon),
+                    x, y, iconOnly = button.icon != ControlIcon.NONE, codes = if (button.available) setOf(button.code) else emptySet())
+            }
         }
         if (profile.directions) {
             val step = size + margin * .25f
@@ -239,7 +249,7 @@ class TouchControls(
     private fun place(id: String, default: ControlPoint, halfWidth: Float, halfHeight: Float): ControlPoint {
         val position = if (editing) draft?.get(id) else savedPositions[id]
         // Leave untouched default positions alone outside the editor.
-        if (position == null && !editing && style(id).scale == 1f) return default
+        if (position == null && !editing && style(id).scale == 1f && !id.contains("/custom/")) return default
         val center = position?.let { ControlLayout.project(it, layoutBounds) } ?: default
         return ControlLayout.constrain(center, halfWidth, halfHeight, layoutBounds, toolbarBounds)
     }
@@ -301,6 +311,10 @@ class TouchControls(
                 paint.style = Paint.Style.FILL
                 paint.textAlign = Paint.Align.CENTER
                 paint.textSize = min(15 * density, key.rect.height() * .28f)
+                if (key.id.contains("/custom/")) {
+                    val measured = paint.measureText(key.action.label)
+                    if (measured > key.rect.width() * .9f) paint.textSize *= key.rect.width() * .9f / measured
+                }
                 val y = if (key.action.icon == ControlIcon.NONE) key.rect.centerY() else key.rect.top + key.rect.height() * .76f
                 canvas.drawText(key.action.label, key.rect.centerX(), y - (paint.ascent() + paint.descent()) / 2, paint)
             }
@@ -364,6 +378,9 @@ class TouchControls(
             ControlIcon.EDIT -> { path(-9f, 9f, -7f, 2f, 5f, -10f, 10f, -5f, -2f, 7f, -9f, 9f); path(2f, -7f, 7f, -2f) }
             ControlIcon.CLOSE -> { path(-8f, -8f, 8f, 8f); path(-8f, 8f, 8f, -8f) }
             ControlIcon.RESET -> { canvas.drawArc(-9f, -9f, 9f, 9f, -160f, 290f, false, paint); path(-10f, -10f, -10f, -2f, -2f, -2f) }
+            ControlIcon.CHAT -> path(-10f, -8f, 10f, -8f, 10f, 5f, 0f, 5f, -6f, 10f, -6f, 5f, -10f, 5f, -10f, -8f)
+            ControlIcon.BOLT -> path(2f, -11f, -8f, 2f, -1f, 2f, -3f, 11f, 9f, -3f, 2f, -3f, 2f, -11f)
+            ControlIcon.STAR -> path(0f, -11f, 3f, -4f, 11f, -3f, 5f, 2f, 7f, 10f, 0f, 6f, -7f, 10f, -5f, 2f, -11f, -3f, -3f, -4f, 0f, -11f)
             ControlIcon.NONE -> Unit
         }
         canvas.restore(); paint.style = Paint.Style.FILL
@@ -383,9 +400,10 @@ class TouchControls(
             if (abs(sy) >= abs(sx) * .41421356f)
                 next += ControlKeys.resolveAll(state, if (sy < 0) "Up" else "Down")
         }
-        for (code in down - next) { SDLActivity.onNativeKeyUp(code); pressedAt.remove(code) }
-        for (code in next - down) { SDLActivity.onNativeKeyDown(code); pressedAt[code] = SystemClock.uptimeMillis() }
+        for (code in down - next) { if (code >= 0) SDLActivity.onNativeKeyUp(code); pressedAt.remove(code) }
+        for (code in next - down) { if (code >= 0) SDLActivity.onNativeKeyDown(code); pressedAt[code] = SystemClock.uptimeMillis() }
         down.clear(); down.addAll(next)
+        modWriter.set(state.modEpoch, ModButtons.held(state.modButtons, down))
     }
     private fun updateStick(x: Float, y: Float) {
         val dx = (x - cx) / radius
@@ -822,7 +840,7 @@ class TouchControls(
     override fun onDetachedFromWindow() {
         releaseAll(); resetDialog?.dismiss(); resetDialog = null
         styleDialog?.dismiss(); styleDialog = null
-        textDialog?.dismiss(); textDialog = null; touchWriter.close()
+        textDialog?.dismiss(); textDialog = null; touchWriter.close(); modWriter.close()
         super.onDetachedFromWindow()
     }
     fun releaseAll() {
@@ -830,7 +848,8 @@ class TouchControls(
         contacts.clear()
         directGesture = null; directSequence = false; directPointer = -1
         handler.removeCallbacksAndMessages(null)
-        for (code in down) SDLActivity.onNativeKeyUp(code)
+        for (code in down) if (code >= 0) SDLActivity.onNativeKeyUp(code)
+        modWriter.set(state.modEpoch, emptyList())
         down.clear(); pulses.clear(); pressedAt.clear(); pointers.clear(); actionPointers.clear(); directionPointers.clear()
         stickPointer = -1; sx = 0f; sy = 0f
         invalidate()

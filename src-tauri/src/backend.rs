@@ -6190,6 +6190,7 @@ pub fn run() {
             start_miaonet_oauth,
             keybindings::get_key_bindings,
             keybindings::update_key_binding,
+            keybindings::save_touch_buttons,
         ])
         .run(tauri::generate_context!())
         .expect("error while running CeleMod");

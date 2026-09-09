@@ -8,7 +8,7 @@ enum class ControlMode {
     }
 }
 
-enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT, BOOK, EXIT, KEYBOARD, DELETE, EDIT, CLOSE, RESET }
+enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT, BOOK, EXIT, KEYBOARD, DELETE, EDIT, CLOSE, RESET, CHAT, BOLT, STAR }
 
 data class ControlAction(val binding: String, val label: String, val icon: ControlIcon = ControlIcon.NONE)
 
@@ -18,7 +18,9 @@ data class ControlState(
     val keyboard: Boolean = false,
     val ui: String = "",
     val bindings: Map<String, List<String>> = emptyMap(),
-    val touch: TouchScene? = null
+    val touch: TouchScene? = null,
+    val modEpoch: String = "",
+    val modButtons: List<ModButton> = emptyList()
 )
 
 data class ControlProfile(

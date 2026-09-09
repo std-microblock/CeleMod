@@ -30,9 +30,19 @@ class ControlStateReader(private val file: File, private val onState: (ControlSt
                                 val array = bindings.optJSONArray(name)
                                 if (array != null) keys[name] = (0 until array.length()).map { array.getString(it) }
                             }
+                            val custom = value.optJSONObject("custom")
+                            val customButtons = custom?.optJSONArray("buttons")
+                            val modButtons = (0 until minOf(customButtons?.length() ?: 0, 24)).mapNotNull { i ->
+                                val button = customButtons?.optJSONObject(i) ?: return@mapNotNull null
+                                val id = button.optString("id")
+                                val code = button.optInt("code")
+                                if (!ControlLayout.validId(id) || code !in -24..-1) return@mapNotNull null
+                                val icon = ControlIcon.entries.firstOrNull { it.name == button.optString("icon") } ?: ControlIcon.NONE
+                                ModButton(id, button.optString("label").take(32), code, button.optBoolean("available"), icon)
+                            }.distinctBy { it.id }
                             val state = ControlState(ControlMode.parse(value.optString("mode")),
                                 value.optBoolean("canTalk"), value.optBoolean("keyboard"), value.optString("ui"), keys,
-                                readTouch(value.optJSONObject("touch")))
+                                readTouch(value.optJSONObject("touch")), custom?.optString("epoch") ?: "", modButtons)
                             main.post { if (running && session == generation) onState(state) }
                         }
                         last = raw

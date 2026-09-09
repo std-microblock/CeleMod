@@ -20,6 +20,8 @@ import { createPopup, PopupContext } from "../components/Popup";
 import { useCurrentLang, useGamePath } from "../states";
 import { callRemote } from "../utils";
 import "./KeyBindings.scss";
+import { detectDesktopPlatform } from "../tauri/window";
+import { AndroidKeyBindings } from "./AndroidKeyBindings";
 
 type Device = "keyboard" | "controller" | "mouse";
 type InputMode = "keyboard" | "controller";
@@ -236,7 +238,10 @@ const displayLabel = (entry: KeyBindingEntry) =>
     ? _i18n.t(`binding_${entry.action}`)
     : entry.label;
 
-export const KeyBindings = () => {
+export const KeyBindings = () => detectDesktopPlatform() === "android"
+  ? <AndroidKeyBindings /> : <DesktopKeyBindings />;
+
+const DesktopKeyBindings = () => {
   const [mobileOverviewOpen, setMobileOverviewOpen] = useState(false);
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();

@@ -65,7 +65,7 @@ export const Home = () => {
       { page: "Manage", icon: "drive", title: _i18n.t("管理"), description: chinese ? "模组、依赖与预设" : "Mods & profiles", tone: "blue" },
       { page: "Search", icon: "search", title: _i18n.t("搜索"), description: chinese ? "发现新的模组" : "Discover new mods", tone: "pink" },
       { page: "RecommendMods", icon: "flag", title: _i18n.t("推荐模组"), description: chinese ? "精选地图与实用工具" : "Maps & useful tools", tone: "amber" },
-      { page: "KeyBindings", icon: "keyboard", title: _i18n.t("按键"), description: chinese ? "按键映射与冲突检查" : "Bindings & conflicts", tone: "green" },
+      { page: "KeyBindings", icon: "keyboard", title: _i18n.t("按键"), description: detectDesktopPlatform() === "android" ? (chinese ? "虚拟按钮与 Mod 功能" : "Touch buttons & Mod actions") : (chinese ? "按键映射与冲突检查" : "Bindings & conflicts"), tone: "green" },
       ...(chinese ? [{ page: "Multiplayer", icon: "web", title: _i18n.t("联机相关"), description: "和朋友一起登山", tone: "blue" }] : []),
     ] : []),
     ...(featureVisible(updateInfo?.loenn, i18n.currentLang) ? [{ page: "Loenn", icon: "edit", title: "Loenn", description: chinese ? "地图编辑器" : "Map editor", tone: "green" }] : []),

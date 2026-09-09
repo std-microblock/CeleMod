@@ -32,6 +32,7 @@ internal static class GameControls
             var update = engine!.GetMethods(Flags).Single(m => m.Name == "Update" && m.GetParameters().Length == 1);
             GameHooks.Add(update, nameof(Update), typeof(GameControls), engine, update.GetParameters()[0].ParameterType);
             GameTouch.Install(game, engine, input!, path);
+            GameModButtons.Install(game, engine, input!, path);
             Console.WriteLine("[CeleMod] Contextual touch controls joined Engine.Update detour chain.");
         } catch (Exception e) {
             Console.WriteLine("[CeleMod] Contextual controls unavailable; using fallback controls: " + e);
@@ -132,6 +133,7 @@ internal static class GameControls
     private static bool updateObserved;
     private static void Update<TGame, TTime>(Action<TGame, TTime> original, TGame game, TTime time)
     {
+        GameModButtons.BeforeUpdate();
         original(game, time);
         AfterUpdate();
     }
@@ -155,6 +157,7 @@ internal static class GameControls
                 canTalk = mode == "gameplay" && Read(talk, "PlayerOver") is object nearby && Yes(nearby, "Enabled"),
                 keyboard = mode == "naming" && Yes(current, "UseKeyboardInput") || mode == "search" && Yes(current, "Searching"),
                 bindings = Bindings(input, Read(settings, "Instance")),
+                custom = GameModButtons.Capture(),
                 touch = GameTouch.Capture(scene)
             });
             if (json == lastJson) return;

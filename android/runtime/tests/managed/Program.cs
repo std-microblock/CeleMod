@@ -46,6 +46,7 @@ Mode(new Credits(), "complete");
 Mode(new object(), "fallback");
 Console.WriteLine($"PASS: {count} managed scene classification cases.");
 BindingTests.Run();
+ModButtonTests.Run();
 GameHookTests.Run();
 DirectTouchTests.Run();
 
