@@ -4,9 +4,10 @@ import android.view.KeyEvent
 
 /** XNA key names from actual Celeste bindings, not a hardcoded C/X/Z assumption. */
 object ControlKeys {
+    private val directions = setOf("Up", "Down", "Left", "Right")
     private val defaults = mapOf(
         "Jump" to KeyEvent.KEYCODE_C, "Dash" to KeyEvent.KEYCODE_X, "Grab" to KeyEvent.KEYCODE_Z,
-        "Talk" to KeyEvent.KEYCODE_C, "Pause" to KeyEvent.KEYCODE_ENTER,
+        "Talk" to KeyEvent.KEYCODE_X, "Pause" to KeyEvent.KEYCODE_ENTER,
         "MenuConfirm" to KeyEvent.KEYCODE_C, "MenuCancel" to KeyEvent.KEYCODE_X,
         "MenuJournal" to KeyEvent.KEYCODE_TAB,
         "Up" to KeyEvent.KEYCODE_DPAD_UP, "Down" to KeyEvent.KEYCODE_DPAD_DOWN,
@@ -20,6 +21,8 @@ object ControlKeys {
         "Enter" to 66, "Escape" to 111, "Space" to 62, "Tab" to 61, "Back" to 67,
         "LeftShift" to 59, "RightShift" to 60, "LeftControl" to 113, "RightControl" to 114,
         "LeftAlt" to 57, "RightAlt" to 58, "CapsLock" to 115, "NumLock" to 143,
+        "LeftWindows" to KeyEvent.KEYCODE_META_LEFT, "RightWindows" to KeyEvent.KEYCODE_META_RIGHT,
+        "PrintScreen" to KeyEvent.KEYCODE_SYSRQ, "Scroll" to KeyEvent.KEYCODE_SCROLL_LOCK, "Pause" to KeyEvent.KEYCODE_BREAK,
         "Home" to 122, "End" to 123, "PageUp" to 92, "PageDown" to 93, "Insert" to 124, "Delete" to 112,
         "OemMinus" to 69, "OemPlus" to 70, "OemOpenBrackets" to 71, "OemCloseBrackets" to 72,
         "OemPipe" to 73, "OemBackslash" to 73, "OemSemicolon" to 74, "OemQuotes" to 75,
@@ -35,5 +38,17 @@ object ControlKeys {
         else -> special[name]
     }
     fun resolve(state: ControlState, action: String): Int? =
-        state.bindings[action]?.firstNotNullOfOrNull(::fromXna) ?: defaults[action]
+        if (state.bindings.containsKey(action)) state.bindings[action]?.firstNotNullOfOrNull(::fromXna)
+        else defaults[action]
+
+    /** One common direction key controls both movement and aim. If it is unbound,
+     * press the separate move/aim bindings together, never an unrelated arrow key. */
+    fun resolveAll(state: ControlState, action: String): Set<Int> {
+        if (action !in directions) return setOfNotNull(resolve(state, action))
+        state.bindings[action]?.firstNotNullOfOrNull(::fromXna)?.let { return setOf(it) }
+        val split = listOf(action + "MoveOnly", action + "DashOnly")
+        if (state.bindings.containsKey(action) || split.any(state.bindings::containsKey))
+            return split.mapNotNull { state.bindings[it]?.firstNotNullOfOrNull(::fromXna) }.toSet()
+        return setOfNotNull(defaults[action])
+    }
 }

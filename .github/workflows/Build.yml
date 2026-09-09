@@ -104,3 +104,147 @@ jobs:
           name: CeleMod ${{ github.ref_name }}
           body_path: CHANGELOG.md
           files: target/release/CeleMod_*.exe
+
+  android:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      # Share the toolchain installed by the action with android-env.ps1.
+      CARGO_HOME: ${{ github.workspace }}/.local/cargo
+      RUSTUP_HOME: ${{ github.workspace }}/.local/rustup
+      CMAKE_POLICY_VERSION_MINIMUM: 3.5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Android release configuration
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          $version = (Get-Content version.txt -Raw).Trim()
+          if ($env:RELEASE_TAG -ne "v$version") { throw 'Release tag must match version.txt.' }
+          foreach ($name in 'ANDROID_KEYSTORE_BASE64', 'ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD') {
+            if (![Environment]::GetEnvironmentVariable($name)) {
+              throw "Missing release signing secret: $name. See docs/android-release.md."
+            }
+          }
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: src/celemod-ui/pnpm-lock.yaml
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK and NDK
+        run: |
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+          if ($LASTEXITCODE) { throw 'Android SDK installation failed' }
+          "NDK_HOME=$env:ANDROID_HOME/ndk/28.2.13676358" >> $env:GITHUB_ENV
+          # Runtime asset preparation uses 7-Zip from the Windows runner image.
+          'C:/Program Files/7-Zip' >> $env:GITHUB_PATH
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+          key: android-arm64
+
+      - name: Install frontend dependencies
+        run: pnpm --dir src/celemod-ui install --frozen-lockfile
+
+      - name: Prepare pinned Android runtime
+        run: ./scripts/prepare-android-runtime.ps1
+
+      - name: Build Android APK
+        env:
+          IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: ./scripts/build-android.ps1 -Release:($env:IS_RELEASE -eq 'true')
+
+      - name: Collect debug APK
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          $version = (Get-Content version.txt -Raw).Trim()
+          New-Item -ItemType Directory -Force target/android | Out-Null
+          Copy-Item src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk "target/android/CeleMod_${version}_android-arm64-debug.apk"
+
+      - name: Sign and verify release APK
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          $version = (Get-Content version.txt -Raw).Trim()
+          $buildTools = "$env:ANDROID_HOME/build-tools/36.0.0"
+          $keystore = Join-Path $env:RUNNER_TEMP 'celemod-release.keystore'
+          $aligned = Join-Path $env:RUNNER_TEMP 'celemod-aligned.apk'
+          $unsigned = 'src-tauri/gen/android/app/build/outputs/apk/arm64/release/app-arm64-release-unsigned.apk'
+          New-Item -ItemType Directory -Force target/android | Out-Null
+          $apk = "target/android/CeleMod_${version}_android-arm64.apk"
+          try {
+            [IO.File]::WriteAllBytes($keystore, [Convert]::FromBase64String($env:ANDROID_KEYSTORE_BASE64))
+            & "$buildTools/zipalign.exe" -f -P 16 4 $unsigned $aligned
+            if ($LASTEXITCODE) { throw 'APK alignment failed' }
+            & "$buildTools/apksigner.bat" sign --ks $keystore --ks-key-alias $env:ANDROID_KEY_ALIAS `
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD --out $apk $aligned
+            if ($LASTEXITCODE) { throw 'APK signing failed' }
+            & "$buildTools/apksigner.bat" verify --verbose --print-certs $apk
+            if ($LASTEXITCODE) { throw 'APK signature verification failed' }
+            & "$buildTools/zipalign.exe" -c -P 16 4 $apk
+            if ($LASTEXITCODE) { throw 'Signed APK alignment verification failed' }
+          } finally {
+            Remove-Item -LiteralPath $keystore, $aligned -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Generate APK checksums
+        run: |
+          Get-ChildItem target/android/*.apk | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)" | Set-Content "$($_.FullName).sha256" -Encoding ascii
+          }
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CeleMod-android-arm64
+          path: |
+            target/android/*.apk
+            target/android/*.sha256
+          if-no-files-found: error
+
+      - name: Upload Android APK to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: CeleMod ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          fail_on_unmatched_files: true
+          files: |
+            target/android/*.apk
+            target/android/*.sha256

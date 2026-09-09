@@ -1,0 +1,990 @@
+// Loaded after page/theme styles. Desktop geometry is unchanged outside compact mode.
+.mobile-navigation,
+.mobile-manage-tabs {
+  display: none;
+}
+.mobile-more-sheet:not([open]) {
+  display: none;
+}
+
+.home-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.home-shortcut {
+  --shortcut-accent: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 88px;
+  padding: 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-fg) 9%, transparent);
+  border-radius: 14px;
+  background: var(--color-surface-elevated);
+  color: var(--color-fg);
+  box-shadow: none;
+  text-align: left;
+  letter-spacing: 0;
+  text-transform: none;
+  &.tone-blue {
+    --shortcut-accent: #89b8ee;
+  }
+  &.tone-green {
+    --shortcut-accent: #88d3b0;
+  }
+  &.tone-pink {
+    --shortcut-accent: #e9a1c0;
+  }
+  &.tone-amber {
+    --shortcut-accent: #e7c17c;
+  }
+  &.tone-neutral {
+    --shortcut-accent: var(--color-fg-muted);
+  }
+  .shortcut-icon {
+    display: grid;
+    flex: 0 0 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 11px;
+    color: var(--shortcut-accent);
+    background: color-mix(in srgb, var(--shortcut-accent) 13%, transparent);
+    font-size: 18px;
+  }
+  .shortcut-copy {
+    min-width: 0;
+    flex: 1;
+  }
+  strong,
+  small {
+    display: block;
+  }
+  strong {
+    font-size: 14px;
+    font-weight: 650;
+  }
+  small {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-fg-muted);
+  }
+  > .icon {
+    font-size: 9px;
+    opacity: 0.4;
+  }
+  &:hover {
+    border-color: var(--shortcut-accent);
+    background: var(--color-surface-hover);
+  }
+}
+
+html[data-mobile-layout] {
+  --window-titlebar-height: 0px;
+  --mobile-nav-height: 72px;
+  body {
+    font-size: 14px;
+  }
+  .app-frame {
+    height: 100%;
+    height: 100dvh;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0
+      env(safe-area-inset-left, 0px);
+  }
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+  }
+  .sidebar {
+    display: none;
+  }
+  .app-content {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+  .page {
+    width: 100%;
+    box-sizing: border-box;
+    overscroll-behavior: contain;
+  }
+  button,
+  input,
+  select {
+    touch-action: manipulation;
+  }
+  input:not([type="checkbox"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  button {
+    min-height: 40px;
+  }
+  input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+  .mobile-navigation {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    min-height: var(--mobile-nav-height);
+    padding: 4px 6px max(6px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid color-mix(in srgb, var(--color-fg) 12%, transparent);
+    background: var(--color-surface-elevated);
+    box-sizing: border-box;
+    z-index: 30;
+  }
+  .mobile-nav-button {
+    display: flex;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 60px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 0;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 12px;
+    color: var(--color-fg-muted);
+    background: transparent;
+    box-shadow: none;
+    font-size: 11px;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-transform: none;
+    text-align: center;
+    overflow-wrap: anywhere;
+    .mobile-nav-icon {
+      display: grid;
+      position: relative;
+      width: 52px;
+      height: 28px;
+      place-items: center;
+      border-radius: 20px;
+      font-size: 19px;
+    }
+    &.selected {
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+    &.selected .mobile-nav-icon {
+      background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+    }
+    &:active {
+      background: var(--color-surface-hover);
+    }
+  }
+  .mobile-nav-badge {
+    position: absolute;
+    right: 0;
+    top: -2px;
+    padding: 2px 5px;
+    border-radius: 12px;
+    background: #d84f6f;
+    color: white;
+    font-size: 10px;
+  }
+  .mobile-more-sheet {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: 600px;
+    max-height: 80dvh;
+    margin: auto auto 0;
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom, 0px));
+    border: 1px solid var(--color-surface-active);
+    border-radius: 24px 24px 0 0;
+    box-sizing: border-box;
+    background: var(--color-surface-elevated);
+    color: var(--color-fg);
+    &::backdrop {
+      background: #0009;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header button {
+      width: 44px;
+      min-height: 44px;
+      padding: 0;
+    }
+    .mobile-more-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .mobile-nav-button {
+      min-height: 84px;
+      background: var(--color-surface);
+      font-size: 12px;
+    }
+  }
+  // Single-column pages, with a shared comfortable phone gutter.
+  .home-page,
+  .settings-page,
+  .download-page,
+  .multiplayer-page,
+  .loenn {
+    padding: 20px 16px 24px;
+  }
+  .home-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 0 20px;
+  }
+  .home-brand {
+    width: 100%;
+    gap: 14px;
+  }
+  .home-brand img {
+    width: 64px;
+    height: 64px;
+  }
+  .home-brand h1 {
+    font-size: 30px;
+  }
+  .home-brand p {
+    width: auto;
+    font-size: 13px;
+  }
+  .home-language,
+  .home-community,
+  .home-update-actions {
+    position: static;
+  }
+  .home-language {
+    order: 1;
+  }
+  .home-language select {
+    min-height: 40px;
+    font-size: 13px;
+  }
+  .home-community {
+    flex-wrap: wrap;
+    font-size: 12px;
+    gap: 12px;
+  }
+  .home-community button {
+    min-height: 40px;
+  }
+  .home-update-actions {
+    order: 2;
+    margin-left: auto;
+  }
+  .home-update-actions button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .home-section {
+    padding: 0;
+    margin-bottom: 24px;
+  }
+  .home-section-heading h2 {
+    font-size: 16px;
+  }
+  .home-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-shortcut {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    min-height: 90px;
+    gap: 6px 8px;
+    padding: 12px 10px;
+
+    .shortcut-copy { display: contents; }
+    strong, small {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    small {
+      grid-column: 1 / -1;
+      margin-top: 0;
+    }
+  }
+  .home-shortcut > .icon {
+    display: none;
+  }
+  .home-game-section .gameSelector,
+  .home-profiles-section .profiles {
+    padding: 0;
+  }
+  .gameSelector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gameSelector .game-path-field select {
+    height: 44px;
+    font-size: 12px;
+  }
+  .gameSelector .game-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .gameSelector .game-actions button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .home-profiles-section .profiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-profiles-section .profile {
+    width: auto;
+    box-sizing: border-box;
+    min-height: 70px;
+  }
+  .home-profiles-section .profile .profile-meta,
+  .home-active-mod-list span {
+    font-size: 11px;
+  }
+  .home-active-mods {
+    margin: 12px 0 0;
+  }
+  .home-game-missing,
+  .home-keyboard-input-banner {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  // Search keeps a bounded virtual list; filters use the available viewport width.
+  .filter {
+    padding: 12px;
+    gap: 6px;
+  }
+  .filter .search-field {
+    min-width: 0;
+  }
+  .filter .searchinput {
+    height: 44px;
+    font-size: 16px;
+  }
+  .filter .search-submit,
+  .filter .filter-toggle,
+  .filter .view-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  .filter .filter-popup,
+  .manage-filter-popup,
+  .manage-action-menu {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 76px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(
+      100dvh - 180px - env(safe-area-inset-top, 0px) -
+        env(safe-area-inset-bottom, 0px)
+    );
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  .filter .filter-popup .filter-popup-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .filter .filter-popup .filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .filter .filter-popup select,
+  .filter .filter-popup input {
+    height: 44px;
+    font-size: 14px;
+  }
+  // The virtual rows own their horizontal padding; padding the viewport would clip cards.
+  .search-skeleton-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mod .operations button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .mod .operations {
+    top: 116px;
+  }
+  .mod-list-shell.view-list .mod .operations {
+    top: 12px;
+  }
+  .mod-list-shell.view-list .mod .operations button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .mod-list-shell.view-list .mod .info {
+    padding-right: 106px;
+  }
+  // Profiles get their own tab instead of taking half of the Mod list's width.
+  .manage-page,
+  .manage-page.profiles-disabled {
+    display: flex;
+    flex-direction: column;
+  }
+  .mobile-manage-tabs {
+    display: flex;
+    padding: 10px 12px;
+  }
+  .manage-main {
+    flex: 1;
+    border: 0;
+  }
+  .manage-side {
+    display: none;
+  }
+  .mobile-profiles-open:not(.profiles-disabled) {
+    .manage-main {
+      display: none;
+    }
+    .manage-side {
+      display: block;
+      flex: 1;
+      padding: 16px;
+      overflow: auto;
+    }
+  }
+  .manage-toolbar {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .manage-toolbar .manage-title-block {
+    width: 100%;
+  }
+  .manage-toolbar .manage-title-block h1 {
+    font-size: 20px;
+  }
+  .manage-toolbar .manage-title-block span {
+    font-size: 12px;
+  }
+  .manage-search {
+    min-width: 120px;
+  }
+  .manage-search input {
+    height: 44px;
+    font-size: 14px;
+  }
+  .toolbar-icon-button,
+  .toolbar-action-button {
+    height: 44px;
+    min-height: 44px;
+  }
+  .toolbar-icon-button {
+    width: 44px;
+    min-width: 44px;
+  }
+  .tree-row-actions {
+    opacity: 1;
+  }
+  .manage-tree-row {
+    min-height: 56px;
+    --indent: calc(min(var(--tree-depth, 0), 4) * 10px);
+  }
+  .tree-row-main.compact {
+    display: block;
+  }
+  .tree-name {
+    font-size: calc(13px * var(--manage-font-scale, 1));
+  }
+  .tree-mod-name,
+  .tree-version,
+  .manage-badge {
+    font-size: calc(10px * var(--manage-font-scale, 1));
+  }
+  .tree-expander {
+    width: 24px;
+    height: 44px;
+  }
+  .tree-row-actions button {
+    width: 36px;
+    height: 44px;
+  }
+  .profile-select {
+    min-height: 48px;
+    font-size: 14px;
+  }
+  .profile-export,
+  .profile-rename,
+  .profile-delete,
+  .profile-import,
+  .profile-folder {
+    width: 40px;
+    height: 44px;
+  }
+  .profile-create {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .profile-create input {
+    height: 44px;
+    font-size: 14px;
+  }
+  // Binding sources become horizontally scrollable chips above the editor.
+  .keybindings-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  .keybindings-sources {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-surface-active);
+  }
+  .keybindings-sources .source-heading {
+    display: none;
+  }
+  .keybindings-sources > button {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 200px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .keybindings-main {
+    flex: 1;
+    width: 100%;
+  }
+  .keybindings-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .keybindings-title {
+    grid-column: 1 / -1;
+  }
+  .keybindings-title h1 {
+    font-size: 20px;
+  }
+  .keybindings-search input {
+    height: 44px;
+    font-size: 14px;
+  }
+  .keybindings-actions {
+    flex-wrap: wrap;
+  }
+  .binding-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+    gap: 10px;
+  }
+  .binding-info strong {
+    font-size: calc(14px * var(--keybindings-font-scale, 1));
+  }
+  .binding-chip,
+  .binding-add {
+    min-height: 36px;
+    font-size: 12px;
+  }
+  .binding-add {
+    width: 36px;
+  }
+  .everest {
+    padding: 20px 16px 16px;
+  }
+  .everest .everest-header {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .everest .everest-header > img {
+    width: 140px;
+    max-height: 60px;
+  }
+  .everest .version-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .everest .edition-description {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .everest .edition-description p {
+    max-height: 110px;
+    overflow: auto;
+  }
+  .everest .installing .tip {
+    font-size: 23px;
+  }
+  .centered-tab-buttons {
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .centered-tab-buttons > button {
+    min-width: 0;
+    flex: 1 0 auto;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .recommend-mods-page {
+    padding: 16px 12px 0;
+    box-sizing: border-box;
+  }
+  .recommend-header {
+    padding: 0;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .recommend-header h1 {
+    font-size: 24px;
+  }
+  .recommended-map-row {
+    grid-template-columns: minmax(0, 1fr);
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+  .recommended-map-description {
+    padding: 16px;
+  }
+  .recommended-map-card .mod {
+    border-right: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .recommended-skin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .helper-mod-list,
+  .recommended-map-list,
+  .recommended-skin-grid {
+    padding-right: 0;
+  }
+  .recommended-download-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .helper-mod-description {
+    white-space: normal;
+  }
+  .settings-page .setting-select-row,
+  .settings-page .download-default-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .settings-page .setting-toggle-row {
+    gap: 12px;
+  }
+  .settings-page .setting-toggle-row small,
+  .settings-page .setting-select-row small,
+  .settings-page .theme-setting small {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .settings-page .font-scale-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .settings-page .font-scale-control {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .settings-page .segmented-setting {
+    flex-wrap: wrap;
+  }
+  .settings-page .segmented-setting button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .settings-page select {
+    width: 100%;
+    height: 44px;
+  }
+  .settings-page .cache-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-page .download-type-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-page .type-chip-grid button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .android-runtime code {
+    display: block;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+    user-select: text;
+    font-size: 12px;
+  }
+  .download-page-header,
+  .multiplayer-page-header {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .download-page-list .download-task {
+    padding: 14px 12px;
+  }
+  .multiplayer-page-body {
+    overflow-y: auto;
+  }
+  .loenn .loenn-header,
+  .loenn .loenn-local,
+  .loenn .install-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .loenn .local-path {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .no-everest {
+    padding: 24px 16px;
+  }
+  // No desktop offsets or scale transforms on a phone: dialogs stay within safe areas.
+  .popup-container {
+    inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    padding: 12px;
+    border-radius: 0;
+    transform: none;
+    box-sizing: border-box;
+  }
+  .popup-content {
+    max-width: 100%;
+    max-height: 100%;
+    padding: 20px 16px;
+    overflow-y: auto;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+  .popup-content .buttons {
+    flex-wrap: wrap;
+  }
+  .popup-content .buttons button {
+    min-height: 44px;
+  }
+  .popup-container.full-mod-check-overlay,
+  .popup-container.binding-capture-overlay {
+    inset: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    padding: 12px;
+  }
+  .mod-detail-popup {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 52px 16px 24px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .mod-detail-popup .images {
+    height: 180px;
+    margin: 12px 0;
+  }
+  .mod-detail-popup .images img {
+    min-width: 240px;
+    width: 240px;
+    max-height: 160px;
+  }
+  .mod-detail-popup .content img,
+  .mod-detail-popup .content iframe {
+    max-width: 100%;
+  }
+  .mod-detail-popup .closeBtn {
+    top: 4px;
+    right: 4px;
+    min-width: 44px;
+    min-height: 44px;
+    display: grid;
+    place-items: center;
+  }
+  .manage-detail-popup {
+    width: 100%;
+    max-height: 100%;
+  }
+  .manage-detail-popup .detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .download-file-popup {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+  }
+  .download-file-popup .download-file-dialog {
+    max-height: 100%;
+  }
+  .download-file-popup .download-file-heading {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .downloadList {
+    right: 12px;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
+    width: calc(100% - 24px);
+    max-height: 70dvh;
+  }
+}
+
+.mobile-binding-overview-toggle {
+  display: none;
+}
+html[data-mobile-layout] {
+  .settings-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-section,
+  .settings-card,
+  .theme-setting,
+  .theme-picker,
+  .font-scale-control {
+    min-width: 0;
+  }
+  .settings-page .segmented-setting {
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+  .settings-page .font-scale-segments {
+    flex-wrap: wrap;
+  }
+  .theme-picker.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .theme-option-copy {
+    overflow-wrap: anywhere;
+  }
+  .manage-toolbar .manage-title-block {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+  .manage-toolbar .manage-search {
+    order: 1;
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+  .mobile-binding-overview-toggle {
+    display: flex;
+    width: calc(100% - 24px);
+    align-items: center;
+    gap: 10px;
+    margin: 12px;
+    padding: 0 12px;
+    min-height: 44px;
+    text-align: left;
+    font-size: 13px;
+  }
+  .mobile-binding-overview-toggle > .icon:last-child {
+    margin-left: auto;
+  }
+  .binding-overview:not(.mobile-overview-open) {
+    display: none;
+  }
+  .virtual-keyboard-panel,
+  .virtual-controller-panel {
+    margin: 12px;
+  }
+  .virtual-keyboard-board {
+    --keyboard-key-height: 36px;
+  }
+  .virtual-keyboard-key {
+    min-height: var(--keyboard-key-height) !important;
+  }
+  .virtual-controller-button {
+    min-height: 0;
+  }
+  .virtual-controller-header,
+  .virtual-controller-heading {
+    flex-wrap: wrap;
+  }
+  .mod-row-menu button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .everest .load-error {
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  // These selectors also beat the themes' intentionally dense desktop overrides.
+  .manage-page {
+    padding: 0;
+    width: 100%;
+  }
+  .manage-page .toolbar-icon-button,
+  .manage-page .toolbar-action-button {
+    min-height: 44px;
+    height: 44px;
+    width: auto;
+  }
+  .manage-page .toolbar-icon-button {
+    min-width: 44px;
+  }
+  .manage-page .manage-tree-row {
+    min-height: 56px;
+  }
+  .manage-page .tree-expander {
+    height: 44px;
+    min-height: 44px;
+  }
+  .manage-page .tree-row-actions > button {
+    width: 36px;
+    height: 44px;
+    min-height: 44px;
+  }
+  .manage-page .profile-export,
+  .manage-page .profile-rename,
+  .manage-page .profile-delete {
+    width: 40px;
+    height: 44px;
+  }
+  .keybindings-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .keybindings-toolbar .keybindings-search {
+    min-width: 0;
+  }
+  .keybindings-page .mobile-binding-overview-toggle {
+    min-height: 44px;
+  }
+  .keybindings-sources > button {
+    height: auto;
+  }
+  // Navigation and shortcut cards are not the themes' generic filled/pill buttons.
+  .mobile-nav-button,
+  .mobile-nav-button:hover,
+  .mobile-nav-button:active,
+  .mobile-nav-button.selected {
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .mobile-more-grid .mobile-nav-button {
+    background: var(--color-surface) !important;
+  }
+  .home-shortcut {
+    border: 1px solid color-mix(in srgb, var(--color-fg) 9%, transparent) !important;
+    border-radius: 14px !important;
+    background: var(--color-surface-elevated) !important;
+    box-shadow: none !important;
+  }
+}

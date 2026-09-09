@@ -553,10 +553,10 @@ select option {
 
 @keyframes blocking-mask-spin {
   from {
-    opacity: 0.65;
+    transform: rotate(0deg);
   }
   to {
-    opacity: 1;
+    transform: rotate(360deg);
   }
 }
 

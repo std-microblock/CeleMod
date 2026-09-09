@@ -58,6 +58,10 @@ static class DirectTouchTests {
         Check(GameTouch.Inspect(new Level()) == null && GameTouch.Inspect(new object()) == null, "gameplay and unknown scenes keep controls");
         Check(GameTouch.Inspect(new Overworld { Current = new OuiTitleScreen() })?.kind == "continue", "initial title can receive touches without Focused");
         Check(GameTouch.Inspect(new Overworld { Current = new OuiTitleScreen { hideConfirmButton = true } }) == null, "hidden title confirm cannot receive taps");
+        Check(GameTouch.Inspect(new Overworld { Next = new OuiTitleScreen() }) == null,
+            "incoming UI during transition must not expose touch targets");
+        Check(GameTouch.Inspect(new Overworld { Current = new OuiTitleScreen(), transitioning = true }) == null,
+            "transition invalidates outgoing title touch targets");
         var main = new OuiMainMenu();
         var b1 = new MainMenuSmallButton(); var b2 = new MainMenuSmallButton();
         main.Buttons.AddRange(new[] { b1, b2 }); b1.Selected = true; b1.DownButton = b2;
@@ -121,6 +125,14 @@ static class DirectTouchTests {
         Check(namingState.targets.Any(t => t.id == "text" && t.kind == "text") && namingState.targets.Any(t => t.id == "letter/0/0"), "naming exposes native text and alphabet targets");
         GameTouch.TestCommand(new(1, namingState.epoch, "text", "text", text: "ABC"));
         Check(naming.Name == "ABC" && naming.Finished, "native text uses game's OnTextInput validation and Finish");
+        var previousConfirm = Input.MenuConfirm;
+        Input.MenuConfirm = new(); // Rebinding can replace the entire VirtualButton.
+        var titleState = GameTouch.Inspect(new Overworld { Current = new OuiTitleScreen() })!;
+        presses.Clear(); GameTouch.TestCommand(Tap(titleState, "continue"));
+        Check(presses.SetEquals(new[] { Input.MenuConfirm }) && !presses.Contains(previousConfirm),
+            "direct touch uses the current semantic confirm after input reinitialization");
+        Input.MenuConfirm = previousConfirm;
+        presses.Clear();
         var valid = new GameTouch.Command(1, "ok", "menu/1", "tap");
         Check(GameTouch.Accept(valid, "ok") && !GameTouch.Accept(valid, "new"), "protocol epochs validated");
         Check(!GameTouch.Accept(valid with { x = float.NaN }, "ok") && !GameTouch.Accept(valid with { value = float.PositiveInfinity }, "ok"), "nonfinite commands rejected");

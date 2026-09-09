@@ -1,6 +1,7 @@
-export type DesktopPlatform = "windows" | "macos" | "linux";
+export type DesktopPlatform = "windows" | "macos" | "linux" | "android";
 
 export function detectDesktopPlatform(): DesktopPlatform {
+  if (/android/i.test(navigator.userAgent)) return "android";
   const navigatorWithUserAgentData = navigator as Navigator & {
     userAgentData?: { platform?: string };
   };
@@ -15,4 +16,13 @@ export function detectDesktopPlatform(): DesktopPlatform {
 
 export function initializeWindowChrome() {
   document.documentElement.dataset.platform = detectDesktopPlatform();
+  const compact = window.matchMedia("(max-width: 760px)");
+  const updateLayout = () => {
+    document.documentElement.toggleAttribute(
+      "data-mobile-layout",
+      detectDesktopPlatform() === "android" || compact.matches,
+    );
+  };
+  updateLayout();
+  compact.addEventListener("change", updateLayout);
 }

@@ -11,7 +11,7 @@ class ControlProfileTest {
         val p = profile(ControlMode.PAUSE)
         assertFalse(p.stick); assertTrue(p.directions); assertTrue(p.menuDirections)
         assertEquals(ControlIcon.PLAY, p.top?.icon)
-        assertEquals("ESC", p.top?.binding)
+        assertEquals("Pause", p.top?.binding)
         assertEquals(listOf("MenuConfirm", "MenuCancel"), p.actions.map { it.binding })
     }
     @Test fun pauseSubmenusGoBackInsteadOfPretendingToResume() {
@@ -37,6 +37,7 @@ class ControlProfileTest {
         assertTrue(stick.stick); assertFalse(stick.directions)
         assertEquals(listOf("Jump", "Dash", "Grab"), stick.actions.map { it.binding })
         assertEquals(ControlIcon.PAUSE, stick.top?.icon)
+        assertEquals("Pause", stick.top?.binding)
         val pad = profile(ControlMode.GAMEPLAY, joystick = false)
         assertFalse(pad.stick); assertTrue(pad.directions); assertFalse(pad.menuDirections)
     }
@@ -70,6 +71,17 @@ class ControlProfileTest {
         assertTrue(p.actions.any { it.binding == "MenuConfirm" })
         assertEquals(ControlMode.PAUSE, ControlMode.parse("pause"))
     }
+    @Test fun transitionsNeverFlashVirtualFallbackOrAcceptGameActions() {
+        assertEquals(ControlMode.TRANSITION, ControlMode.parse("transition"))
+        for (direct in listOf(false, true)) {
+            val p = ControlProfile.forState(ControlState(ControlMode.TRANSITION), true, true, direct)
+            assertFalse(p.stick); assertFalse(p.directions)
+            assertTrue(p.actions.isEmpty()); assertNull(p.top); assertNull(p.auxiliary)
+        }
+        // Once the transition ends, both real gameplay and unsupported mods retain controls.
+        assertTrue(profile(ControlMode.GAMEPLAY).actions.isNotEmpty())
+        assertTrue(profile(ControlMode.FALLBACK).actions.isNotEmpty())
+    }
     @Test fun searchOffersKeyboardOnlyWhenTextInputIsActive() {
         assertNull(profile(ControlMode.SEARCH).auxiliary)
         val search = ControlProfile.forState(ControlState(ControlMode.SEARCH, keyboard = true), true, true)
@@ -86,6 +98,48 @@ class ControlProfileTest {
         assertEquals(113, ControlKeys.fromXna("LeftControl"))
         assertEquals(144, ControlKeys.fromXna("NumPad0"))
         assertEquals(142, ControlKeys.fromXna("F12"))
+        assertEquals(117, ControlKeys.fromXna("LeftWindows"))
+        assertEquals(120, ControlKeys.fromXna("PrintScreen"))
+        assertEquals(116, ControlKeys.fromXna("Scroll"))
+        assertEquals(121, ControlKeys.fromXna("Pause"))
         assertNull(ControlKeys.fromXna("None"))
+    }
+
+    @Test fun knownEmptyOrUnsupportedBindingsNeverPressSomeOtherActionsDefaultKey() {
+        for (keys in listOf(emptyList(), listOf("None"), listOf("UnsupportedKey"))) {
+            val state = ControlState(bindings = mapOf("Jump" to keys, "Dash" to listOf("C")))
+            assertNull(ControlKeys.resolve(state, "Jump"))
+            assertTrue(ControlKeys.resolveAll(state, "Jump").isEmpty())
+            assertEquals(setOf(31), ControlKeys.resolveAll(state, "Dash"))
+        }
+        // Only absent metadata (older/missing hook) gets compatibility defaults.
+        assertEquals(setOf(31), ControlKeys.resolveAll(ControlState(), "Jump"))
+    }
+
+    @Test fun stickAndDpadCanDriveSeparateMovementAndDashDirections() {
+        val state = ControlState(bindings = mapOf("Left" to emptyList(),
+            "LeftMoveOnly" to listOf("A"), "LeftDashOnly" to listOf("J")))
+        assertEquals(setOf(29, 38), ControlKeys.resolveAll(state, "Left"))
+        assertEquals(setOf(21), ControlKeys.resolveAll(state, "MenuLeft"))
+        assertEquals(setOf(45), ControlKeys.resolveAll(state.copy(bindings = state.bindings +
+            ("Left" to listOf("Q"))), "Left")) // Common key already covers both axes.
+        assertEquals(setOf(29), ControlKeys.resolveAll(state.copy(bindings = state.bindings +
+            ("LeftDashOnly" to listOf("A"))), "Left")) // Shared key is held once.
+        assertTrue(ControlKeys.resolveAll(ControlState(bindings = mapOf("Left" to emptyList())), "Left").isEmpty())
+        assertEquals(setOf(29), ControlKeys.resolveAll(ControlState(bindings =
+            mapOf("LeftMoveOnly" to listOf("A"))), "Left"))
+    }
+
+    @Test fun rebindingAppliesToGameAndMenuActionsIndependently() {
+        val state = ControlState(bindings = mapOf("Jump" to listOf("Space"), "MenuConfirm" to listOf("V"),
+            "Pause" to listOf("P"), "Up" to listOf("W"), "MenuUp" to listOf("I")))
+        assertEquals(setOf(62), ControlKeys.resolveAll(state, "Jump"))
+        assertEquals(setOf(50), ControlKeys.resolveAll(state, "MenuConfirm"))
+        assertEquals(setOf(44), ControlKeys.resolveAll(state, "Pause"))
+        assertEquals(setOf(51), ControlKeys.resolveAll(state, "Up"))
+        assertEquals(setOf(37), ControlKeys.resolveAll(state, "MenuUp"))
+        assertEquals(setOf(39), ControlKeys.resolveAll(state.copy(bindings = state.bindings +
+            ("Jump" to listOf("K"))), "Jump"))
+        assertEquals(setOf(111), ControlKeys.resolveAll(state, "ESC"))
     }
 }

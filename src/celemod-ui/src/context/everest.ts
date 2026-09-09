@@ -8,6 +8,7 @@ import {
   useGamePath,
 } from "../states";
 import { callRemote } from "../utils";
+import { determinateInstallProgress } from "../components/installerProgress";
 
 export interface EverestInstallState {
   installingUrl: string | null;
@@ -148,7 +149,7 @@ export const useEverestCtx = () => {
           setEverestInstallState({
             ...current,
             status,
-            progress: typeof data === "number" ? data : current.progress,
+            progress: determinateInstallProgress(data),
             failedReason: status === "Failed" ? String(data) : null,
           });
           if (status === "Success") ctx.updateEverestVersion();

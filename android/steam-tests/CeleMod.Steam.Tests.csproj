@@ -7,5 +7,8 @@
     <Compile Include="../steam/SyncPlan.cs" Link="SyncPlan.cs" />
     <Compile Include="../steam/SafeFiles.cs" Link="SafeFiles.cs" />
     <Compile Include="../steam/CloudPayload.cs" Link="CloudPayload.cs" />
+    <Compile Include="../steam/CloudAddress.cs" Link="CloudAddress.cs" />
+    <Compile Include="../steam/CloudTransfer.cs" Link="CloudTransfer.cs" />
+    <Compile Include="../steam/CloudProgress.cs" Link="CloudProgress.cs" />
   </ItemGroup>
 </Project>

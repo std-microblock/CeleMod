@@ -12,13 +12,17 @@ export class SteamDownloadMeter {
   private key = "";
 
   sample(status: SteamStatus | undefined, now: number): SteamDownloadRate {
-    const { done, total, downloadedBytes: downloaded, transferredBytes: transferred } = status ?? {};
-    if (!status?.busy || status.operation !== "download" || status.stage !== "downloading" ||
+    const syncing = status?.stage === "syncing";
+    const done = syncing ? status.completedBytes : status?.done;
+    const total = syncing ? status.totalBytes : status?.total;
+    const downloaded = syncing ? status.completedBytes : status?.downloadedBytes;
+    const transferred = status?.transferredBytes;
+    if (!status?.busy || (!syncing && (status.operation !== "download" || status.stage !== "downloading")) ||
         ![now, done, total, downloaded, transferred].every(v => typeof v === "number" && Number.isFinite(v) && v >= 0) || !total) {
       this.samples = []; this.key = ""; return {};
     }
     const point: Sample = { at: now, done: done!, downloaded: downloaded!, transferred: transferred! };
-    const key = `${status.job}:${total}`;
+    const key = `${status.job}:${status.stage}:${total}`;
     const last = this.samples.at(-1);
     if (key !== this.key || (last && (now <= last.at || now - last.at > 15000 ||
         point.done < last.done || point.downloaded < last.downloaded || point.transferred < last.transferred))) this.samples = [];
@@ -44,9 +48,9 @@ export function steamSpeed(rate?: number) {
   return `${(rate / 1024 ** unit).toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
-export function steamEta(seconds?: number) {
+export function steamEta(seconds?: number, completeLabel = "下载已完成") {
   if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return "剩余时间待估算";
-  if (seconds === 0) return "下载已完成";
+  if (seconds === 0) return completeLabel;
   if (seconds < 60) return `剩余约 ${Math.ceil(seconds)} 秒`;
   const minutes = Math.ceil(seconds / 60);
   if (minutes < 60) return `剩余约 ${minutes} 分钟`;

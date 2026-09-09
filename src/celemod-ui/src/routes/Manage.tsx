@@ -1088,6 +1088,7 @@ const ManageTreeNode = ({
 let lastApplyRequest = 0;
 
 export const Manage = () => {
+  const [mobileProfilesOpen, setMobileProfilesOpen] = useState(false);
   const noEverest = enforceEverest();
   const [gamePath] = useGamePath();
   const modPath = `${gamePath}/Mods`;
@@ -2040,8 +2041,12 @@ export const Manage = () => {
   if (noEverest) return noEverest;
 
   return (
-    <div className={`manage-page${profileEnabled ? "" : " profiles-disabled"}`}>
+    <div className={`manage-page${profileEnabled ? "" : " profiles-disabled"}${mobileProfilesOpen ? " mobile-profiles-open" : ""}`}>
       <ManageActionsContext.Provider value={actions}>
+        {profileEnabled && <div className="mobile-manage-tabs centered-tab-buttons">
+          <button type="button" aria-pressed={!mobileProfilesOpen} className={!mobileProfilesOpen ? "selected" : ""} onClick={() => setMobileProfilesOpen(false)}>{_i18n.t("Mod 管理")}</button>
+          <button type="button" aria-pressed={mobileProfilesOpen} className={mobileProfilesOpen ? "selected" : ""} onClick={() => setMobileProfilesOpen(true)}>{_i18n.t("Profile 选择")} ({profiles.length})</button>
+        </div>}
         <section className="manage-main">
           <header className="manage-toolbar">
             <div className="manage-title-block">

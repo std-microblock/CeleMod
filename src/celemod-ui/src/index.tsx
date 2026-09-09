@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.scss";
 import "./i2.css";
+import "./styles/android.scss";
 import { initializeWindowChrome } from "./tauri/window";
 import { initializeCeleModDeepLinks } from "./deepLink";
 import { initializeFrontendLogging } from "./logging";

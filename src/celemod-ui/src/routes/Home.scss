@@ -334,3 +334,15 @@
     font-size: 31px;
   }
 }
+
+.home-launch-error {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  color: theme.$fg;
+  background: theme.$bg2;
+  overflow-wrap: anywhere;
+
+  p { margin: 8px 0 0; }
+}

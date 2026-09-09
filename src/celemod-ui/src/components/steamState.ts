@@ -2,9 +2,12 @@ export type SteamStatus = {
   account: string; steamId: string; busy: boolean; cloud: boolean; offline: boolean;
   pending: boolean; stage?: string; message?: string; done?: number; total?: number;
   downloadedBytes?: number | null; transferredBytes?: number | null;
+  syncPhase?: string | null; completedBytes?: number | null; totalBytes?: number | null;
+  cachedFiles?: number | null; currentFile?: string | null; retryAttempt?: number | null;
   pendingOtherAccount?: boolean;
   hasSavedPassword?: boolean;
   operation?: string; job?: string; revision?: string;
+  launchStage?: "" | "waiting-sync" | "syncing" | "preparing" | "starting";
   conflicts?: { name: string; local: string | null; remote: string | null }[];
   game?: string;
 };

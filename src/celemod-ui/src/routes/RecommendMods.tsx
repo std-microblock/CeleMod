@@ -142,6 +142,23 @@ const recommendedMaps = () => [
     ],
   },
   {
+    name: _i18n.t("画布竞赛"),
+    installName: "CanvasContest",
+    alias: "Canvas Collab / Canvas Contest",
+    previewUrl:
+      "https://celeste.weg.fan/images/gamebanana-submissions/Mod/706886/waean3hb6tp6ql7csi77lnqi4qiwqy4d.jpg",
+    downloadUrl:
+      "https://celeste.weg.fan/api/v2/download/mods/CanvasContest",
+    meta: "~ 458 MiB · 2026-08",
+    recommendations: [
+      _i18n.t("由中文社区举办，历时一年多打磨而成"),
+      _i18n.t("包含 20+ 张地图，围绕独一无二的绘画作品展开"),
+      _i18n.t(
+        "难度覆盖酱二至酱五；进入大厅前需禁用 YaoiHelper、DaxHelper、LeniencyHelper 和 PuzzleHelper",
+      ),
+    ],
+  },
+  {
     name: _i18n.t("春游"),
     installName: "SpringCollab2020",
     alias: "Spring Collab 2020",

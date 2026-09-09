@@ -23,6 +23,7 @@ object SteamBridge {
     private var watching = false
     private var initialized = false
     @Volatile var launching = false
+    @Volatile var launchStage = ""
     val busy get() = active.get()
     private fun ipc(context: Context) = File(context.filesDir, "steam-ipc").apply { mkdirs() }
     private fun prefs(context: Context) = File(context.filesDir, "steam-settings.json")
@@ -68,6 +69,7 @@ object SteamBridge {
         val account = try { SteamVault.read(context) } catch (_: Exception) { null }
         val settings = json(prefs(context))
         result.put("operation", json(operation(context)).optString("action"))
+        result.put("launchStage", if (launching) launchStage else "")
         result.put("busy", busy).put("account", account?.optString("account") ?: "")
             .put("hasSavedPassword", !account?.optString("password").isNullOrEmpty())
             .put("steamId", account?.optString("steamId") ?: "").put("cloud", settings.optBoolean("cloud", true))
@@ -84,7 +86,9 @@ object SteamBridge {
         return result
     }
     private fun failure(context: Context, message: String) {
-        atomic(File(ipc(context), "status.json"), JSONObject().put("stage", "error").put("message", message))
+        val file = File(ipc(context), "status.json")
+        val value = try { json(file) } catch (_: Exception) { JSONObject() }
+        atomic(file, value.put("stage", "error").put("message", message))
     }
     @Synchronized private fun ensureRuntime(context: Context) {
         runtimeError?.let { error(it) }
@@ -174,10 +178,22 @@ object SteamBridge {
     }
     private fun exclusive(context: Context, block: () -> Unit) {
         check(active.compareAndSet(false, true)) { "Steam 操作正在进行，请等待完成。" }
-        cancellationRequested.set(false); File(ipc(context), "cancel").delete()
-        atomic(operation(context), JSONObject().put("action", "sync"))
-        try { service(context, true); block() }
-        finally { service(context, false); active.set(false) }
+        try {
+            cancellationRequested.set(false); File(ipc(context), "cancel").delete()
+            atomic(operation(context), JSONObject().put("action", "sync"))
+            // Do not display the previous job's completed totals while this host connects.
+            atomic(File(ipc(context), "status.json"), JSONObject().put("stage", "connecting")
+                .put("message", "正在连接 Steam，准备同步启动所需的云存档…"))
+            service(context, true)
+            block()
+        } catch (e: Exception) {
+            if (status(context).optString("stage") != "conflict") {
+                if (cancellationRequested.get()) atomic(File(ipc(context), "status.json"), JSONObject()
+                    .put("stage", "cancelled").put("message", "已取消启动。本地游戏和未同步存档已保留。"))
+                else failure(context, e.message ?: "启动前云存档同步失败")
+            }
+            throw e // A failed/cancelled sync must never proceed to GameActivity.
+        } finally { try { service(context, false) } finally { active.set(false) } }
     }
     fun command(context: Context, args: JSONObject): JSONObject {
         val action = args.getString("action")
@@ -255,7 +271,10 @@ object SteamBridge {
         val settings = json(prefs(context))
         val previous = json(pending(context)).optString("game")
         check(previous.isEmpty() || previous == game.absolutePath) { "其他账号/游戏还有待同步存档，请先完成同步。" }
-        if (settings.optBoolean("cloud", true) && !settings.optBoolean("offline", false)) exclusive(context) { sync(context, game, phase = "launch") }
+        if (settings.optBoolean("cloud", true) && !settings.optBoolean("offline", false)) {
+            launchStage = "syncing"
+            exclusive(context) { sync(context, game, phase = "launch") }
+        }
         markPending(context, game)
     }
     /** Poll process liveness, not activity pause: never upload while the game is still writing saves. */

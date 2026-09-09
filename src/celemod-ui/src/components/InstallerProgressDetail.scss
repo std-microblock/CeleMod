@@ -1,0 +1,24 @@
+.android-installer-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(560px, 90%);
+  min-width: 0;
+  margin: 14px auto;
+  text-align: center;
+  font-size: 14px;
+  > span { font-variant-numeric: tabular-nums; opacity: .75; }
+  p { margin: 0; font-size: 12px; opacity: .7; }
+  pre {
+    margin: 0;
+    padding: 10px;
+    max-height: 120px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    border-radius: 8px;
+    background: rgba(127, 127, 127, .12);
+    font-size: 12px;
+    text-align: left;
+  }
+}

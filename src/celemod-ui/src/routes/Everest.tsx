@@ -28,6 +28,8 @@ import {
   useUpdateInfo,
 } from "../api/updateInfo";
 import { useEverestInstallState } from "../context/everest";
+import { InstallerProgressDetail } from "../components/InstallerProgressDetail";
+import { parseAndroidInstallerProgress } from "../components/installerProgress";
 
 interface Maddie480EverestVersion {
   date: string;
@@ -468,7 +470,9 @@ export const Everest = () => {
               </div>
               <div className="tip">{getInstallTip(installState)}</div>
               <div className="url">{installingUrl}</div>
-              {getInstallDetail(installState) ? (
+              {parseAndroidInstallerProgress(installState) ? (
+                <InstallerProgressDetail status={installState} />
+              ) : getInstallDetail(installState) ? (
                 <div className="state">{getInstallDetail(installState)}</div>
               ) : null}
             </Fragment>

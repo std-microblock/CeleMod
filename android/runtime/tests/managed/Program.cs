@@ -34,7 +34,9 @@ Mode(new Overworld { Current = new Celeste.Mod.UI.OuiNumberEntry() }, "naming");
 Mode(new Overworld { Current = new Celeste.Mod.UI.OuiMapSearch() }, "search");
 Mode(new Overworld { Current = new CustomMenu() }, "menu");
 Mode(new Overworld { Current = new OuiChapterSelect(), Overlay = new object() }, "menu");
-Mode(new Overworld { Next = new OuiJournal() }, "journal");
+Mode(new Overworld { Next = new OuiJournal() }, "transition");
+Mode(new Overworld { Current = new OuiTitleScreen(), transitioning = true }, "transition");
+Mode(new Overworld { Current = new OuiChapterPanel(), transitioning = true }, "transition");
 Mode(new Overworld { Last = new OuiTitleScreen() }, "title");
 Mode(new Celeste.Pico8.Emulator(), "pico8");
 Mode(new AreaComplete(), "complete");
@@ -43,6 +45,8 @@ Mode(new LevelExit(), "complete");
 Mode(new Credits(), "complete");
 Mode(new object(), "fallback");
 Console.WriteLine($"PASS: {count} managed scene classification cases.");
+BindingTests.Run();
+GameHookTests.Run();
 DirectTouchTests.Run();
 
 class CustomLevel : Level { }
@@ -58,7 +62,7 @@ namespace Celeste {
         public object? Overlay { get; set; }
         public List<Monocle.Entity> Entities { get; set; } = new();
     }
-    class Overworld { public object? Current; public object? Next; public object? Last; public object? Overlay; public List<Monocle.Entity> Entities = new(); }
+    class Overworld { public object? Current; public object? Next; public object? Last; public object? Overlay; public bool transitioning; public List<Monocle.Entity> Entities = new(); }
     class Textbox : Monocle.Entity { public bool Opened { get; set; } }
     partial class TextMenu : Monocle.Entity { public bool Focused; }
     class OuiTitleScreen : Monocle.Entity { public bool hideConfirmButton; }

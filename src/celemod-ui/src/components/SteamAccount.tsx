@@ -7,6 +7,8 @@ import { useGlobalContext } from "../App";
 import { Icon } from "./Icon";
 import { canUseSavedSteamPassword, steamActivity, steamIssue, steamProgress, steamScreen, type SteamPanel, type SteamStatus } from "./steamState";
 import { SteamDownloadMeter, steamEta, steamSpeed, type SteamDownloadRate } from "./steamDownload";
+import { SteamSyncProgress } from "./SteamSyncProgress";
+import { SteamLaunchProgress } from "./SteamLaunchProgress";
 import "./SteamAccount.scss";
 
 const command = (request: Record<string, unknown>) => invoke<SteamStatus>("android_steam", { request });
@@ -33,6 +35,7 @@ export function SteamAccount() {
   const [guardSubmitted, setGuardSubmitted] = useState("");
   const [panel, setPanel] = useState<SteamPanel>("main");
   const [open, setOpen] = useState(false);
+  const [launchWaiting, setLaunchWaiting] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -73,6 +76,16 @@ export function SteamAccount() {
     return () => { stopped = true; alive.current = false; clearTimeout(timer); clearTimeout(closeTimer.current); };
   }, []);
   useEffect(() => { if (!status?.busy) { setCanceling(false); setGuardSubmitted(""); } }, [status?.busy]);
+  useEffect(() => {
+    const preparing = () => { setLaunchWaiting(true); setPanel("main"); setOpen(true); };
+    const finished = () => setLaunchWaiting(false);
+    window.addEventListener("celemod:launch-preparing", preparing);
+    window.addEventListener("celemod:launch-finished", finished);
+    return () => {
+      window.removeEventListener("celemod:launch-preparing", preparing);
+      window.removeEventListener("celemod:launch-finished", finished);
+    };
+  }, []);
   useEffect(() => { if (status?.account) setAccount(status.account); }, [status?.account]);
   useEffect(() => {
     if (open) {
@@ -137,6 +150,7 @@ export function SteamAccount() {
   const issue = problem ? steamIssue(problem) : undefined;
   const activity = steamActivity(status);
   const downloading = !!status?.busy && status.operation === "download" && status.stage === "downloading";
+  const syncing = !!status && (status.stage === "syncing" || !!status.syncPhase && ["error", "complete"].includes(status.stage ?? ""));
   const downloadPending = !!status?.busy && status.operation === "download" && !["syncing", "guard-confirm", "guard-email", "guard-device", "downloaded"].includes(status.stage ?? "");
   const downloadStats = <span className="steam-download-stats"><span>{steamSpeed(rate.bytesPerSecond)}</span><span>{steamEta(rate.secondsRemaining)}</span></span>;
   const cloudLabel = status?.offline ? "离线游玩" : !status?.cloud ? "自动同步已关闭" : status?.pending ? "存档等待同步" : "自动云存档已开启";
@@ -159,6 +173,7 @@ export function SteamAccount() {
       onClick={() => { setPanel("main"); setOpen(true); }}>
       <span className="steam-mark"><FaSteam aria-hidden="true" /></span>
       <span className="steam-entry-copy"><strong>{status?.account ? `Steam · ${status.account}` : "从 Steam 获取游戏"}</strong><span>{summary}</span>
+        {syncing && <SteamSyncProgress status={status!} rate={rate} compact />}
         {downloadPending && <span className="steam-entry-download">
           <progress className="steam-download-bar" aria-label="Celeste 下载进度" max={100} value={downloading ? percent : undefined} />
           {downloading && downloadStats}
@@ -188,6 +203,8 @@ export function SteamAccount() {
             {status?.operation === "download" && status.account && !busy && screen === "overview" && <button type="button" onClick={() => navigate("download")}>重试下载</button>}
           </div>}
           {notice && <p className="steam-callout" role="status">{notice}</p>}
+          {launchWaiting && <SteamLaunchProgress status={status} />}
+          {syncing && screen !== "progress" && <SteamSyncProgress status={status!} rate={rate} />}
           {status?.pendingOtherAccount && !status.busy && <p className="steam-callout">另一个 Steam 账号还有待同步存档。请先切回原账号完成同步，避免混用进度。</p>}
           {status?.stage === "interrupted" && !status.busy && <p className="steam-callout">上次操作被中断。游戏和未同步存档已保留，可以重新尝试。</p>}
           {status?.stage === "cancelled" && !status.busy && <p className="steam-muted" role="status">已取消。本地游戏和存档未被删除。</p>}
@@ -236,11 +253,11 @@ export function SteamAccount() {
           {screen === "progress" && <>
             <div className="steam-transfer-art"><FaSteam aria-hidden="true" /><span className="steam-spinner" /></div>
             <p className="steam-intro">{status?.stage === "syncing" ? "正在比较并同步手机与 Steam 云端的进度。" : status?.operation === "download" ? "正在获取你已购买的游戏资源，请保持网络连接。" : status?.operation === "probe" ? "只检查与 Steam 的连接，不会登录你的账号。" : "正在与 Steam 建立安全连接，请稍候。"}</p>
-            <div className="steam-progress" role="status"><div><span>{activity}</span>{percent !== undefined && <strong>{percent}%</strong>}</div>
+            {syncing ? <SteamSyncProgress status={status!} rate={rate} /> : <div className="steam-progress" role="status"><div><span>{activity}</span>{percent !== undefined && <strong>{percent}%</strong>}</div>
               <progress className="steam-download-bar" aria-label={activity} max={100} value={percent} />
               {downloading && downloadStats}
               {status?.stage === "downloading" && !!status.total && <small>{Math.floor((status.done ?? 0) / 1048576)} / {Math.ceil(status.total / 1048576)} MiB</small>}
-            </div>
+            </div>}
             <button type="button" className="steam-primary" onClick={close}>收起面板</button>
             <p className="steam-footnote">收起不会取消操作，可从 Steam 入口查看进度。</p>
             <button type="button" className="steam-text-button" disabled={sending || canceling} onClick={() => void cancel()}>{canceling ? "正在取消，请稍候…" : "取消当前操作"}</button>

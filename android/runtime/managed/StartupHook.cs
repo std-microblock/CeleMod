@@ -8,9 +8,20 @@ internal static class StartupHook
 {
     public static void Initialize()
     {
+        if (Environment.GetEnvironmentVariable("CELEMOD_INSTALLER") == "1") InstallerLog.Install();
+        InstallerDependencies.Prepare(AppContext.BaseDirectory,
+            Environment.GetEnvironmentVariable("MONOMOD_PATH")!);
+        // Run the pinned RAL hook after selecting the edition-specific dependencies.
+        var ralHook = Environment.GetEnvironmentVariable("CELEMOD_RAL_HOOK");
+        if (!string.IsNullOrEmpty(ralHook)) {
+            var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(ralHook);
+            assembly.GetType("StartupHook", true)!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null);
+        }
         if (Environment.GetEnvironmentVariable("CELEMOD_INSTALLER") == "1")
             PatchInstaller();
         else {
+            SteamPlatform.Install();
+            GameDisplay.Install();
             PatchGameProgress();
             GameControls.Install();
         }
@@ -29,7 +40,7 @@ internal static class StartupHook
         Console.WriteLine("[CeleMod] Android apphost adaptation installed.");
     }
 
-    internal static void Patch(MethodInfo method, string prefixName, Type? owner = null, bool postfix = false)
+    internal static void Patch(MethodBase method, string prefixName, Type? owner = null, bool postfix = false)
     {
         // Resolve RAL's net10 Harmony at runtime; the hook itself builds with a stock
         // .NET 8 SDK and does not accidentally bundle desktop MonoMod dependencies.

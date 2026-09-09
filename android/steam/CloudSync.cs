@@ -31,11 +31,11 @@ internal sealed class CloudSync(Session session, string game, string state)
         foreach (var file in reply.files) {
             var name = SyncPlan.RemoteName(reply.path_prefixes, file.path_prefix_index, file.file_name);
             // Fail closed on unknown files rather than mapping two names onto the same save.
-            SyncPlan.SaveName(name);
+            var key = SyncPlan.SaveKey(name);
             if (file.persist_state == ECloudStoragePersistState.k_ECloudStoragePersistStateDeleted) continue;
             if (file.persist_state != ECloudStoragePersistState.k_ECloudStoragePersistStatePersisted)
                 throw new SteamFailure("其他设备的云存档尚未提交，请在 PC 端完成同步后重试。");
-            if (file.sha_file is not { Length: 20 } || file.raw_file_size > FileLimit || !result.TryAdd(name, new(name, file.sha_file, file.raw_file_size, file.time_stamp)))
+            if (file.sha_file is not { Length: 20 } || file.raw_file_size > FileLimit || !result.TryAdd(key, new(name, file.sha_file, file.raw_file_size, file.time_stamp)))
                 throw new InvalidDataException("Steam 云存档清单重复、过大或无效。");
         }
         if (result.Count > 1000 || result.Values.Sum(f => (long)f.Size) > 1_000_000_000)
@@ -87,12 +87,27 @@ internal sealed class CloudSync(Session session, string game, string state)
             plan = plan.Select(p => p.Action == SyncAction.Conflict ? p with { Action = choice == "local" ? SyncAction.Push : SyncAction.Pull } : p).ToList();
         }
         var work = plan.Where(p => p.Action != SyncAction.None).ToList();
-        if (work.Count == 0) { Program.Write(baselinePath, local); File.Delete(conflictPath); NotifyExit(false); return; }
+        if (work.Count == 0) {
+            Program.Write(baselinePath, local); File.Delete(conflictPath); NotifyExit(false);
+            var bytes = remoteFiles.Values.Sum(file => (long)file.Size);
+            Program.SyncStatus(new(local.Count, local.Count, bytes, bytes, 0, local.Count,
+                "complete", "本地与 Steam 云端一致，无需传输", null, 0));
+            return;
+        }
+        var pushes = work.Where(p => p.Action == SyncAction.Push).ToList();
+        var downloads = work.Where(p => p.Remote != null).ToList();
+        var uploads = pushes.Where(p => p.Local != null).ToList();
+        var progress = new CloudProgress(downloads.Count + uploads.Count,
+            downloads.Sum(p => (long)remoteFiles[p.Name].Size) + uploads.Sum(p => new FileInfo(LocalPath(p.Name)).Length),
+            Program.SyncStatus);
+        progress.Stage("download", "正在备份并下载云存档…");
         // Persist BOTH versions before any overwrite/deletion. A failed sync never discards these snapshots.
         var backup = Path.Combine(state, "backups", DateTime.UtcNow.ToString("yyyyMMddTHHmmssfff") + "-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(backup);
         Program.Write(Path.Combine(backup, "plan.json"), plan);
-        using var http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(60) };
+        using var http = new HttpClient(new SocketsHttpHandler {
+            AllowAutoRedirect = false, ConnectTimeout = TimeSpan.FromSeconds(10), MaxConnectionsPerServer = 4
+        }) { Timeout = TimeSpan.FromSeconds(60) };
         foreach (var entry in work) {
             Program.Cancel.ThrowIfCancellationRequested();
             if (entry.Local != null) {
@@ -100,28 +115,39 @@ internal sealed class CloudSync(Session session, string game, string state)
                 Directory.CreateDirectory(Path.GetDirectoryName(copy)!); File.Copy(LocalPath(entry.Name), copy);
                 if (SafeFiles.Hash(copy) != entry.Local) throw new SteamFailure("本地存档在同步过程中发生变化，请退出游戏后重试。");
             }
-            if (entry.Remote != null) await Download(http, remoteFiles[entry.Name], SafeFiles.Under(backup, "cloud/" + entry.Name));
         }
+        // Bounded concurrency prevents hundreds of tiny mod saves serializing
+        // network latency. Nothing is applied until ALL snapshots are verified.
+        await Parallel.ForEachAsync(downloads, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = Program.Cancel },
+            async (entry, cancel) => await Download(http, remoteFiles[entry.Name], SafeFiles.Under(backup, "cloud/" + entry.Name), progress, cancel));
+        progress.Stage("verify", "传输完成，正在复核两端存档…");
         if (!SyncPlan.Same(local, LocalHashes()) || !SyncPlan.Same(remote, Hashes(await List())))
             throw new SteamFailure("同步期间存档发生变化，备份已保留，请重试。");
-        var pushes = work.Where(p => p.Action == SyncAction.Push).ToList();
         if (pushes.Count > 0) {
+            progress.Stage("upload", "正在上传手机存档…");
             var quota = Body(await session.Cloud.ClientGetAppQuotaUsage(new CCloud_ClientGetAppQuotaUsage_Request { appid = Session.AppId }).ToTask().WaitAsync(Program.Cancel));
             var expected = new Dictionary<string, long>(remoteFiles.ToDictionary(p => p.Key, p => (long)p.Value.Size));
             foreach (var entry in pushes) { if (entry.Local == null) expected.Remove(entry.Name); else expected[entry.Name] = new FileInfo(LocalPath(entry.Name)).Length; }
             if (expected.Count > quota.max_num_files || (ulong)expected.Values.Sum() > quota.max_num_bytes)
                 throw new SteamFailure("Steam 云存档配额不足，未开始上传。");
             var begin = new CCloud_BeginAppUploadBatch_Request { appid = Session.AppId, machine_name = "CeleMod Android", client_id = session.ClientId };
-            begin.files_to_upload.AddRange(pushes.Where(p => p.Local != null).Select(p => p.Name));
-            begin.files_to_delete.AddRange(pushes.Where(p => p.Local == null).Select(p => p.Name));
+            // Local/baseline keys are canonical; every Steam request must retain
+            // the exact remote name (including the Auto-Cloud root token).
+            string WireName(SyncEntry entry) => SyncPlan.UploadName(entry.Name, remoteFiles.GetValueOrDefault(entry.Name)?.Name);
+            begin.files_to_upload.AddRange(pushes.Where(p => p.Local != null).Select(WireName));
+            begin.files_to_delete.AddRange(pushes.Where(p => p.Local == null).Select(WireName));
             var batch = Body(await session.Cloud.BeginAppUploadBatch(begin).ToTask().WaitAsync(Program.Cancel));
             var success = false;
             try {
                 foreach (var entry in pushes) {
                     if (entry.Local == null) Body(await session.Cloud.ClientDeleteFile(new CCloud_ClientDeleteFile_Request {
-                        appid = Session.AppId, filename = entry.Name, is_explicit_delete = true, upload_batch_id = batch.batch_id
+                        appid = Session.AppId, filename = WireName(entry), is_explicit_delete = true, upload_batch_id = batch.batch_id
                     }).ToTask().WaitAsync(Program.Cancel));
-                    else await Upload(http, entry.Name, SafeFiles.Under(backup, "local/" + entry.Name), batch.batch_id);
+                    else {
+                        var snapshot = SafeFiles.Under(backup, "local/" + entry.Name);
+                        await Upload(http, WireName(entry), snapshot, batch.batch_id, progress);
+                        progress.Complete(new FileInfo(snapshot).Length);
+                    }
                 }
                 success = true;
             } finally {
@@ -132,11 +158,13 @@ internal sealed class CloudSync(Session session, string game, string state)
             }
         }
         if (!SyncPlan.Same(local, LocalHashes())) throw new SteamFailure("本地存档发生变化，停止写回；两端备份已保留。");
+        progress.Stage("verify", "正在确认 Steam 云端版本…");
         var desired = new Dictionary<string, string>(local);
         foreach (var entry in work.Where(p => p.Action == SyncAction.Pull)) {
             if (entry.Remote == null) desired.Remove(entry.Name); else desired[entry.Name] = entry.Remote;
         }
         if (!SyncPlan.Same(desired, Hashes(await List()))) throw new SteamFailure("云端在同步期间变化或尚未确认上传，请重试；不会标记为已同步。");
+        progress.Stage("apply", "正在写入已校验存档，完成后即可启动…");
         foreach (var entry in work.Where(p => p.Action == SyncAction.Pull)) {
             var path = LocalPath(entry.Name);
             if (entry.Remote == null) File.Delete(path);
@@ -152,47 +180,53 @@ internal sealed class CloudSync(Session session, string game, string state)
         Program.Write(baselinePath, desired);
         File.Delete(conflictPath);
         NotifyExit(pushes.Count > 0);
+        progress.Stage("complete", "Steam 云存档同步完成");
     }
 
-    private static Uri Url(string host, string path)
-    {
-        // Never send signed Steam instructions over cleartext HTTP or follow redirects carrying their headers.
-        if (!Uri.TryCreate("https://" + host + path, UriKind.Absolute, out var uri) || uri.UserInfo != "" || uri.Port != 443 || uri.HostNameType != UriHostNameType.Dns ||
-            !new[] { "steamcontent.com", "steamusercontent.com", "steampowered.com", "steamstatic.com", "amazonaws.com" }.Any(d => uri.Host == d || uri.Host.EndsWith("." + d, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidDataException("Steam 返回了不支持的云存储地址，已停止传输。");
-        return uri;
-    }
     private static void Headers(HttpRequestMessage request, IEnumerable<(string name, string value)> headers) {
         foreach (var header in headers) {
             if (header.name.Equals("Host", StringComparison.OrdinalIgnoreCase) || header.name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase)) continue;
             if (!request.Headers.TryAddWithoutValidation(header.name, header.value)) request.Content?.Headers.TryAddWithoutValidation(header.name, header.value);
         }
     }
-    private async Task Download(HttpClient http, RemoteFile file, string destination)
+    private async Task Download(HttpClient http, RemoteFile file, string destination, CloudProgress progress, CancellationToken cancel)
     {
-        Program.Status("syncing", "下载云存档 " + file.Name);
-        var info = Body(await session.Cloud.ClientFileDownload(new CCloud_ClientFileDownload_Request { appid = Session.AppId, filename = file.Name }).ToTask().WaitAsync(Program.Cancel));
-        if (info.encrypted || info.is_explicit_delete || info.raw_file_size != file.Size || !info.sha_file.SequenceEqual(file.Hash))
-            throw new InvalidDataException("云存档版本已变化或使用了不支持的加密格式。");
-        using var request = new HttpRequestMessage(HttpMethod.Get, Url(info.url_host, info.url_path)); Headers(request, info.request_headers.Select(h => (h.name, h.value)));
-        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.Cancel);
-        response.EnsureSuccessStatusCode();
-        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-        await using (var input = await response.Content.ReadAsStreamAsync(Program.Cancel))
-        await using (var output = File.Create(destination)) {
-            var buffer = new byte[65536]; long total = 0;
-            while (true) {
-                var n = await input.ReadAsync(buffer, Program.Cancel); if (n == 0) break;
-                total += n; if (total > FileLimit) throw new InvalidDataException("云存档下载超过安全大小限制。");
-                await output.WriteAsync(buffer.AsMemory(0, n), Program.Cancel);
+        var name = SyncPlan.SaveName(file.Name);
+        var cache = SafeFiles.Under(Path.Combine(state, "download-cache"), Convert.ToHexString(file.Hash) + "-" + file.Size);
+        if (CloudTransfer.UseCache(cache, destination, file.Hash, file.Size)) { progress.Complete(file.Size, true); return; }
+        string? reason = null;
+        for (var attempt = 1; attempt <= 3; attempt++) {
+            cancel.ThrowIfCancellationRequested();
+            progress.Start(name, attempt, reason);
+            var host = "Steam 文件地址服务";
+            try {
+                // Ask Steam for a fresh signed URL on every retry, not a stale CDN URL.
+                var info = Body(await session.Cloud.ClientFileDownload(new CCloud_ClientFileDownload_Request { appid = Session.AppId, filename = file.Name })
+                    .ToTask().WaitAsync(TimeSpan.FromSeconds(30), cancel));
+                if (info.encrypted || info.is_explicit_delete || info.raw_file_size != file.Size || !info.sha_file.SequenceEqual(file.Hash))
+                    throw new InvalidDataException("云存档版本已变化或使用了不支持的加密格式。");
+                var url = CloudAddress.Url(info.url_host, info.url_path); host = url.Host;
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                Headers(request, info.request_headers.Select(h => (h.name, h.value)));
+                await CloudTransfer.Receive(http, request, destination, FileLimit, progress.Bytes, cancel);
+                if (info.file_size != info.raw_file_size) CloudPayload.Unpack(destination, file.Size);
+                SafeFiles.Verify(destination, file.Hash, file.Size);
+                Directory.CreateDirectory(Path.GetDirectoryName(cache)!);
+                var temp = cache + "." + Guid.NewGuid().ToString("N") + ".part";
+                try { File.Copy(destination, temp); File.Move(temp, cache, true); }
+                finally { File.Delete(temp); }
+                progress.Complete(file.Size);
+                return;
+            } catch (Exception error) when (CloudTransfer.Retryable(error, cancel)) {
+                reason = CloudTransfer.Reason(error) + "（" + host + "）";
+                if (attempt == 3) throw new SteamFailure($"云存档 {name}：{reason}，重试 3 次仍未完成。已校验文件会保留，重试同步时无需重新下载；尚未覆盖游戏存档。");
+                await Task.Delay(TimeSpan.FromSeconds(attempt), cancel);
             }
         }
-        if (info.file_size != info.raw_file_size) CloudPayload.Unpack(destination, file.Size);
-        SafeFiles.Verify(destination, file.Hash, file.Size);
     }
-    private async Task Upload(HttpClient http, string name, string snapshot, ulong batch)
+    private async Task Upload(HttpClient http, string name, string snapshot, ulong batch, CloudProgress progress)
     {
-        Program.Status("syncing", "上传云存档 " + name);
+        progress.Start(SyncPlan.SaveName(name));
         var bytes = await File.ReadAllBytesAsync(snapshot, Program.Cancel); var hash = SHA1.HashData(bytes);
         var info = Body(await session.Cloud.ClientBeginFileUpload(new CCloud_ClientBeginFileUpload_Request {
             appid = Session.AppId, filename = name, file_size = (uint)bytes.Length, raw_file_size = (uint)bytes.Length,
@@ -209,9 +243,10 @@ internal sealed class CloudSync(Session session, string game, string state)
                     if (block.block_offset + block.block_length > (ulong)bytes.Length) throw new InvalidDataException("云上传分块越界。");
                     body = bytes.AsSpan((int)block.block_offset, (int)block.block_length).ToArray();
                 }
-                using var request = new HttpRequestMessage(HttpMethod.Put, Url(block.url_host, block.url_path)) { Content = new ByteArrayContent(body) };
+                using var request = new HttpRequestMessage(HttpMethod.Put, CloudAddress.Url(block.url_host, block.url_path)) { Content = new ByteArrayContent(body) };
                 Headers(request, block.request_headers.Select(h => (h.name, h.value)));
                 using var response = await http.SendAsync(request, Program.Cancel); response.EnsureSuccessStatusCode();
+                progress.Bytes(body.Length);
             }
             success = true;
         } finally {

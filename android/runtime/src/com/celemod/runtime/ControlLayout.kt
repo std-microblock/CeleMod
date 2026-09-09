@@ -32,7 +32,7 @@ object ControlLayout {
         }
     }
 
-    private fun validId(id: String) = id.isNotEmpty() && id.length <= 80 &&
+    internal fun validId(id: String) = id.isNotEmpty() && id.length <= 80 &&
         id.all { it.isLetterOrDigit() || it in "/-_" }
 
     fun normalize(center: ControlPoint, bounds: ControlBounds) = ControlPoint(
@@ -63,11 +63,15 @@ object ControlLayout {
 }
 
 /** Changes stay private until Save. Reset is also undoable by cancelling the editor. */
-class ControlLayoutDraft(saved: Map<String, ControlPoint>) {
+class ControlLayoutDraft(saved: Map<String, ControlPoint>, savedStyles: Map<String, ControlStyle> = emptyMap()) {
     private val positions = saved.toMutableMap()
+    private val styles = savedStyles.toMutableMap()
     fun snapshot(): Map<String, ControlPoint> = positions.toMap()
+    fun styleSnapshot(): Map<String, ControlStyle> = styles.toMap()
+    fun style(id: String) = styles[id] ?: ControlStyle()
+    fun setStyle(id: String, style: ControlStyle) { styles[id] = style.normalized() }
     fun get(id: String) = positions[id]
     fun move(id: String, point: ControlPoint) { if (point.finite) positions[id] = point.normalized() }
     fun restore(id: String, point: ControlPoint?) { if (point == null) positions.remove(id) else positions[id] = point }
-    fun reset() = positions.clear()
+    fun reset() { positions.clear(); styles.clear() }
 }

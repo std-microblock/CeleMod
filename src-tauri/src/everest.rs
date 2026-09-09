@@ -300,6 +300,10 @@ fn run_command(
     step_label: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
+    #[cfg(target_os = "android")]
+    return crate::android::install_everest(&installer_path, step_label, progress_callback);
+    #[cfg(not(target_os = "android"))]
+    {
     let mut cmd = Command::new(&installer_path);
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
@@ -369,6 +373,12 @@ fn run_command(
     progress_callback(step_label.to_string(), 100.0);
 
     Ok(())
+    }
+}
+
+#[cfg(target_os = "android")]
+fn installer_name() -> anyhow::Result<&'static str> {
+    Ok("MiniInstaller.dll")
 }
 
 #[cfg(target_os = "windows")]
@@ -416,6 +426,8 @@ fn install_everest_archive_with_steps(
     installer_step: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
+    #[cfg(target_os = "android")]
+    crate::android::can_install()?;
     if !is_everest_install_archive(archive_path)? {
         bail!("The zip is not an Everest install package for this platform");
     }
@@ -429,7 +441,8 @@ fn install_everest_archive_with_steps(
 
     for i in 0..archive_len {
         let mut file = archive.by_index(i)?;
-        let dist_name = file.mangled_name().strip_prefix("main/")?.to_path_buf();
+        let safe_name = file.enclosed_name().context("Unsafe Everest archive path")?;
+        let dist_name = safe_name.strip_prefix("main/")?.to_path_buf();
         let outpath = game_path.join(&dist_name);
         let status_str = format!("{extract_step}: {}", outpath.display());
         progress_callback(status_str, (i as f32) / (archive_len as f32) * 100.0);

@@ -12,6 +12,8 @@ import { callRemote } from "../utils";
 import { Icon } from "./Icon";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
+import { InstallerProgressDetail } from "./InstallerProgressDetail";
+import { parseAndroidInstallerProgress } from "./installerProgress";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./DropInstaller.scss";
 import { installProfileFile } from "../profileInstall";
@@ -47,7 +49,7 @@ const splitProgressDetail = (detail: string) => {
   };
 };
 
-const LocalInstallPopup = ({
+export const LocalInstallPopup = ({
   paths,
   gamePath,
   autoDisableNewMods,
@@ -89,7 +91,10 @@ const LocalInstallPopup = ({
           setFatalError(payload);
         }
       },
-    );
+    ).catch(error => {
+      localInstallRunning = false;
+      setFatalError(String(error));
+    });
   }, []);
 
   const successCount = results?.filter((result) => result.success).length ?? 0;
@@ -173,7 +178,9 @@ const LocalInstallPopup = ({
             <div className="progress-file" title={progress?.file ?? paths[0]}>
               {progress?.file ?? getDisplayFileName(paths[0])}
             </div>
-            {detail.description ? (
+              {parseAndroidInstallerProgress(progress?.detail ?? null) ? (
+                <InstallerProgressDetail status={progress?.detail ?? null} />
+              ) : detail.description ? (
               <div className="progress-detail" title={progress?.detail}>
                 {detail.step ? (
                   <span className="progress-step">{detail.step}</span>
@@ -216,6 +223,15 @@ const showMissingGamePopup = () => {
     );
   });
 };
+
+export function showLocalPackageInstaller(paths: string[], gamePath: string, autoDisableNewMods: boolean,
+  onInstalled: (results: LocalInstallResult[]) => void) {
+  if (localInstallRunning || !paths.length) return;
+  if (!gamePath) { showMissingGamePopup(); return; }
+  localInstallRunning = true;
+  createPopup(() => <LocalInstallPopup paths={paths} gamePath={gamePath}
+    autoDisableNewMods={autoDisableNewMods} onInstalled={onInstalled} />, { cancelable: false });
+}
 
 export const DropInstaller = () => {
   initAutoDisableNewMods();

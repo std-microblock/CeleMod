@@ -3,6 +3,7 @@ import { createPopup } from "./Popup";
 import { callRemote, compareVersion } from "../utils";
 import "./SelfUpdate.scss";
 import { useState } from "react";
+import { detectDesktopPlatform } from "../tauri/window";
 import { ProgressIndicator } from "./Progress";
 import {
   getLatestUpdateInfo,
@@ -10,6 +11,8 @@ import {
 } from "../api/updateInfo";
 
 export const checkUpdate = async (forceRefresh = false) => {
+  // The desktop updater downloads executables, not APK updates.
+  if (detectDesktopPlatform() === "android") return;
   const currentVersion = (await callRemote<string>("celemod_version"))
     .split("")
     .filter((v) => v === "." || !isNaN(parseInt(v)))

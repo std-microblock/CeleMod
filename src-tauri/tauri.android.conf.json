@@ -1,0 +1,11 @@
+{
+  "identifier": "cc.microblock.celemod",
+  "build": {
+    "beforeBuildCommand": "pnpm build",
+    "beforeDevCommand": "pnpm dev"
+  },
+  "app": {
+    "windows": [{ "label": "main", "title": "CeleMod", "backgroundColor": "#131313" }]
+  },
+  "bundle": { "android": { "minSdkVersion": 28 } }
+}

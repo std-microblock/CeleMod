@@ -2,6 +2,7 @@ package com.celemod.runtime
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.*
 import android.util.Log
 import android.view.WindowManager
@@ -15,6 +16,12 @@ import java.io.File
 
 /** SDL + RAL CoreCLR run only in :game; exiting cannot terminate the Tauri manager. */
 class GameActivity : SDLActivity() {
+    // SDL can otherwise replace the manifest orientation with SENSOR for a
+    // resizable FNA window, inheriting the manager's portrait orientation.
+    override fun setOrientationBis(w: Int, h: Int, resizable: Boolean, hint: String?) {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
+
     private var controls: TouchControls? = null
     private var exitDialog: AlertDialog? = null
     private var returning = false

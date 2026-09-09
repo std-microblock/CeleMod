@@ -76,10 +76,10 @@ internal static partial class GameTouch
         try {
             engineType = engine; inputType = input; fontType = game.GetType("Celeste.ActiveFont");
             var button = game.GetType("Monocle.VirtualButton", true)!;
-            StartupHook.Patch(button.GetProperty("Pressed")!.GetMethod!, nameof(ButtonPressed), typeof(GameTouch), true);
+            GameHooks.Add(button.GetProperty("Pressed")!.GetMethod!, nameof(ButtonPressed), typeof(GameTouch), button);
             foreach (var name in new[] { "ConsumeBuffer", "ConsumePress" }) {
                 var consume = button.GetMethod(name, Flags);
-                if (consume != null) StartupHook.Patch(consume, nameof(Consumed), typeof(GameTouch), true);
+                if (consume != null) GameHooks.Add(consume, nameof(Consumed), typeof(GameTouch), button);
             }
             installed = true;
             _ = Task.Run(async () => {
@@ -108,11 +108,15 @@ internal static partial class GameTouch
         } catch (Exception e) { Console.WriteLine("[CeleMod] Direct touch unavailable: " + e); }
     }
 
-    private static void ButtonPressed(object __instance, ref bool __result) {
-        if (pressed.Contains(__instance) && ReferenceEquals(pressedScene, R(engineType, "Scene")) &&
-            ReferenceEquals(pressedUI, R(pressedScene, "Current"))) __result = true;
+    private static bool ButtonPressed<TButton>(Func<TButton, bool> original, TButton button) where TButton : class {
+        var result = original(button);
+        return result || pressed.Contains(button) && ReferenceEquals(pressedScene, R(engineType, "Scene")) &&
+            ReferenceEquals(pressedUI, R(pressedScene, "Current"));
     }
-    private static void Consumed(object __instance) => pressed.Remove(__instance);
+    private static void Consumed<TButton>(Action<TButton> original, TButton button) where TButton : class {
+        original(button);
+        pressed.Remove(button);
+    }
     private static void Press(string binding) {
         var button = R(inputType, binding);
         if (button == null && inputType?.Assembly.GetType("Celeste.Mod.Core.CoreModule") is Type core)
@@ -178,7 +182,7 @@ internal static partial class GameTouch
         var pp = R(R(R(engineType, "Graphics"), "GraphicsDevice"), "PresentationParameters");
         float bw = N(pp, "BackBufferWidth"), bh = N(pp, "BackBufferHeight");
         if (bw > 0 && bh > 0) viewport = new(N(vp, "X") / bw, N(vp, "Y") / bh, N(vp, "Width") / bw, N(vp, "Height") / bh);
-        if (mode is "gameplay" or "loading" or "pico8" or "fallback") { FinishSignature(mode); return; }
+        if (mode is "gameplay" or "loading" or "transition" or "pico8" or "fallback") { FinishSignature(mode); return; }
         // An unknown modal must not expose clickable UI underneath it.
         if (R(scene, "Overlay") != null) { FinishSignature("overlay:" + Identity(R(scene, "Overlay"))); return; }
         var menus = List(R(scene, "Entities")).Where(e => Is(e, "TextMenu") && B(e, "Focused") && B(e, "Visible") && B(e, "Active")).ToList();

@@ -7,6 +7,9 @@ edition = "2024"
 name = "cele_mod_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
 [[bin]]
 name = "cele-mod"
 path = "src/main.rs"
@@ -18,15 +21,12 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-http = "2"
 tauri-plugin-dialog = "2"
-tauri-plugin-system-symbols = "0.3"
-tauri-plugin-window-controls = "0.1"
 tauri-plugin-deep-link = "2.4.9"
 
-game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 lazy_static = "1"
 anyhow = "1"
 parking_lot = "0.12"
-zip = "4"
+zip = { version = "4", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9.25"
 serde_json = "1"
@@ -47,6 +47,9 @@ url = "2"
 webpki-roots = "1"
 whoami = "1"
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
+tauri-plugin-system-symbols = "0.3"
+tauri-plugin-window-controls = "0.1"
+game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 tauri-plugin-single-instance = { version = "2.4.3", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]

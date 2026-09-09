@@ -1,10 +1,10 @@
 import _i18n from "src/i18n";
 import { useI18N } from "src/i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameSelector } from "../components/GameSelector";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
-import { refreshLatestUpdateInfo } from "../api/updateInfo";
+import { refreshLatestUpdateInfo, featureVisible, useUpdateInfo } from "../api/updateInfo";
 import { callRemote, selectGamePath, useBlockingMask } from "../utils";
 // @ts-ignore
 import strawberry from "../resources/Celemod.png";
@@ -57,10 +57,27 @@ export const Home = () => {
     return () => window.removeEventListener("focus", checkNewKeyboardInput);
   }, [gamePath]);
   const globalCtx = useGlobalContext();
+  const { data: updateInfo } = useUpdateInfo();
+  const chinese = i18n.currentLang === "zh-CN";
+  const shortcuts = [
+    ...(gamePath ? [
+      { page: "Everest", icon: "chart-area", title: "Everest", description: chinese ? "安装与更新加载器" : "Install & update", tone: "purple" },
+      { page: "Manage", icon: "drive", title: _i18n.t("管理"), description: chinese ? "模组、依赖与预设" : "Mods & profiles", tone: "blue" },
+      { page: "Search", icon: "search", title: _i18n.t("搜索"), description: chinese ? "发现新的模组" : "Discover new mods", tone: "pink" },
+      { page: "RecommendMods", icon: "flag", title: _i18n.t("推荐模组"), description: chinese ? "精选地图与实用工具" : "Maps & useful tools", tone: "amber" },
+      { page: "KeyBindings", icon: "keyboard", title: _i18n.t("按键"), description: chinese ? "按键映射与冲突检查" : "Bindings & conflicts", tone: "green" },
+      ...(chinese ? [{ page: "Multiplayer", icon: "web", title: _i18n.t("联机相关"), description: "和朋友一起登山", tone: "blue" }] : []),
+    ] : []),
+    ...(featureVisible(updateInfo?.loenn, i18n.currentLang) ? [{ page: "Loenn", icon: "edit", title: "Loenn", description: chinese ? "地图编辑器" : "Map editor", tone: "green" }] : []),
+    { page: "Downloads", icon: "download", title: _i18n.t("下载任务"), description: chinese ? "查看下载进度" : "Download progress", tone: "purple" },
+    { page: "Settings", icon: "settings", title: _i18n.t("设置"), description: chinese ? "外观与运行选项" : "Appearance & runtime", tone: "neutral" },
+  ];
   const profileEnabled = useAppStore((state) => state.profileEnabled);
   const { profiles, activeProfileNames } = useCurrentBlacklistProfile();
   const alwaysOnMods = useAppStore((state) => state.alwaysOnMods);
   const mask = useBlockingMask();
+  const launchPending = useRef(false);
+  const [launchError, setLaunchError] = useState("");
   const [updateCheckState, setUpdateCheckState] = useState<
     "idle" | "checking" | "success" | "error"
   >("idle");
@@ -216,18 +233,28 @@ export const Home = () => {
                 selectGamePath(setGamePath);
               } else setGamePath(value);
             }}
-            launchGame={(v) => {
-              mask.setMaskEnabled(true);
+            launchGame={async (v) => {
+              if (launchPending.current) return;
+              launchPending.current = true;
+              setLaunchError("");
+              const android = detectDesktopPlatform() === "android";
+              if (android) window.dispatchEvent(new Event("celemod:launch-preparing"));
+              else mask.setMaskEnabled(true);
               mask.setMaskText(_i18n.t("正在启动"));
-              callRemote(
-                "start_game_directly",
-                gamePath || gamePaths[0],
-                v === "origin",
-                v === "legacy",
-              );
-              setTimeout(() => {
+              try {
+                await callRemote(
+                  "start_game_directly",
+                  gamePath || gamePaths[0],
+                  v === "origin",
+                  v === "legacy",
+                );
+              } catch (error) {
+                setLaunchError(error instanceof Error ? error.message : String(error));
+              } finally {
+                launchPending.current = false;
+                if (android) window.dispatchEvent(new Event("celemod:launch-finished"));
                 mask.setMaskEnabled(false);
-              }, 20000);
+              }
             }}
           />
         ) : (
@@ -243,9 +270,29 @@ export const Home = () => {
             </button>
           </div>
         )}
+        {launchError && <div className="home-launch-error" role="alert">
+          <strong>{chinese ? "游戏未能启动" : "Could not start the game"}</strong>
+          <p>{launchError}</p>
+          {detectDesktopPlatform() === "android" && <p>{chinese
+            ? "如果是 Steam 同步问题，请在下方 Steam 面板重试或处理冲突；需要离线游玩时，请明确开启离线模式。"
+            : "For Steam sync errors, retry or resolve conflicts in the Steam panel below. Enable offline mode explicitly if you want to play offline."}</p>}
+        </div>}
       </section>
 
       {detectDesktopPlatform() === "android" && <SteamAccount />}
+
+      <section className="home-section home-shortcuts-section">
+        <div className="home-section-heading"><Icon name="grid" /><h2>{chinese ? "常用功能" : "Quick access"}</h2></div>
+        <div className="home-shortcuts">
+          {shortcuts.map(shortcut => <button type="button" key={shortcut.page} className={`home-shortcut tone-${shortcut.tone}`}
+            onClick={() => globalCtx.pageController.setPage(shortcut.page)}>
+            <span className="shortcut-icon"><Icon name={shortcut.icon} /></span>
+            <span className="shortcut-copy"><strong title={shortcut.title}>{shortcut.title}</strong><small title={shortcut.description}>{shortcut.description}</small></span>
+            <Icon name="i-right" />
+          </button>)}
+        </div>
+      </section>
+
 
       {profileEnabled && (
         <section className="home-section home-profiles-section">

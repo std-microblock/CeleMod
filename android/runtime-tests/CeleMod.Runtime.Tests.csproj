@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <Compile Include="../runtime/managed/SteamPlatform.cs" Link="SteamPlatform.cs" />
+    <Compile Include="../runtime/managed/GameDisplay.cs" Link="GameDisplay.cs" />
+    <Compile Include="../runtime/managed/InstallerDependencies.cs" Link="InstallerDependencies.cs" />
+    <Compile Include="../runtime/managed/InstallerLog.cs" Link="InstallerLog.cs" />
+  </ItemGroup>
+</Project>

@@ -5,7 +5,10 @@ use anyhow::{Context, bail};
 use base64::{Engine as _, engine::general_purpose};
 use cbc::cipher::{BlockEncryptMut, KeyIvInit, block_padding::Pkcs7};
 use everest::get_mod_cached_new;
+#[cfg(not(target_os = "android"))]
 use game_scanner::prelude::Game;
+#[cfg(target_os = "android")]
+struct Game { path: Option<PathBuf> }
 use parking_lot::Mutex as ParkingMutex;
 use pbkdf2::pbkdf2_hmac;
 use rand::RngCore;
@@ -2127,6 +2130,10 @@ fn rm_mod_sync(mods_folder_path: &str, mod_name: &str) -> anyhow::Result<()> {
 }
 
 fn get_celestes() -> Vec<Game> {
+    #[cfg(target_os = "android")]
+    return crate::android::game_dirs().into_iter().map(|path| Game { path: Some(path) }).collect();
+    #[cfg(not(target_os = "android"))]
+    {
     let mut games = vec![];
     use game_scanner::*;
     if let Ok(game) = steam::find("504230") {
@@ -2138,6 +2145,7 @@ fn get_celestes() -> Vec<Game> {
     };
 
     games
+    }
 }
 
 fn normalize_game_path_impl(path: &str) -> String {
@@ -3883,6 +3891,10 @@ fn start_game_directly_with_loader_impl(
     origin: bool,
     legacy_loader: bool,
 ) -> anyhow::Result<()> {
+    #[cfg(target_os = "android")]
+    return crate::android::launch(&path, origin, legacy_loader);
+    #[cfg(not(target_os = "android"))]
+    {
     let path = normalize_game_path_impl(&path);
     let path = Path::new(&path);
 
@@ -3920,6 +3932,7 @@ fn start_game_directly_with_loader_impl(
     }
     command.spawn()?;
     Ok(())
+    }
 }
 
 const EVEREST_ULTRA_SLOW_START_ENVIRONMENT: [(&str, &str); 3] = [
@@ -4319,6 +4332,34 @@ async fn android_steam(request: serde_json::Value) -> Result<serde_json::Value, 
 }
 
 #[tauri::command]
+async fn android_runtime_settings(buttons: Option<bool>, joystick: Option<bool>) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(move || crate::android::settings(buttons, joystick)).await
+        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    { let _ = (buttons, joystick); Err("Android only".into()) }
+}
+
+#[tauri::command]
+async fn android_read_log(source: String) -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(move || {
+        crate::android::read_log(&source).and_then(|log| Ok(serde_json::to_value(log)?))
+    }).await.map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    { let _ = source; Err("Android only".into()) }
+}
+
+#[tauri::command]
+async fn android_pick_package() -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(crate::android::pick_package).await
+        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    Err("Android only".into())
+}
+
+#[tauri::command]
 fn get_loenn_state(install_root: String) -> LoennState {
     get_loenn_state_impl(&install_root)
 }
@@ -4392,7 +4433,17 @@ fn start_loenn(install_root: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn start_game(path: String) -> Result<(), String> {
+async fn start_game(path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || start_game_impl(path))
+        .await
+        .map_err(|error| format!("Game launch worker failed: {error}"))?
+}
+
+fn start_game_impl(path: String) -> Result<(), String> {
+    #[cfg(target_os = "android")]
+    return crate::android::launch(&path, false, false).map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    {
     let path = normalize_game_path_impl(&path);
     let celestes = get_celestes();
     if let Some(game) = celestes.iter().find(|game| {
@@ -4405,12 +4456,19 @@ fn start_game(path: String) -> Result<(), String> {
     } else {
         start_game_directly_impl(path, false).map_err(|error| format!("{error:#}"))
     }
+    }
 }
 
 #[tauri::command]
-fn start_game_directly(path: String, origin: bool, legacy_loader: bool) -> Result<(), String> {
-    start_game_directly_with_loader_impl(path, origin, legacy_loader)
-        .map_err(|error| format!("{error:#}"))
+async fn start_game_directly(path: String, origin: bool, legacy_loader: bool) -> Result<(), String> {
+    // run_mobile_plugin waits for Kotlin to resolve the invocation, including cloud
+    // sync. Never block the IPC/event-loop thread: it also delivers progress and cancel.
+    tauri::async_runtime::spawn_blocking(move || {
+        start_game_directly_with_loader_impl(path, origin, legacy_loader)
+            .map_err(|error| format!("{error:#}"))
+    })
+    .await
+    .map_err(|error| format!("Game launch worker failed: {error}"))?
 }
 
 #[tauri::command]
@@ -4431,8 +4489,12 @@ fn stop_game_for_restart(game_path: String) -> Result<usize, String> {
 }
 
 #[tauri::command]
-fn restart_game_with_loader(game_path: String, legacy_loader: bool) -> Result<(), String> {
-    restart_game_with_loader_impl(game_path, legacy_loader).map_err(|error| format!("{error:#}"))
+async fn restart_game_with_loader(game_path: String, legacy_loader: bool) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        restart_game_with_loader_impl(game_path, legacy_loader).map_err(|error| format!("{error:#}"))
+    })
+    .await
+    .map_err(|error| format!("Game restart worker failed: {error}"))?
 }
 
 #[tauri::command]
@@ -4442,6 +4504,9 @@ fn reveal_crash_report(path: String) -> Result<(), String> {
 
 #[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
+    #[cfg(target_os = "android")]
+    return crate::android::open_url(&url).map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
     open::that(url).map_err(|error| error.to_string())
 }
 
@@ -4521,13 +4586,15 @@ fn configure_mod_cache(ttl_seconds: u64) {
 }
 
 #[tauri::command]
-fn get_mod_catalog(force_refresh: bool) -> Result<String, String> {
-    everest::get_mod_catalog_json(force_refresh).map_err(|error| format!("{error:#}"))
+async fn get_mod_catalog(force_refresh: bool) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || everest::get_mod_catalog_json(force_refresh)).await
+        .map_err(|e| e.to_string())?.map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
-fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
-    everest::get_mod_catalog_status().map_err(|error| format!("{error:#}"))
+async fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
+    tauri::async_runtime::spawn_blocking(everest::get_mod_catalog_status).await
+        .map_err(|e| e.to_string())?.map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
@@ -5987,6 +6054,10 @@ pub fn run() {
         }
     }
     let mut builder = tauri::Builder::default();
+    #[cfg(target_os = "android")]
+    { builder = builder.plugin(crate::android::init()); }
+    #[cfg(desktop)]
+    { builder = builder.plugin(tauri_plugin_system_symbols::init()).plugin(tauri_plugin_window_controls::init()); }
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -6004,6 +6075,7 @@ pub fn run() {
             }
             let app_handle = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
+                #[cfg(desktop)]
                 focus_main_window(&app_handle);
                 emit_deep_links(&app_handle, event.urls());
             });
@@ -6033,8 +6105,6 @@ pub fn run() {
 
             Ok(())
         })
-        .plugin(tauri_plugin_system_symbols::init())
-        .plugin(tauri_plugin_window_controls::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
@@ -6051,7 +6121,10 @@ pub fn run() {
             get_installed_miaonet,
             start_game,
             runtime_platform,
+            android_runtime_settings,
+            android_read_log,
             android_steam,
+            android_pick_package,
             get_loenn_state,
             download_and_install_loenn,
             start_loenn,

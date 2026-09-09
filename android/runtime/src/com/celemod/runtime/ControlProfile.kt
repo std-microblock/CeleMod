@@ -2,7 +2,7 @@ package com.celemod.runtime
 
 /** Semantic actions, kept independent of View/SDL so profiles can be regression tested. */
 enum class ControlMode {
-    FALLBACK, LOADING, GAMEPLAY, PAUSE, PAUSE_MENU, MENU, TITLE, CHAPTER, JOURNAL, NAMING, SEARCH, DIALOGUE, COMPLETE, PICO8;
+    FALLBACK, LOADING, TRANSITION, GAMEPLAY, PAUSE, PAUSE_MENU, MENU, TITLE, CHAPTER, JOURNAL, NAMING, SEARCH, DIALOGUE, COMPLETE, PICO8;
     companion object {
         fun parse(value: String) = entries.firstOrNull { it.name.equals(value, ignoreCase = true) } ?: FALLBACK
     }
@@ -58,13 +58,14 @@ data class ControlProfile(
                     ControlAction("Enter", "搜索", ControlIcon.CONFIRM),
                     ControlAction("Backspace", "删除", ControlIcon.DELETE)
                 ) else listOf(confirm, cancel)
-                ControlMode.LOADING -> emptyList()
+                ControlMode.LOADING, ControlMode.TRANSITION -> emptyList()
                 else -> listOf(confirm, cancel)
             }
             val top = when (mode) {
-                ControlMode.LOADING -> null
-                ControlMode.PAUSE -> ControlAction("ESC", "继续游戏", ControlIcon.PLAY)
-                ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK, ControlMode.DIALOGUE ->
+                ControlMode.LOADING, ControlMode.TRANSITION -> null
+                ControlMode.PAUSE -> ControlAction("Pause", "继续游戏", ControlIcon.PLAY)
+                ControlMode.GAMEPLAY, ControlMode.DIALOGUE -> ControlAction("Pause", "暂停", ControlIcon.PAUSE)
+                ControlMode.PICO8, ControlMode.FALLBACK ->
                     ControlAction("ESC", "暂停", ControlIcon.PAUSE)
                 ControlMode.MENU, ControlMode.CHAPTER, ControlMode.JOURNAL -> cancel
                 else -> escape

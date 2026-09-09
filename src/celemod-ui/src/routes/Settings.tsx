@@ -14,6 +14,8 @@ import {
 import { clearInMemoryModCatalog, loadModCatalog } from "../api/modCatalog";
 import { callRemote } from "../utils";
 import "./Settings.scss";
+import { AndroidRuntime } from "../components/AndroidRuntime";
+import { detectDesktopPlatform } from "../tauri/window";
 
 interface CacheStatus {
   source: string;
@@ -280,6 +282,7 @@ export const Settings = () => {
       </header>
 
       <div className="settings-columns">
+        {detectDesktopPlatform() === "android" && <AndroidRuntime />}
         <section className="settings-section">
           <div className="settings-section-title">
             <Icon name="download" />

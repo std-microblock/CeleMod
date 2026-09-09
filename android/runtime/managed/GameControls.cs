@@ -30,9 +30,9 @@ internal static class GameControls
             settings = game.GetType("Celeste.Settings", true);
             talk = game.GetType("Celeste.TalkComponent");
             var update = engine!.GetMethods(Flags).Single(m => m.Name == "Update" && m.GetParameters().Length == 1);
-            StartupHook.Patch(update, nameof(AfterUpdate), typeof(GameControls), postfix: true);
+            GameHooks.Add(update, nameof(Update), typeof(GameControls), engine, update.GetParameters()[0].ParameterType);
             GameTouch.Install(game, engine, input!, path);
-            Console.WriteLine("[CeleMod] Contextual touch controls connected to Engine.Update.");
+            Console.WriteLine("[CeleMod] Contextual touch controls joined Engine.Update detour chain.");
         } catch (Exception e) {
             Console.WriteLine("[CeleMod] Contextual controls unavailable; using fallback controls: " + e);
         }
@@ -70,6 +70,11 @@ internal static class GameControls
         if (Is(scene, "Celeste.Pico8.Emulator")) return "pico8";
         if (Is(scene, "Celeste.Overworld")) {
             if (Read(scene, "Overlay") != null) return "menu";
+            // GotoRoutine deliberately clears Current while Leave/Enter animate.
+            // This is not an unsupported menu: never flash the virtual fallback
+            // or expose the incoming UI before it can accept input.
+            if (Yes(scene, "transitioning") || Read(scene, "Current") == null && Read(scene, "Next") != null)
+                return "transition";
             var ui = Read(scene, "Current") ?? Read(scene, "Next") ?? Read(scene, "Last");
             if (Is(ui, "Celeste.OuiTitleScreen")) return "title";
             if (Is(ui, "Celeste.OuiJournal")) return "journal";
@@ -101,24 +106,40 @@ internal static class GameControls
         return "fallback"; // Unknown mod scenes must not lose gameplay inputs.
     }
 
-    private static string[] Keyboard(object? binding) => Read(binding, "Keyboard") is IEnumerable keys
+    private static string[]? Keyboard(object? binding) => Read(binding, "Keyboard") is IEnumerable keys
         ? keys.Cast<object>().Select(k => k.ToString()!).Where(k => k != "None").ToArray()
-        : Array.Empty<string>();
+        : null;
 
-    private static Dictionary<string, string[]> Bindings()
+    internal static Dictionary<string, string[]> Bindings(object? liveInput, object? instance)
     {
         var result = new Dictionary<string, string[]>();
+        void Add(string name, object? binding) {
+            // Missing metadata is not the same as an explicitly unbound action.
+            // Android may use defaults only for the former, never for the latter.
+            if (Keyboard(binding) is string[] keys) result[name] = keys;
+        }
         foreach (var name in new[] { "Jump", "Dash", "Grab", "Talk", "Pause", "MenuConfirm", "MenuCancel",
-            "MenuJournal", "MenuUp", "MenuDown", "MenuLeft", "MenuRight" })
-            result[name] = Keyboard(Read(Read(input, name), "Binding"));
-        var instance = Read(settings, "Instance");
-        foreach (var name in new[] { "Up", "Down", "Left", "Right" })
-            result[name] = Keyboard(Read(instance, name));
+            "MenuJournal", "MenuUp", "MenuDown", "MenuLeft", "MenuRight", "ESC" })
+            Add(name, Read(Read(liveInput, name), "Binding"));
+        foreach (var name in new[] { "Up", "Down", "Left", "Right" }) {
+            Add(name, Read(instance, name));
+            Add(name + "MoveOnly", Read(instance, name + "MoveOnly"));
+            Add(name + "DashOnly", Read(instance, name + "DashOnly"));
+        }
         return result;
+    }
+
+    private static bool updateObserved;
+    private static void Update<TGame, TTime>(Action<TGame, TTime> original, TGame game, TTime time)
+    {
+        original(game, time);
+        AfterUpdate();
     }
 
     private static void AfterUpdate()
     {
+        if (!updateObserved) Console.WriteLine("[CeleMod] Contextual touch controls receiving game updates.");
+        updateObserved = true;
         GameTouch.Pump();
         var now = Environment.TickCount64;
         if (now < nextSample) return;
@@ -133,7 +154,7 @@ internal static class GameControls
                 ui = current?.GetType().FullName ?? "",
                 canTalk = mode == "gameplay" && Read(talk, "PlayerOver") is object nearby && Yes(nearby, "Enabled"),
                 keyboard = mode == "naming" && Yes(current, "UseKeyboardInput") || mode == "search" && Yes(current, "Searching"),
-                bindings = Bindings(),
+                bindings = Bindings(input, Read(settings, "Instance")),
                 touch = GameTouch.Capture(scene)
             });
             if (json == lastJson) return;

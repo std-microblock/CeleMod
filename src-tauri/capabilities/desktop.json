@@ -1,0 +1,7 @@
+{
+  "identifier": "desktop-window-controls",
+  "description": "Native desktop titlebar only",
+  "windows": ["main"],
+  "platforms": ["windows", "linux", "macOS"],
+  "permissions": ["window-controls:default"]
+}

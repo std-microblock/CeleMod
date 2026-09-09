@@ -31,7 +31,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
         webView.settings.apply { saveFormData = false; savePassword = false }
         val host = activity as? AppCompatActivity ?: return
         // Tauri disables WebView history navigation. Android Back must dismiss the
-        // Steam sheet (or its confirmation step), not leave the manager underneath it.
+        // Steam sheet (or its confirmation step) / log viewer, not leave the manager underneath it.
         host.onBackPressedDispatcher.addCallback(host, object : OnBackPressedCallback(true) {
             private var handling = false
             override fun handleOnBackPressed() {
@@ -39,7 +39,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                 handling = true
                 webView.evaluateJavascript("""
                     (() => {
-                        const sheet = document.querySelector('dialog.steam-sheet[open]');
+                        const sheet = document.querySelector('dialog.android-log-sheet[open], dialog.steam-sheet[open]');
                         if (!sheet) return false;
                         if (sheet.dispatchEvent(new Event('cancel', { cancelable: true }))) sheet.close();
                         return true;
@@ -138,18 +138,38 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     @Command fun launch(invoke: Invoke) {
         try {
             check(!installing) { "Everest installation is still running" }
-            check(!SteamBridge.busy && !SteamBridge.launching) { "请等待 Steam 下载或云存档同步完成" }
+            check(!SteamBridge.launching) { "游戏正在准备启动，请查看同步进度" }
             check(!gameRunning()) { "Game is already running. Exit the game before starting another session." }
             val args = invoke.getArgs()
             val path = checkedPath(args.getString("path"))
+            val waitForSync = SteamBridge.busy
+            if (waitForSync) {
+                val status = SteamBridge.status(activity.applicationContext)
+                check(status.optString("operation") == "sync" && status.optString("game") == path.absolutePath) {
+                    "请等待 Steam 下载或其他游戏的云存档同步完成"
+                }
+            }
             require(File(path, "Content").isDirectory) { "Missing game Content directory; deploy your own game first" }
             if (File(path, ".celemod-steam.json").exists()) {
                 require(File(path, "Celeste.dll").isFile) { "Steam 资源已下载；请先在 Everest 页面安装 Android 兼容的 Everest。" }
             }
             SteamBridge.launching = true
+            SteamBridge.launchStage = if (waitForSync) "waiting-sync" else "preparing"
             worker.execute {
                 try {
+                    if (waitForSync) {
+                        val deadline = System.currentTimeMillis() + 92 * 60_000L
+                        while (SteamBridge.busy) {
+                            check(System.currentTimeMillis() < deadline) { "等待云存档同步超时，请重试" }
+                            Thread.sleep(200)
+                        }
+                        val status = SteamBridge.status(activity.applicationContext)
+                        check(status.optString("stage") == "complete") {
+                            status.optString("message", "云存档尚未同步完成，请重试")
+                        }
+                    }
                     SteamBridge.beforeLaunch(activity.applicationContext, path)
+                    SteamBridge.launchStage = "preparing"
                     RuntimeHost.prepare(activity)
                     val intent = Intent(activity, GameActivity::class.java)
                         .putExtra("path", path.absolutePath)
@@ -157,6 +177,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                         .putExtra("legacyLoader", args.optBoolean("legacyLoader"))
                         .putExtra("buttons", settings().optBoolean("buttons"))
                         .putExtra("joystick", settings().optBoolean("joystick"))
+                    SteamBridge.launchStage = "starting"
                     activity.runOnUiThread {
                         try {
                             activity.startActivity(intent)
@@ -209,9 +230,14 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
             check(!gameRunning() && !SteamBridge.busy && !SteamBridge.launching) { "请先退出游戏，等待 Steam 操作完成" }
             val path = checkedPath(invoke.getArgs().getString("path"))
             require(path.name == "MiniInstaller.dll" && path.isFile) { "Missing MiniInstaller.dll" }
+            val requestId = invoke.getArgs().optString("requestId", "legacy")
+            require(requestId.matches(Regex("[a-zA-Z0-9-]{1,80}"))) { "Invalid installer request" }
             installing = true
             worker.execute {
                 try {
+                    val logs = File(activity.getExternalFilesDir(null), "logs").apply { mkdirs() }
+                    File(logs, "installer.log").writeText("[CeleMod] Preparing Android runtime.\n")
+                    File(logs, "installer-session").writeText(requestId)
                     RuntimeHost.prepare(activity)
                     val handler = Handler(Looper.getMainLooper())
                     var completed = false
@@ -219,20 +245,44 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                         override fun onReceiveResult(code: Int, data: Bundle?) {
                             if (completed) return
                             completed = true
-                            installing = false
-                            if (code == 0) invoke.resolve() else invoke.reject(data?.getString("error") ?: "Installer failed: $code")
+                            // The service exits its process after sending the result. Do
+                            // not let an immediate retry reuse that retiring CoreCLR host.
+                            handler.postDelayed({
+                                installing = false
+                                if (code == 0) invoke.resolve() else invoke.reject(data?.getString("error") ?: "Installer failed: $code")
+                            }, 750)
                         }
                     }
                     activity.startService(Intent(activity, InstallerService::class.java)
                         .putExtra("path", path.absolutePath).putExtra("receiver", receiver))
+                    val serviceStarted = SystemClock.elapsedRealtime()
+                    var processSeen = false
+                    val monitor = object : Runnable {
+                        override fun run() {
+                            if (completed) return
+                            val running = (activity.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
+                                .runningAppProcesses.orEmpty().any {
+                                    it.uid == Process.myUid() && it.processName == activity.packageName + ":installer"
+                                }
+                            processSeen = processSeen || running
+                            if (!running && (processSeen || SystemClock.elapsedRealtime() - serviceStarted > 30_000)) {
+                                completed = true
+                                installing = false
+                                invoke.reject("Android installer process exited unexpectedly. See the installer log for details.")
+                            } else handler.postDelayed(this, 1000)
+                        }
+                    }
+                    handler.postDelayed(monitor, 1000)
                     handler.postDelayed({
                         if (!completed) {
                             completed = true
-                            installing = false
                             activity.stopService(Intent(activity, InstallerService::class.java))
-                            invoke.reject("MiniInstaller timed out. See runtime logs; installation may be incomplete.")
+                            handler.postDelayed({
+                                installing = false
+                                invoke.reject("MiniInstaller timed out after 15 minutes and was stopped. Installation may be incomplete; see the installer log.")
+                            }, 750)
                         }
-                    }, 300_000)
+                    }, 900_000)
                 } catch (e: Exception) { installing = false; invoke.reject(e.message) }
             }
         } catch (e: Exception) { invoke.reject(e.message) }

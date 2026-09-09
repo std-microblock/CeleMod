@@ -1,0 +1,16 @@
+{
+  "name": "RotatingArtLauncher",
+  "repository": "https://github.com/FireworkSky/RotatingartLauncher",
+  "tag": "v2.1.1",
+  "commit": "aa5caa7e7041fe3e2d9c804752420afe4981b999",
+  "sourceArchiveSha256": "dda974b2a211e47bcbe3ecf3194d8c598ab3fdf0b285afb8e3f4875d3a9ca87c",
+  "apk": "https://github.com/FireworkSky/RotatingartLauncher/releases/download/v2.1.1/RotatingArtLauncher.2.1.1.apk",
+  "apkSha256": "5edc18cd4ca3cfdec2a60e8ad6070090e8b8cad979cc4dd7adf65f1a8648bfa2",
+  "runtime": "CoreCLR 10.0.4 android-arm64",
+  "license": "GPL-3.0; third-party runtime libraries retain their own licenses",
+  "nativeLibraries": [
+    "libc++_shared.so", "libdotnethost.so", "libFAudio.so", "libFNA3D.so",
+    "libSDL2.so", "libmain.so", "libtheorafile.so", "libfmod.so",
+    "libfmodstudio.so", "libfmod_SDL.so", "liblua54.so"
+  ]
+}

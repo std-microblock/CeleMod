@@ -9,6 +9,7 @@ internal static class Program
     internal static string Ipc = "";
     internal static string Job = "";
     internal static CancellationToken Cancel;
+    private static CloudProgressSnapshot? lastSync;
     internal static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     internal static void Write(string path, object value)
@@ -19,8 +20,18 @@ internal static class Program
     }
 
     internal static void Status(string stage, string message, long done = 0, long total = 0, object? conflicts = null,
-        long? downloadedBytes = null, long? transferredBytes = null) =>
-        Write(Path.Combine(Ipc, "status.json"), new { job = Job, revision = Guid.NewGuid().ToString("N"), stage, message, done, total, conflicts, downloadedBytes, transferredBytes });
+        long? downloadedBytes = null, long? transferredBytes = null, CloudProgressSnapshot? sync = null) =>
+        Write(Path.Combine(Ipc, "status.json"), new { job = Job, revision = Guid.NewGuid().ToString("N"), stage, message, done, total, conflicts, downloadedBytes, transferredBytes,
+            syncPhase = sync?.Phase, completedBytes = sync?.CompletedBytes, totalBytes = sync?.TotalBytes,
+            cachedFiles = sync?.CachedFiles, currentFile = sync?.CurrentFile, retryAttempt = sync?.RetryAttempt });
+
+    internal static void SyncStatus(CloudProgressSnapshot sync) {
+        lastSync = sync;
+        Status("syncing", sync.Message, sync.Done, sync.Total, transferredBytes: sync.TransferredBytes, sync: sync);
+    }
+
+    private static void FinishStatus(string stage, string message) =>
+        Status(stage, message, lastSync?.Done ?? 0, lastSync?.Total ?? 0, transferredBytes: lastSync?.TransferredBytes, sync: lastSync);
 
     public static async Task Main(string[] args)
     {
@@ -36,6 +47,7 @@ internal static class Program
             try { request = JsonNode.Parse(await File.ReadAllTextAsync(requestPath))!.AsObject(); }
             finally { File.Delete(requestPath); }
             Job = request["job"]!.GetValue<string>();
+            lastSync = null;
             using var cancellation = new CancellationTokenSource(TimeSpan.FromMinutes(90));
             Cancel = cancellation.Token;
             var watch = Task.Run(async () => {
@@ -77,7 +89,7 @@ internal static class Program
                     } else throw new InvalidOperationException("Unknown Steam operation");
                     result = new { account = session.Account, steamId = session.SteamId, game };
                 }
-                Status("complete", "操作完成");
+                FinishStatus("complete", lastSync == null ? "操作完成" : "Steam 云存档同步完成");
                 completion = new { job = Job, ok = true, result };
             }
             catch (CloudConflictException e) {
@@ -90,7 +102,7 @@ internal static class Program
                     e is SteamKit2.Authentication.AuthenticationException authError ? "Steam 验证失败：" + authError.Result + "。请检查账号、密码或 Steam Guard 后重试。" :
                     e is SteamFailure or InvalidDataException or InvalidOperationException ? e.Message :
                     "Steam 操作失败（" + e.GetType().Name + "），请检查网络、可用空间和登录状态后重试。";
-                Status("error", message);
+                FinishStatus("error", message);
                 completion = new { job = Job, ok = false, error = message };
             }
             finally {

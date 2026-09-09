@@ -7,14 +7,17 @@ import android.util.Log
 import com.app.ralaunch.core.common.util.NativeMethods
 import com.app.ralaunch.core.platform.runtime.dotnet.CoreHostHooks
 import com.app.ralaunch.core.platform.runtime.dotnet.DotNetLauncher
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.tukaani.xz.XZInputStream
+import java.io.BufferedInputStream
+import java.io.EOFException
 import java.io.File
+import java.io.InputStream
 import java.util.zip.ZipInputStream
 
 /** CeleMod's feature-scoped fork of RAL's runtime setup; never copies game data into APK assets. */
 object RuntimeHost {
-    private const val VERSION = "ral-2.1.1-dotnet-10.0.4"
+    private const val VERSION = "ral-2.1.1-dotnet-10.0.4-slim3"
+    private const val TAR_BLOCK_SIZE = 512
     fun runtimeRoot(context: Context) = File(context.filesDir, VERSION)
     private fun safeTarget(root: File, name: String): File {
         val file = File(root, name).canonicalFile
@@ -33,6 +36,92 @@ object RuntimeHost {
             }
         }
     }
+
+    private fun InputStream.readBlock(block: ByteArray): Boolean {
+        var offset = 0
+        while (offset < block.size) {
+            val count = read(block, offset, block.size - offset)
+            if (count < 0) {
+                if (offset == 0) return false
+                throw EOFException("Truncated runtime archive header")
+            }
+            // InputStream is allowed to return zero without reaching EOF.
+            // Make progress explicitly instead of spinning forever.
+            if (count == 0) {
+                val value = read()
+                if (value < 0) {
+                    if (offset == 0) return false
+                    throw EOFException("Truncated runtime archive header")
+                }
+                block[offset++] = value.toByte()
+            } else {
+                offset += count
+            }
+        }
+        return true
+    }
+
+    private fun tarString(block: ByteArray, offset: Int, length: Int): String {
+        val end = (offset until offset + length).firstOrNull { block[it].toInt() == 0 } ?: offset + length
+        return block.copyOfRange(offset, end).toString(Charsets.UTF_8)
+    }
+
+    private fun tarSize(block: ByteArray): Long {
+        val value = tarString(block, 124, 12).trim()
+        require(value.isNotEmpty() && value.all { it in '0'..'7' }) { "Invalid runtime archive size" }
+        return value.toLong(8)
+    }
+
+    private fun InputStream.copyExactly(output: java.io.OutputStream, length: Long) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var remaining = length
+        while (remaining > 0) {
+            val count = read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
+            if (count < 0) throw EOFException("Truncated runtime archive entry")
+            output.write(buffer, 0, count)
+            remaining -= count
+        }
+    }
+
+    private fun InputStream.skipExactly(length: Long) {
+        var remaining = length
+        while (remaining > 0) {
+            val count = skip(remaining)
+            if (count > 0) remaining -= count
+            else if (read() >= 0) remaining--
+            else throw EOFException("Truncated runtime archive padding")
+        }
+    }
+
+    private fun untarAsset(context: Context, asset: String, root: File) {
+        BufferedInputStream(XZInputStream(context.assets.open(asset))).use { tar ->
+            val block = ByteArray(TAR_BLOCK_SIZE)
+            while (tar.readBlock(block)) {
+                if (block.all { it.toInt() == 0 }) break
+                val name = tarString(block, 0, 100)
+                val prefix = tarString(block, 345, 155)
+                val path = if (prefix.isEmpty()) name else "$prefix/$name"
+                val type = block[156].toInt().toChar()
+                val size = tarSize(block)
+                val out = safeTarget(root, path)
+                when (type) {
+                    '\u0000', '0' -> {
+                        out.parentFile!!.mkdirs()
+                        out.outputStream().use { tar.copyExactly(it, size) }
+                        if (out.name.endsWith(".so") || out.name == "dotnet") out.setExecutable(true, true)
+                    }
+                    '5' -> {
+                        require(size == 0L) { "Invalid runtime directory entry" }
+                        out.mkdirs()
+                    }
+                    '1', '2' -> error("Unexpected runtime archive link: $path")
+                    else -> error("Unsupported runtime archive entry type $type: $path")
+                }
+                tar.skipExactly((TAR_BLOCK_SIZE - size % TAR_BLOCK_SIZE) % TAR_BLOCK_SIZE)
+            }
+        }
+    }
+
     @Synchronized fun prepare(context: Context) {
         val root = runtimeRoot(context)
         // Refresh the small CeleMod hook independently of the pinned runtime archive.
@@ -40,25 +129,31 @@ object RuntimeHost {
         context.assets.open("CeleMod.Android.dll").use { input ->
             File(root, "CeleMod.Android.dll").outputStream().use { input.copyTo(it) }
         }
-        if (File(root, ".ready").isFile) return
-        root.mkdirs()
-        // Private internal storage is required: Android shared storage is mounted noexec.
-        TarArchiveInputStream(XZInputStream(context.assets.open("dotnet.tar.xz"))).use { tar ->
+        if (!File(root, ".ready").isFile) {
+            // Private internal storage is required: Android shared storage is mounted noexec.
+            untarAsset(context, "dotnet.tar.xz", root)
+            untarAsset(context, "monomod.tar.xz", root)
+            unzip(context, "patches/com.app.ralaunch.everest.fix.zip", File(root, "everest"))
+            unzip(context, "patches/com.app.ralaunch.everest.miniinstaller.fix.zip", File(root, "installer"))
+            File(root, ".ready").writeText(VERSION)
+        }
+        // An APK update must refresh the worker even when CoreCLR is already
+        // extracted. Keep account credentials and cloud baselines untouched.
+        val steamReady = File(root, ".steam-ready")
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        context.assets.open("steam.tar.xz").use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
             while (true) {
-                val entry = tar.nextEntry ?: break
-                require(!entry.isSymbolicLink && !entry.isLink) { "Unexpected runtime archive link" }
-                val out = safeTarget(root, entry.name)
-                if (entry.isDirectory) out.mkdirs() else {
-                    out.parentFile!!.mkdirs()
-                    out.outputStream().use { tar.copyTo(it) }
-                    if (out.name.endsWith(".so") || out.name == "dotnet") out.setExecutable(true, true)
-                }
+                val count = input.read(buffer)
+                if (count < 0) break
+                digest.update(buffer, 0, count)
             }
         }
-        unzip(context, "MonoMod.zip", File(root, "monomod"))
-        unzip(context, "patches/com.app.ralaunch.everest.fix.zip", File(root, "everest"))
-        unzip(context, "patches/com.app.ralaunch.everest.miniinstaller.fix.zip", File(root, "installer"))
-        File(root, ".ready").writeText(VERSION)
+        val steamVersion = digest.digest().joinToString("") { "%02x".format(it) }
+        if (!steamReady.isFile || steamReady.readText() != steamVersion) {
+            untarAsset(context, "steam.tar.xz", root)
+            steamReady.writeText(steamVersion)
+        }
     }
 
     private fun installMonoMod(context: Context, game: File) {
@@ -69,6 +164,10 @@ object RuntimeHost {
             File(game, "everest-lib").walkTopDown().filter { it.isFile }.toList()
         for (target in targets) {
             val replacement = replacements[target.name] ?: continue
+            // Ultra extends RuntimeDetour with ILHookTransaction. Keep that managed
+            // implementation; the startup hook binds it to RAL's Android Core/Utils.
+            if (target.name == "MonoMod.RuntimeDetour.dll" &&
+                target.readBytes().toString(Charsets.ISO_8859_1).contains("ILHookTransaction")) continue
             val backup = File(game, ".celemod-runtime-backup/${target.relativeTo(game)}")
             if (!backup.exists()) { backup.parentFile!!.mkdirs(); target.copyTo(backup) }
             replacement.copyTo(target, overwrite = true)
@@ -90,11 +189,7 @@ object RuntimeHost {
     /** Network-only worker in the manager process. Never chdir, redirect stdio, initialize SDL, or install game hooks here. */
     fun runSteam(context: Context, ipc: File): Int {
         val root = runtimeRoot(context)
-        val steam = File(root, "steam").apply { mkdirs() }
-        for (name in context.assets.list("steam").orEmpty()) {
-            require(!name.contains('/') && !name.contains('\\'))
-            context.assets.open("steam/$name").use { input -> File(steam, name).outputStream().use { input.copyTo(it) } }
-        }
+        val steam = File(root, "steam")
         val assembly = File(steam, "CeleMod.Steam.dll")
         check(assembly.isFile) { "Steam worker assets are missing; rebuild the APK" }
         Os.setenv("DOTNET_ROOT", root.absolutePath, true)
@@ -123,7 +218,8 @@ object RuntimeHost {
         if (installer) installMonoMod(context, assembly.parentFile!!)
         val logs = File(context.getExternalFilesDir(null), "logs").apply { mkdirs() }
         val log = File(logs, if (installer) "installer.log" else "game.log")
-        val fd = Os.open(log.absolutePath, OsConstants.O_WRONLY or OsConstants.O_CREAT or OsConstants.O_TRUNC, 384)
+        val fd = Os.open(log.absolutePath, OsConstants.O_WRONLY or OsConstants.O_CREAT or
+            (if (installer) OsConstants.O_APPEND else OsConstants.O_TRUNC), 384)
         Os.dup2(fd, 1); Os.dup2(fd, 2); Os.close(fd)
         val nativeDir = context.applicationInfo.nativeLibraryDir
         fun env(k: String, v: String) = Os.setenv(k, v, true)
@@ -156,12 +252,14 @@ object RuntimeHost {
         }
         val hook = if (installer) "installer/EverestMiniInstallerPatch.dll" else "everest/EverestPatch.dll"
         env("CELEMOD_INSTALLER", if (installer) "1" else "0")
+        if (installer) env("CELEMOD_INSTALLER_LOG", log.absolutePath)
         if (!installer) {
             env("CELEMOD_PROGRESS_PATH", File(context.cacheDir, "game-progress-${android.os.Process.myPid()}.json").absolutePath)
             env("CELEMOD_CONTROLS_PATH", File(context.cacheDir, "game-controls-${android.os.Process.myPid()}.json").absolutePath)
         }
-        env("DOTNET_STARTUP_HOOKS", File(root, hook).absolutePath + ":" + File(root, "CeleMod.Android.dll").absolutePath)
-        for (lib in arrayOf("c++_shared", "fmodL", "fmod", "fmodstudioL", "fmodstudio", "dotnethost", "FAudio", "theorafile", "SDL2", "main", "FNA3D", "lua54")) {
+        env("CELEMOD_RAL_HOOK", File(root, hook).absolutePath)
+        env("DOTNET_STARTUP_HOOKS", File(root, "CeleMod.Android.dll").absolutePath)
+        for (lib in arrayOf("c++_shared", "fmod", "fmodstudio", "dotnethost", "FAudio", "theorafile", "SDL2", "main", "FNA3D", "lua54", "cimgui")) {
             System.loadLibrary(lib)
         }
         org.fmod.FMOD.init(context)

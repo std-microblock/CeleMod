@@ -38,6 +38,7 @@ import { KeyBindings } from "./routes/KeyBindings";
 import { featureVisible, useUpdateInfo } from "./api/updateInfo";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import celemodLogo from "./resources/Celemod.png";
+import { MobileNavigation } from "./components/MobileNavigation";
 
 const pages = {
   Search: memo(Search),
@@ -205,6 +206,7 @@ export default function App() {
   }) => (
     <button
       className={`navBtn ${name === page ? "selected" : ""}`}
+      aria-current={name === page ? "page" : undefined}
       onClick={() => setPage(name)}
     >
       <Icon name={icon} />
@@ -316,6 +318,14 @@ export default function App() {
             </section>
           ))}
         </main>
+        <MobileNavigation
+          page={page}
+          setPage={setPage}
+          hasGame={Boolean(gamePath)}
+          showLoenn={showLoenn}
+          currentLang={currentLang}
+          activeDownloadCount={activeDownloadCount}
+        />
       </div>
     </div>
   );

@@ -583,5 +583,9 @@
   "文本": "Texto",
   "添加文本": "Adicionar texto",
   "添加图片": "Adicionar imagem",
-  "重命名预设": "Renomear predefinição"
+  "重命名预设": "Renomear predefinição",
+  "画布竞赛": "Canvas Contest",
+  "由中文社区举办，历时一年多打磨而成": "Criado pela comunidade chinesa e aprimorado por mais de um ano",
+  "包含 20+ 张地图，围绕独一无二的绘画作品展开": "Inclui mais de 20 mapas com temas de obras de arte únicas",
+  "难度覆盖酱二至酱五；进入大厅前需禁用 YaoiHelper、DaxHelper、LeniencyHelper 和 PuzzleHelper": "Abrange dificuldades de Intermediário a Grão-Mestre; YaoiHelper, DaxHelper, LeniencyHelper e PuzzleHelper devem ser desativados antes de entrar no lobby"
 }

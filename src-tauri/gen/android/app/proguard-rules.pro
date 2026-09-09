@@ -2,7 +2,9 @@
 -keep class com.app.ralaunch.** { *; }
 -keep class org.libsdl.app.** { *; }
 -keep class org.fmod.** { *; }
--keep class com.celemod.runtime.** { *; }
+# RuntimePlugin's annotated commands are kept by Tauri's consumer rules;
+# Android manifest components are kept by the Android Gradle plugin.  Avoid
+# pinning every helper/data class so R8 can optimize and obfuscate them.
 # .NET's Android TLS backend loads these through JNI, not Java call sites.
 -keep class net.dot.android.crypto.** { *; }
 # You can control the set of applied configuration files using the

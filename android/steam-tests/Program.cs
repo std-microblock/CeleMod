@@ -36,9 +36,30 @@ Check(SyncPlan.SaveName("Saves\\modsave-0.celeste") == "modsave-0.celeste", "Win
 Check(SyncPlan.RemoteName(["Saves"], 0, "0.celeste") == "Saves/0.celeste", "Cloud prefix joining");
 Check(SyncPlan.RemoteName(["Saves/"], 0, "0.celeste") == "Saves/0.celeste", "Trailing slash prefix");
 Check(SyncPlan.RemoteName(["Saves"], uint.MaxValue, "Saves/0.celeste") == "Saves/0.celeste", "No-prefix sentinel");
+var autoCloud = "%GameInstall%Saves/0-modsave-AchievementHelper.celeste";
+Check(SyncPlan.SaveName(autoCloud) == "0-modsave-AchievementHelper.celeste", "Real Steam Auto-Cloud root token");
+Check(SyncPlan.RemoteName(["%GameInstall%Saves/"], 0, "0-modsave-AchievementHelper.celeste") == autoCloud, "Preserve Auto-Cloud wire name");
+Check(SyncPlan.RemoteName([], uint.MaxValue, autoCloud) == autoCloud, "Unprefixed Auto-Cloud wire name");
+Check(SyncPlan.SaveKey("%GameInstall%/Saves/0.celeste") == "Saves/0.celeste", "Root separator canonicalization");
+Check(SyncPlan.SaveKey("%GameInstall%Saves\\0.celeste") == "Saves/0.celeste", "Windows Auto-Cloud key");
+Check(SyncPlan.UploadName("Saves/0.celeste") == "%GameInstall%Saves/0.celeste", "New saves use Steam Auto-Cloud namespace");
+Check(SyncPlan.UploadName("Saves/0.celeste", "%GameInstall%Saves\\0.celeste") == "%GameInstall%Saves\\0.celeste", "Existing wire names are unchanged");
+Check(SyncPlan.UploadName("Saves/0.celeste", "Saves/0.celeste") == "Saves/0.celeste", "Legacy wire names are unchanged");
+Reject(() => SyncPlan.UploadName("Saves/0.celeste", "%GameInstall%Saves/1.celeste"), "Mismatched wire name");
+var aliases = new Dictionary<string, string>(StringComparer.Ordinal) { [SyncPlan.SaveKey(autoCloud)] = autoCloud };
+Check(!aliases.TryAdd(SyncPlan.SaveKey("Saves/0-modsave-AchievementHelper.celeste"), "alias"), "Duplicate aliases cannot overwrite the same local save");
+foreach (var name in new[] { "%GameInstall%../Saves/0.celeste", "%GameInstall%Saves/../0.celeste", "%GameInstall%//Saves/0.celeste", "%GameInstall%Saves/a/0.celeste", "%WinAppData%Saves/0.celeste", "%gameinstall%Saves/0.celeste", "%GameInstall%Saves/a:0.celeste" })
+    Reject(() => SyncPlan.SaveKey(name), "Unsafe Auto-Cloud mapping: " + name);
 foreach (var name in new[] { "0.celeste", "../Saves/0.celeste", "Saves/../0.celeste", "Saves/a/0.celeste", "Saves/a:0.celeste", "Saves/.celeste", "Saves/0.celeste\0", "/Saves/0.celeste", "Mods/x.zip", "Saves/settings.xml" })
     Reject(() => SyncPlan.SaveName(name), "Unsafe cloud mapping: " + name);
 var root = Path.Combine(Path.GetTempPath(), "celemod-steam-test-" + Guid.NewGuid().ToString("N"));
+foreach (var host in new[] { "steamcloudlrstyo.blob.core.windows.net", "steamcloudlrstyo.blob.core.windows.net:443", "steamcloud-hk.storage.googleapis.com", "steamcloud-hkg.oss-accelerate.aliyuncs.com", "steamcloud-hkg.oss-cn-hongkong.aliyuncs.com", "cdn.steamusercontent.com", "bucket.s3.amazonaws.com" })
+    Check(CloudAddress.Url(host, "/save?signature=private").Scheme == "https", "Authenticated Steam storage host: " + host);
+foreach (var host in new[] { "evil.blob.core.windows.net", "evil.storage.googleapis.com", "evil.oss-accelerate.aliyuncs.com", "steamcloud-hkg.oss-accelerate.aliyuncs.com.evil.com", "steamcloud-hk.storage.googleapis.com.evil.com", "steamcloud.blob.core.windows.net.evil.com", "steamcloudlrstyo.blob.core.windows.net:80", "127.0.0.1", "evil.com", "user@cdn.steamcontent.com", "cdn.steamcontent.com/hidden?query=" })
+    Reject(() => CloudAddress.Url(host, "/save"), "Unsafe cloud address: " + host);
+Reject(() => CloudAddress.Url("cdn.steamcontent.com", "bad-path"), "Non-absolute cloud path");
+try { CloudAddress.Url("evil.com", "/save?signature=private"); }
+catch (InvalidDataException e) { Check(!e.Message.Contains("signature") && !e.Message.Contains("private"), "Errors never expose signed cloud paths"); }
 Directory.CreateDirectory(root);
 try {
     foreach (var name in new[] { "../escape", "/absolute", "a/../../escape", "C:/escape", "a//b", "./a", "a/./b", "a\0" })
@@ -58,4 +79,5 @@ try {
     Reject(() => CloudPayload.Unpack(bomb, 0), "Multi-entry cloud ZIP accepted");
     Check(File.Exists(bomb) && !File.Exists(bomb + ".unpacked"), "Failed ZIP leaves original and no partial output");
 } finally { Directory.Delete(root, true); }
+count += await CloudTransferTests.Run();
 Console.WriteLine($"PASS: {count} Steam cloud/depot safety assertions (no account or network required).");

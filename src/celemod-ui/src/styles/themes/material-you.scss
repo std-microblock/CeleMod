@@ -154,44 +154,66 @@ html[data-theme="material-you"] h3 { font-size: 16px; line-height: 1.3; font-wei
 html[data-theme="material-you"] p, html[data-theme="material-you"] small { color: var(--md-on-surface-variant); }
 
 /* Filled / outlined / tonal button families with state layers and ripple. */
-html[data-theme="material-you"] .md-ripple-host,
-html[data-theme="material-you"] button {
-  contain: paint;
+html[data-theme="material-you"] .md-ripple-positioned {
+  position: relative;
 }
+/* Only this decorative layer clips paint. Do not reposition button children or
+   clip their badges, focus rings and menus to make a ripple fit. */
 html[data-theme="material-you"] .md-ripple {
   position: absolute;
-  inset: auto;
-  z-index: 0;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  flex: none;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  contain: paint;
+  background: transparent;
+  color: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+html[data-theme="material-you"] .md-ripple > .md-ripple-wave {
+  position: absolute;
   display: block;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.18;
-  filter: blur(1px);
+  opacity: .1;
   pointer-events: none;
-  animation: md-ripple-reveal 520ms var(--md-motion-emphasized, cubic-bezier(.2, 0, 0, 1)) forwards;
+  animation: md-ripple-enter 300ms var(--md-motion-standard) both;
+  will-change: transform;
 }
-html[data-theme="material-you"] button > :not(.md-ripple),
-html[data-theme="material-you"] .md-ripple-host > :not(.md-ripple) {
-  position: relative;
-  z-index: 1;
+html[data-theme="material-you"] .md-ripple[data-releasing] {
+  animation: md-ripple-exit 160ms linear forwards;
 }
-@keyframes md-ripple-reveal {
-  0% { opacity: .2; transform: scale(.05); }
-  55% { opacity: .12; transform: scale(.72); }
-  100% { opacity: 0; transform: scale(1); }
+@keyframes md-ripple-enter {
+  from { transform: scale(var(--md-ripple-start-scale, .1)); }
+  to { transform: scale(1); }
+}
+@keyframes md-ripple-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 html[data-theme="material-you"] button {
-  position: relative; isolation: isolate; overflow: hidden; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard);
+  position: relative; isolation: isolate; min-height: 40px; padding: 0 20px; border: 0 !important; border-radius: var(--md-shape-full) !important; color: var(--md-on-secondary-container); background: var(--md-secondary-container); box-shadow: none; font-size: 14px; font-weight: 600; letter-spacing: .01em; transition: background-color 150ms var(--md-motion-standard), box-shadow 150ms var(--md-motion-standard);
 }
 html[data-theme="material-you"] button::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: currentColor; opacity: 0; transition: opacity 160ms ease; pointer-events: none; }
 html[data-theme="material-you"] button:hover { background: color-mix(in srgb, var(--md-secondary-container) 88%, white); box-shadow: var(--md-elevation-1); }
 html[data-theme="material-you"] button:hover::after { opacity: .08; }
 html[data-theme="material-you"] button:focus-visible { outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent); outline-offset: 2px; }
-html[data-theme="material-you"] button:active { background: color-mix(in srgb, var(--md-secondary-container) 80%, black); box-shadow: none; }
+html[data-theme="material-you"] button:active { box-shadow: none; }
 html[data-theme="material-you"] button:active::after { opacity: .12; transition-duration: 80ms; }
+html[data-theme="material-you"] button.md-ripple-active::after { opacity: 0; }
 html[data-theme="material-you"] button.primary, html[data-theme="material-you"] button[class*="primary"] { color: var(--md-on-primary) !important; background: var(--md-primary) !important; box-shadow: var(--md-elevation-1); }
 html[data-theme="material-you"] button.primary:hover, html[data-theme="material-you"] button[class*="primary"]:hover { background: color-mix(in srgb, var(--md-primary) 92%, white) !important; box-shadow: var(--md-elevation-2); }
 html[data-theme="material-you"] button.large { min-height: 56px; padding-inline: 28px; font-size: 16px; }
@@ -602,8 +624,17 @@ html[data-theme="material-you"] .sidebar .navBtn {
   gap: 2px;
 }
 html[data-theme="material-you"] .sidebar .navBtn::before {
-  inset: 3px 9px auto;
-  height: 28px;
+  inset: var(--md-rail-indicator-inset);
+  height: var(--md-rail-indicator-height);
+}
+html[data-theme="material-you"] .sidebar .navBtn {
+  --md-rail-indicator-inset: 3px 9px auto;
+  --md-rail-indicator-height: 28px;
+}
+html[data-theme="material-you"] .sidebar .navBtn > .md-ripple {
+  inset: var(--md-rail-indicator-inset);
+  height: var(--md-rail-indicator-height);
+  border-radius: var(--md-shape-full);
 }
 html[data-theme="material-you"] .sidebar .navBtn .icon {
   align-self: center;

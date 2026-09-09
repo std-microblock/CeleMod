@@ -96,6 +96,8 @@ dialog.steam-sheet.steam-sheet {
   input[type="checkbox"] { accent-color: #2585b2; width: 22px; height: 22px; flex: 0 0 22px; margin: 0; }
   .steam-callout { padding: 14px 16px; background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-elevated)); border: 1px solid var(--steam-line); border-radius: 12px; font-size: 13px; line-height: 1.7; }
   .steam-error { border-color: #cb884a66; background: color-mix(in srgb, #bc7b37 10%, var(--color-surface)); }
+  .steam-launch-progress > strong { display: flex; align-items: center; gap: 10px; }
+  .steam-launch-progress > p { margin-top: 8px; }
   .steam-error > strong { display: block; margin-bottom: 4px; }
   .steam-error p { color: var(--color-fg-muted); }
   .steam-technical { overflow-wrap: anywhere; user-select: text; font-size: 12px; max-height: 140px; overflow: auto; }
@@ -169,4 +171,21 @@ dialog.steam-sheet.steam-sheet {
 @media (prefers-reduced-motion: reduce) {
   dialog.steam-sheet.steam-sheet, dialog.steam-sheet.steam-sheet::backdrop { animation: none; }
   dialog.steam-sheet *, dialog.steam-sheet *::before { animation-duration: 4s; transition: none; }
+}
+// Shared by the Home entry and the modal, so synchronization is never hidden.
+.steam-sync-progress {
+  display: grid; gap: 8px; width: 100%; min-width: 0; margin-top: 10px;
+  font-size: 12px; line-height: 1.5; font-weight: 400; text-align: left;
+  .steam-sync-heading { display: flex; justify-content: space-between; gap: 12px; }
+  .steam-sync-count { font-size: 11px; opacity: .8; }
+  .steam-sync-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+  progress { width: 100%; min-width: 0; height: 8px; }
+  .steam-sync-metrics {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 10px;
+    > span { display: grid; gap: 3px; min-width: 0; }
+    small { opacity: .65; font-size: 10px; }
+    > span > span { white-space: nowrap; font-size: 11px; font-variant-numeric: tabular-nums; }
+  }
+  .steam-sync-summary { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  &.steam-sync-compact { margin-top: 3px; gap: 5px; }
 }

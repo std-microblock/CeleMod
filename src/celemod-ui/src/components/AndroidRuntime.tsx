@@ -5,6 +5,7 @@ import { useGlobalContext } from "../App";
 import { showLocalPackageInstaller } from "./DropInstaller";
 import { Icon } from "./Icon";
 import { SteamAccount } from "./SteamAccount";
+import { AndroidLogs } from "./AndroidLogs";
 
 type RuntimeSettings = { gameRoot: string; runtime: string; buttons: boolean; joystick: boolean };
 
@@ -44,6 +45,7 @@ export function AndroidRuntime() {
   return <><SteamAccount /><section className="settings-section android-runtime">
     <div className="settings-section-title"><Icon name="settings" /><span>Android 游戏运行时</span></div>
     <div className="settings-card">
+      <AndroidLogs />
       <div className="theme-setting">
         <div className="setting-description">
           <strong>{settings?.runtime ?? "正在读取运行时…"}</strong>
