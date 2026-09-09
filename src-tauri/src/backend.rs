@@ -19,7 +19,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -27,6 +27,7 @@ use ureq::DownloadCallbackInfo;
 
 static TEST_MODE: AtomicBool = AtomicBool::new(false);
 static MIAONET_OAUTH_ACTIVE: AtomicBool = AtomicBool::new(false);
+static MIAONET_AUTHORIZATION_REVISION: AtomicU64 = AtomicU64::new(0);
 #[cfg(target_os = "windows")]
 static WINDOWS_ACRYLIC_ENABLED: AtomicBool = AtomicBool::new(false);
 #[cfg(target_os = "windows")]
@@ -54,6 +55,7 @@ lazy_static::lazy_static! {
     static ref DOWNLOAD_DESTINATION_LOCKS: Mutex<HashMap<String, Arc<Mutex<()>>>> = Mutex::new(HashMap::new());
     static ref MOD_DEPENDENCY_GRAPH: Mutex<Option<ModDependencyGraphCache>> = Mutex::new(None);
     static ref PENDING_DEEP_LINKS: ParkingMutex<Vec<String>> = ParkingMutex::new(Vec::new());
+    static ref MIAONET_AUTHORIZATION: ParkingMutex<Option<(PathBuf, MiaoNetAuthorization)>> = ParkingMutex::new(None);
 }
 
 #[path = "blacklist.rs"]
@@ -112,6 +114,14 @@ struct MiaoNetLocalState {
     installed: bool,
     authenticated: bool,
     last_name: Option<String>,
+    authorization: Option<MiaoNetAuthorization>,
+}
+
+#[derive(Clone, Serialize)]
+struct MiaoNetAuthorization {
+    state: String,
+    detail: Option<String>,
+    revision: u64,
 }
 
 const MIAONET_DEFAULT_EMOTES: [&str; 8] = [
@@ -168,6 +178,16 @@ struct MiaoNetSettingsUpdate {
 }
 
 fn miaonet_settings_directories(game_path: &Path) -> Vec<PathBuf> {
+    miaonet_settings_directories_for_platform(game_path, cfg!(target_os = "android"))
+}
+
+fn miaonet_settings_directories_for_platform(game_path: &Path, android_runtime: bool) -> Vec<PathBuf> {
+    // RuntimeHost sets EVEREST_SAVEPATH only in the separate :game process.
+    // The manager must resolve the same per-install Saves directory itself,
+    // never the app-wide Linux/XDG directory (which can contain stale tokens).
+    if android_runtime {
+        return vec![game_path.join("Saves")];
+    }
     let mut directories = Vec::new();
     if let Some(override_path) = std::env::var_os("EVEREST_SAVEPATH") {
         directories.push(PathBuf::from(override_path).join("Saves"));
@@ -523,12 +543,34 @@ fn read_miaonet_auth_state(game_path: &Path) -> (bool, Option<String>) {
 }
 
 #[tauri::command]
-fn logout_miaonet(game_path: String) -> Result<(), String> {
+async fn logout_miaonet(game_path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || logout_miaonet_impl(game_path))
+        .await.map_err(|error| format!("退出群服登录失败：{error}"))?
+}
+
+fn ensure_miaonet_game_stopped(game_path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "android")]
+    let running = {
+        let _ = game_path; // Android has a single game process for all installs.
+        crate::android::game_running().map_err(|error| error.to_string())?
+    };
+    #[cfg(not(target_os = "android"))]
+    let running = is_celeste_running(game_path);
+    if running {
+        return Err("请先退出 Celeste，再修改 MiaoNet 登录信息或设置。".to_string());
+    }
+    Ok(())
+}
+
+fn logout_miaonet_impl(game_path: String) -> Result<(), String> {
     let game_path = normalize_game_path_impl(&game_path);
     let game_path = Path::new(&game_path);
-    if is_celeste_running(game_path) {
-        return Err("请先退出 Celeste，再清除 MiaoNet 登录信息。".to_string());
+    ensure_miaonet_game_stopped(game_path)?;
+    let mut authorization = MIAONET_AUTHORIZATION.lock();
+    if authorization.as_ref().is_some_and(|(path, _)| path == game_path) {
+        *authorization = None;
     }
+    drop(authorization);
 
     for directory in miaonet_settings_directories(game_path) {
         let path = directory.join("modsettings-MiaoNet.celeste");
@@ -578,6 +620,9 @@ fn get_miaonet_local_state(game_path: String) -> MiaoNetLocalState {
         installed,
         authenticated,
         last_name,
+        authorization: MIAONET_AUTHORIZATION.lock().as_ref()
+            .filter(|(path, _)| path == Path::new(&game_path))
+            .map(|(_, status)| status.clone()),
     }
 }
 
@@ -588,16 +633,16 @@ fn get_miaonet_settings(game_path: String) -> Result<MiaoNetSettings, String> {
 }
 
 #[tauri::command]
-fn save_miaonet_settings(
+async fn save_miaonet_settings(
     game_path: String,
     settings: MiaoNetSettingsUpdate,
 ) -> Result<MiaoNetSettings, String> {
-    let game_path = normalize_game_path_impl(&game_path);
-    let game_path = Path::new(&game_path);
-    if is_celeste_running(game_path) {
-        return Err("请先退出 Celeste，再保存 MiaoNet 设置。".to_string());
-    }
-    save_miaonet_settings_update(game_path, &settings)
+    tauri::async_runtime::spawn_blocking(move || {
+        let game_path = normalize_game_path_impl(&game_path);
+        let game_path = Path::new(&game_path);
+        ensure_miaonet_game_stopped(game_path)?;
+        save_miaonet_settings_update(game_path, &settings)
+    }).await.map_err(|error| format!("保存群服设置失败：{error}"))?
 }
 
 fn installed_miaonet_protocol_version(game_path: &Path) -> Result<[u16; 3], String> {
@@ -634,16 +679,23 @@ struct MiaoNetOauthGuard;
 
 impl Drop for MiaoNetOauthGuard {
     fn drop(&mut self) {
+        #[cfg(target_os = "android")]
+        if crate::android::finish_miaonet_auth().is_err() {
+            crate::logging::warn(format_args!("MiaoNet authorization service cleanup failed"));
+        }
         MIAONET_OAUTH_ACTIVE.store(false, Ordering::Release);
     }
 }
 
-fn miaonet_oauth_event(channel: &Channel<IpcEvent>, state: &str, detail: Option<&str>) {
-    let mut args = vec![serde_json::json!(state)];
-    if let Some(detail) = detail {
-        args.push(serde_json::json!(detail));
-    }
-    send_event(channel, args);
+fn miaonet_oauth_event(game_path: &Path, channel: &Channel<IpcEvent>, state: &str, detail: Option<&str>) {
+    // Channel callbacks belong to the original WebView. Keep a snapshot so a
+    // resumed/recreated page can recover even when a callback was not delivered.
+    let revision = MIAONET_AUTHORIZATION_REVISION.fetch_add(1, Ordering::Relaxed) + 1;
+    *MIAONET_AUTHORIZATION.lock() = Some((game_path.to_path_buf(), MiaoNetAuthorization {
+        state: state.to_string(), detail: detail.map(str::to_string), revision,
+    }));
+    crate::logging::info(format_args!("MiaoNet authorization stage: {state}"));
+    send_event(channel, vec![serde_json::json!(state), serde_json::json!(detail), serde_json::json!(revision)]);
 }
 
 fn make_miaonet_oauth_url(state: &str) -> Result<String, String> {
@@ -680,13 +732,12 @@ fn read_http_request(stream: &mut TcpStream) -> Result<String, String> {
 }
 
 fn write_http_page(stream: &mut TcpStream, status: &str, title: &str, message: &str) {
-    let body = format!(
-        "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{margin:0;background:#101114;color:#eee;font:16px system-ui,-apple-system,sans-serif;display:grid;min-height:100vh;place-items:center}}main{{max-width:520px;padding:40px;text-align:center}}h1{{font-size:24px;margin:0 0 12px}}p{{color:#aeb2ba;line-height:1.7;margin:0}}</style></head><body><main><h1>{title}</h1><p>{message}</p></main></body></html>"
-    );
+    let body = miaonet_callback_page(title, message, cfg!(target_os = "android"));
     let response = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n{body}",
+        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nConnection: close\r\n\r\n{body}",
         body.len()
     );
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
     let _ = stream.write_all(response.as_bytes());
     let _ = stream.flush();
 }
@@ -944,6 +995,26 @@ fn save_miaonet_login(
     username: Option<&str>,
 ) -> Result<(), String> {
     let settings_path = miaonet_settings_path(game_path)?;
+    save_miaonet_login_at_path(&settings_path, authentication_data, username)
+}
+
+fn miaonet_callback_page(title: &str, message: &str, android: bool) -> String {
+    fn escape(value: &str) -> String {
+        value.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+            .replace('"', "&quot;").replace('\'', "&#39;")
+    }
+    let title = escape(title);
+    let message = escape(message);
+    // A user-activated wake-up link, never an OAuth credential transport.
+    let return_link = if android { "<p><a href=\"celemod-auth://return\">返回 CeleMod</a></p>" } else { "" };
+    format!("<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{margin:0;background:#101114;color:#eee;font:16px system-ui,-apple-system,sans-serif;display:grid;min-height:100vh;place-items:center}}main{{max-width:520px;padding:32px;text-align:center;overflow-wrap:anywhere}}h1{{font-size:24px}}p{{color:#aeb2ba;line-height:1.7}}a{{display:inline-block;padding:14px 24px;color:#fff;background:#365caa;border-radius:8px}}</style></head><body><main><h1>{title}</h1><p>{message}</p>{return_link}</main></body></html>")
+}
+
+fn save_miaonet_login_at_path(
+    settings_path: &Path,
+    authentication_data: &[u8],
+    username: Option<&str>,
+) -> Result<(), String> {
     let mut settings = read_miaonet_settings_document(&settings_path)?;
     let serde_yaml::Value::Mapping(mapping) = &mut settings else {
         return Err("MiaoNet 设置文件格式不正确。".to_string());
@@ -964,25 +1035,33 @@ fn save_miaonet_login(
 
     let serialized = serde_yaml::to_string(&settings)
         .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
+    let directory = settings_path.parent()
+        .ok_or_else(|| "MiaoNet 设置路径无效。".to_string())?;
+    fs::create_dir_all(directory).map_err(|error| format!("创建 MiaoNet 设置目录失败：{error}"))?;
     fs::write(&settings_path, serialized).map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))
 }
 
 fn run_miaonet_oauth_listener(
-    listener: TcpListener,
+    listeners: Vec<TcpListener>,
     expected_state: &str,
     game_path: &Path,
     protocol_version: [u16; 3],
     on_event: &Channel<IpcEvent>,
+    timeout: Duration,
 ) -> Result<(), String> {
-    let deadline = Instant::now() + Duration::from_secs(120);
+    let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
-        let (mut stream, _) = match listener.accept() {
-            Ok(connection) => connection,
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                std::thread::sleep(Duration::from_millis(80));
-                continue;
+        let mut connection = None;
+        for listener in &listeners {
+            match listener.accept() {
+                Ok(accepted) => { connection = Some(accepted); break; }
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
+                Err(error) => return Err(format!("接收浏览器授权回调失败：{error}")),
             }
-            Err(error) => return Err(format!("接收浏览器授权回调失败：{error}")),
+        }
+        let Some((mut stream, _)) = connection else {
+            std::thread::sleep(Duration::from_millis(80));
+            continue;
         };
 
         let request = match read_http_request(&mut stream) {
@@ -1022,6 +1101,7 @@ fn run_miaonet_oauth_listener(
         }
         let parameters = callback_url.query_pairs().collect::<HashMap<_, _>>();
         if parameters.get("state").map(|state| state.as_ref()) != Some(expected_state) {
+            crate::logging::warn(format_args!("MiaoNet callback rejected: state mismatch"));
             write_http_page(
                 &mut stream,
                 "400 Bad Request",
@@ -1044,6 +1124,7 @@ fn run_miaonet_oauth_listener(
             return Err(format!("论坛未完成授权：{detail}"));
         }
         let Some(code) = parameters.get("code") else {
+            crate::logging::warn(format_args!("MiaoNet callback rejected: missing code"));
             write_http_page(
                 &mut stream,
                 "400 Bad Request",
@@ -1053,37 +1134,42 @@ fn run_miaonet_oauth_listener(
             continue;
         };
 
-        write_http_page(
-            &mut stream,
-            "200 OK",
-            "MiaoNet+ 授权已收到",
-            "CeleMod 正在验证并保存登录信息。你现在可以关闭此页面并返回 CeleMod。",
-        );
-        drop(stream);
-        miaonet_oauth_event(on_event, "exchanging_code", None);
+        // Do not claim success before exchange/save. Otherwise any later error
+        // is invisible in the browser and may be lost with a suspended WebView.
+        miaonet_oauth_event(game_path, on_event, "exchanging_code", None);
         let result = exchange_miaonet_oauth_code(code.as_ref(), protocol_version).and_then(
             |(authentication_data, username)| {
-                miaonet_oauth_event(on_event, "saving_token", None);
+                // The game may have been started while the browser was open.
+                ensure_miaonet_game_stopped(game_path)?;
+                miaonet_oauth_event(game_path, on_event, "saving_token", None);
                 save_miaonet_login(game_path, &authentication_data, username.as_deref())
             },
         );
         match result {
             Ok(()) => {
-                miaonet_oauth_event(on_event, "complete", None);
+                miaonet_oauth_event(game_path, on_event, "complete", None);
+                write_http_page(&mut stream, "200 OK", "MiaoNet+ 登录成功",
+                    "登录信息已保存。请返回 CeleMod，群服页面会自动更新。不要刷新此授权页面。");
                 return Ok(());
             }
-            Err(error) => return Err(error),
+            Err(error) => {
+                write_http_page(&mut stream, "502 Bad Gateway", "MiaoNet+ 登录未完成", &error);
+                return Err(error);
+            }
         }
     }
     Err("等待浏览器授权超时，请重新开始。".to_string())
 }
 
 #[tauri::command]
-fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
+async fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || start_miaonet_oauth_impl(game_path, on_event))
+        .await.map_err(|error| format!("启动群服授权失败：{error}"))?
+}
+
+fn start_miaonet_oauth_impl(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
     let game_path = PathBuf::from(normalize_game_path_impl(&game_path));
-    if is_celeste_running(&game_path) {
-        return Err("请先退出 Celeste，避免游戏覆盖新的登录信息。".to_string());
-    }
+    ensure_miaonet_game_stopped(&game_path)?;
     let protocol_version = installed_miaonet_protocol_version(&game_path)?;
     if MIAONET_OAUTH_ACTIVE
         .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
@@ -1104,6 +1190,14 @@ fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result
         return Err(format!("无法配置本地授权回调：{error}"));
     }
 
+    let mut listeners = vec![listener];
+    // localhost may resolve to ::1 in mobile browsers. Only bind loopback.
+    if let Ok(listener) = TcpListener::bind(("::1", 21472)) {
+        if listener.set_nonblocking(true).is_ok() {
+            listeners.push(listener);
+        }
+    }
+
     let mut random = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut random);
     let state = general_purpose::URL_SAFE_NO_PAD.encode(random);
@@ -1117,17 +1211,23 @@ fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result
 
     std::thread::spawn(move || {
         let _guard = MiaoNetOauthGuard;
-        miaonet_oauth_event(&on_event, "waiting_browser", None);
-        if let Err(error) = open::that(&authorization_url) {
+        miaonet_oauth_event(&game_path, &on_event, "waiting_browser", None);
+        // Use the platform-aware opener: Android launches an ACTION_VIEW intent,
+        // not the desktop opener's subprocess (which can fail with os error 13).
+        #[cfg(target_os = "android")]
+        let open_result = crate::android::open_miaonet_auth(&authorization_url).map_err(|e| e.to_string());
+        #[cfg(not(target_os = "android"))]
+        let open_result = open_url(authorization_url);
+        if let Err(error) = open_result {
             let message = logged_error(format!("无法打开系统浏览器：{error}"));
-            miaonet_oauth_event(&on_event, "failed", Some(&message));
+            miaonet_oauth_event(&game_path, &on_event, "failed", Some(&message));
             return;
         }
         if let Err(error) =
-            run_miaonet_oauth_listener(listener, &state, &game_path, protocol_version, &on_event)
+            run_miaonet_oauth_listener(listeners, &state, &game_path, protocol_version, &on_event, Duration::from_secs(300))
         {
             logged_error(format!("MiaoNet OAuth 失败：{error}"));
-            miaonet_oauth_event(&on_event, "failed", Some(&error));
+            miaonet_oauth_event(&game_path, &on_event, "failed", Some(&error));
         }
     });
     Ok(())
@@ -5537,8 +5637,92 @@ fn do_self_update(url: String, on_event: Channel<IpcEvent>) {
     });
 }
 #[cfg(test)]
+mod miaonet_oauth_tests {
+    use super::*;
+
+    #[test]
+    fn callback_page_escapes_errors_and_returns_without_credentials() {
+        let page = miaonet_callback_page("<bad>", "<script>alert('x')</script>&", true);
+        assert!(!page.contains("<script>"));
+        assert!(page.contains("&lt;script&gt;"));
+        assert!(page.contains("href=\"celemod-auth://return\""));
+        assert!(!miaonet_callback_page("Done", "Done", false).contains("celemod-auth"));
+    }
+
+    #[test]
+    fn status_survives_a_callback_without_a_page_subscriber() {
+        let channel = Channel::<IpcEvent>::new(|_| Ok(()));
+        let path = Path::new("/test/miaonet-status");
+        miaonet_oauth_event(path, &channel, "failed", Some("Test failure"));
+        let saved = MIAONET_AUTHORIZATION.lock().clone().unwrap();
+        assert_eq!(saved.0, path);
+        assert_eq!(saved.1.state, "failed");
+        assert_eq!(saved.1.detail.as_deref(), Some("Test failure"));
+        assert!(saved.1.revision > 0);
+        miaonet_oauth_event(path, &channel, "waiting_browser", None);
+        assert!(MIAONET_AUTHORIZATION.lock().as_ref().unwrap().1.revision > saved.1.revision);
+    }
+
+    #[test]
+    fn actual_loopback_callback_rejects_wrong_state_then_reports_denial() {
+        for host in ["127.0.0.1", "::1"] {
+            let listener = match TcpListener::bind((host, 0)) {
+                Ok(listener) => listener,
+                Err(_) if host == "::1" => continue,
+                Err(error) => panic!("IPv4 loopback unavailable: {error}"),
+            };
+            let address = listener.local_addr().unwrap();
+            listener.set_nonblocking(true).unwrap();
+            let worker = std::thread::spawn(move || run_miaonet_oauth_listener(
+                vec![listener], "test-state", Path::new("/test/game"), [0, 0, 0],
+                &Channel::new(|_| Ok(())), Duration::from_secs(3)));
+            for (state, expected) in [("wrong", "授权请求已失效"), ("test-state", "未完成授权")] {
+                let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(1)).unwrap();
+                stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                write!(stream, "GET /auth?state={state}&error=access_denied HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n").unwrap();
+                let mut response = String::new();
+                stream.read_to_string(&mut response).unwrap();
+                assert!(response.starts_with("HTTP/1.1 400 Bad Request"));
+                assert!(response.contains(expected));
+                assert!(response.contains("Referrer-Policy: no-referrer"));
+            }
+            assert!(worker.join().unwrap().unwrap_err().contains("access_denied"));
+        }
+    }
+}
+
+#[cfg(test)]
 mod miaonet_settings_tests {
     use super::*;
+
+    #[test]
+    fn android_settings_are_per_game_not_app_wide_linux_settings() {
+        for game in ["/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/Steam-123", "/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/imported"] {
+            let game = Path::new(game);
+            assert_eq!(miaonet_settings_directories_for_platform(game, true), vec![game.join("Saves")]);
+        }
+    }
+
+    #[test]
+    fn first_login_creates_saves_and_preserves_settings_on_reauthorization() {
+        let root = std::env::temp_dir().join(format!("celemod-miaonet-login-{}-{}",
+            std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let path = root.join("game/Saves/modsettings-MiaoNet.celeste");
+        assert!(!path.parent().unwrap().exists());
+        save_miaonet_login_at_path(&path, b"test-authentication-data", Some("Test player")).unwrap();
+        let mut document = read_miaonet_settings_document(&path).unwrap();
+        assert!(yaml_string_property(&document, "TokenDataEncrypted").is_some_and(|token| !token.is_empty()));
+        assert_eq!(yaml_string_property(&document, "LastName").as_deref(), Some("Test player"));
+        apply_miaonet_settings_update(&mut document, &sample_update()).unwrap();
+        fs::write(&path, serde_yaml::to_string(&document).unwrap()).unwrap();
+        save_miaonet_login_at_path(&path, b"replacement-authentication-data", Some("Other player")).unwrap();
+        let document = read_miaonet_settings_document(&path).unwrap();
+        assert_eq!(yaml_string_property(&document, "LastName").as_deref(), Some("Other player"));
+        let settings = miaonet_settings_from_document(&document).unwrap();
+        assert!(!settings.show_avatar);
+        assert_eq!(settings.player_opacity, 7);
+        fs::remove_dir_all(root).unwrap();
+    }
 
     fn sample_update() -> MiaoNetSettingsUpdate {
         MiaoNetSettingsUpdate {

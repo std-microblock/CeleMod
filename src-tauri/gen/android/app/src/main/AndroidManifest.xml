@@ -37,6 +37,13 @@
             <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
 
             <!-- DEEP LINK PLUGIN. AUTO-GENERATED. DO NOT REMOVE. -->
+            <!-- Wake-up only: authorization codes stay on the loopback callback. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="celemod-auth" android:host="return" />
+            </intent-filter>
         </activity>
 
         <activity android:name="com.celemod.runtime.GameActivity"
@@ -48,6 +55,8 @@
         <service android:name="com.celemod.runtime.InstallerService"
             android:exported="false" android:process=":installer" />
         <service android:name="com.celemod.runtime.SteamTransferService"
+            android:exported="false" android:foregroundServiceType="dataSync" />
+        <service android:name="com.celemod.runtime.MiaoNetAuthService"
             android:exported="false" android:foregroundServiceType="dataSync" />
         <provider
           android:name="androidx.core.content.FileProvider"

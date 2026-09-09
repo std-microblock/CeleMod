@@ -827,3 +827,28 @@
     bottom: 16px;
   }
 }
+
+// Keep Save in the page layout, above the bottom navigation. The desktop
+// fixed footer otherwise sits underneath the mobile nav at bottom: 16px.
+html[data-mobile-layout],
+html[data-platform="android"] {
+  .multiplayer-settings-body {
+    padding-bottom: 18px;
+  }
+  .multiplayer-settings-footer {
+    position: static;
+    flex: 0 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    z-index: auto;
+    margin-top: 8px;
+    button { min-height: 44px; font-size: 13px; }
+  }
+  .multiplayer-emote-footer { flex-wrap: wrap; }
+  .multiplayer-page > .multiplayer-settings-message {
+    flex: 0 0 auto;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+}

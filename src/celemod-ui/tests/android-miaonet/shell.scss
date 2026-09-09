@@ -1,0 +1,24 @@
+// Minimal test shell; the component and Multiplayer.scss remain production code.
+// Keep this fixture independent of unrelated, in-progress mobile navigation work.
+html[data-mobile-layout] {
+  .app-frame { height: 100dvh; padding: 0; }
+  .app-shell { display: flex; flex-direction: column; }
+  .app-content { flex: 1; min-height: 0; }
+  .multiplayer-page { padding: 20px 16px 24px; }
+  .multiplayer-page-body { overflow-y: auto; }
+  .mobile-navigation {
+    display: flex;
+    flex: 0 0 72px;
+    padding: 4px 6px 6px;
+    box-sizing: border-box;
+    background: var(--color-surface-elevated);
+    z-index: 30;
+  }
+  .mobile-nav-button {
+    flex: 1;
+    min-width: 0;
+    min-height: 60px;
+    padding: 4px 2px;
+    font-size: 11px;
+  }
+}

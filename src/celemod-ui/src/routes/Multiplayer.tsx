@@ -37,6 +37,7 @@ type LocalState = {
   installed: boolean;
   authenticated: boolean;
   lastName?: string | null;
+  authorization?: { state: AuthorizationState | "complete"; detail?: string | null; revision: number } | null;
 };
 
 type MiaoNetSettings = {
@@ -86,10 +87,12 @@ const MultiplayerFrame = ({
   step,
   settings = false,
   children,
+  footer,
 }: {
   step: string;
   settings?: boolean;
   children: ReactNode;
+  footer?: ReactNode;
 }) => (
   <div
     className={`multiplayer-page${settings ? " multiplayer-page-settings" : ""}`}
@@ -110,14 +113,21 @@ const MultiplayerFrame = ({
     >
       {children}
     </div>
+    {footer}
   </div>
 );
 
 export const Multiplayer = () => {
-  const noEverest = enforceEverest();
   const [gamePath] = useGamePath();
+  // Pending requests/callbacks from one installation must not populate another.
+  return <MultiplayerGame key={gamePath} gamePath={gamePath} />;
+};
+
+const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
+  const noEverest = enforceEverest();
   const [autoDisableNewMods] = useAutoDisableNewMods();
   const [localState, setLocalState] = useState<LocalState | null>(null);
+  const [localStateError, setLocalStateError] = useState("");
   const [authorizationState, setAuthorizationState] =
     useState<AuthorizationState>("idle");
   const [authorizationError, setAuthorizationError] = useState("");
@@ -145,6 +155,9 @@ export const Multiplayer = () => {
   const [emoteDragOffset, setEmoteDragOffset] = useState({ x: 0, y: 0 });
   const [settling, setSettling] = useState(false);
   const emotePreviewRequest = useRef(0);
+  const localStateRequest = useRef(0);
+  const authorizationRevision = useRef(0);
+  const authorizationPending = useRef(false);
   const draggedEmoteIndexRef = useRef<number | null>(null);
   const dragOverEmoteIndexRef = useRef<number | null>(null);
   const emoteDragStartRef = useRef({ x: 0, y: 0 });
@@ -154,13 +167,23 @@ export const Multiplayer = () => {
 
   const refreshLocalState = useCallback(async () => {
     if (!gamePath) return;
+    const request = ++localStateRequest.current;
     try {
       const state = await invokeCommand<LocalState>("get_miaonet_local_state", {
         gamePath,
       });
+      if (request !== localStateRequest.current) return;
       setLocalState(state);
+      setLocalStateError("");
+      const snapshot = state.authorization;
+      if (!authorizationPending.current && snapshot && snapshot.revision > authorizationRevision.current) {
+        authorizationRevision.current = snapshot.revision;
+        setAuthorizationState(state.authenticated || snapshot.state === "complete" ? "idle" : snapshot.state);
+        setAuthorizationError(snapshot.state === "failed" ? snapshot.detail || _i18n.t("授权未完成，请重试。") : "");
+      }
     } catch (error) {
-      console.error(error);
+      if (request !== localStateRequest.current) return;
+      setLocalStateError(String(error));
     }
   }, [gamePath]);
 
@@ -185,7 +208,16 @@ export const Multiplayer = () => {
   useEffect(() => {
     void refreshLocalState();
     const timer = window.setInterval(refreshLocalState, 2200);
-    return () => window.clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshLocalState();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refreshLocalState);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refreshLocalState);
+    };
   }, [refreshLocalState]);
 
   useEffect(() => {
@@ -244,15 +276,24 @@ export const Multiplayer = () => {
   }, [autoDisableNewMods, downloadMod, downloadTask, refreshLocalState]);
 
   const openAuthorization = useCallback(async () => {
+    ++localStateRequest.current;
+    authorizationPending.current = true;
     setAuthorizationState("starting");
     setAuthorizationError("");
     try {
       await callRemote(
         "start_miaonet_oauth",
         gamePath,
-        (state: unknown, detail: unknown) => {
+        (state: unknown, detail: unknown, revision: unknown) => {
+          ++localStateRequest.current;
+          if (typeof revision === "number") {
+            if (revision <= authorizationRevision.current) return;
+            authorizationRevision.current = revision;
+          }
           const nextState = String(state);
           if (nextState === "complete") {
+            setAuthorizationState("idle");
+            setAuthorizationError("");
             void refreshLocalState();
             return;
           }
@@ -275,6 +316,8 @@ export const Multiplayer = () => {
     } catch (error) {
       setAuthorizationState("failed");
       setAuthorizationError(String(error));
+    } finally {
+      authorizationPending.current = false;
     }
   }, [gamePath, refreshLocalState]);
 
@@ -558,8 +601,18 @@ export const Multiplayer = () => {
   if (!localState) {
     return (
       <MultiplayerFrame step={_i18n.t("正在检查本地状态")}>
-        <ProgressIndicator infinite />
-        <strong>{_i18n.t("正在检查联机配置…")}</strong>
+        {localStateError ? (
+          <>
+            <FaCircleExclamation />
+            <span className="multiplayer-auth-error">{localStateError}</span>
+            <button type="button" onClick={refreshLocalState}>{_i18n.t("重试")}</button>
+          </>
+        ) : (
+          <>
+            <ProgressIndicator infinite />
+            <strong>{_i18n.t("正在检查联机配置…")}</strong>
+          </>
+        )}
       </MultiplayerFrame>
     );
   }
@@ -732,7 +785,45 @@ export const Multiplayer = () => {
     });
 
     return (
-      <MultiplayerFrame step={_i18n.t("联机设置")} settings>
+      <MultiplayerFrame
+        step={_i18n.t("联机设置")}
+        settings
+        footer={
+          <>
+            {(settingsError || settingsNotice) && (
+              <div
+                role={settingsError ? "alert" : "status"}
+                className={`multiplayer-settings-message${settingsError ? " error" : " success"}`}
+              >
+                {settingsError || settingsNotice}
+              </div>
+            )}
+            <footer className="multiplayer-settings-footer">
+              <button
+                type="button"
+                disabled={!settingsDirty || settingsSaving}
+                onClick={() => {
+                  if (!savedMiaoNetSettings) return;
+                  setMiaoNetSettings(cloneMiaoNetSettings(savedMiaoNetSettings));
+                  setSettingsError("");
+                  setSettingsNotice("");
+                }}
+              >
+                {_i18n.t("放弃更改")}
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={!settingsDirty || settingsSaving}
+                onClick={saveMiaoNetSettings}
+              >
+                <FaFloppyDisk />
+                {settingsSaving ? _i18n.t("正在保存…") : _i18n.t("保存设置")}
+              </button>
+            </footer>
+          </>
+        }
+      >
         <div className="multiplayer-dashboard">
           <section className="multiplayer-account-card">
             <div>
@@ -991,39 +1082,6 @@ export const Multiplayer = () => {
             </div>
           </section>
 
-          {(settingsError || settingsNotice) && (
-            <div
-              className={`multiplayer-settings-message${
-                settingsError ? " error" : " success"
-              }`}
-            >
-              {settingsError || settingsNotice}
-            </div>
-          )}
-
-          <footer className="multiplayer-settings-footer">
-            <button
-              type="button"
-              disabled={!settingsDirty || settingsSaving}
-              onClick={() => {
-                if (!savedMiaoNetSettings) return;
-                setMiaoNetSettings(cloneMiaoNetSettings(savedMiaoNetSettings));
-                setSettingsError("");
-                setSettingsNotice("");
-              }}
-            >
-              {_i18n.t("放弃更改")}
-            </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={!settingsDirty || settingsSaving}
-              onClick={saveMiaoNetSettings}
-            >
-              <FaFloppyDisk />
-              {settingsSaving ? _i18n.t("正在保存…") : _i18n.t("保存设置")}
-            </button>
-          </footer>
         </div>
       </MultiplayerFrame>
     );

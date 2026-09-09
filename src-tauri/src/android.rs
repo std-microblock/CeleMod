@@ -17,6 +17,25 @@ pub fn open_url(url: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+// Call from a blocking worker, not a synchronous WebView IPC handler.
+pub fn game_running() -> anyhow::Result<bool> {
+    let result: serde_json::Value = RUNTIME.get().ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?
+        .run_mobile_plugin("gameState", ())?;
+    result["running"].as_bool().ok_or_else(|| anyhow::anyhow!("Android game state is unavailable"))
+}
+
+pub fn open_miaonet_auth(url: &str) -> anyhow::Result<()> {
+    let _: serde_json::Value = RUNTIME.get().ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?
+        .run_mobile_plugin("openMiaoNetAuth", serde_json::json!({"url": url}))?;
+    Ok(())
+}
+
+pub fn finish_miaonet_auth() -> anyhow::Result<()> {
+    let _: serde_json::Value = RUNTIME.get().ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?
+        .run_mobile_plugin("finishMiaoNetAuth", ())?;
+    Ok(())
+}
+
 pub fn pick_package() -> anyhow::Result<serde_json::Value> {
     Ok(RUNTIME.get().ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?
         .run_mobile_plugin("pickPackage", ())?)

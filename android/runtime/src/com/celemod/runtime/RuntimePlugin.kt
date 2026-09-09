@@ -59,6 +59,9 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     private fun gameRunning() = (activity.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
         .runningAppProcesses.orEmpty().any { it.uid == android.os.Process.myUid() && it.processName == activity.packageName + ":game" }
     private fun root() = File(activity.getExternalFilesDir(null), "games").apply { mkdirs() }
+    @Command fun gameState(invoke: Invoke) {
+        invoke.resolve(JSObject().put("running", gameRunning() || SteamBridge.launching) as JSObject)
+    }
     private fun settingsFile() = File(activity.filesDir, "android-controls.json")
     private fun settings(): JSONObject = if (settingsFile().isFile) JSONObject(settingsFile().readText()) else JSONObject()
     private fun checkedPath(raw: String): File {
@@ -178,6 +181,26 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
             activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
             invoke.resolve()
         } catch (e: Exception) { invoke.reject(e.message) }
+    }
+
+    @Command fun openMiaoNetAuth(invoke: Invoke) {
+        try {
+            val uri = android.net.Uri.parse(invoke.getArgs().getString("url"))
+            require(uri.scheme == "https" && uri.host == "bbs.celemiao.com" &&
+                uri.path == "/oauth/authorize") { "Invalid MiaoNet authorization URL" }
+            androidx.core.content.ContextCompat.startForegroundService(activity,
+                Intent(activity, MiaoNetAuthService::class.java))
+            activity.startActivity(Intent(Intent.ACTION_VIEW, uri))
+            invoke.resolve()
+        } catch (e: Exception) {
+            activity.stopService(Intent(activity, MiaoNetAuthService::class.java))
+            invoke.reject(e.message)
+        }
+    }
+
+    @Command fun finishMiaoNetAuth(invoke: Invoke) {
+        activity.stopService(Intent(activity, MiaoNetAuthService::class.java))
+        invoke.resolve()
     }
 
     @Command fun installEverest(invoke: Invoke) {
