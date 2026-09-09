@@ -70,6 +70,10 @@ class ControlLayoutDraft(saved: Map<String, ControlPoint>, savedStyles: Map<Stri
     fun styleSnapshot(): Map<String, ControlStyle> = styles.toMap()
     fun style(id: String) = styles[id] ?: ControlStyle()
     fun setStyle(id: String, style: ControlStyle) { styles[id] = style.normalized() }
+    /** Copy only button settings, never positions or the group's direction mode. */
+    fun setDirectionStyles(group: String, mode: DirectionControlMode, source: ControlStyle) {
+        for (id in mode.buttonIds(group)) setStyle(id, source.copy(directionMode = style(id).directionMode))
+    }
     fun get(id: String) = positions[id]
     fun move(id: String, point: ControlPoint) { if (point.finite) positions[id] = point.normalized() }
     fun restore(id: String, point: ControlPoint?) { if (point == null) positions.remove(id) else positions[id] = point }

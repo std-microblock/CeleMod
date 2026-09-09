@@ -80,8 +80,8 @@ data class ControlProfile(
                 else -> null
             }
             return ControlProfile(
-                stick = enabled && playing && directionMode == DirectionControlMode.STICK,
-                directions = enabled && !direct && (navigation || playing && directionMode != DirectionControlMode.STICK),
+                stick = enabled && playing && directionMode.isStick,
+                directions = enabled && !direct && (navigation || playing && !directionMode.isStick),
                 menuDirections = !playing,
                 top = top.takeIf { enabled },
                 actions = actions.takeIf { enabled && !direct } ?: emptyList(),

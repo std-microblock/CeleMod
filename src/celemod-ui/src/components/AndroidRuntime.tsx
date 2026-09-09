@@ -7,7 +7,7 @@ import { Icon } from "./Icon";
 import { SteamAccount } from "./SteamAccount";
 import { AndroidLogs } from "./AndroidLogs";
 
-type RuntimeSettings = { gameRoot: string; runtime: string; buttons: boolean; joystick: boolean };
+type RuntimeSettings = { gameRoot: string; runtime: string; buttons: boolean; joystick: boolean; gameRumble: boolean };
 
 export function AndroidRuntime() {
   const [gamePath] = useGamePath();
@@ -19,13 +19,12 @@ export function AndroidRuntime() {
   useEffect(() => {
     invoke<RuntimeSettings>("android_runtime_settings").then(setSettings).catch(e => setError(String(e)));
   }, []);
-  async function update(key: "buttons" | "joystick", value: boolean) {
+  async function update(key: "buttons" | "joystick" | "gameRumble", value: boolean) {
     if (!settings) return;
     setSaving(true); setError("");
     try {
       setSettings(await invoke<RuntimeSettings>("android_runtime_settings", {
-        buttons: key === "buttons" ? value : settings.buttons,
-        joystick: key === "joystick" ? value : settings.joystick,
+        [key]: value,
       }));
     } catch (e) { setError(String(e)); }
     finally { setSaving(false); }
@@ -60,15 +59,20 @@ export function AndroidRuntime() {
           onChange={e => void update("buttons", e.target.checked)} />
       </label>
       <label className="setting-toggle-row">
-        <span><strong>屏幕方向控制</strong><small>默认使用八向摇杆（18% 死区）；游戏内「编辑」可切换摇杆 / 四键按钮 / 八键按钮。菜单使用四向方向键，默认关闭。</small></span>
+        <span><strong>屏幕方向控制</strong><small>默认使用固定八向摇杆；游戏内「编辑」可切换固定 / 浮动摇杆、四键 / 八键按钮，并调整死区（默认 18%）和进入死区震动。菜单使用四向方向键，默认关闭。</small></span>
         <input type="checkbox" checked={settings?.joystick ?? false} disabled={!settings || saving}
           onChange={e => void update("joystick", e.target.checked)} />
       </label>
       <div className="theme-setting"><div className="setting-description">
-        <small>设置在下次启动游戏时生效。两项均关闭时可使用实体手柄或键盘。游戏内安卓返回键 / 返回手势等同 Esc；左上角退出图标可返回管理器，启动过程中返回键可取消启动。</small>
+        <small>设置在下次启动游戏时生效。屏幕按键和方向控制均关闭时可使用实体手柄或键盘。游戏内安卓返回键 / 返回手势等同 Esc；左上角退出图标可返回管理器，启动过程中返回键可取消启动。</small>
         <small>游戏内点左上角「编辑」，再轻点摇杆 / 方向键切换模式，轻点各按钮设置进入 / 离开震动、独立震动强度和不透明度（Opacity）；保存后生效，横竖屏分别记忆。</small>
         {error && <p role="alert">{error}</p>}
       </div></div>
+      <label className="setting-toggle-row">
+        <span><strong>跟随游戏震动</strong><small>将原游戏的手柄震动输出转为手机震动，无需连接手柄，默认关闭。保留游戏内震动强弱设置；游戏内关闭震动时不触发。与按键进入 / 离开震动独立，切后台或退出会停止。</small></span>
+        <input type="checkbox" checked={settings?.gameRumble ?? false} disabled={!settings || saving}
+          onChange={e => void update("gameRumble", e.target.checked)} />
+      </label>
     </div>
   </section></>;
 }

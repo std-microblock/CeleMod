@@ -27,11 +27,15 @@ class GameActivity : SDLActivity() {
     private var returning = false
     private var gameReady = false
     private var stateReader: ControlStateReader? = null
+    private var vibration: GameVibration? = null
+    private var resumed = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        vibration = GameVibration(this, intent.getBooleanExtra("gameRumble", false))
         val overlay = TouchControls(this, intent.getBooleanExtra("buttons", false), intent.getBooleanExtra("joystick", false),
-            onExit = { confirmReturn() }, onKeyboard = { SDLActivity.showTextInput(0, 0, 1, 1) })
+            onExit = { confirmReturn() }, onKeyboard = { SDLActivity.showTextInput(0, 0, 1, 1) },
+            onVibration = { vibration?.touch(it) })
         controls = overlay
         overlay.visibility = View.INVISIBLE
         addContentView(overlay, FrameLayout.LayoutParams(-1, -1))
@@ -69,7 +73,8 @@ class GameActivity : SDLActivity() {
             val assembly = File(root, "Celeste.dll").takeIf { it.isFile } ?: File(root, "Celeste.exe")
             SDLActivity.nativeAndroidJNISetEnvCurrent()
             val code = RuntimeHost.run(this, assembly, false,
-                intent.getBooleanExtra("origin", false), intent.getBooleanExtra("legacyLoader", false))
+                intent.getBooleanExtra("origin", false), intent.getBooleanExtra("legacyLoader", false),
+                gameRumble = intent.getBooleanExtra("gameRumble", false))
             if (code != 0) runOnUiThread { Toast.makeText(this, "游戏退出代码 $code，请检查运行日志", Toast.LENGTH_LONG).show() }
         } catch (error: Throwable) {
             Log.e("CeleModRuntime", "Game failed", error)
@@ -79,17 +84,27 @@ class GameActivity : SDLActivity() {
         }
     }
     override fun onPause() {
+        resumed = false
+        vibration?.setActive(false)
         stateReader?.stop()
         controls?.releaseAll()
         super.onPause()
     }
     override fun onResume() {
         super.onResume()
+        resumed = true
+        vibration?.setActive(hasWindowFocus() && !returning)
         stateReader?.start()
     }
     override fun onWindowFocusChanged(hasFocus: Boolean) {
+        vibration?.setActive(hasFocus && resumed && !returning)
         if (!hasFocus) controls?.releaseAll()
         super.onWindowFocusChanged(hasFocus)
+    }
+    override fun onUnhandledMessage(command: Int, param: Any?): Boolean {
+        if (command != GameVibration.COMMAND) return super.onUnhandledMessage(command, param)
+        (param as? Int)?.let { vibration?.game(it) }
+        return true
     }
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Physical Back and predictive-back gestures take exactly the same path:
@@ -115,6 +130,7 @@ class GameActivity : SDLActivity() {
     private fun returnToManager() {
         if (returning) return
         returning = true
+        vibration?.setActive(false)
         controls?.releaseAll()
         packageManager.getLaunchIntentForPackage(packageName)?.let {
             it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -123,6 +139,7 @@ class GameActivity : SDLActivity() {
         finish()
     }
     override fun onDestroy() {
+        vibration?.setActive(false)
         stateReader?.close()
         controls?.releaseAll()
         // SDL's onDestroy waits for SDL_main, which CoreCLR may never return from.

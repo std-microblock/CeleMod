@@ -41,13 +41,13 @@ class ControlProfileTest {
         val pad = profile(ControlMode.GAMEPLAY, joystick = false)
         assertFalse(pad.stick); assertTrue(pad.directions); assertFalse(pad.menuDirections)
     }
-    @Test fun allThreeDirectionModesWorkInGameplayPicoAndFallback() {
+    @Test fun allDirectionModesWorkInGameplayPicoAndFallback() {
         for (scene in listOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)) {
             for (mode in DirectionControlMode.entries) {
                 for ((buttons, joystick) in listOf(true to true, true to false, false to true)) {
                     val p = ControlProfile.forState(ControlState(scene), buttons, joystick, directionMode = mode)
-                    assertEquals(mode == DirectionControlMode.STICK, p.stick)
-                    assertEquals(mode != DirectionControlMode.STICK, p.directions)
+                    assertEquals(mode.isStick, p.stick)
+                    assertEquals(!mode.isStick, p.directions)
                     assertEquals(mode == DirectionControlMode.EIGHT_BUTTONS, p.diagonalDirections)
                     assertFalse(p.menuDirections)
                 }

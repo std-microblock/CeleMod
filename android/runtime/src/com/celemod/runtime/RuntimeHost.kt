@@ -210,7 +210,8 @@ object RuntimeHost {
         return DotNetLauncher.nativeDotNetLauncherHostfxrLaunch(assembly.absolutePath, arrayOf(ipc.absolutePath), root.absolutePath)
     }
 
-    fun run(context: Context, assembly: File, installer: Boolean, vanilla: Boolean = false, legacy: Boolean = false): Int {
+    fun run(context: Context, assembly: File, installer: Boolean, vanilla: Boolean = false, legacy: Boolean = false,
+            gameRumble: Boolean = false): Int {
         val root = runtimeRoot(context)
         check(File(root, ".ready").isFile) { "Runtime has not been prepared" }
         require(assembly.isFile) { "Missing managed assembly: $assembly" }
@@ -218,8 +219,10 @@ object RuntimeHost {
         if (installer) installMonoMod(context, assembly.parentFile!!)
         val logs = File(context.getExternalFilesDir(null), "logs").apply { mkdirs() }
         val log = File(logs, if (installer) "installer.log" else "game.log")
+        // Managed Console also appends through a separate handle. Native writes must
+        // append too, or their independent offset can overwrite the original error.
         val fd = Os.open(log.absolutePath, OsConstants.O_WRONLY or OsConstants.O_CREAT or
-            (if (installer) OsConstants.O_APPEND else OsConstants.O_TRUNC), 384)
+            OsConstants.O_APPEND or (if (installer) 0 else OsConstants.O_TRUNC), 384)
         Os.dup2(fd, 1); Os.dup2(fd, 2); Os.close(fd)
         val nativeDir = context.applicationInfo.nativeLibraryDir
         fun env(k: String, v: String) = Os.setenv(k, v, true)
@@ -244,6 +247,9 @@ object RuntimeHost {
         env("SDL_TOUCH_MOUSE_EVENTS", "0")
         env("SDL_MOUSE_TOUCH_EVENTS", "0")
         env("EVEREST_NO_RESTART", "1")
+        // There is no desktop shell/text-editor association in the embedded host.
+        // Keep ErrorLog.Write and normal failure handling, only suppress Open().
+        env("EVEREST_NO_ERRORLOG_ON_CRASH", "1")
         env("EVEREST_SAVEPATH", assembly.parent!!)
         if (legacy) {
             env("EVEREST_PARALLEL_LOAD", "0")
@@ -252,8 +258,10 @@ object RuntimeHost {
         }
         val hook = if (installer) "installer/EverestMiniInstallerPatch.dll" else "everest/EverestPatch.dll"
         env("CELEMOD_INSTALLER", if (installer) "1" else "0")
+        env("CELEMOD_GAME_RUMBLE", if (!installer && gameRumble) "1" else "0")
         if (installer) env("CELEMOD_INSTALLER_LOG", log.absolutePath)
         if (!installer) {
+            env("CELEMOD_GAME_LOG", log.absolutePath)
             env("CELEMOD_PROGRESS_PATH", File(context.cacheDir, "game-progress-${android.os.Process.myPid()}.json").absolutePath)
             env("CELEMOD_CONTROLS_PATH", File(context.cacheDir, "game-controls-${android.os.Process.myPid()}.json").absolutePath)
         }

@@ -9,6 +9,7 @@ internal static class StartupHook
     public static void Initialize()
     {
         if (Environment.GetEnvironmentVariable("CELEMOD_INSTALLER") == "1") InstallerLog.Install();
+        else GameLog.Install();
         InstallerDependencies.Prepare(AppContext.BaseDirectory,
             Environment.GetEnvironmentVariable("MONOMOD_PATH")!);
         // Run the pinned RAL hook after selecting the edition-specific dependencies.
@@ -20,10 +21,13 @@ internal static class StartupHook
         if (Environment.GetEnvironmentVariable("CELEMOD_INSTALLER") == "1")
             PatchInstaller();
         else {
+            // After RAL resolves Harmony, but before any game/mod code loads.
+            ConsoleColors.Install();
             SteamPlatform.Install();
             GameDisplay.Install();
             PatchGameProgress();
             GameControls.Install();
+            GameRumble.Install();
         }
     }
 

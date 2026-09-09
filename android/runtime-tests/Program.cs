@@ -3,6 +3,15 @@ using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 using Mono.Cecil;
 
+if (args is ["--game-log-probe"]) {
+    GameLog.Install();
+    GameLog.Install(); // No duplicate tee or truncation on repeated initialization.
+    Console.WriteLine("managed stdout 原始错误");
+    try { throw new InvalidOperationException("original game failure", new IOException("inner cause")); }
+    catch (Exception error) { Console.Error.WriteLine(error); }
+    return;
+}
+
 var assertions = 0;
 void Check(bool condition, string description) {
     if (!condition) throw new Exception(description);
@@ -131,6 +140,8 @@ try {
                 "unavailable drawable preserves valid dimensions");
     }
     InstallerTests.Run(root, Check);
+    ConsoleColorTests.Run(Check);
+    GameLogTests.Run(root, Check);
     Console.WriteLine($"PASS: {assertions} Android runtime assertions");
 } finally { Directory.Delete(root, recursive: true); }
 

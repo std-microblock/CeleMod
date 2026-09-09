@@ -48,6 +48,7 @@ Console.WriteLine($"PASS: {count} managed scene classification cases.");
 BindingTests.Run();
 ModButtonTests.Run();
 GameHookTests.Run();
+RumbleTests.Run();
 DirectTouchTests.Run();
 
 class CustomLevel : Level { }

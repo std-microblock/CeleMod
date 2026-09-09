@@ -78,6 +78,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
         result.put("gameRoot", root().absolutePath)
         result.put("buttons", settings().optBoolean("buttons", false))
         result.put("joystick", settings().optBoolean("joystick", false))
+        result.put("gameRumble", settings().optBoolean("gameRumble", false))
         result.put("runtime", "RotatingArtLauncher 2.1.1 / CoreCLR 10.0.4")
         invoke.resolve(result)
     }
@@ -85,8 +86,10 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     @Command fun configure(invoke: Invoke) {
         try {
             val args = invoke.getArgs()
-            val value = JSONObject().put("buttons", args.optBoolean("buttons", false))
-                .put("joystick", args.optBoolean("joystick", false))
+            val value = settings()
+            for (key in arrayOf("buttons", "joystick", "gameRumble")) {
+                if (args.has(key) && !args.isNull(key)) value.put(key, args.getBoolean(key))
+            }
             val temp = File(activity.filesDir, "android-controls.json.tmp")
             temp.writeText(value.toString())
             check(temp.renameTo(settingsFile())) { "Cannot save control settings" }
@@ -177,6 +180,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                         .putExtra("legacyLoader", args.optBoolean("legacyLoader"))
                         .putExtra("buttons", settings().optBoolean("buttons"))
                         .putExtra("joystick", settings().optBoolean("joystick"))
+                        .putExtra("gameRumble", settings().optBoolean("gameRumble", false))
                     SteamBridge.launchStage = "starting"
                     activity.runOnUiThread {
                         try {

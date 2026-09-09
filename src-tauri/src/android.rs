@@ -60,10 +60,10 @@ pub fn steam(request: serde_json::Value) -> anyhow::Result<serde_json::Value> {
         .run_mobile_plugin("steam", request)?)
 }
 
-pub fn settings(buttons: Option<bool>, joystick: Option<bool>) -> anyhow::Result<serde_json::Value> {
+pub fn settings(buttons: Option<bool>, joystick: Option<bool>, game_rumble: Option<bool>) -> anyhow::Result<serde_json::Value> {
     let handle = RUNTIME.get().ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?;
-    Ok(if let (Some(buttons), Some(joystick)) = (buttons, joystick) {
-        handle.run_mobile_plugin("configure", serde_json::json!({"buttons": buttons, "joystick": joystick}))?
+    Ok(if buttons.is_some() || joystick.is_some() || game_rumble.is_some() {
+        handle.run_mobile_plugin("configure", serde_json::json!({"buttons": buttons, "joystick": joystick, "gameRumble": game_rumble}))?
     } else { handle.run_mobile_plugin("info", ())? })
 }
 

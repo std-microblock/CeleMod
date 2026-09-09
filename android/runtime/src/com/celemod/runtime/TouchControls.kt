@@ -6,8 +6,6 @@ import android.graphics.*
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -37,7 +35,8 @@ class TouchControls(
     private val buttons: Boolean,
     private val joystick: Boolean,
     private val onExit: () -> Unit,
-    private val onKeyboard: () -> Unit
+    private val onKeyboard: () -> Unit,
+    private val onVibration: (Int) -> Unit
 ) : View(context) {
     private data class Key(val id: String, val action: ControlAction, val codes: Set<Int>, val rect: RectF,
                            val direction: Boolean = false, val iconOnly: Boolean = false)
@@ -47,22 +46,22 @@ class TouchControls(
     private val keys = mutableListOf<Key>()
     private val pointers = linkedMapOf<Int, Key>()
     private val actionPointers = linkedMapOf<Int, ActionSlideGesture>()
-    private val directionPointers = mutableSetOf<Int>()
+    private val directionPointers = linkedMapOf<Int, DirectionSlideGesture>()
     private val down = mutableSetOf<Int>()
     private val pulses = mutableMapOf<Int, Any>()
     private val pressedAt = mutableMapOf<Int, Long>()
     private val handler = Handler(Looper.getMainLooper())
     private var state = ControlState()
     private var profile = ControlProfile.forState(state, buttons, joystick)
-    private var stickPointer = -1
+    private val stickGesture = StickGesture()
+    private val stickPointer get() = stickGesture.pointer
     private var sx = 0f
     private var sy = 0f
+    private val stickFeedback = StickDirectionFeedback()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val density = resources.displayMetrics.density
     private val safe = Rect()
     private val preferences = context.getSharedPreferences("touch-layouts", Context.MODE_PRIVATE)
-    @Suppress("DEPRECATION")
-    private val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
     private val contacts = ControlContacts()
     private val touchWriter = DirectTouchWriter(context.cacheDir)
     private val modWriter = ModButtonWriter(context.cacheDir)
@@ -91,8 +90,12 @@ class TouchControls(
     private val radius get() = min(
         min((height - safe.top - safe.bottom) * .18f, 75 * density) * style("game/stick").scale,
         min(layoutBounds.width, layoutBounds.height) / 2)
-    private val cx get() = stickCenter.x
-    private val cy get() = stickCenter.y
+    private val floating get() = directionMode == DirectionControlMode.FLOATING_STICK
+    private val floatingArea get() = StickInput.floatingArea(layoutBounds, toolbarBounds)
+    private val visibleStickCenter get() = stickGesture.center ?: if (floating && editing)
+        floatingArea.let { ControlPoint((it.left + it.right) / 2, (it.top + it.bottom) / 2) } else stickCenter
+    private val cx get() = visibleStickCenter.x
+    private val cy get() = visibleStickCenter.y
 
     private fun gameLayout(mode: ControlMode) = mode in setOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)
     private val layoutGroup get() = if (if (editing) editingGame else gameLayout(state.mode)) "game" else "menu"
@@ -276,11 +279,23 @@ class TouchControls(
             }
         }
         if (editing) canvas.drawColor(0x66000000)
-        if (profile.stick) {
+        if (editing && profile.stick && floating) {
+            val area = floatingArea
+            paint.style = Paint.Style.FILL; paint.color = 0x2282B8FF
+            canvas.drawRect(area.left, area.top, area.right, area.bottom, paint)
+            paint.style = Paint.Style.STROKE; paint.strokeWidth = density; paint.color = 0xAA82B8FF.toInt()
+            canvas.drawRect(area.left, area.top, area.right, area.bottom, paint)
+            paint.style = Paint.Style.FILL; paint.textAlign = Paint.Align.CENTER; paint.textSize = 12 * density
+            canvas.drawText("浮动摇杆触发区域 · 按钮优先", (area.left + area.right) / 2, area.bottom - 12 * density, paint)
+        }
+        if (profile.stick && (!floating || editing || stickPointer != -1)) {
             val layer = saveControlLayer(canvas, "game/stick", RectF(cx - radius, cy - radius, cx + radius, cy + radius))
             paint.style = Paint.Style.FILL
             paint.color = if (drag?.id == "game/stick") 0x9982B8FF.toInt() else 0x66313E51
             canvas.drawCircle(cx, cy, radius, paint)
+            paint.style = Paint.Style.STROKE; paint.strokeWidth = density; paint.color = 0x6682B8FF
+            canvas.drawCircle(cx, cy, radius * style("game/stick").stickDeadZone, paint)
+            paint.style = Paint.Style.FILL
             paint.color = 0xAA82B8FF.toInt()
             canvas.drawCircle(cx + sx * radius * .65f, cy + sy * radius * .65f, radius * .35f, paint)
             if (editing) {
@@ -394,23 +409,19 @@ class TouchControls(
             if (!key.direction || !profile.menuDirections || key === direction) next += key.codes
         }
         for (key in heldActionKeys()) next += key.codes
-        if (sx != 0f || sy != 0f) {
-            if (abs(sx) >= abs(sy) * .41421356f)
-                next += ControlKeys.resolveAll(state, if (sx < 0) "Left" else "Right")
-            if (abs(sy) >= abs(sx) * .41421356f)
-                next += ControlKeys.resolveAll(state, if (sy < 0) "Up" else "Down")
-        }
+        StickDirection.fromVector(sx, sy)?.bindings?.forEach { next += ControlKeys.resolveAll(state, it) }
         for (code in down - next) { if (code >= 0) SDLActivity.onNativeKeyUp(code); pressedAt.remove(code) }
         for (code in next - down) { if (code >= 0) SDLActivity.onNativeKeyDown(code); pressedAt[code] = SystemClock.uptimeMillis() }
         down.clear(); down.addAll(next)
         modWriter.set(state.modEpoch, ModButtons.held(state.modButtons, down))
     }
-    private fun updateStick(x: Float, y: Float) {
-        val dx = (x - cx) / radius
-        val dy = (y - cy) / radius
-        val length = sqrt(dx * dx + dy * dy)
-        sx = if (length < .18f) 0f else dx / max(1f, length)
-        sy = if (length < .18f) 0f else dy / max(1f, length)
+    private fun updateStick(x: Float, y: Float): Int {
+        val settings = style("game/stick")
+        val vector = stickGesture.vector(ControlPoint(x, y), radius, settings.stickDeadZone)
+        sx = vector.x; sy = vector.y
+        val entered = stickFeedback.update(StickDirection.fromVector(sx, sy))
+        return if (stickFeedback.enteredDeadZone) settings.deadZoneVibrationStrength()
+            else entered?.let { settings.stickVibrationStrength(it) } ?: 0
     }
 
     /** Keydown/up in the same UI tick can be lost before FNA's next input poll. */
@@ -485,6 +496,9 @@ class TouchControls(
         val target = drag ?: return
         if (!target.moved && hypot(x - target.startX, y - target.startY) <= ViewConfiguration.get(context).scaledTouchSlop) return
         target.moved = true
+        // Floating centers belong only to gestures; editing the preview must not
+        // overwrite the stored fixed-stick anchor or imply the activation area moved.
+        if (target.id == "game/stick" && floating) return
         val point = ControlLayout.constrain(ControlPoint(x - target.offsetX, y - target.offsetY),
             target.halfWidth, target.halfHeight, layoutBounds, toolbarBounds)
         draft?.move(target.id, ControlLayout.normalize(point, layoutBounds))
@@ -499,13 +513,29 @@ class TouchControls(
         val original = editingDraft.style(id)
         var scale = original.scale
         var behavior = original.slide
+        var directionBehavior = original.directionSlide
         var opacity = original.opacity
         var enterVibration = original.enterVibration
         var leaveVibration = original.leaveVibration
         var enterStrength = original.enterStrength
         var leaveStrength = original.leaveStrength
+        var stickDiagonalVibration = original.stickDiagonalVibration
+        var stickCardinalVibration = original.stickCardinalVibration
+        var stickDiagonalStrength = original.stickDiagonalStrength
+        var stickCardinalStrength = original.stickCardinalStrength
+        var stickDeadZone = original.stickDeadZone
+        var stickDeadZoneVibration = original.stickDeadZoneVibration
+        var stickDeadZoneStrength = original.stickDeadZoneStrength
         var selectedMode = directionMode
         val canChangeMode = id == "game/stick" || id.startsWith("game/dpad/")
+        // Batch scope follows the selected gameplay mode; menu batches stay cardinal.
+        var batchToggle: CheckBox? = null
+        fun batchMode() = if (id.startsWith("game/") && selectedMode == DirectionControlMode.EIGHT_BUTTONS)
+            DirectionControlMode.EIGHT_BUTTONS else DirectionControlMode.FOUR_BUTTONS
+        fun updateBatchLabel() {
+            batchToggle?.text = if (batchMode() == DirectionControlMode.EIGHT_BUTTONS) "应用到八键" else "应用到四键"
+            batchToggle?.isEnabled = !canChangeMode || !selectedMode.isStick
+        }
         val padding = (20 * density).toInt()
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -518,7 +548,7 @@ class TouchControls(
                     addView(RadioButton(context).apply {
                         this.id = View.generateViewId(); text = option.label; textSize = 14f
                         isChecked = option == selectedMode
-                        setOnCheckedChangeListener { _, checked -> if (checked) selectedMode = option }
+                        setOnCheckedChangeListener { _, checked -> if (checked) { selectedMode = option; updateBatchLabel() } }
                     })
                 }
             })
@@ -536,7 +566,7 @@ class TouchControls(
                 override fun onStopTrackingTouch(bar: SeekBar?) = Unit
             })
         }, LinearLayout.LayoutParams(-1, -2))
-        fun percentSlider(title: String, initial: Int, presets: Boolean = false, changed: (Int) -> Unit): SeekBar {
+        fun percentSlider(title: String, initial: Int, presets: Boolean = false, maximum: Int = 100, changed: (Int) -> Unit): SeekBar {
             val valueLabel = TextView(context).apply { text = "$title：$initial%"; textSize = 16f }
             content.addView(valueLabel)
             val selector = if (presets) Spinner(context).apply {
@@ -548,7 +578,7 @@ class TouchControls(
                 content.addView(this, LinearLayout.LayoutParams(-1, -2))
             } else null
             return SeekBar(context).apply {
-                max = 100; progress = initial
+                max = maximum; progress = initial
                 val slider = this
                 selector?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, itemId: Long) {
@@ -583,6 +613,34 @@ class TouchControls(
         content.addView(leaveToggle)
         percentSlider("离开震动强度", leaveStrength, presets = true) { leaveStrength = it }
         leaveToggle.setOnCheckedChangeListener { _, checked -> leaveVibration = checked }
+        if (id == "game/stick") {
+            percentSlider("死区比例（相对摇杆半径）", (stickDeadZone * 100).roundToInt(), maximum = 90) { stickDeadZone = it / 100f }
+            content.addView(TextView(context).apply {
+                text = "0–90%，默认 18%；中心死区内不输入方向。浮动摇杆在屏幕左半侧、工具栏下方的空白区域按下出现，以落点为中心拖动；抬手隐藏，按钮优先。编辑时可查看触发区域，固定位置不会被覆盖。"; textSize = 13f
+            })
+            content.addView(TextView(context).apply { text = "摇杆方向变化震动"; textSize = 16f })
+            content.addView(CheckBox(context).apply {
+                text = "切换到斜向时震动（45° / 135° / 225° / 315°）"
+                isChecked = stickDiagonalVibration
+                setOnCheckedChangeListener { _, checked -> stickDiagonalVibration = checked }
+            })
+            percentSlider("斜向震动强度", stickDiagonalStrength, presets = true) { stickDiagonalStrength = it }
+            content.addView(CheckBox(context).apply {
+                text = "切换到正向时震动（0° / 90° / 180° / 270°）"
+                isChecked = stickCardinalVibration
+                setOnCheckedChangeListener { _, checked -> stickCardinalVibration = checked }
+            })
+            percentSlider("正向震动强度", stickCardinalStrength, presets = true) { stickCardinalStrength = it }
+            content.addView(CheckBox(context).apply {
+                text = "进入死区时震动"
+                isChecked = stickDeadZoneVibration
+                setOnCheckedChangeListener { _, checked -> stickDeadZoneVibration = checked }
+            })
+            percentSlider("进入死区震动强度", stickDeadZoneStrength, presets = true) { stickDeadZoneStrength = it }
+            content.addView(TextView(context).apply {
+                text = "按实际八向输入的方向区间触发，不必精确停在角度上。同方向或停留死区不重复；从有效方向回到死区仅触发一次死区震动。初次按在中心、抬手或取消不触发死区震动。与进入 / 离开震动独立。"; textSize = 13f
+            })
+        }
         content.addView(TextView(context).apply {
             text = "进入含按下 / 滑入，离开含滑出 / 抬手；仅响应触控区域变化，不改变锁定 / 叠加行为。0% 不震动，不支持强度调节的设备使用系统默认强度。"; textSize = 13f
         })
@@ -597,9 +655,31 @@ class TouchControls(
                     })
                 }
             })
+        } else if (key?.direction == true) {
+            content.addView(TextView(context).apply { text = "移出按钮区域但手指仍按住时"; textSize = 16f })
+            content.addView(RadioGroup(context).apply {
+                DirectionSlideBehavior.entries.forEach { option ->
+                    addView(RadioButton(context).apply {
+                        this.id = View.generateViewId(); text = option.label; textSize = 14f
+                        isChecked = option == directionBehavior
+                        setOnCheckedChangeListener { _, checked -> if (checked) directionBehavior = option }
+                    })
+                }
+            })
+            content.addView(TextView(context).apply {
+                text = "本次手势沿用起始按钮的设置；保持方向不会改变移入 / 移出震动。抬手、取消触控或切换场景都会释放。"; textSize = 13f
+            })
         } else {
             content.addView(TextView(context).apply {
-                text = "方向按钮支持滑动切换；摇杆保留八向操作和 18% 死区。"; textSize = 13f
+                text = "方向按钮支持滑动切换；固定 / 浮动摇杆使用相同的八向操作和死区设置。"; textSize = 13f
+            })
+        }
+        if (key?.direction == true) {
+            batchToggle = CheckBox(context).apply { isChecked = false }
+            updateBatchLabel()
+            content.addView(batchToggle)
+            content.addView(TextView(context).apply {
+                text = "勾选后，将当前大小、不透明度、进入 / 离开震动及强度、移出行为复制到本组方向按钮。不改变位置或其他布局；应用到草稿后仍需保存，可取消撤销。"; textSize = 13f
             })
         }
         val dialog = AlertDialog.Builder(context).setTitle("$label · 按键设置")
@@ -609,7 +689,14 @@ class TouchControls(
                 if (draft === editingDraft) {
                     editingDraft.setStyle(id, original.copy(scale = scale, slide = behavior, opacity = opacity,
                         enterVibration = enterVibration, leaveVibration = leaveVibration,
-                        enterStrength = enterStrength, leaveStrength = leaveStrength))
+                        enterStrength = enterStrength, leaveStrength = leaveStrength, directionSlide = directionBehavior,
+                        stickDiagonalVibration = stickDiagonalVibration, stickCardinalVibration = stickCardinalVibration,
+                        stickDiagonalStrength = stickDiagonalStrength, stickCardinalStrength = stickCardinalStrength,
+                        stickDeadZone = stickDeadZone, stickDeadZoneVibration = stickDeadZoneVibration,
+                        stickDeadZoneStrength = stickDeadZoneStrength))
+                    batchToggle?.takeIf { it.isEnabled && it.isChecked }?.let {
+                        editingDraft.setDirectionStyles(if (id.startsWith("game/")) "game" else "menu", batchMode(), editingDraft.style(id))
+                    }
                     if (canChangeMode) editingDraft.setStyle("game/stick", editingDraft.style("game/stick").copy(directionMode = selectedMode))
                     rebuild()
                 }
@@ -630,7 +717,8 @@ class TouchControls(
                 if (key != null && key.id.startsWith("fixed/")) editorCommand = id to key.action.binding
                 else if (key != null) drag = Drag(id, key.id, x - key.rect.centerX(), y - key.rect.centerY(),
                     key.rect.width() / 2, key.rect.height() / 2, draft?.get(key.id), x, y)
-                else if (profile.stick && hypot(x - cx, y - cy) <= radius) drag =
+                else if (profile.stick && (hypot(x - cx, y - cy) <= radius ||
+                    floating && StickInput.contains(floatingArea, ControlPoint(x, y)))) drag =
                     Drag(id, "game/stick", x - cx, y - cy, radius, radius, draft?.get("game/stick"), x, y)
             }
             MotionEvent.ACTION_POINTER_DOWN -> { cancelDrag(); rebuild() }
@@ -693,7 +781,7 @@ class TouchControls(
             keys.none { it.rect.contains(event.getX(index), event.getY(index)) }) return false
         // Contact feedback is geometric, not based on keycode pulses or latched actions.
         // Sample before release actions can open a dialog or change the profile.
-        updateContacts(event)
+        var vibrationStrength = updateContacts(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val x = event.getX(index); val y = event.getY(index)
@@ -706,21 +794,24 @@ class TouchControls(
                     }
                     if (slideAction(key)) actionPointers[id] = ActionSlideGesture(key.id, style(key.id).slide)
                     else pointers[id] = key
-                    if (key.direction) directionPointers += id
-                } else if (profile.stick && stickPointer == -1 && hypot(x - cx, y - cy) <= radius * 1.3f) {
-                    stickPointer = id; updateStick(x, y)
+                    if (key.direction) directionPointers[id] = DirectionSlideGesture(key.id, style(key.id).directionSlide)
+                } else if (profile.stick && stickGesture.begin(id, ControlPoint(x, y),
+                        if (floating) null else stickCenter, floatingArea, radius)) {
+                    vibrationStrength = max(vibrationStrength, updateStick(x, y))
                 }
                 // Own the gesture, including fingers initially outside a control.
                 // Otherwise a second finger cannot press jump while the first rests on screen.
             }
             MotionEvent.ACTION_MOVE -> {
                 val i = event.findPointerIndex(stickPointer)
-                if (i >= 0) updateStick(event.getX(i), event.getY(i))
-                for (pointer in directionPointers) {
+                if (i >= 0) vibrationStrength = max(vibrationStrength, updateStick(event.getX(i), event.getY(i)))
+                for ((pointer, gesture) in directionPointers) {
                     val p = event.findPointerIndex(pointer)
                     if (p < 0) continue
-                    val key = keys.lastOrNull { it.direction && it.rect.contains(event.getX(p), event.getY(p)) }
-                    if (key == null) pointers.remove(pointer) else pointers[pointer] = key
+                    val target = keyAt(event.getX(p), event.getY(p))?.takeIf { it.direction }
+                    gesture.move(target?.id)
+                    val held = keys.firstOrNull { it.id == gesture.active() }
+                    if (held == null) pointers.remove(pointer) else pointers[pointer] = held
                 }
                 for ((pointer, gesture) in actionPointers) {
                     val p = event.findPointerIndex(pointer)
@@ -734,7 +825,7 @@ class TouchControls(
                     finishPress(keys.firstOrNull { it.id == actionId })
                 }
                 directionPointers -= id
-                if (id == stickPointer) { stickPointer = -1; sx = 0f; sy = 0f }
+                if (stickGesture.end(id)) { sx = 0f; sy = 0f; stickFeedback.clear() }
                 if (key?.rect?.contains(event.getX(index), event.getY(index)) == true) {
                     if (key.action.binding == "Exit") { releaseAll(); onExit() }
                     if (key.action.binding == "Keyboard") {
@@ -753,12 +844,12 @@ class TouchControls(
             }
             MotionEvent.ACTION_CANCEL -> releaseAll()
         }
-        syncKeys(); invalidate()
+        syncKeys(); vibrate(vibrationStrength); invalidate()
         return true
     }
     override fun performClick(): Boolean { super.performClick(); return true }
-    private fun updateContacts(event: MotionEvent) {
-        if (event.actionMasked == MotionEvent.ACTION_CANCEL) { contacts.clear(); return }
+    private fun updateContacts(event: MotionEvent): Int {
+        if (event.actionMasked == MotionEvent.ACTION_CANCEL) { contacts.clear(); return 0 }
         val lifted = if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_POINTER_UP)
             event.actionIndex else -1
         val touching = buildSet {
@@ -768,22 +859,22 @@ class TouchControls(
                 val key = keyAt(x, y)
                 if (key != null) {
                     if (!key.id.startsWith("fixed/")) add(key.id)
-                } else if (profile.stick && hypot(x - cx, y - cy) <= radius * 1.3f) add("game/stick")
+                } else if (profile.stick) {
+                    val startsFloating = floating && stickPointer == -1 && i == event.actionIndex &&
+                        event.actionMasked in setOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN) &&
+                        StickInput.contains(floatingArea, ControlPoint(x, y))
+                    if (startsFloating || ((!floating || event.getPointerId(i) == stickPointer) &&
+                        hypot(x - cx, y - cy) <= radius * 1.3f)) add("game/stick")
+                }
             }
         }
         val changes = contacts.update(touching)
         // Merge simultaneous transitions; one motor cannot play separate effects at once.
-        val strength = changes.maxOfOrNull { style(it.id).vibrationStrength(it.entering) } ?: 0
+        return changes.maxOfOrNull { style(it.id).vibrationStrength(it.entering) } ?: 0
+    }
+    private fun vibrate(strength: Int) {
         if (strength <= 0) return
-        try {
-            val motor = vibrator ?: return
-            if (!motor.hasVibrator()) return
-            val amplitude = if (motor.hasAmplitudeControl()) (strength * 255 / 100).coerceIn(1, 255)
-                else VibrationEffect.DEFAULT_AMPLITUDE
-            motor.vibrate(VibrationEffect.createOneShot(20L, amplitude))
-        } catch (_: RuntimeException) {
-            // Missing permission or an unavailable device service must never break input.
-        }
+        onVibration(strength)
     }
     private fun directTouch(event: MotionEvent): Boolean {
         val scene = state.touch
@@ -846,12 +937,13 @@ class TouchControls(
     fun releaseAll() {
         cancelDrag()
         contacts.clear()
+        stickFeedback.clear()
         directGesture = null; directSequence = false; directPointer = -1
         handler.removeCallbacksAndMessages(null)
         for (code in down) if (code >= 0) SDLActivity.onNativeKeyUp(code)
         modWriter.set(state.modEpoch, emptyList())
         down.clear(); pulses.clear(); pressedAt.clear(); pointers.clear(); actionPointers.clear(); directionPointers.clear()
-        stickPointer = -1; sx = 0f; sy = 0f
+        stickGesture.clear(); sx = 0f; sy = 0f
         invalidate()
     }
 }

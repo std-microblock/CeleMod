@@ -4332,12 +4332,12 @@ async fn android_steam(request: serde_json::Value) -> Result<serde_json::Value, 
 }
 
 #[tauri::command]
-async fn android_runtime_settings(buttons: Option<bool>, joystick: Option<bool>) -> Result<serde_json::Value, String> {
+async fn android_runtime_settings(buttons: Option<bool>, joystick: Option<bool>, game_rumble: Option<bool>) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    return tauri::async_runtime::spawn_blocking(move || crate::android::settings(buttons, joystick)).await
+    return tauri::async_runtime::spawn_blocking(move || crate::android::settings(buttons, joystick, game_rumble)).await
         .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
-    { let _ = (buttons, joystick); Err("Android only".into()) }
+    { let _ = (buttons, joystick, game_rumble); Err("Android only".into()) }
 }
 
 #[tauri::command]

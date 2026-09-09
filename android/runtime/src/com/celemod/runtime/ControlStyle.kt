@@ -12,11 +12,40 @@ enum class ControlSlideBehavior(val label: String) {
 }
 
 enum class DirectionControlMode(val label: String) {
-    STICK("摇杆"), FOUR_BUTTONS("四键按钮"), EIGHT_BUTTONS("八键按钮");
+    STICK("固定摇杆"), FLOATING_STICK("浮动摇杆"), FOUR_BUTTONS("四键按钮"), EIGHT_BUTTONS("八键按钮");
+
+    val isStick get() = this == STICK || this == FLOATING_STICK
+
+    fun buttonIds(group: String): List<String> {
+        require(group == "game" || group == "menu")
+        if (isStick) return emptyList()
+        val directions = listOf("Left", "Down", "Right", "Up") +
+            if (this == EIGHT_BUTTONS && group == "game") listOf("UpLeft", "UpRight", "DownLeft", "DownRight") else emptyList()
+        return directions.map { "$group/dpad/$it" }
+    }
 
     companion object {
         fun parse(value: String?) = entries.firstOrNull { it.name == value }
         fun default(joystick: Boolean) = if (joystick) STICK else FOUR_BUTTONS
+    }
+}
+
+enum class DirectionSlideBehavior(val label: String) {
+    RELEASE("移出后松开；滑入其他方向时切换"),
+    KEEP_LAST("移出后保持最后方向；滑入其他方向时切换，抬手松开");
+
+    companion object {
+        fun parse(value: String?) = entries.firstOrNull { it.name == value } ?: RELEASE
+    }
+}
+
+/** The starting direction owns the policy for this finger, even after crossing
+ * a button with another policy. At most one direction button is held per finger. */
+class DirectionSlideGesture(first: String, private val behavior: DirectionSlideBehavior) {
+    private var held: String? = first
+    fun active(): String? = held
+    fun move(target: String?) {
+        if (target != null || behavior == DirectionSlideBehavior.RELEASE) held = target
     }
 }
 
@@ -29,17 +58,35 @@ data class ControlStyle(
     val enterStrength: Int = 50,
     val leaveStrength: Int = 50,
     // Only game/stick uses this field. Null preserves the launcher's old preference.
-    val directionMode: DirectionControlMode? = null
+    val directionMode: DirectionControlMode? = null,
+    val directionSlide: DirectionSlideBehavior = DirectionSlideBehavior.RELEASE,
+    val stickDiagonalVibration: Boolean = false,
+    val stickCardinalVibration: Boolean = false,
+    val stickDiagonalStrength: Int = 50,
+    val stickCardinalStrength: Int = 50,
+    val stickDeadZone: Float = .18f,
+    val stickDeadZoneVibration: Boolean = false,
+    val stickDeadZoneStrength: Int = 50
 ) {
     fun normalized() = copy(
         scale = if (scale.isFinite()) scale.coerceIn(.5f, 2f) else 1f,
         opacity = if (opacity.isFinite()) opacity.coerceIn(0f, 1f) else 1f,
         enterStrength = enterStrength.coerceIn(0, 100),
-        leaveStrength = leaveStrength.coerceIn(0, 100))
+        leaveStrength = leaveStrength.coerceIn(0, 100),
+        stickDiagonalStrength = stickDiagonalStrength.coerceIn(0, 100),
+        stickCardinalStrength = stickCardinalStrength.coerceIn(0, 100),
+        stickDeadZone = StickInput.deadZone(stickDeadZone),
+        stickDeadZoneStrength = stickDeadZoneStrength.coerceIn(0, 100))
 
     fun vibrationStrength(entering: Boolean): Int =
         if (entering) { if (enterVibration) enterStrength.coerceIn(0, 100) else 0 }
         else { if (leaveVibration) leaveStrength.coerceIn(0, 100) else 0 }
+
+    fun stickVibrationStrength(direction: StickDirection): Int =
+        if (direction.diagonal) { if (stickDiagonalVibration) stickDiagonalStrength.coerceIn(0, 100) else 0 }
+        else { if (stickCardinalVibration) stickCardinalStrength.coerceIn(0, 100) else 0 }
+
+    fun deadZoneVibrationStrength() = if (stickDeadZoneVibration) stickDeadZoneStrength.coerceIn(0, 100) else 0
 
     companion object {
         val strengthPresets: List<Int> = (0..100 step 10).toList()
@@ -47,7 +94,7 @@ data class ControlStyle(
         fun encode(styles: Map<String, ControlStyle>) = "v2\n" + styles.toSortedMap()
             .filterKeys { ControlLayout.validId(it) }.map { (id, style) ->
                 val value = style.normalized()
-                "$id=${value.scale},${value.slide.name},${value.opacity},${value.enterVibration},${value.leaveVibration},${value.enterStrength},${value.leaveStrength},${value.directionMode?.name ?: "DEFAULT"}"
+                "$id=${value.scale},${value.slide.name},${value.opacity},${value.enterVibration},${value.leaveVibration},${value.enterStrength},${value.leaveStrength},${value.directionMode?.name ?: "DEFAULT"},${value.directionSlide.name},${value.stickDiagonalVibration},${value.stickCardinalVibration},${value.stickDiagonalStrength},${value.stickCardinalStrength},${value.stickDeadZone},${value.stickDeadZoneVibration},${value.stickDeadZoneStrength}"
             }.joinToString("\n")
 
         fun decode(raw: String?): Map<String, ControlStyle> {
@@ -55,8 +102,8 @@ data class ControlStyle(
             val legacy = raw.startsWith("v1\n")
             return buildMap {
                 for (line in raw.lineSequence().drop(1).take(128)) {
-                    val parts = line.split('=', ',', limit = 10)
-                    if (parts.size != (if (legacy) 3 else 9) || !ControlLayout.validId(parts[0])) continue
+                    val parts = line.split('=', ',', limit = 18)
+                    if ((if (legacy) parts.size != 3 else parts.size !in listOf(9, 10, 14, 17)) || !ControlLayout.validId(parts[0])) continue
                     val scale = parts[1].toFloatOrNull()?.takeIf { it.isFinite() } ?: continue
                     val style = ControlStyle(scale, ControlSlideBehavior.parse(parts[2]))
                     put(parts[0], (if (legacy) style else style.copy(
@@ -65,7 +112,15 @@ data class ControlStyle(
                         leaveVibration = parts[5].toBooleanStrictOrNull() ?: false,
                         enterStrength = parts[6].toIntOrNull() ?: 50,
                         leaveStrength = parts[7].toIntOrNull() ?: 50,
-                        directionMode = DirectionControlMode.parse(parts[8]))).normalized())
+                        directionMode = DirectionControlMode.parse(parts[8]),
+                        directionSlide = DirectionSlideBehavior.parse(parts.getOrNull(9)),
+                        stickDiagonalVibration = parts.getOrNull(10)?.toBooleanStrictOrNull() ?: false,
+                        stickCardinalVibration = parts.getOrNull(11)?.toBooleanStrictOrNull() ?: false,
+                        stickDiagonalStrength = parts.getOrNull(12)?.toIntOrNull() ?: 50,
+                        stickCardinalStrength = parts.getOrNull(13)?.toIntOrNull() ?: 50,
+                        stickDeadZone = parts.getOrNull(14)?.toFloatOrNull() ?: .18f,
+                        stickDeadZoneVibration = parts.getOrNull(15)?.toBooleanStrictOrNull() ?: false,
+                        stickDeadZoneStrength = parts.getOrNull(16)?.toIntOrNull() ?: 50)).normalized())
                 }
             }
         }

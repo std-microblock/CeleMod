@@ -9,7 +9,10 @@
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <Compile Include="../runtime/managed/SteamPlatform.cs" Link="SteamPlatform.cs" />
     <Compile Include="../runtime/managed/GameDisplay.cs" Link="GameDisplay.cs" />
+    <Compile Include="../runtime/managed/ConsoleColors.cs" Link="ConsoleColors.cs" />
     <Compile Include="../runtime/managed/InstallerDependencies.cs" Link="InstallerDependencies.cs" />
     <Compile Include="../runtime/managed/InstallerLog.cs" Link="InstallerLog.cs" />
+    <Compile Include="../runtime/managed/GameLog.cs" Link="GameLog.cs" />
+    <Compile Include="../runtime/managed/AppendLogStream.cs" Link="AppendLogStream.cs" />
   </ItemGroup>
 </Project>

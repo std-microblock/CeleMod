@@ -10,7 +10,7 @@ pause-key toggles, proprietary game references, or persistent game setting chang
 
 | Context | Left | Bottom right / other actions | Top right |
 | --- | --- | --- | --- |
-| Gameplay | Eight-way stick, four buttons, or eight buttons | Jump, dash, grab; interaction appears in Talk range | Pause icon / bound Pause |
+| Gameplay | Fixed/floating eight-way stick, four buttons, or eight buttons | Jump, dash, grab; interaction appears in Talk range | Pause icon / bound Pause |
 | Pause main menu | Cardinal D-pad | Confirm, cancel | **Play/resume icon / bound Pause** |
 | Pause submenus / confirmation prompts | Cardinal D-pad | Confirm, cancel | Back icon / Esc |
 | Main menu, saves, options, Everest / mod Oui menus | Cardinal D-pad | Confirm, cancel | Bound menu-cancel key |
@@ -112,11 +112,41 @@ one-tap resume.
 ### Direction mode, feedback and opacity
 
 - In the gameplay layout editor, tap the stick or any direction button to choose
-  **摇杆 / 四键按钮 / 八键按钮**. The eight-button layout adds four explicit diagonal
+  **固定摇杆 / 浮动摇杆 / 四键按钮 / 八键按钮**. The eight-button layout adds four explicit diagonal
   buttons around an empty center. Menus retain cardinal-only navigation. Existing
   launcher enable/disable switches are respected; an unset mode follows the old
   joystick preference. Switching modes preserves the hidden controls' positions
   and styles so switching back is non-destructive.
+- **浮动摇杆** starts anywhere in the left half of the safe layout, below the
+  fixed toolbar, excluding button hit regions. It appears centered exactly at
+  touch-down and initially sends no direction; dragging determines direction.
+  The first finger owns a latched center until lift/cancel, even when dragging
+  outside the activation region. Other fingers can use action buttons but cannot
+  recenter or release it. When idle it is hidden; the editor shows its activation
+  region and a preview that can be tapped for settings. Preview dragging does not
+  change the region or overwrite the fixed stick's saved anchor. Menus keep their
+  normal direct-touch/cardinal navigation. Both stick modes share size, dead zone,
+  opacity and feedback settings.
+- **死区比例** is adjustable from 0–90% of the base radius in 1% increments,
+  defaulting to the previous 18%. A faint circle indicates its size. Dead-zone
+  motion sends no direction; 0% still leaves the exact center neutral. The separate
+  **进入死区时震动** switch and strength (11 presets / 1% increments) trigger only
+  when an active direction returns to neutral. Staying neutral, initially pressing
+  in the dead zone, lifting or cancellation never trigger this effect. The new
+  switch defaults off and persists/cancels/resets with the other stick settings.
+- In a direction button's settings, check **应用到四键 / 应用到八键** to copy
+  its size, opacity, entry/exit feedback and strengths, and outside-hold behavior
+  to the selected direction group. It is opt-in; individual editing stays the
+  default. Positions, action buttons, the stick and the other layout are unchanged.
+  A four-key batch leaves hidden diagonals untouched; an eight-key batch includes
+  all four diagonals. Menu batches always affect only their four cardinal buttons.
+  Batch edits use the same draft/Save/Cancel/Reset transaction as single edits.
+- Direction buttons independently choose **移出后松开** (the existing default)
+  or **移出后保持最后方向** while the finger stays down. Both switch to another
+  direction when the finger enters it; neither accumulates crossed directions.
+  The starting button's policy lasts for that finger's gesture. Lifting/cancelling,
+  entering the editor, or changing scenes/focus releases ownership normally.
+  Physical entry/exit vibration remains independent of a held direction.
 - Each editable button (including menu buttons) and the stick has **进入时震动** and
   **离开时震动**, independently enabled with separate 0–100% strength sliders.
   Each has 11 quick presets (0, 10, …, 100%) and 1% slider increments (101 levels);
@@ -132,6 +162,18 @@ one-tap resume.
   icon and text) from 0–100%. It does not shrink or disable the hit region. In the
   editor, a 25% visibility floor keeps fully transparent controls recoverable.
   Fixed editor/exit controls remain visible and are not customizable.
+- The stick additionally has independent **切换到斜向时震动** (45°, 135°, 225°,
+  315°) and **切换到正向时震动** (0°/360°, 90°, 180°, 270°) switches and strengths.
+  Each defaults off and offers the same 11 presets / 1% fine adjustment. Feedback
+  uses the exact eight-way sectors used for input, not exact-angle equality. A
+  change to another cardinal or another diagonal also counts, but remaining in
+  the same sector does not repeat. Entering a direction from the configured dead
+  zone counts as a change; returning to neutral uses the separate dead-zone
+  feedback setting. Releasing/cancelling does not trigger these direction/dead-zone
+  groups. Contact entry/exit settings remain separate. Simultaneous contact
+  and direction changes merge into one pulse at the strongest configured strength.
+  Both groups persist with the stick's existing per-orientation draft settings;
+  old styles load without enabling any new vibration.
 - All these settings join the existing draft/save/cancel/reset transaction and are
   stored separately for portrait/landscape. The v2 style format accepts legacy v1
   size/slide data with unchanged appearance and no vibration. Scene/focus/layout
@@ -144,6 +186,25 @@ slide A → outside → B, hold still, re-enter, lift, and repeat with HOLD/ADDI
 two fingers on one button. Test each toggle off and strength 0. Set opacity to 0,
 25 and 100%; verify invisible hit regions and editor recovery. Save/relaunch,
 Cancel, Reset+Cancel, Reset+Save, and rotate to check independent persistence.
+For batch/hold settings: edit one direction and apply to four/eight, verify all
+target styles match without moving any control, and check that menu/action styles
+are unchanged. Test both outside policies with A → outside → B → outside → lift,
+including diagonals and a second finger holding an action. Verify scene changes,
+focus loss and gesture cancellation release held directions. Cancel both the
+settings dialog and the full editor after a batch; confirm neither saves changes.
+For stick feedback: enable only the diagonal group, then only the cardinal group,
+then both with distinct strengths. Rotate through all eight sectors, jump directly
+between two cardinals / diagonals, remain inside a sector, return to the dead zone
+and re-enter, then lift/cancel and start again. Check 0% strength, Save/Cancel/Reset,
+portrait/landscape persistence, and simultaneous button and stick transitions.
+For dead zone/floating mode: test 0%, 18%, 50% and 90%; move out and return to
+neutral, hold there, lift and cancel. Tap several left-side positions (including
+edges), confirm no movement until dragging, keep the base anchored while dragging
+outside the region, and verify a second finger can jump without moving the base.
+Touches on buttons or outside the activation region must not spawn a stick. Check
+the toolbar remains usable, idle sticks disappear, menu/focus changes release
+input, and switching back restores the saved fixed anchor. Test Save/Cancel/Reset
+and relaunch to verify both new settings and the selected mode persist.
 
 ## Direct UI touch
 
@@ -252,3 +313,30 @@ PID's `game-controls-<pid>.json`. Verify title tap reaches the main menu and sna
 follow subsequent UI changes. The host tests also exercise typed original delegates,
 post-update pumping, real and synthetic button presses, consumption, UI/scene
 invalidation, and propagation of original game exceptions.
+
+## Game-output phone vibration
+
+- Manager settings → Android 游戏运行时 → **跟随游戏震动** (`gameRumble`, default
+  false, applied on the next game launch). Existing settings files remain off;
+  partial setting updates preserve all other switches.
+- A managed detour observes `FNA GamePad.SetVibration(PlayerIndex, float, float)`
+  after the original call, including when it returns false because no physical
+  controller is attached. Celeste's own rumble off/half/full setting, timing,
+  arbitration and stop commands remain upstream; no key/gesture guesses and no
+  simulated controller connection. Mods using the same FNA output are also mirrored.
+- The stronger motor across the four logical pads maps to the phone's 1–255
+  amplitude. SDL's existing `SDL_AndroidSendMessage` JNI channel uses user command
+  `0xCE01`; no native library changes, files or background polling are needed.
+- An independent Engine.Update detour renews active output every 100 ms; the Android
+  lease expires after 300 ms without updates. Focus loss, backgrounding and exit
+  clear both sources immediately. Resuming does not replay stored Android effects.
+- Touch enter/leave pulses keep their own switches and 20 ms durations. The shared
+  phone motor mixes them with game output by maximum amplitude, restoring remaining
+  game output after a touch pulse; a game stop never cancels an active touch pulse.
+  Devices without amplitude control use the system's default strength. Missing
+  hardware/permission/service failures must never interrupt gameplay.
+- Host coverage: `dotnet run --project android/runtime/tests/managed` and Gradle
+  `:app:testArm64DebugUnitTest` (`VibrationStateTest`). Device smoke checks: enable
+  with both touch controls off; trigger dash/landing rumble without a gamepad; check
+  half/off in the game's settings; combine touch pulses; background and return;
+  disable and relaunch. Physical controller rumble should remain unchanged.
