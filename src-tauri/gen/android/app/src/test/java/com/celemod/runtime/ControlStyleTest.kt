@@ -7,6 +7,82 @@ class ControlStyleTest {
     @Test fun oldLayoutsKeepOriginalSizeAndHoldBehavior() {
         assertTrue(ControlStyle.decode(null).isEmpty())
         assertEquals(ControlStyle(1f, ControlSlideBehavior.HOLD), ControlLayoutDraft(emptyMap()).style("game/action/Jump"))
+        assertEquals(mapOf("game/stick" to ControlStyle(1.5f, ControlSlideBehavior.TRANSFER)),
+            ControlStyle.decode("v1\ngame/stick=1.5,TRANSFER"))
+    }
+    @Test fun opacityFeedbackAndDirectionModeRoundTrip() {
+        val saved = mapOf("game/stick" to ControlStyle(directionMode = DirectionControlMode.EIGHT_BUTTONS),
+            "game/action/Jump" to ControlStyle(.75f, ControlSlideBehavior.ADDITIVE, .35f, true, true, 80, 25),
+            "game/dpad/UpLeft" to ControlStyle(opacity = 0f, leaveVibration = true, leaveStrength = 100),
+            "menu/action/0" to ControlStyle(enterVibration = true, enterStrength = 0))
+        assertEquals(saved, ControlStyle.decode(ControlStyle.encode(saved)))
+        assertTrue(ControlStyle.decode("v3\ngame/stick=1,HOLD").isEmpty())
+    }
+    @Test fun newValuesAreClampedAndMalformedFieldsUseSafeDefaults() {
+        val loaded = ControlStyle.decode("v2\ngame/stick=1,HOLD,NaN,invalid,true,-10,900,UNKNOWN\n" +
+            "game/action/Jump=1,TRANSFER,-2,true,false,broken,broken,DEFAULT")
+        assertEquals(ControlStyle(leaveVibration = true, enterStrength = 0, leaveStrength = 100), loaded["game/stick"])
+        assertEquals(ControlStyle(slide = ControlSlideBehavior.TRANSFER, opacity = 0f, enterVibration = true), loaded["game/action/Jump"])
+        assertEquals(1f, ControlStyle(opacity = 5f).normalized().opacity)
+        assertEquals(1f, ControlStyle(opacity = Float.POSITIVE_INFINITY).normalized().opacity)
+    }
+    @Test fun newSettingsAreDraftOnlyUntilSavedAndResetIsUndoable() {
+        val original = mapOf("game/stick" to ControlStyle(directionMode = DirectionControlMode.STICK))
+        val draft = ControlLayoutDraft(emptyMap(), original)
+        val changed = ControlStyle(opacity = .2f, enterVibration = true, leaveVibration = true,
+            enterStrength = 70, leaveStrength = 30, directionMode = DirectionControlMode.FOUR_BUTTONS)
+        draft.setStyle("game/stick", changed)
+        assertEquals(DirectionControlMode.STICK, original["game/stick"]?.directionMode)
+        val saved = ControlStyle.decode(ControlStyle.encode(draft.styleSnapshot()))
+        draft.reset()
+        assertEquals(ControlStyle(), draft.style("game/stick"))
+        assertEquals(changed, saved["game/stick"])
+        assertEquals(original, ControlLayoutDraft(emptyMap(), original).styleSnapshot())
+    }
+    @Test fun vibrationSwitchesAndZeroStrengthAreIndependent() {
+        assertEquals(0, ControlStyle().vibrationStrength(true))
+        assertEquals(0, ControlStyle().vibrationStrength(false))
+        val style = ControlStyle(enterVibration = true, leaveVibration = true, enterStrength = 70, leaveStrength = 20)
+        assertEquals(70, style.vibrationStrength(true)); assertEquals(20, style.vibrationStrength(false))
+        assertEquals(0, style.copy(enterVibration = false).vibrationStrength(true))
+        assertEquals(0, style.copy(leaveStrength = 0).vibrationStrength(false))
+    }
+    @Test fun elevenPresetsAndAll101FineStrengthLevelsRemainDistinctAfterSaving() {
+        assertEquals((0..100 step 10).toList(), ControlStyle.strengthPresets)
+        assertEquals(11, ControlStyle.strengthPresets.size)
+        for (strength in 0..100) {
+            val style = ControlStyle(enterVibration = true, leaveVibration = true,
+                enterStrength = strength, leaveStrength = 100 - strength)
+            val saved = ControlStyle.decode(ControlStyle.encode(mapOf("game/action/Jump" to style))).getValue("game/action/Jump")
+            assertEquals(strength, saved.vibrationStrength(true))
+            assertEquals(100 - strength, saved.vibrationStrength(false))
+        }
+    }
+    @Test fun contactsFireOnEnterLeaveAndReentryButNotStationaryMoves() {
+        val contacts = ControlContacts()
+        assertEquals(listOf(ControlContacts.Change("A", true)), contacts.update(setOf("A")))
+        repeat(10) { assertTrue(contacts.update(setOf("A")).isEmpty()) }
+        assertEquals(listOf(ControlContacts.Change("A", false), ControlContacts.Change("B", true)), contacts.update(setOf("B")))
+        assertEquals(listOf(ControlContacts.Change("B", false)), contacts.update(emptySet()))
+        assertEquals(listOf(ControlContacts.Change("A", true)), contacts.update(setOf("A")))
+    }
+    @Test fun lastContactLeavesAndCancellationDoesNotEmitFeedback() {
+        val contacts = ControlContacts()
+        contacts.update(listOf("A", "A", "B").toSet())
+        assertTrue(contacts.update(listOf("A", "B").toSet()).isEmpty())
+        assertEquals(listOf(ControlContacts.Change("A", false)), contacts.update(setOf("B")))
+        contacts.clear() // Focus loss, scene switch, editor and ACTION_CANCEL are silent.
+        assertTrue(contacts.update(emptySet()).isEmpty())
+        assertEquals(listOf(ControlContacts.Change("B", true)), contacts.update(setOf("B")))
+    }
+    @Test fun contactFeedbackDoesNotChangeLatchedActionOwnership() {
+        for (behavior in listOf(ControlSlideBehavior.HOLD, ControlSlideBehavior.ADDITIVE)) {
+            val gesture = ActionSlideGesture("A", behavior)
+            val contacts = ControlContacts()
+            contacts.update(setOf("A")); gesture.move(null)
+            assertEquals(listOf(ControlContacts.Change("A", false)), contacts.update(emptySet()))
+            assertEquals(setOf("A"), gesture.active())
+        }
     }
     @Test fun stylesRoundTripIndependentlyForEachControl() {
         val saved = mapOf("game/action/Jump" to ControlStyle(1.5f, ControlSlideBehavior.TRANSFER),

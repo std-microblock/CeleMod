@@ -60,12 +60,13 @@ export function AndroidRuntime() {
           onChange={e => void update("buttons", e.target.checked)} />
       </label>
       <label className="setting-toggle-row">
-        <span><strong>屏幕摇杆映射</strong><small>游玩时使用八向摇杆（18% 死区），菜单自动换为十字方向键和确认 / 返回，默认关闭。</small></span>
+        <span><strong>屏幕方向控制</strong><small>默认使用八向摇杆（18% 死区）；游戏内「编辑」可切换摇杆 / 四键按钮 / 八键按钮。菜单使用四向方向键，默认关闭。</small></span>
         <input type="checkbox" checked={settings?.joystick ?? false} disabled={!settings || saving}
           onChange={e => void update("joystick", e.target.checked)} />
       </label>
       <div className="theme-setting"><div className="setting-description">
         <small>设置在下次启动游戏时生效。两项均关闭时可使用实体手柄或键盘。游戏内安卓返回键 / 返回手势等同 Esc；左上角退出图标可返回管理器，启动过程中返回键可取消启动。</small>
+        <small>游戏内点左上角「编辑」，再轻点摇杆 / 方向键切换模式，轻点各按钮设置进入 / 离开震动、独立震动强度和不透明度（Opacity）；保存后生效，横竖屏分别记忆。</small>
         {error && <p role="alert">{error}</p>}
       </div></div>
     </div>

@@ -5,6 +5,8 @@ import android.view.KeyEvent
 /** XNA key names from actual Celeste bindings, not a hardcoded C/X/Z assumption. */
 object ControlKeys {
     private val directions = setOf("Up", "Down", "Left", "Right")
+    private val diagonals = mapOf("UpLeft" to listOf("Up", "Left"), "UpRight" to listOf("Up", "Right"),
+        "DownLeft" to listOf("Down", "Left"), "DownRight" to listOf("Down", "Right"))
     private val defaults = mapOf(
         "Jump" to KeyEvent.KEYCODE_C, "Dash" to KeyEvent.KEYCODE_X, "Grab" to KeyEvent.KEYCODE_Z,
         "Talk" to KeyEvent.KEYCODE_X, "Pause" to KeyEvent.KEYCODE_ENTER,
@@ -44,6 +46,7 @@ object ControlKeys {
     /** One common direction key controls both movement and aim. If it is unbound,
      * press the separate move/aim bindings together, never an unrelated arrow key. */
     fun resolveAll(state: ControlState, action: String): Set<Int> {
+        diagonals[action]?.let { return it.flatMap { direction -> resolveAll(state, direction) }.toSet() }
         if (action !in directions) return setOfNotNull(resolve(state, action))
         state.bindings[action]?.firstNotNullOfOrNull(::fromXna)?.let { return setOf(it) }
         val split = listOf(action + "MoveOnly", action + "DashOnly")

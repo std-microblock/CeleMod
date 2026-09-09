@@ -10,7 +10,7 @@ pause-key toggles, proprietary game references, or persistent game setting chang
 
 | Context | Left | Bottom right / other actions | Top right |
 | --- | --- | --- | --- |
-| Gameplay | Preferred eight-way stick or D-pad | Jump, dash, grab; interaction appears in Talk range | Pause icon / bound Pause |
+| Gameplay | Eight-way stick, four buttons, or eight buttons | Jump, dash, grab; interaction appears in Talk range | Pause icon / bound Pause |
 | Pause main menu | Cardinal D-pad | Confirm, cancel | **Play/resume icon / bound Pause** |
 | Pause submenus / confirmation prompts | Cardinal D-pad | Confirm, cancel | Back icon / Esc |
 | Main menu, saves, options, Everest / mod Oui menus | Cardinal D-pad | Confirm, cancel | Bound menu-cancel key |
@@ -97,7 +97,8 @@ one-tap resume.
   **Additive** keeps A and every action crossed until that finger lifts;
   **Hold** retains only the original A regardless of drifting (the existing default).
   Sweeps never activate the editor, exit, pause, or other toolbar controls. Directions
-  retain their existing slide navigation and the stick remains a stick.
+  retain their slide navigation; eight-button diagonals hold both resolved axes,
+  including split movement/aim bindings, rather than introducing new game bindings.
 - The starting button's behavior controls the entire gesture; different fingers
   have independent ownership. Lifting/cancelling or changing scene/layout/focus
   releases holds. Shared/rebound keycodes still release only when all owners do.
@@ -107,6 +108,42 @@ one-tap resume.
 - Menu Leave/Enter animations have an explicit `transition` state. They no longer
   briefly fall back to virtual controls when `Current` or direct targets disappear;
   stale touch targets are invalidated rather than kept clickable during animation.
+
+### Direction mode, feedback and opacity
+
+- In the gameplay layout editor, tap the stick or any direction button to choose
+  **摇杆 / 四键按钮 / 八键按钮**. The eight-button layout adds four explicit diagonal
+  buttons around an empty center. Menus retain cardinal-only navigation. Existing
+  launcher enable/disable switches are respected; an unset mode follows the old
+  joystick preference. Switching modes preserves the hidden controls' positions
+  and styles so switching back is non-destructive.
+- Each editable button (including menu buttons) and the stick has **进入时震动** and
+  **离开时震动**, independently enabled with separate 0–100% strength sliders.
+  Each has 11 quick presets (0, 10, …, 100%) and 1% slider increments (101 levels);
+  custom strengths survive reopening and saving without rounding to a preset.
+  Both default off. Entry includes touch-down/sliding in; exit includes sliding
+  out/lifting. Feedback tracks physical contact, not latched HOLD/ADDITIVE actions,
+  SDL minimum key pulses, or keycode aliases. Stationary move events do not repeat;
+  multiple fingers on one control generate entry on the first and exit on the last.
+  Simultaneous changes use the strongest configured effect, for a single 20 ms
+  pulse. Zero strength is silent; devices without amplitude control use the default
+  motor amplitude. Missing hardware/service/permission must not interrupt input.
+- **不透明度（Opacity）** scales the entire original control appearance (background,
+  icon and text) from 0–100%. It does not shrink or disable the hit region. In the
+  editor, a 25% visibility floor keeps fully transparent controls recoverable.
+  Fixed editor/exit controls remain visible and are not customizable.
+- All these settings join the existing draft/save/cancel/reset transaction and are
+  stored separately for portrait/landscape. The v2 style format accepts legacy v1
+  size/slide data with unchanged appearance and no vibration. Scene/focus/layout
+  changes and cancelled gestures clear contact history silently.
+
+Device checks: cycle through all three modes and back, test each diagonal and a
+diagonal-to-cardinal slide with another finger holding Jump/Grab, then open a menu
+and verify only four directions. Set different entry/exit strengths on two buttons,
+slide A → outside → B, hold still, re-enter, lift, and repeat with HOLD/ADDITIVE and
+two fingers on one button. Test each toggle off and strength 0. Set opacity to 0,
+25 and 100%; verify invisible hit regions and editor recovery. Save/relaunch,
+Cancel, Reset+Cancel, Reset+Save, and rotate to check independent persistence.
 
 ## Direct UI touch
 

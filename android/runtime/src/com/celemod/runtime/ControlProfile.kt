@@ -8,7 +8,7 @@ enum class ControlMode {
     }
 }
 
-enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, BOOK, EXIT, KEYBOARD, DELETE, EDIT, CLOSE, RESET }
+enum class ControlIcon { NONE, PAUSE, PLAY, BACK, CONFIRM, UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT, BOOK, EXIT, KEYBOARD, DELETE, EDIT, CLOSE, RESET }
 
 data class ControlAction(val binding: String, val label: String, val icon: ControlIcon = ControlIcon.NONE)
 
@@ -27,10 +27,12 @@ data class ControlProfile(
     val menuDirections: Boolean,
     val top: ControlAction?,
     val actions: List<ControlAction>,
-    val auxiliary: ControlAction? = null
+    val auxiliary: ControlAction? = null,
+    val diagonalDirections: Boolean = false
 ) {
     companion object {
-        fun forState(state: ControlState, buttons: Boolean, joystick: Boolean, direct: Boolean = false): ControlProfile {
+        fun forState(state: ControlState, buttons: Boolean, joystick: Boolean, direct: Boolean = false,
+                     directionMode: DirectionControlMode = DirectionControlMode.default(joystick)): ControlProfile {
             val enabled = buttons || joystick
             val mode = state.mode
             val playing = mode in setOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)
@@ -76,12 +78,13 @@ data class ControlProfile(
                 else -> null
             }
             return ControlProfile(
-                stick = enabled && playing && joystick,
-                directions = enabled && !direct && (navigation || playing && !joystick),
+                stick = enabled && playing && directionMode == DirectionControlMode.STICK,
+                directions = enabled && !direct && (navigation || playing && directionMode != DirectionControlMode.STICK),
                 menuDirections = !playing,
                 top = top.takeIf { enabled },
                 actions = actions.takeIf { enabled && !direct } ?: emptyList(),
-                auxiliary = auxiliary.takeIf { enabled }
+                auxiliary = auxiliary.takeIf { enabled },
+                diagonalDirections = enabled && !direct && playing && directionMode == DirectionControlMode.EIGHT_BUTTONS
             )
         }
     }

@@ -41,6 +41,48 @@ class ControlProfileTest {
         val pad = profile(ControlMode.GAMEPLAY, joystick = false)
         assertFalse(pad.stick); assertTrue(pad.directions); assertFalse(pad.menuDirections)
     }
+    @Test fun allThreeDirectionModesWorkInGameplayPicoAndFallback() {
+        for (scene in listOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)) {
+            for (mode in DirectionControlMode.entries) {
+                for ((buttons, joystick) in listOf(true to true, true to false, false to true)) {
+                    val p = ControlProfile.forState(ControlState(scene), buttons, joystick, directionMode = mode)
+                    assertEquals(mode == DirectionControlMode.STICK, p.stick)
+                    assertEquals(mode != DirectionControlMode.STICK, p.directions)
+                    assertEquals(mode == DirectionControlMode.EIGHT_BUTTONS, p.diagonalDirections)
+                    assertFalse(p.menuDirections)
+                }
+            }
+        }
+    }
+    @Test fun directionOverridesNeverEnableDisabledControlsOrChangeMenus() {
+        for (mode in DirectionControlMode.entries) {
+            for (scene in ControlMode.entries) {
+                val p = ControlProfile.forState(ControlState(scene), false, false, directionMode = mode)
+                assertFalse(p.stick); assertFalse(p.directions); assertFalse(p.diagonalDirections)
+            }
+            for (scene in listOf(ControlMode.PAUSE, ControlMode.PAUSE_MENU, ControlMode.MENU, ControlMode.CHAPTER,
+                ControlMode.JOURNAL, ControlMode.NAMING, ControlMode.SEARCH)) {
+                val p = ControlProfile.forState(ControlState(scene), true, true, directionMode = mode)
+                assertFalse(p.stick); assertTrue(p.directions); assertFalse(p.diagonalDirections); assertTrue(p.menuDirections)
+                val direct = ControlProfile.forState(ControlState(scene), true, true, direct = true, directionMode = mode)
+                assertFalse(direct.stick); assertFalse(direct.directions); assertFalse(direct.diagonalDirections)
+            }
+        }
+    }
+    @Test fun diagonalButtonsResolveBothAxesIncludingSplitAndSharedBindings() {
+        val defaults = ControlState()
+        assertEquals(setOf(19, 21), ControlKeys.resolveAll(defaults, "UpLeft"))
+        assertEquals(setOf(19, 22), ControlKeys.resolveAll(defaults, "UpRight"))
+        assertEquals(setOf(20, 21), ControlKeys.resolveAll(defaults, "DownLeft"))
+        assertEquals(setOf(20, 22), ControlKeys.resolveAll(defaults, "DownRight"))
+        val split = ControlState(bindings = mapOf("Up" to emptyList(), "UpMoveOnly" to listOf("W"),
+            "UpDashOnly" to listOf("I"), "Left" to listOf("A")))
+        assertEquals(setOf(51, 37, 29), ControlKeys.resolveAll(split, "UpLeft"))
+        assertEquals(setOf(51, 37), ControlKeys.resolveAll(split.copy(bindings = split.bindings +
+            ("Left" to listOf("W"))), "UpLeft"))
+        val empty = ControlState(bindings = mapOf("Up" to emptyList(), "Left" to emptyList()))
+        assertTrue(ControlKeys.resolveAll(empty, "UpLeft").isEmpty())
+    }
     @Test fun onlyNearbyInteractionsAddTalk() {
         assertFalse(profile(ControlMode.GAMEPLAY).actions.any { it.binding == "Talk" })
         assertTrue(ControlProfile.forState(ControlState(ControlMode.GAMEPLAY, canTalk = true), true, true)
