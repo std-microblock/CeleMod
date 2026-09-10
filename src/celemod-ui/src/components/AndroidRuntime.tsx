@@ -7,7 +7,7 @@ import { Icon } from "./Icon";
 import { SteamAccount } from "./SteamAccount";
 import { AndroidLogs } from "./AndroidLogs";
 
-type RuntimeSettings = { gameRoot: string; runtime: string; buttons: boolean; joystick: boolean; gameRumble: boolean };
+type RuntimeSettings = { gameRoot: string; runtime: string; joystick: boolean; gameRumble: boolean };
 
 export function AndroidRuntime() {
   const [gamePath] = useGamePath();
@@ -19,7 +19,7 @@ export function AndroidRuntime() {
   useEffect(() => {
     invoke<RuntimeSettings>("android_runtime_settings").then(setSettings).catch(e => setError(String(e)));
   }, []);
-  async function update(key: "buttons" | "joystick" | "gameRumble", value: boolean) {
+  async function update(key: "joystick" | "gameRumble", value: boolean) {
     if (!settings) return;
     setSaving(true); setError("");
     try {
@@ -54,17 +54,12 @@ export function AndroidRuntime() {
         <button disabled={!gamePath || saving} onClick={() => void importPackage()}>导入 Mod / Everest ZIP</button>
       </div>
       <label className="setting-toggle-row">
-        <span><strong>智能屏幕按键</strong><small>游玩时显示跳跃 / 冲刺 / 抓取，菜单自动切换确定 / 返回；跟随游戏键位，默认关闭。</small></span>
-        <input type="checkbox" checked={settings?.buttons ?? false} disabled={!settings || saving}
-          onChange={e => void update("buttons", e.target.checked)} />
-      </label>
-      <label className="setting-toggle-row">
-        <span><strong>屏幕方向控制</strong><small>默认使用固定八向摇杆；游戏内「编辑」可切换固定 / 浮动摇杆、四键 / 八键按钮，选择八分圆环显示。四键 / 八键可选择独立按钮或合并成方向盘整体排版，并调整死区、震动和大小（最高 300%）。菜单使用四向方向键，默认关闭。</small></span>
+        <span><strong>显示虚拟按键</strong></span>
         <input type="checkbox" checked={settings?.joystick ?? false} disabled={!settings || saving}
           onChange={e => void update("joystick", e.target.checked)} />
       </label>
       <div className="theme-setting"><div className="setting-description">
-        <small>设置在下次启动游戏时生效。屏幕按键和方向控制均关闭时可使用实体手柄或键盘。游戏内安卓返回键 / 返回手势等同 Esc；左上角退出图标可返回管理器，启动过程中返回键可取消启动。</small>
+        <small>设置在下次启动游戏时生效。关闭虚拟按键时可使用实体手柄或键盘。游戏内安卓返回键 / 返回手势等同 Esc；左上角退出图标可返回管理器，启动过程中返回键可取消启动。</small>
         <small>游戏内点左上角「编辑」，再轻点摇杆 / 方向键切换模式，轻点各按钮设置进入 / 离开震动、独立震动强度和不透明度（Opacity）；保存后生效，横竖屏分别记忆。</small>
         {error && <p role="alert">{error}</p>}
       </div></div>

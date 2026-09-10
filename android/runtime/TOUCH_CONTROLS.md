@@ -39,9 +39,9 @@ one-tap resume.
   startup. If the native text keyboard is open, Back dismisses it first. During
   startup it retains the cancel-launch confirmation.
 - The top-left edit button and adjacent exit icon are fixed. Exit **always asks for confirmation** and is
-  available even when both touch options are off. It does not save the game for you.
-- Enabling only the stick still provides complete menu navigation and confirmation.
-  Disabling both options leaves only edit/exit; other touches pass through.
+  available even when virtual keys are off. It does not save the game for you.
+- The **显示虚拟按键** switch controls the complete touch overlay, including gameplay actions and
+  direction controls. When it is off, only edit/exit remain and other touches pass through.
 - Bindings are read from `Celeste.Input` and `Settings`, including menu directions,
   gameplay movement, interaction and Pause. Supported keyboard bindings use their
   first Android-representable key. Only missing metadata (e.g. an unavailable hook)
@@ -126,7 +126,7 @@ one-tap resume.
 - In the gameplay layout editor, tap the stick or any direction button to choose
   **固定摇杆 / 浮动摇杆 / 四键按钮 / 八键按钮**. The eight-button layout adds four explicit diagonal
   buttons around an empty center. Menus retain cardinal-only navigation. Existing
-  launcher enable/disable switches are respected; an unset mode follows the old
+  launcher virtual-key switch is respected; an unset mode follows the old
   joystick preference. Switching modes preserves the hidden controls' positions
   and styles so switching back is non-destructive.
 - **浮动摇杆** starts anywhere in the left half of the overlay, below the
@@ -307,7 +307,7 @@ verify play icon, D-pad and bottom-right confirm; open options and verify back i
 resume via both play icon and Android Back; hold climb while entering Talk range;
 hold movement while opening pause and verify no stuck selection; background/return;
 test journal, naming, dialogue, two-finger gameplay, fast taps, controller-opened
-menus, and both touch preference combinations. Exit only through the confirmed
+menus, and with virtual keys both enabled and disabled. Exit only through the confirmed
 manager button or normal game exit. Use test saves for any progress-changing checks.
 For rebinding: move jump/dash/grab/talk/pause and menu confirm/cancel/directions to
 distinct keys; verify both direct touch and virtual navigation. Clear a common
@@ -346,7 +346,7 @@ invalidation, and propagation of original game exceptions.
 
 - Manager settings → Android 游戏运行时 → **跟随游戏震动** (`gameRumble`, default
   false, applied on the next game launch). Existing settings files remain off;
-  partial setting updates preserve all other switches.
+  partial setting updates preserve the virtual-key switch.
 - A managed detour observes `FNA GamePad.SetVibration(PlayerIndex, float, float)`
   after the original call, including when it returns false because no physical
   controller is attached. Celeste's own rumble off/half/full setting, timing,
@@ -374,6 +374,6 @@ invalidation, and propagation of original game exceptions.
   last 20 ms, and the motor must receive distinct amplitudes rather than different
   durations. Actual perceptual separation must be checked on the device.
   Device smoke checks: enable
-  with both touch controls off; trigger dash/landing rumble without a gamepad; check
+  with virtual keys off; trigger dash/landing rumble without a gamepad; check
   half/off in the game's settings; combine touch pulses; background and return;
   disable and relaunch. Physical controller rumble should remain unchanged.

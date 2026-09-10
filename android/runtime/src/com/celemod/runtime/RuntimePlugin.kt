@@ -75,9 +75,12 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command fun info(invoke: Invoke) {
         val result = JSObject()
+        // The gameplay buttons and direction controls are one virtual-keyboard
+        // switch. Keep accepting the old settings file format and treat either
+        // legacy flag as enabling the overlay.
+        val touchEnabled = settings().optBoolean("buttons", false) || settings().optBoolean("joystick", false)
         result.put("gameRoot", root().absolutePath)
-        result.put("buttons", settings().optBoolean("buttons", false))
-        result.put("joystick", settings().optBoolean("joystick", false))
+        result.put("joystick", touchEnabled)
         result.put("gameRumble", settings().optBoolean("gameRumble", false))
         result.put("runtime", "RotatingArtLauncher 2.1.1 / CoreCLR 10.0.4")
         invoke.resolve(result)
@@ -87,9 +90,13 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
         try {
             val args = invoke.getArgs()
             val value = settings()
-            for (key in arrayOf("buttons", "joystick", "gameRumble")) {
-                if (args.has(key) && !args.isNull(key)) value.put(key, args.getBoolean(key))
+            if (args.has("joystick") && !args.isNull("joystick")) {
+                val enabled = args.getBoolean("joystick")
+                value.put("joystick", enabled)
+                // Keep the legacy field in sync for older game processes.
+                value.put("buttons", enabled)
             }
+            if (args.has("gameRumble") && !args.isNull("gameRumble")) value.put("gameRumble", args.getBoolean("gameRumble"))
             val temp = File(activity.filesDir, "android-controls.json.tmp")
             temp.writeText(value.toString())
             check(temp.renameTo(settingsFile())) { "Cannot save control settings" }
@@ -174,12 +181,13 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                     SteamBridge.beforeLaunch(activity.applicationContext, path)
                     SteamBridge.launchStage = "preparing"
                     RuntimeHost.prepare(activity)
+                    val touchEnabled = settings().optBoolean("buttons", false) || settings().optBoolean("joystick", false)
                     val intent = Intent(activity, GameActivity::class.java)
                         .putExtra("path", path.absolutePath)
                         .putExtra("origin", args.optBoolean("origin"))
                         .putExtra("legacyLoader", args.optBoolean("legacyLoader"))
-                        .putExtra("buttons", settings().optBoolean("buttons"))
-                        .putExtra("joystick", settings().optBoolean("joystick"))
+                        .putExtra("buttons", touchEnabled)
+                        .putExtra("joystick", touchEnabled)
                         .putExtra("gameRumble", settings().optBoolean("gameRumble", false))
                     SteamBridge.launchStage = "starting"
                     activity.runOnUiThread {

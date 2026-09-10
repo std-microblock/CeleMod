@@ -44,9 +44,9 @@ best-effort, with the existing **按键 / 触屏** fallback.
   still be configured on the launcher's custom **按键** page. This change does not
   implement a touch version of the gamepad emote wheel or player-list row actions.
 
-Default gameplay shortcuts require gameplay buttons enabled and a usable keyboard
-binding; both touch preferences off remain off. Direct chat/map menus also work
-with joystick-only controls. Custom semantic buttons can target unbound Mod actions.
+Default gameplay shortcuts require virtual keys enabled and a usable keyboard
+binding. Direct chat/map menus also work with the virtual-key switch enabled.
+Custom semantic buttons can target unbound Mod actions.
 
 ## Verification
 
