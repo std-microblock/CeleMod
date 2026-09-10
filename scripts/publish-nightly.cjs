@@ -36,17 +36,7 @@ module.exports = async function publishNightly({ github, context, core, director
   }
 
   const tag = 'nightly';
-  const runUrl = `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
-  const body = [
-    'Rolling development build from `master`. Replaced after each successful build.',
-    '',
-    `Commit: ${context.sha}`,
-    `Build: ${runUrl}`,
-    '',
-    'Includes Windows, macOS, Linux and Android ARM64 downloads.',
-    'Android is a debug-signed APK (Android 9+); a different signing key requires uninstalling the old app.',
-    'Development builds may be unstable. No Celeste game resources are included.',
-  ].join('\n');
+  const body = `Commit: ${context.sha}`;
 
   let release;
   try {

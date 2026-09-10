@@ -58,6 +58,7 @@ test('creates a prerelease and tag only after uploading all platforms', async t 
   assert.equal(created.draft, true);
   assert.equal(created.prerelease, true);
   assert.equal(created.make_latest, 'false');
+  assert.equal(created.body, 'Commit: commit');
   assert.equal(f.calls.at(-2).name, 'createRef');
   assert.equal(f.calls.at(-2).args.ref, 'refs/tags/nightly');
   assert.equal(f.calls.at(-1).args.draft, false);
@@ -73,7 +74,7 @@ test('replaces all old assets and moves only the nightly tag', async t => {
   assert.equal(moved.ref, 'tags/nightly');
   assert.equal(moved.sha, 'commit');
   assert.equal(moved.force, true);
-  assert.match(f.calls.at(-1).args.body, /Commit: commit/);
+  assert.equal(f.calls.at(-1).args.body, 'Commit: commit');
   assert.equal(f.calls.at(-1).args.draft, false);
 });
 

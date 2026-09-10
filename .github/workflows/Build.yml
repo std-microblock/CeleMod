@@ -136,20 +136,21 @@ jobs:
       CARGO_HOME: ${{ github.workspace }}/.local/cargo
       RUSTUP_HOME: ${{ github.workspace }}/.local/rustup
       CMAKE_POLICY_VERSION_MINIMUM: 3.5
+      IS_RELEASE: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate Android release configuration
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.IS_RELEASE == 'true'
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           $version = (Get-Content version.txt -Raw).Trim()
-          if ($env:RELEASE_TAG -ne "v$version") { throw 'Release tag must match version.txt.' }
+          if ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne "v$version") { throw 'Release tag must match version.txt.' }
           foreach ($name in 'ANDROID_KEYSTORE_BASE64', 'ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD') {
             if (![Environment]::GetEnvironmentVariable($name)) {
               throw "Missing release signing secret: $name. See docs/android-release.md."
@@ -208,12 +209,10 @@ jobs:
         run: ./scripts/prepare-android-runtime.ps1
 
       - name: Build Android APK
-        env:
-          IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: ./scripts/build-android.ps1 -Release:($env:IS_RELEASE -eq 'true')
 
       - name: Collect debug APK
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        if: env.IS_RELEASE != 'true'
         run: |
           $version = (Get-Content version.txt -Raw).Trim()
           New-Item -ItemType Directory -Force target/android | Out-Null
@@ -229,7 +228,7 @@ jobs:
           } finally { Pop-Location }
 
       - name: Sign and verify release APK
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.IS_RELEASE == 'true'
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

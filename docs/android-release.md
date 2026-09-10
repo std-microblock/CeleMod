@@ -7,11 +7,13 @@
 
 ## 下载与发布
 
-- `master` push、PR、分支上的手动运行：上传 `CeleMod-android-arm64` Actions artifact，
+- PR、非 `master` 分支上的手动运行：上传 `CeleMod-android-arm64` Actions artifact，
   内含 `CeleMod_<版本>_android-arm64-debug.apk` 和 SHA-256 校验文件。
 - `master` 每次 push（也支持在 `master` 手动运行）：所有平台构建和测试成功后，更新固定的
   `nightly` 标签和 **CeleMod Nightly** 预发布，包含 Windows EXE、macOS DMG、Linux
-  AppImage/DEB、Android Debug APK 和 APK 校验文件。替换旧附件，不累积历史 nightly，
+  AppImage/DEB、Android Release APK 和 APK 校验文件。APK 复用正式发布的签名密钥和签名步骤，
+  文件名为 `CeleMod_<版本>_android-arm64.apk`，同时保留 Actions artifact。
+  替换旧附件，不累积历史 nightly，
   不修改正式版本标签，也不将 nightly 设为 Latest。
 - nightly 发布串行执行，发布前核对 `master` HEAD，过期构建不会覆盖新提交。
   上传期间 release 为草稿，全部上传成功后才公开；上传失败可重新运行工作流恢复发布。
@@ -35,10 +37,8 @@
 使用并备份长期有效的正式签名密钥；已经发行过 APK 时，必须沿用原密钥才能覆盖升级。
 不要把 keystore、密码或 Base64 内容提交到 Git。CI 只在签名步骤临时还原 keystore，
 密码通过环境变量传给 `apksigner`，结束后删除临时文件。
-标签构建缺少任何签名 secret 都会失败，不会回退到调试签名或发布未签名 APK。
-普通分支/PR 构建不需要 secrets。
-Nightly 使用 CI 的调试签名，不使用正式签名 secrets；不同 runner 生成的调试密钥可能不同，
-覆盖安装失败时需先备份数据再卸载旧包，不能视为正式包的无缝升级通道。
+正式发布和 nightly 均使用上述四个 secrets；缺少任何一个都会失败，不会回退到调试签名。
+非 `master` 分支/PR 构建不需要 secrets，也不会执行正式签名步骤。
 
 发布前，将 `version.txt`、`src-tauri/tauri.conf.json` 和 `src-tauri/Cargo.toml` 中的版本同步。
 标签必须是 `v` 加 `version.txt` 中的版本，例如 `v1.1.11`。
