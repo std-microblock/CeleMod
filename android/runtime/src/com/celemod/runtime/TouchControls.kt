@@ -40,8 +40,8 @@ class TouchControls(
 ) : View(context) {
     private data class Key(val id: String, val action: ControlAction, val codes: Set<Int>, val rect: RectF,
                            val direction: Boolean = false, val iconOnly: Boolean = false)
-    private data class Drag(val pointer: Int, val id: String, val offsetX: Float, val offsetY: Float,
-                            val halfWidth: Float, val halfHeight: Float, val original: ControlPoint?,
+    private data class Drag(val pointer: Int, val id: String,
+                            val centers: Map<String, ControlPoint>, val originals: Map<String, ControlPoint?>,
                             val startX: Float, val startY: Float, var moved: Boolean = false)
     private val keys = mutableListOf<Key>()
     private val pointers = linkedMapOf<Int, Key>()
@@ -77,6 +77,8 @@ class TouchControls(
     private var orientation = ""
     private var savedPositions: Map<String, ControlPoint> = emptyMap()
     private var savedStyles: Map<String, ControlStyle> = emptyMap()
+    private var savedMergedButtons = false
+    private var savedFullScreen = false
     private var draft: ControlLayoutDraft? = null
     private var editingGame = true
     private var drag: Drag? = null
@@ -86,10 +88,9 @@ class TouchControls(
     private val editing get() = draft != null
     private var stickCenter = ControlPoint(0f, 0f)
     private var layoutBounds = ControlBounds(0f, 0f, 0f, 0f)
+    private var legacyBounds = layoutBounds
     private var toolbarBounds = ControlBounds(0f, 0f, 0f, 0f)
-    private val radius get() = min(
-        min((height - safe.top - safe.bottom) * .18f, 75 * density) * style("game/stick").scale,
-        min(layoutBounds.width, layoutBounds.height) / 2)
+    private val radius get() = min((height - safe.top - safe.bottom) * .18f, 75 * density) * style("game/stick").scale
     private val floating get() = directionMode == DirectionControlMode.FLOATING_STICK
     private val floatingArea get() = StickInput.floatingArea(layoutBounds, toolbarBounds)
     private val visibleStickCenter get() = stickGesture.center ?: if (floating && editing)
@@ -161,6 +162,8 @@ class TouchControls(
             orientation = next
             savedPositions = ControlLayout.decode(preferences.getString(orientation, null))
             savedStyles = ControlStyle.decode(preferences.getString("$orientation/styles", null))
+            savedMergedButtons = preferences.getBoolean("$orientation/merged-buttons", false)
+            savedFullScreen = preferences.getBoolean("$orientation/full-screen-centers", false)
         }
         rebuild()
     }
@@ -173,8 +176,9 @@ class TouchControls(
         val size = min((h - safe.top) * .16f, 65 * density)
         val margin = min(18 * density, size * .28f)
         val topSize = size * .78f
-        layoutBounds = ControlBounds(safe.left + margin, safe.top + margin, w - margin, h - margin)
-        val toolbarCount = if (editing) 4 else if (buttons || joystick) 3 else 2
+        layoutBounds = ControlBounds(0f, 0f, width.toFloat(), height.toFloat())
+        legacyBounds = ControlBounds(safe.left + margin, safe.top + margin, w - margin, h - margin)
+        val toolbarCount = if (editing) 5 else if (buttons || joystick) 3 else 2
         toolbarBounds = ControlBounds(safe.left.toFloat(), safe.top.toFloat(),
             safe.left + margin + toolbarCount * (topSize + margin), safe.top + topSize + 2 * margin)
         profile = if (!editing) ControlProfile.forState(state, buttons, joystick, direct, directionMode)
@@ -186,20 +190,20 @@ class TouchControls(
             }
         fun key(id: String, action: ControlAction, x: Float, y: Float, side: Float = size,
                 direction: Boolean = false, iconOnly: Boolean = false, codes: Set<Int>? = null) {
-            val actualSide = if (id.startsWith("fixed/")) side else
-                (side * style(id).scale).coerceAtMost(min(layoutBounds.width, layoutBounds.height))
+            val actualSide = if (id.startsWith("fixed/")) side else side * style(id).scale
             val center = if (id.startsWith("fixed/")) ControlPoint(x + side / 2, y + side / 2)
-                else place(id, ControlPoint(x + side / 2, y + side / 2), actualSide / 2, actualSide / 2)
+                else place(id, ControlPoint(x + side / 2, y + side / 2))
             keys += Key(id, action, codes ?: ControlKeys.resolveAll(state, action.binding),
                 RectF(center.x - actualSide / 2, center.y - actualSide / 2,
                     center.x + actualSide / 2, center.y + actualSide / 2), direction, iconOnly)
         }
-        // Fixed controls cannot be dragged off screen or covered by custom controls.
+        // Fixed controls stay in the safe area and render above overlapping custom controls.
         val toolbar = if (editing) listOf(
             ControlAction("SaveLayout", "保存", ControlIcon.CONFIRM),
             ControlAction("CancelLayout", "取消", ControlIcon.CLOSE),
             ControlAction("ResetLayout", "重置", ControlIcon.RESET),
-            ControlAction("SwitchLayout", if (editingGame) "到菜单" else "到游戏")
+            ControlAction("SwitchLayout", if (editingGame) "到菜单" else "到游戏"),
+            ControlAction("MergeButtons", if (draft?.mergedButtons == true) "取消合并" else "合并按钮")
         ) else buildList {
             add(ControlAction("Edit", "编辑", ControlIcon.EDIT))
             add(ControlAction("Exit", "返回管理器", ControlIcon.EXIT))
@@ -242,20 +246,31 @@ class TouchControls(
                 key("game/dpad/DownRight", ControlAction("DownRight", "右下", ControlIcon.DOWN_RIGHT), left + 2 * step, bottom, direction = true, iconOnly = true)
             }
         }
-        stickCenter = place("game/stick", ControlPoint(safe.left + radius + 26 * density,
-            height - safe.bottom - radius - 25 * density), radius, radius)
-        contentDescription = if (editing) "布局编辑：拖动调整位置，轻点设置方向模式、大小、滑出行为、震动和不透明度；左上角保存、取消、重置、切换布局"
+        // Scaling an untouched stick must not move its anchor.
+        val baseRadius = min((height - safe.top - safe.bottom) * .18f, 75 * density)
+        stickCenter = place("game/stick", ControlPoint(safe.left + baseRadius + 26 * density,
+            height - safe.bottom - baseRadius - 25 * density))
+        contentDescription = if (editing) "布局编辑：拖动调整位置，轻点设置方向模式、大小、滑出行为、震动和不透明度；左上角保存、取消、重置、切换布局、合并按钮"
             else "游戏触控：${state.mode.name}；左上角编辑布局、返回管理器"
         invalidate()
     }
 
-    private fun place(id: String, default: ControlPoint, halfWidth: Float, halfHeight: Float): ControlPoint {
+    private fun place(id: String, default: ControlPoint): ControlPoint {
         val position = if (editing) draft?.get(id) else savedPositions[id]
         // Leave untouched default positions alone outside the editor.
         if (position == null && !editing && style(id).scale == 1f && !id.contains("/custom/")) return default
-        val center = position?.let { ControlLayout.project(it, layoutBounds) } ?: default
-        return ControlLayout.constrain(center, halfWidth, halfHeight, layoutBounds, toolbarBounds)
+        val center = position?.let { ControlLayout.project(it, if (editing || savedFullScreen) layoutBounds else legacyBounds) } ?: default
+        return ControlLayout.constrain(center, layoutBounds)
     }
+
+    private fun editableCenters(): Map<String, ControlPoint> = buildMap {
+        for (key in this@TouchControls.keys) if (!key.id.startsWith("fixed/"))
+            put(key.id, ControlPoint(key.rect.centerX(), key.rect.centerY()))
+        // A floating stick has no movable layout anchor, but still shares style edits.
+        if (profile.stick && !floating) put("game/stick", stickCenter)
+    }
+
+    private fun editableIds() = editableCenters().keys + if (profile.stick) setOf("game/stick") else emptySet()
 
     private fun keyAt(x: Float, y: Float): Key? =
         keys.firstOrNull { it.id.startsWith("fixed/") && it.rect.contains(x, y) }
@@ -292,14 +307,17 @@ class TouchControls(
         }
         if (profile.stick && (!floating || editing || stickPointer != -1)) {
             val layer = saveControlLayer(canvas, "game/stick", RectF(cx - radius, cy - radius, cx + radius, cy + radius))
-            paint.style = Paint.Style.FILL
-            paint.color = if (drag?.id == "game/stick") 0x9982B8FF.toInt() else 0x66313E51
-            canvas.drawCircle(cx, cy, radius, paint)
-            paint.style = Paint.Style.STROKE; paint.strokeWidth = density; paint.color = 0x6682B8FF
-            canvas.drawCircle(cx, cy, radius * style("game/stick").stickDeadZone, paint)
-            paint.style = Paint.Style.FILL
-            paint.color = 0xAA82B8FF.toInt()
-            canvas.drawCircle(cx + sx * radius * .65f, cy + sy * radius * .65f, radius * .35f, paint)
+            if (style("game/stick").stickDisplay == StickDisplayMode.RING) drawStickRing(canvas)
+            else {
+                paint.style = Paint.Style.FILL
+                paint.color = if (drag?.id == "game/stick") 0x9982B8FF.toInt() else 0x66313E51
+                canvas.drawCircle(cx, cy, radius, paint)
+                paint.style = Paint.Style.STROKE; paint.strokeWidth = density; paint.color = 0x6682B8FF
+                canvas.drawCircle(cx, cy, radius * style("game/stick").stickDeadZone, paint)
+                paint.style = Paint.Style.FILL
+                paint.color = 0xAA82B8FF.toInt()
+                canvas.drawCircle(cx + sx * radius * .65f, cy + sy * radius * .65f, radius * .35f, paint)
+            }
             if (editing) {
                 paint.style = Paint.Style.STROKE; paint.strokeWidth = 2 * density; paint.color = Color.WHITE
                 canvas.drawCircle(cx, cy, radius, paint)
@@ -307,10 +325,11 @@ class TouchControls(
             canvas.restoreToCount(layer)
         }
         val heldActions = heldActionKeys().map { it.id }.toSet()
-        for (key in keys) {
+        for (key in keys.sortedBy { it.id.startsWith("fixed/") }) {
             val layer = saveControlLayer(canvas, key.id, key.rect)
             paint.style = Paint.Style.FILL
-            paint.color = if ((key.codes.isNotEmpty() && key.codes.all { it in down }) || key in pointers.values || key.id in heldActions || drag?.id == key.id)
+            paint.color = if ((key.codes.isNotEmpty() && key.codes.all { it in down }) || key in pointers.values || key.id in heldActions || drag?.id == key.id || drag?.centers?.containsKey(key.id) == true ||
+                key.action.binding == "MergeButtons" && draft?.mergedButtons == true)
                 0xBB82B8FF.toInt() else 0x88313E51.toInt()
             canvas.drawRoundRect(key.rect, 12 * density, 12 * density, paint)
             if (editing && !key.id.startsWith("fixed/")) {
@@ -340,9 +359,35 @@ class TouchControls(
         if (editing) {
             paint.style = Paint.Style.FILL
             paint.color = Color.WHITE; paint.textAlign = Paint.Align.CENTER; paint.textSize = 13 * density
-            val hint = "${if (editingGame) "游戏" else "菜单"}布局 · 拖动移位 · 轻点设置模式 / 震动 / 透明度 · 保存后生效"
+            val hint = "${if (editingGame) "游戏" else "菜单"}布局 · ${if (draft?.mergedButtons == true) "合并编辑" else "单独编辑"} · 拖动移位 · 轻点设置 · 保存后生效"
             canvas.drawText(hint, width / 2f, toolbarBounds.bottom + 20 * density, paint)
         }
+    }
+
+    /** Annular sectors leave the dead zone unpainted, including during highlighting. */
+    private fun drawStickRing(canvas: Canvas) {
+        val outer = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
+        val innerRadius = radius * style("game/stick").stickDeadZone
+        val inner = RectF(cx - innerRadius, cy - innerRadius, cx + innerRadius, cy + innerRadius)
+        val active = StickDirection.fromVector(sx, sy)
+        for (direction in StickDirection.entries) {
+            val start = direction.ordinal * 45f - 22.5f
+            val sector = Path().apply {
+                arcTo(outer, start, 45f, true)
+                if (innerRadius > 0f) arcTo(inner, start + 45f, -45f, false) else lineTo(cx, cy)
+                close()
+            }
+            paint.style = Paint.Style.FILL
+            paint.color = if (direction == active) 0xDD82B8FF.toInt() else 0x88313E51.toInt()
+            canvas.drawPath(sector, paint)
+            // Clip strokes to the sector so no border leaks into the transparent hole.
+            val clip = canvas.save()
+            canvas.clipPath(sector)
+            paint.style = Paint.Style.STROKE; paint.strokeWidth = density; paint.color = 0xAA82B8FF.toInt()
+            canvas.drawPath(sector, paint)
+            canvas.restoreToCount(clip)
+        }
+        paint.style = Paint.Style.FILL
     }
 
     private fun controlAlpha(id: String): Int {
@@ -465,7 +510,10 @@ class TouchControls(
         releaseAll()
         textDialog?.dismiss(); textDialog = null; textEpoch = null
         editingGame = gameLayout(state.mode)
-        draft = ControlLayoutDraft(savedPositions, savedStyles)
+        val positions = if (savedFullScreen) savedPositions else savedPositions.mapValues { (_, point) ->
+            ControlLayout.normalize(ControlLayout.project(point, legacyBounds), layoutBounds)
+        }
+        draft = ControlLayoutDraft(positions, savedStyles, savedMergedButtons)
         // Pause known gameplay using its binding. Never send Escape in an unknown
         // mod scene (it might mean exit), and never auto-resume after editing.
         if (state.mode == ControlMode.GAMEPLAY || state.mode == ControlMode.PICO8) {
@@ -479,8 +527,12 @@ class TouchControls(
         if (save) {
             savedPositions = draft?.snapshot() ?: savedPositions
             savedStyles = draft?.styleSnapshot() ?: savedStyles
+            savedMergedButtons = draft?.mergedButtons ?: savedMergedButtons
+            savedFullScreen = true
             preferences.edit().putString(orientation, ControlLayout.encode(savedPositions))
-                .putString("$orientation/styles", ControlStyle.encode(savedStyles)).apply()
+                .putString("$orientation/styles", ControlStyle.encode(savedStyles))
+                .putBoolean("$orientation/merged-buttons", savedMergedButtons)
+                .putBoolean("$orientation/full-screen-centers", true).apply()
         }
         draft = null
         resetDialog?.dismiss(); resetDialog = null
@@ -490,7 +542,7 @@ class TouchControls(
     }
 
     private fun cancelDrag() {
-        drag?.let { draft?.restore(it.id, it.original) }
+        drag?.originals?.forEach { (id, point) -> draft?.restore(id, point) }
         drag = null; editorCommand = null
     }
 
@@ -500,10 +552,9 @@ class TouchControls(
         target.moved = true
         // Floating centers belong only to gestures; editing the preview must not
         // overwrite the stored fixed-stick anchor or imply the activation area moved.
-        if (target.id == "game/stick" && floating) return
-        val point = ControlLayout.constrain(ControlPoint(x - target.offsetX, y - target.offsetY),
-            target.halfWidth, target.halfHeight, layoutBounds, toolbarBounds)
-        draft?.move(target.id, ControlLayout.normalize(point, layoutBounds))
+        val centers = target.centers
+        ControlLayout.translate(centers, ControlPoint(x - target.startX, y - target.startY), layoutBounds)
+            .forEach { (id, point) -> draft?.move(id, ControlLayout.normalize(point, layoutBounds)) }
         rebuild()
     }
 
@@ -528,6 +579,7 @@ class TouchControls(
         var stickDeadZone = original.stickDeadZone
         var stickDeadZoneVibration = original.stickDeadZoneVibration
         var stickDeadZoneStrength = original.stickDeadZoneStrength
+        var stickDisplay = style("game/stick").stickDisplay
         var selectedMode = directionMode
         val canChangeMode = id == "game/stick" || id.startsWith("game/dpad/")
         // Batch scope follows the selected gameplay mode; menu batches stay cardinal.
@@ -543,6 +595,14 @@ class TouchControls(
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding / 2, padding, padding / 2)
         }
+        var mergedButtons = editingDraft.mergedButtons
+        content.addView(CheckBox(context).apply {
+            text = "合并按钮"; isChecked = mergedButtons
+            setOnCheckedChangeListener { _, checked -> mergedButtons = checked }
+        })
+        content.addView(TextView(context).apply {
+            text = "开启后，当前布局所有按钮一起移动，修改的属性同步应用；未修改的属性保留各自设置。工具栏不参与，浮动摇杆只同步属性、不移动触发区域。"; textSize = 13f
+        })
         if (canChangeMode) {
             content.addView(TextView(context).apply { text = "游戏方向控制（菜单仍为四键）"; textSize = 16f })
             content.addView(RadioGroup(context).apply {
@@ -554,11 +614,20 @@ class TouchControls(
                     })
                 }
             })
+            content.addView(TextView(context).apply { text = "摇杆显示模式（固定 / 浮动通用）"; textSize = 16f })
+            content.addView(RadioGroup(context).apply {
+                StickDisplayMode.entries.forEach { option ->
+                    addView(RadioButton(context).apply {
+                        this.id = View.generateViewId(); text = option.label; isChecked = option == stickDisplay
+                        setOnCheckedChangeListener { _, checked -> if (checked) stickDisplay = option }
+                    })
+                }
+            })
         }
         val sizeLabel = TextView(context).apply { text = "大小：${(scale * 100).roundToInt()}%"; textSize = 16f }
         content.addView(sizeLabel)
         content.addView(SeekBar(context).apply {
-            max = 30; progress = ((scale * 100 - 50) / 5).roundToInt()
+            max = 50; progress = ((scale * 100 - 50) / 5).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(bar: SeekBar?, value: Int, fromUser: Boolean) {
                     scale = (50 + value * 5) / 100f
@@ -699,17 +768,24 @@ class TouchControls(
             .setNegativeButton("取消", null)
             .setPositiveButton("应用到草稿") { _, _ ->
                 if (draft === editingDraft) {
-                    editingDraft.setStyle(id, original.copy(scale = scale, slide = behavior, opacity = opacity,
+                    val edited = original.copy(scale = scale, slide = behavior, opacity = opacity,
                         enterVibration = enterVibration, leaveVibration = leaveVibration,
                         enterStrength = enterStrength, leaveStrength = leaveStrength, directionSlide = directionBehavior,
                         stickDiagonalVibration = stickDiagonalVibration, stickCardinalVibration = stickCardinalVibration,
                         stickDiagonalStrength = stickDiagonalStrength, stickCardinalStrength = stickCardinalStrength,
                         stickDeadZone = stickDeadZone, stickDeadZoneVibration = stickDeadZoneVibration,
-                        stickDeadZoneStrength = stickDeadZoneStrength))
+                        stickDeadZoneStrength = stickDeadZoneStrength)
+                    editingDraft.mergedButtons = mergedButtons
+                    if (mergedButtons) {
+                        val ids = editableIds() + if (canChangeMode) selectedMode.buttonIds("game") else emptyList()
+                        editingDraft.applyStyles(ids, original, edited)
+                    }
+                    else editingDraft.setStyle(id, edited)
                     batchToggle?.takeIf { it.isEnabled && it.isChecked }?.let {
                         editingDraft.setDirectionStyles(if (id.startsWith("game/")) "game" else "menu", batchMode(), editingDraft.style(id))
                     }
-                    if (canChangeMode) editingDraft.setStyle("game/stick", editingDraft.style("game/stick").copy(directionMode = selectedMode))
+                    if (canChangeMode) editingDraft.setStyle("game/stick", editingDraft.style("game/stick").copy(
+                        directionMode = selectedMode, stickDisplay = stickDisplay))
                     rebuild()
                 }
             }.create()
@@ -727,6 +803,13 @@ class TouchControls(
         dialog.window?.decorView?.viewTreeObserver?.addOnWindowFocusChangeListener(previewFocus)
     }
 
+    private fun beginDrag(pointer: Int, id: String, center: ControlPoint, x: Float, y: Float) {
+        val centers = if (draft?.mergedButtons == true) editableCenters()
+            else if (id == "game/stick" && floating) emptyMap() else mapOf(id to center)
+        drag = Drag(pointer, id, centers,
+            centers.mapValues { (key, _) -> draft?.get(key) }, x, y)
+    }
+
     /** Editor gestures are never passed to SDL, even while changing preview tabs. */
     private fun editTouch(event: MotionEvent): Boolean {
         val index = event.actionIndex
@@ -736,11 +819,10 @@ class TouchControls(
                 val x = event.getX(index); val y = event.getY(index)
                 val key = keyAt(x, y)
                 if (key != null && key.id.startsWith("fixed/")) editorCommand = id to key.action.binding
-                else if (key != null) drag = Drag(id, key.id, x - key.rect.centerX(), y - key.rect.centerY(),
-                    key.rect.width() / 2, key.rect.height() / 2, draft?.get(key.id), x, y)
+                else if (key != null) beginDrag(id, key.id, ControlPoint(key.rect.centerX(), key.rect.centerY()), x, y)
                 else if (profile.stick && (hypot(x - cx, y - cy) <= radius ||
-                    floating && StickInput.contains(floatingArea, ControlPoint(x, y)))) drag =
-                    Drag(id, "game/stick", x - cx, y - cy, radius, radius, draft?.get("game/stick"), x, y)
+                    floating && StickInput.contains(floatingArea, ControlPoint(x, y))))
+                    beginDrag(id, "game/stick", ControlPoint(cx, cy), x, y)
             }
             MotionEvent.ACTION_POINTER_DOWN -> { cancelDrag(); rebuild() }
             MotionEvent.ACTION_MOVE -> drag?.let {
@@ -761,6 +843,7 @@ class TouchControls(
                         "SaveLayout" -> finishEditing(save = true)
                         "CancelLayout" -> finishEditing(save = false)
                         "SwitchLayout" -> { cancelDrag(); editingGame = !editingGame; rebuild() }
+                        "MergeButtons" -> { draft?.let { it.mergedButtons = !it.mergedButtons }; rebuild() }
                         "ResetLayout" -> {
                             resetDialog = AlertDialog.Builder(context).setTitle("恢复默认按键设置？")
                                 .setMessage("将重置当前屏幕方向的位置、大小、方向模式、滑出行为、震动和不透明度。点击保存后生效；取消编辑仍可撤销。")

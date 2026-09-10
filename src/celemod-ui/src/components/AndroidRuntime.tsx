@@ -59,7 +59,7 @@ export function AndroidRuntime() {
           onChange={e => void update("buttons", e.target.checked)} />
       </label>
       <label className="setting-toggle-row">
-        <span><strong>屏幕方向控制</strong><small>默认使用固定八向摇杆；游戏内「编辑」可切换固定 / 浮动摇杆、四键 / 八键按钮，并调整死区（默认 18%）和进入死区震动。菜单使用四向方向键，默认关闭。</small></span>
+        <span><strong>屏幕方向控制</strong><small>默认使用固定八向摇杆；游戏内「编辑」可切换固定 / 浮动摇杆、四键 / 八键按钮，选择八分圆环显示，调整死区及震动。支持合并按钮一起编辑、最大 300% 大小和中心点限位。菜单使用四向方向键，默认关闭。</small></span>
         <input type="checkbox" checked={settings?.joystick ?? false} disabled={!settings || saving}
           onChange={e => void update("joystick", e.target.checked)} />
       </label>

@@ -95,7 +95,7 @@ class ControlStyleTest {
         assertTrue(ControlStyle.decode("v1\n" + "x".repeat(65536)).isEmpty())
         val loaded = ControlStyle.decode("v1\ngame/stick=NaN,HOLD\nbad?=1,HOLD\ngame/action/Jump=9,UNKNOWN\nmenu/action/0=-2,TRANSFER")
         assertEquals(2, loaded.size)
-        assertEquals(ControlStyle(2f, ControlSlideBehavior.HOLD), loaded["game/action/Jump"])
+        assertEquals(ControlStyle(3f, ControlSlideBehavior.HOLD), loaded["game/action/Jump"])
         assertEquals(ControlStyle(.5f, ControlSlideBehavior.TRANSFER), loaded["menu/action/0"])
         assertEquals(1f, ControlStyle(Float.POSITIVE_INFINITY).normalized().scale)
     }
@@ -144,13 +144,33 @@ class ControlStyleTest {
         fingers.remove(2); assertEquals(setOf("A", "B"), active())
         fingers.clear(); assertTrue(active().isEmpty())
     }
-    @Test fun enlargedControlsRemainInsideSafeBoundsAndOutsideToolbar() {
+    @Test fun tripleSizeControlsMayOverlapToolbarAndExtendPastScreenEdges() {
         val bounds = ControlBounds(10f, 10f, 1010f, 610f)
-        val toolbar = ControlBounds(0f, 0f, 300f, 100f)
-        val half = 50f * ControlStyle(2f).normalized().scale
-        val point = ControlLayout.constrain(ControlPoint(25f, 25f), half, half, bounds, toolbar)
-        assertTrue(point.x - half >= bounds.left && point.x + half <= bounds.right)
-        assertTrue(point.y - half >= bounds.top && point.y + half <= bounds.bottom)
-        assertTrue(point.x - half >= toolbar.right || point.y - half >= toolbar.bottom)
+        val half = 50f * ControlStyle(3f).normalized().scale
+        val point = ControlLayout.constrain(ControlPoint(25f, 25f), bounds)
+        assertEquals(ControlPoint(25f, 25f), point)
+        assertTrue(point.x - half < bounds.left && point.y - half < bounds.top)
+    }
+
+    @Test fun ringDisplayAndTripleSizeRoundTripForFixedAndFloatingSticks() {
+        for (mode in listOf(DirectionControlMode.STICK, DirectionControlMode.FLOATING_STICK)) {
+            val saved = mapOf("game/stick" to ControlStyle(scale = 3f, directionMode = mode,
+                stickDisplay = StickDisplayMode.RING, stickDeadZone = .3f))
+            assertEquals(saved, ControlStyle.decode(ControlStyle.encode(saved)))
+        }
+        assertEquals(StickDisplayMode.CLASSIC, StickDisplayMode.parse("unknown"))
+        assertEquals(StickDisplayMode.CLASSIC, ControlStyle.decode("v1\ngame/stick=2,HOLD").getValue("game/stick").stickDisplay)
+        assertEquals(3f, ControlStyle(10f).normalized().scale)
+    }
+
+    @Test fun mergedEditsChangeOnlyEditedFieldsAndSelectedScope() {
+        val source = ControlStyle(scale = 1f, opacity = .5f)
+        val other = ControlStyle(scale = 2f, opacity = .8f, slide = ControlSlideBehavior.ADDITIVE,
+            directionMode = DirectionControlMode.EIGHT_BUTTONS, enterStrength = 70)
+        val draft = ControlLayoutDraft(emptyMap(), mapOf("a" to source, "b" to other, "menu" to other))
+        draft.applyStyles(listOf("a", "b"), source, source.copy(scale = 3f, leaveVibration = true))
+        assertEquals(source.copy(scale = 3f, leaveVibration = true), draft.style("a"))
+        assertEquals(other.copy(scale = 3f, leaveVibration = true), draft.style("b"))
+        assertEquals(other, draft.style("menu"))
     }
 }

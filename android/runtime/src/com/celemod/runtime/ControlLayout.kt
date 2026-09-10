@@ -1,7 +1,5 @@
 package com.celemod.runtime
 
-import kotlin.math.abs
-
 /** Layout math and storage format have no Android dependency. Coordinates are normalized centers. */
 data class ControlPoint(val x: Float, val y: Float) {
     fun normalized() = ControlPoint(x.coerceIn(0f, 1f), y.coerceIn(0f, 1f))
@@ -43,33 +41,35 @@ object ControlLayout {
     fun project(position: ControlPoint, bounds: ControlBounds) = ControlPoint(
         bounds.left + position.x * bounds.width, bounds.top + position.y * bounds.height)
 
-    /** Keep the whole control visible and the fixed editor/exit toolbar reachable. */
-    fun constrain(center: ControlPoint, halfWidth: Float, halfHeight: Float,
-                  bounds: ControlBounds, toolbar: ControlBounds): ControlPoint {
-        val hw = halfWidth.coerceIn(0f, bounds.width / 2)
-        val hh = halfHeight.coerceIn(0f, bounds.height / 2)
-        val x = center.x.coerceIn(bounds.left + hw, bounds.right - hw)
-        val y = center.y.coerceIn(bounds.top + hh, bounds.bottom - hh)
-        if (x + hw <= toolbar.left || x - hw >= toolbar.right ||
-            y + hh <= toolbar.top || y - hh >= toolbar.bottom) return ControlPoint(x, y)
-        val right = toolbar.right + hw
-        val below = toolbar.bottom + hh
-        return when {
-            right <= bounds.right - hw && (below > bounds.bottom - hh || abs(right - x) < abs(below - y)) -> ControlPoint(right, y)
-            below <= bounds.bottom - hh -> ControlPoint(x, below)
-            else -> ControlPoint(x, y) // Degenerate, smaller-than-a-control viewport.
-        }
+    /** Only centers are limited. The toolbar is drawn and hit-tested above controls. */
+    fun constrain(center: ControlPoint, bounds: ControlBounds) = ControlPoint(
+        center.x.coerceIn(bounds.left, bounds.right), center.y.coerceIn(bounds.top, bounds.bottom))
+
+    /** Clamp one translation for the entire group, never squeeze its spacing at an edge. */
+    fun translate(centers: Map<String, ControlPoint>, delta: ControlPoint,
+                  bounds: ControlBounds): Map<String, ControlPoint> {
+        if (centers.isEmpty() || !delta.finite) return centers
+        val dx = delta.x.coerceIn(bounds.left - centers.values.minOf { it.x },
+            bounds.right - centers.values.maxOf { it.x })
+        val dy = delta.y.coerceIn(bounds.top - centers.values.minOf { it.y },
+            bounds.bottom - centers.values.maxOf { it.y })
+        return centers.mapValues { (_, p) -> ControlPoint(p.x + dx, p.y + dy) }
     }
 }
 
 /** Changes stay private until Save. Reset is also undoable by cancelling the editor. */
-class ControlLayoutDraft(saved: Map<String, ControlPoint>, savedStyles: Map<String, ControlStyle> = emptyMap()) {
+class ControlLayoutDraft(saved: Map<String, ControlPoint>, savedStyles: Map<String, ControlStyle> = emptyMap(),
+                         var mergedButtons: Boolean = false) {
     private val positions = saved.toMutableMap()
     private val styles = savedStyles.toMutableMap()
     fun snapshot(): Map<String, ControlPoint> = positions.toMap()
     fun styleSnapshot(): Map<String, ControlStyle> = styles.toMap()
     fun style(id: String) = styles[id] ?: ControlStyle()
     fun setStyle(id: String, style: ControlStyle) { styles[id] = style.normalized() }
+    /** Batch edits only copy changed fields; unrelated per-control settings survive. */
+    fun applyStyles(ids: Collection<String>, original: ControlStyle, edited: ControlStyle) {
+        for (id in ids) setStyle(id, style(id).withChanges(original, edited))
+    }
     /** Copy only button settings, never positions or the group's direction mode. */
     fun setDirectionStyles(group: String, mode: DirectionControlMode, source: ControlStyle) {
         for (id in mode.buttonIds(group)) setStyle(id, source.copy(directionMode = style(id).directionMode))
@@ -77,5 +77,5 @@ class ControlLayoutDraft(saved: Map<String, ControlPoint>, savedStyles: Map<Stri
     fun get(id: String) = positions[id]
     fun move(id: String, point: ControlPoint) { if (point.finite) positions[id] = point.normalized() }
     fun restore(id: String, point: ControlPoint?) { if (point == null) positions.remove(id) else positions[id] = point }
-    fun reset() { positions.clear(); styles.clear() }
+    fun reset() { positions.clear(); styles.clear(); mergedButtons = false }
 }

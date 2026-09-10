@@ -70,7 +70,7 @@ class DirectionControlTest {
         assertEquals(four, draft.style("game/stick").directionMode)
         eight.buttonIds("game").forEach {
             assertNull(draft.style(it).directionMode)
-            assertEquals(2f, draft.style(it).scale)
+            assertEquals(3f, draft.style(it).scale)
             assertEquals(0f, draft.style(it).opacity)
             assertEquals(100, draft.style(it).leaveStrength)
         }

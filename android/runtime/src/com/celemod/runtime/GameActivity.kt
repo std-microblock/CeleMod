@@ -32,6 +32,20 @@ class GameActivity : SDLActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Let the touch overlay reach the status-bar/cutout strip. Only its fixed
+        // toolbar uses safe insets; editable controls are limited by their centers.
+        window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= 30)
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            else WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        if (Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
+        else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        }
         vibration = GameVibration(this, intent.getBooleanExtra("gameRumble", false))
         val overlay = TouchControls(this, intent.getBooleanExtra("buttons", false), intent.getBooleanExtra("joystick", false),
             onExit = { confirmReturn() }, onKeyboard = { SDLActivity.showTextInput(0, 0, 1, 1) },

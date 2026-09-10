@@ -59,7 +59,9 @@ one-tap resume.
   Menu D-pad input is cardinal, slides between keys and releases outside the pad.
   Short taps are held briefly so SDL keydown/up cannot vanish between FNA frames.
 - Native shapes draw all navigation/pause/resume/confirm icons, independent of
-  installed fonts. Display cutouts and system bars are excluded from placement.
+  installed fonts. The overlay extends into system-bar/cutout areas; only fixed
+  toolbar controls retain safe insets. Physical cutouts/system gestures remain
+  subject to Android's touch handling.
 
 ## Position editor
 
@@ -73,10 +75,19 @@ one-tap resume.
 - **保存** applies and persists both previews. **取消** or Android Back discards
   edits. **重置** asks for confirmation and resets the current orientation's draft;
   it is not permanent until Save, and Cancel can still undo it.
-- Positions are stored as normalized safe-viewport centers in private Android
+- Positions are stored as normalized full-overlay centers in private Android
   preferences, independently for landscape and portrait. They survive game and
-  app restarts, scale to screen-size/inset changes, and are clamped so buttons and
-  the stick stay visible. Custom controls cannot cover the fixed toolbar.
+  app restarts and scale to screen-size changes. Only centers are clamped to the
+  screen: controls may extend beyond its edges or overlap the toolbar area.
+  The fixed toolbar draws on top and wins hit tests, keeping Save/Cancel/Exit
+  reachable. Old safe-viewport coordinates are converted when saving an edit.
+- **合并按钮** (toolbar or button settings) treats the current preview's editable
+  controls as a group. Dragging any member translates the whole group with one
+  edge-clamped offset, preserving spacing. Changed properties apply to all members;
+  unrelated settings retain their individual values. Fixed toolbar controls are
+  excluded, and floating sticks share style edits but never move their activation
+  region or saved anchor. Shared pause/auxiliary controls remain shared across
+  previews. The toggle and group edits use the same Save/Cancel/Reset transaction.
 - Editor controls are available even with touch gameplay disabled; previewing and
   saving do not change the user's touch-enable settings. The editor shows the
   selected gameplay direction style (stick or D-pad).
@@ -90,8 +101,9 @@ one-tap resume.
 
 - In the editor, **drag** to move a control; **tap without dragging** to open its
   settings. Each virtual button and the stick has an independent size from 50% to
-  200%. Visual and hit-test bounds use the same size. Fixed toolbar controls stay
-  at their normal size and cannot be covered by enlarged controls.
+  300%. Visual and hit-test bounds use the same size without shrinking at screen
+  edges. Fixed toolbar controls stay at their normal size and draw above enlarged
+  controls.
 - Gameplay action buttons additionally choose what a finger that starts there does:
   **Transfer** releases A on leaving and holds only the action under the finger;
   **Additive** keeps A and every action crossed until that finger lifts;
@@ -117,7 +129,7 @@ one-tap resume.
   launcher enable/disable switches are respected; an unset mode follows the old
   joystick preference. Switching modes preserves the hidden controls' positions
   and styles so switching back is non-destructive.
-- **浮动摇杆** starts anywhere in the left half of the safe layout, below the
+- **浮动摇杆** starts anywhere in the left half of the overlay, below the
   fixed toolbar, excluding button hit regions. It appears centered exactly at
   touch-down and initially sends no direction; dragging determines direction.
   The first finger owns a latched center until lift/cancel, even when dragging
@@ -127,6 +139,12 @@ one-tap resume.
   change the region or overwrite the fixed stick's saved anchor. Menus keep their
   normal direct-touch/cardinal navigation. Both stick modes share size, dead zone,
   opacity and feedback settings.
+- **摇杆显示模式 → 圆环模式** works with both fixed and floating sticks. Eight
+  equal 45° colored annular sectors match the input directions; the active sector
+  highlights using the same direction calculation as SDL input. The center hole
+  matches the configured dead zone and is never painted. Returning to the dead
+  zone, lifting or cancelling clears highlighting. Classic stick display remains
+  the default for existing layouts.
 - **死区比例** is adjustable from 0–90% of the base radius in 1% increments,
   defaulting to the previous 18%. A faint circle indicates its size. Dead-zone
   motion sends no direction; 0% still leaves the exact center neutral. The separate
