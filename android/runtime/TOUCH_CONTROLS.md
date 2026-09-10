@@ -156,8 +156,15 @@ one-tap resume.
   SDL minimum key pulses, or keycode aliases. Stationary move events do not repeat;
   multiple fingers on one control generate entry on the first and exit on the last.
   Simultaneous changes use the strongest configured effect, for a single 20 ms
-  pulse. Zero strength is silent; devices without amplitude control use the default
-  motor amplitude. Missing hardware/service/permission must not interrupt input.
+  pulse. All sources share a quadratic phone-amplitude curve (20% / 50% / 100%
+  touch strength sends amplitudes 10 / 63 / 255), increasing weak/medium/full
+  contrast without using pulse length as strength. Zero strength is silent.
+  Each strength slider has an explicit **试震** button using the current draft
+  value and the same 20 ms output path, even if its feedback switch is off. It
+  does not save/enable anything; dialog focus loss/dismissal stops the preview.
+  Devices without amplitude control use the default motor amplitude and cannot
+  provide real amplitude differences; the editor explains this limitation.
+  Missing hardware/service/permission must not interrupt input.
 - **不透明度（Opacity）** scales the entire original control appearance (background,
   icon and text) from 0–100%. It does not shrink or disable the hit region. In the
   editor, a 25% visibility floor keeps fully transparent controls recoverable.
@@ -207,6 +214,9 @@ input, and switching back restores the saved fixed anchor. Test Save/Cancel/Rese
 and relaunch to verify both new settings and the selected mode persist.
 
 ## Direct UI touch
+
+CollabUtils2 lobby UI and MiaoNet chat have dedicated adapters; see `MOD_TOUCH.md`
+for supported package versions, controls, fallbacks, and verification limits.
 
 Supported menus default to direct touch when either touch preference is enabled.
 The fixed **按键 / 触屏** switch beside Edit/Exit can restore the virtual D-pad and
@@ -324,19 +334,28 @@ invalidation, and propagation of original game exceptions.
   controller is attached. Celeste's own rumble off/half/full setting, timing,
   arbitration and stop commands remain upstream; no key/gesture guesses and no
   simulated controller connection. Mods using the same FNA output are also mirrored.
-- The stronger motor across the four logical pads maps to the phone's 1–255
-  amplitude. SDL's existing `SDL_AndroidSendMessage` JNI channel uses user command
+- The stronger motor across the four logical pads maps to a 1–255 logical
+  amplitude, then the shared quadratic phone-amplitude curve is applied once
+  after mixing with touch feedback. Game durations and stop commands are unchanged.
+  SDL's existing `SDL_AndroidSendMessage` JNI channel uses user command
   `0xCE01`; no native library changes, files or background polling are needed.
 - An independent Engine.Update detour renews active output every 100 ms; the Android
   lease expires after 300 ms without updates. Focus loss, backgrounding and exit
   clear both sources immediately. Resuming does not replay stored Android effects.
+  Equal-amplitude heartbeats only extend the lease: an already playing motor is
+  not restarted until its finite pulse ends. Changes of output amplitude still
+  take effect immediately, and all source expiry deadlines remain observed.
 - Touch enter/leave pulses keep their own switches and 20 ms durations. The shared
   phone motor mixes them with game output by maximum amplitude, restoring remaining
   game output after a touch pulse; a game stop never cancels an active touch pulse.
   Devices without amplitude control use the system's default strength. Missing
   hardware/permission/service failures must never interrupt gameplay.
 - Host coverage: `dotnet run --project android/runtime/tests/managed` and Gradle
-  `:app:testArm64DebugUnitTest` (`VibrationStateTest`). Device smoke checks: enable
+  `:app:testArm64DebugUnitTest` (`VibrationStateTest`, `VibrationPlayerTest`).
+  Device strength check: use the editor's **试震** at 20% / 50% / 100%; all three
+  last 20 ms, and the motor must receive distinct amplitudes rather than different
+  durations. Actual perceptual separation must be checked on the device.
+  Device smoke checks: enable
   with both touch controls off; trigger dash/landing rumble without a gamepad; check
   half/off in the game's settings; combine touch pulses; background and return;
   disable and relaunch. Physical controller rumble should remain unchanged.

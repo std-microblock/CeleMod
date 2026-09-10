@@ -17,7 +17,7 @@ static class GameHookTests
             if (!value) throw new Exception(name);
             checks++;
         }
-        var state = new[] { "engineType", "pressedScene", "pressedUI" }
+        var state = new[] { "engineType", "pressedScene", "pressedUI", "pressedHost" }
             .Select(name => typeof(GameTouch).GetField(name, Flags)!).ToArray();
         var oldState = state.Select(field => field.GetValue(null)).ToArray();
         var presses = (HashSet<object>)typeof(GameTouch).GetField("pressed", Flags)!.GetValue(null)!;
@@ -34,6 +34,7 @@ static class GameHookTests
             state[0].SetValue(null, typeof(Engine));
             state[1].SetValue(null, ui);
             state[2].SetValue(null, ui.Current);
+            state[3].SetValue(null, ui);
             var getPressed = typeof(GameTouch).GetMethod("ButtonPressed", Flags)!
                 .MakeGenericMethod(typeof(Button))
                 .CreateDelegate<Func<Func<Button, bool>, Button, bool>>();

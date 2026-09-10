@@ -28,6 +28,7 @@ internal static class StartupHook
             PatchGameProgress();
             GameControls.Install();
             GameRumble.Install();
+            GamePerformance.Install();
         }
     }
 

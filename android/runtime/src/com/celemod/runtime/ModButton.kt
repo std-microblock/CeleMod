@@ -4,7 +4,7 @@ data class ModButton(val id: String, val label: String, val code: Int, val avail
 
 object ModButtons {
     fun visible(mode: ControlMode) = mode !in setOf(ControlMode.LOADING, ControlMode.TRANSITION,
-        ControlMode.NAMING, ControlMode.SEARCH)
+        ControlMode.NAMING, ControlMode.SEARCH, ControlMode.CHAT)
     fun held(buttons: List<ModButton>, codes: Set<Int>) = buttons
         .filter { it.available && it.code in codes }.map { it.id }.distinct().sorted()
 }

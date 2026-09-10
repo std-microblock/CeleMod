@@ -16,6 +16,7 @@ internal static class GameControls
     private const BindingFlags Flags = BindingFlags.Public | BindingFlags.NonPublic |
         BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
     private static readonly Dictionary<(Type, string), MemberInfo?> Members = new();
+    private static readonly Dictionary<(Type, string), bool> TypeMatches = new();
 
     internal static void Install()
     {
@@ -59,9 +60,12 @@ internal static class GameControls
     private static bool Yes(object? target, string name) => Read(target, name) is true;
     internal static bool Is(object? target, string name)
     {
-        for (var type = target?.GetType(); type != null; type = type.BaseType)
-            if (type.FullName == name) return true;
-        return false;
+        if (target == null) return false;
+        var actual = target.GetType();
+        if (TypeMatches.TryGetValue((actual, name), out var matches)) return matches;
+        for (var type = actual; type != null; type = type.BaseType)
+            if (type.FullName == name) return TypeMatches[(actual, name)] = true;
+        return TypeMatches[(actual, name)] = false;
     }
 
     internal static string Classify(object? scene)
@@ -69,6 +73,8 @@ internal static class GameControls
         if (scene == null || Is(scene, "Celeste.GameLoader") || Is(scene, "Celeste.LevelLoader") ||
             Is(scene, "Celeste.OverworldLoader")) return "loading";
         if (Is(scene, "Celeste.Pico8.Emulator")) return "pico8";
+        if (GameModUi.Chat(scene) != null) return "chat";
+        if (GameModUi.Wrapped(scene) is object wrapped) return Classify(wrapped);
         if (Is(scene, "Celeste.Overworld")) {
             if (Read(scene, "Overlay") != null) return "menu";
             // GotoRoutine deliberately clears Current while Leave/Enter animate.
@@ -86,17 +92,29 @@ internal static class GameControls
             return "menu"; // Includes Everest and third-party Oui menus.
         }
         if (Is(scene, "Celeste.Level")) {
-            if (Yes(scene, "Paused")) return Yes(scene, "PauseMainMenuOpen") ? "pause" : "pause_menu";
             if (Read(scene, "Overlay") != null) return "menu";
-            bool dialogue = false;
+            bool dialogue = false, menu = false;
             if (Read(scene, "Entities") is IEnumerable entities) {
                 foreach (var entity in entities) {
-                    if (!Yes(entity, "Visible") || !Yes(entity, "Active")) continue;
+                    // A collab lobby can contain thousands of non-UI entities.
+                    // Filter their cached type BEFORE reflective (boxing) getters.
                     // A focused mod TextMenu takes precedence over a textbox underneath it.
-                    if (Is(entity, "Celeste.TextMenu") && Yes(entity, "Focused")) return "menu";
-                    if (Is(entity, "Celeste.Textbox") && Yes(entity, "Opened")) dialogue = true;
+                    var entityUi = GameModUi.Kind(entity);
+                    if (entityUi is GameModUi.EntityUi.LobbyMap or GameModUi.EntityUi.AssistSkip && Yes(entity, "Active")) {
+                        // CU2 modals precede underlying TextMenus, including during
+                        // their opening/closing animation and while Level.Paused.
+                        if (entityUi == GameModUi.EntityUi.LobbyMap)
+                            return Yes(entity, "Visible") && Yes(entity, "focused") && !Yes(entity, "closing")
+                                ? (Yes(entity, "viewOnly") ? "lobby_map_view" : "lobby_map") : "transition";
+                        if (Yes(entity, "Visible")) return Yes(entity, "opened") ? "menu" : "transition";
+                    } else if (entityUi == GameModUi.EntityUi.TextMenu) {
+                        if (Yes(entity, "Visible") && Yes(entity, "Active") && Yes(entity, "Focused")) menu = true;
+                    } else if (entityUi == GameModUi.EntityUi.Textbox && Yes(entity, "Visible") &&
+                        Yes(entity, "Active") && Yes(entity, "Opened")) dialogue = true;
                 }
             }
+            if (Yes(scene, "Paused")) return Yes(scene, "PauseMainMenuOpen") ? "pause" : "pause_menu";
+            if (menu) return "menu";
             if (dialogue) return "dialogue";
             // Keep movement during non-dialogue cutscenes/transitions: mods and
             // several vanilla sequences allow player control while InCutscene.
@@ -133,9 +151,13 @@ internal static class GameControls
     private static bool updateObserved;
     private static void Update<TGame, TTime>(Action<TGame, TTime> original, TGame game, TTime time)
     {
+        long beforeInput = GamePerformance.Timestamp();
         GameModButtons.BeforeUpdate();
+        GamePerformance.BridgeCompleted(beforeInput);
         original(game, time);
+        long afterInput = GamePerformance.Timestamp();
         AfterUpdate();
+        GamePerformance.BridgeCompleted(afterInput);
     }
 
     private static void AfterUpdate()
@@ -149,16 +171,18 @@ internal static class GameControls
         try {
             var scene = Read(engine, "Scene");
             var mode = Classify(scene);
-            var current = Read(scene, "Current");
+            var current = Read(GameModUi.Wrapped(scene) ?? scene, "Current");
+            var bindings = Bindings(input, Read(settings, "Instance"));
+            GameModUi.AddBindings(bindings, scene, mode);
             var json = JsonSerializer.Serialize(new {
                 version = 1, mode,
                 scene = scene?.GetType().FullName ?? "",
                 ui = current?.GetType().FullName ?? "",
                 canTalk = mode == "gameplay" && Read(talk, "PlayerOver") is object nearby && Yes(nearby, "Enabled"),
-                keyboard = mode == "naming" && Yes(current, "UseKeyboardInput") || mode == "search" && Yes(current, "Searching"),
-                bindings = Bindings(input, Read(settings, "Instance")),
+                keyboard = mode == "chat" || mode == "naming" && Yes(current, "UseKeyboardInput") || mode == "search" && Yes(current, "Searching"),
+                bindings,
                 custom = GameModButtons.Capture(),
-                touch = GameTouch.Capture(scene)
+                touch = GameTouch.Capture(scene, mode)
             });
             if (json == lastJson) return;
             lastJson = json;

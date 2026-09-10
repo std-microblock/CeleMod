@@ -17,7 +17,18 @@ internal class GameVibration(context: Context, enabled: Boolean) {
     private val state = VibrationState(enabled)
     private val handler = Handler(Looper.getMainLooper())
     private val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()
-    private var playing = false
+    // Capability queries can fail too; initialize inside render's guarded path.
+    private val player by lazy {
+        motor?.takeIf { it.hasVibrator() }?.let { vibrator ->
+            VibrationPlayer(object : VibrationPlayer.Motor {
+                override val hasAmplitudeControl = vibrator.hasAmplitudeControl()
+                override fun play(duration: Long, amplitude: Int) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude), attributes)
+                }
+                override fun cancel() = vibrator.cancel()
+            })
+        }
+    }
     private var reportedError = false
     private val expire = Runnable { render() }
 
@@ -27,18 +38,10 @@ internal class GameVibration(context: Context, enabled: Boolean) {
 
     private fun render() {
         handler.removeCallbacks(expire)
-        val effect = state.effect(SystemClock.uptimeMillis())
+        val now = SystemClock.uptimeMillis()
         try {
-            val vibrator = motor ?: return
-            if (effect.amplitude == 0) {
-                if (playing) vibrator.cancel()
-                playing = false
-            } else if (vibrator.hasVibrator()) {
-                val amplitude = if (vibrator.hasAmplitudeControl()) effect.amplitude else VibrationEffect.DEFAULT_AMPLITUDE
-                vibrator.vibrate(VibrationEffect.createOneShot(effect.duration, amplitude), attributes)
-                playing = true
-                handler.postDelayed(expire, effect.duration)
-            }
+            val delay = player?.render(state.effect(now), now) ?: return
+            if (delay > 0) handler.postDelayed(expire, delay)
         } catch (e: RuntimeException) {
             // Unsupported hardware, permission or service failures must not break gameplay/input.
             if (!reportedError) Log.w("CeleModRuntime", "Phone vibration unavailable", e)

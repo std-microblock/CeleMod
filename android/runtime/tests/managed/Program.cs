@@ -1,6 +1,8 @@
 // Synthetic game objects: tests need neither proprietary game data nor Harmony.
 using Celeste;
 
+if (args is ["--lobby-benchmark"]) { PerformanceTests.Benchmark(); return; }
+
 int count = 0;
 void Mode(object? scene, string expected) {
     var actual = GameControls.Classify(scene);
@@ -50,6 +52,8 @@ ModButtonTests.Run();
 GameHookTests.Run();
 RumbleTests.Run();
 DirectTouchTests.Run();
+ModTouchTests.Run();
+PerformanceTests.Run();
 
 class CustomLevel : Level { }
 class CustomMenu : TextMenu { }

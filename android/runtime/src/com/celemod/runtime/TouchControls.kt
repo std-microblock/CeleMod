@@ -272,6 +272,8 @@ class TouchControls(
                     "chapters" -> "点选章节 · 左右切换章节 · 上下切换地图集"
                     "continue" -> "轻点继续"
                     "text" -> "轻点文本使用手机键盘，也可点选字符"
+                    "chat" -> "轻点输入框填入文字 · 点发送发送 · 左右滑动频道栏"
+                    "lobby_map" -> "拖动平移 · 方向键切换大厅/目的地 · 缩放 · 确认传送"
                     else -> "直接点选 · 滑动列表 · 左上角可切回按键"
                 }
                 canvas.drawText(hint, width / 2f, height - safe.bottom - 8 * density, paint)
@@ -566,6 +568,9 @@ class TouchControls(
                 override fun onStopTrackingTouch(bar: SeekBar?) = Unit
             })
         }, LinearLayout.LayoutParams(-1, -2))
+        // The editor dialog owns focus, so game feedback correctly stays disabled.
+        // Explicit previews have their own short-lived source and never save settings.
+        val vibrationPreview = GameVibration(context, false)
         fun percentSlider(title: String, initial: Int, presets: Boolean = false, maximum: Int = 100, changed: (Int) -> Unit): SeekBar {
             val valueLabel = TextView(context).apply { text = "$title：$initial%"; textSize = 16f }
             content.addView(valueLabel)
@@ -595,6 +600,13 @@ class TouchControls(
                     override fun onStopTrackingTouch(bar: SeekBar?) = Unit
                 })
                 content.addView(this, LinearLayout.LayoutParams(-1, -2))
+                if (presets) content.addView(android.widget.Button(context).apply {
+                    text = "试震：当前强度（固定 20 毫秒）"
+                    setOnClickListener {
+                        vibrationPreview.setActive(styleDialog?.window?.decorView?.hasWindowFocus() == true)
+                        vibrationPreview.touch(slider.progress)
+                    }
+                }, LinearLayout.LayoutParams(-1, -2))
             }
         }
         percentSlider("不透明度（Opacity）", (opacity * 100).roundToInt()) { opacity = it / 100f }
@@ -642,7 +654,7 @@ class TouchControls(
             })
         }
         content.addView(TextView(context).apply {
-            text = "进入含按下 / 滑入，离开含滑出 / 抬手；仅响应触控区域变化，不改变锁定 / 叠加行为。0% 不震动，不支持强度调节的设备使用系统默认强度。"; textSize = 13f
+            text = "进入含按下 / 滑入，离开含滑出 / 抬手；仅响应触控区域变化，不改变锁定 / 叠加行为。强度调节振幅，不改变 20 毫秒时长；可用试震对比 20% / 50% / 100%，不必先开启或保存。0% 不震动；不支持振幅控制的设备只能使用系统默认强度，无法实现真实强弱。"; textSize = 13f
         })
         if (key != null && slideAction(key)) {
             content.addView(TextView(context).apply { text = "手指从这个按键滑出时"; textSize = 16f })
@@ -702,8 +714,17 @@ class TouchControls(
                 }
             }.create()
         styleDialog = dialog
-        dialog.setOnDismissListener { if (styleDialog === dialog) styleDialog = null }
+        val previewFocus = android.view.ViewTreeObserver.OnWindowFocusChangeListener { focused ->
+            if (!focused) vibrationPreview.setActive(false)
+        }
+        dialog.setOnDismissListener {
+            vibrationPreview.setActive(false)
+            dialog.window?.decorView?.viewTreeObserver?.takeIf { it.isAlive }
+                ?.removeOnWindowFocusChangeListener(previewFocus)
+            if (styleDialog === dialog) styleDialog = null
+        }
         dialog.show()
+        dialog.window?.decorView?.viewTreeObserver?.addOnWindowFocusChangeListener(previewFocus)
     }
 
     /** Editor gestures are never passed to SDL, even while changing preview tabs. */
@@ -918,7 +939,7 @@ class TouchControls(
         textEpoch = scene.epoch
         val dialog = AlertDialog.Builder(context).setTitle(target.label.ifBlank { "输入文本" }).setView(edit)
             .setNegativeButton("取消", null)
-            .setPositiveButton(if (scene.kind == "search") "搜索" else "完成") { _, _ ->
+            .setPositiveButton(when (scene.kind) { "search" -> "搜索"; "chat" -> "填入"; else -> "完成" }) { _, _ ->
                 if (state.touch?.epoch == scene.epoch)
                     touchWriter.send(TouchIntent(scene.epoch, target.id, "text", text = edit.text.toString()))
             }.create()

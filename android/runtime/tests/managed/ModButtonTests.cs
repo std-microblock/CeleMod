@@ -7,7 +7,11 @@ static class ModButtonTests
     private sealed class Settings : SettingsBase { public List<object> Items = new(); }
     private sealed class Button { public bool AutoConsumeBuffer; }
     private static class Engine { public static object? Scene; }
-    private static class MInput { public static bool Disabled; }
+    private static class MInput {
+        private static bool disabled;
+        internal static int Reads;
+        public static bool Disabled { get { Reads++; return disabled; } set => disabled = value; }
+    }
 
     internal static void Run()
     {
@@ -71,6 +75,11 @@ static class ModButtonTests
             var consume = typeof(GameModButtons).GetMethod("Consume", flags)!.MakeGenericMethod(typeof(Button)).CreateDelegate<Action<Action<Button>, Button>>();
             int originals = 0;
             bool Original(Button _) { originals++; return false; }
+            live.Clear();
+            MInput.Reads = 0;
+            Check(!check(Original, a) && !press(Original, a) && !release(Original, a), "empty virtual state preserves original input");
+            Check(MInput.Reads == 0, "unrelated/idle input bypasses all reflective context checks");
+            originals = 0;
             live.Apply(["combo"], targets, 3000);
             Check(check(Original, a) && originals == 1, "Check joins original chain exactly once");
             Check(press(Original, a) && originals == 2, "Pressed joins original chain exactly once");

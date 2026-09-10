@@ -34,6 +34,9 @@ internal static class GameModButtons
             if (new FileInfo(file).Length > 262144) throw new InvalidDataException("Touch configuration too large.");
             definitions = JsonSerializer.Deserialize<Definition[]>(File.ReadAllText(file)) ?? [];
             if (!Valid(definitions)) throw new InvalidDataException("Invalid touch button configuration.");
+            // No active definitions means no input hooks, polling task or per-frame
+            // scene scan. Configuration is loaded once per game launch.
+            if (!definitions.Any(d => d.enabled)) return;
             var button = game.GetType("Monocle.VirtualButton", true)!;
             foreach (var name in new[] { "Check", "Pressed", "Released" })
                 GameHooks.Add(button.GetProperty(name)!.GetMethod!, name, typeof(GameModButtons), button);
@@ -43,16 +46,21 @@ internal static class GameModButtons
             }
             installed = true;
             _ = Task.Run(async () => {
+                string last = "";
                 while (true) {
                     try {
                         var info = new FileInfo(path + ".buttons");
                         if (info.Exists && info.Length <= 65536) {
-                            var commands = JsonSerializer.Deserialize<Command[]>(await File.ReadAllTextAsync(info.FullName));
-                            if (commands is { Length: <= 64 }) foreach (var command in commands) {
-                                if (command == null || command.seq <= sequence) continue;
-                                sequence = command.seq;
-                                if (command.held is { Length: <= 24 } && command.epoch != null && incoming.Count < 128)
-                                    incoming.Enqueue(command);
+                            var raw = await File.ReadAllTextAsync(info.FullName);
+                            if (raw != last) {
+                                var commands = JsonSerializer.Deserialize<Command[]>(raw);
+                                if (commands is { Length: <= 64 }) foreach (var command in commands) {
+                                    if (command == null || command.seq <= sequence) continue;
+                                    sequence = command.seq;
+                                    if (command.held is { Length: <= 24 } && command.epoch != null && incoming.Count < 128)
+                                        incoming.Enqueue(command);
+                                }
+                                last = raw;
                             }
                         }
                     } catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException) { }
@@ -158,7 +166,7 @@ internal static class GameModButtons
                 break;
             }
             state.Expire(now);
-            if (mode is "loading" or "transition" or "naming" or "search" || R(minput, "Disabled") is true)
+            if (mode is "loading" or "transition" or "naming" or "search" or "chat" || R(minput, "Disabled") is true)
                 state.Clear();
         } catch (Exception) { state.Clear(); }
     }
@@ -172,11 +180,11 @@ internal static class GameModButtons
 
     private static bool Active => installed && R(minput, "Disabled") is not true &&
         ReferenceEquals(scene, R(engine, "Scene")) && ReferenceEquals(ui, R(scene, "Current")) && (R(scene, "Paused") is true) == paused;
-    private static bool Check<T>(Func<T, bool> original, T button) where T : class => original(button) || Active && state.Held.Contains(button);
-    private static bool Released<T>(Func<T, bool> original, T button) where T : class => original(button) || Active && state.Released.Contains(button);
+    private static bool Check<T>(Func<T, bool> original, T button) where T : class => original(button) || state.Held.Contains(button) && Active;
+    private static bool Released<T>(Func<T, bool> original, T button) where T : class => original(button) || state.Released.Contains(button) && Active;
     private static bool Pressed<T>(Func<T, bool> original, T button) where T : class {
         bool result = original(button);
-        if (!Active || !state.Pressed.Contains(button)) return result;
+        if (!state.Pressed.Contains(button) || !Active) return result;
         if (R(button, "AutoConsumeBuffer") is true) state.Pressed.Remove(button);
         return true;
     }

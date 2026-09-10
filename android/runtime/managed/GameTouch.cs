@@ -21,7 +21,8 @@ internal static partial class GameTouch
     private static readonly HashSet<object> pressed = new(ReferenceEqualityComparer.Instance);
     private static Type? engineType, inputType, fontType;
     private static object? scene, current, root;
-    private static object? pressedScene, pressedUI;
+    private static object? pressedScene, pressedUI, pressedHost;
+    private static object? uiScene;
     private static string epoch = "", kind = "", signature = "";
     private static long generation, lastSequence, lastAction;
     private static bool installed, failed;
@@ -111,7 +112,8 @@ internal static partial class GameTouch
     private static bool ButtonPressed<TButton>(Func<TButton, bool> original, TButton button) where TButton : class {
         var result = original(button);
         return result || pressed.Contains(button) && ReferenceEquals(pressedScene, R(engineType, "Scene")) &&
-            ReferenceEquals(pressedUI, R(pressedScene, "Current"));
+            ReferenceEquals(pressedHost, GameModUi.Wrapped(pressedScene) ?? pressedScene) &&
+            ReferenceEquals(pressedUI, R(pressedHost, "Current"));
     }
     private static void Consumed<TButton>(Action<TButton> original, TButton button) where TButton : class {
         original(button);
@@ -122,7 +124,7 @@ internal static partial class GameTouch
         if (button == null && inputType?.Assembly.GetType("Celeste.Mod.Core.CoreModule") is Type core)
             button = R(R(R(core, "Settings"), binding), "Button");
         if (button is object b) {
-            pressedScene = scene; pressedUI = current; pressed.Add(b);
+            pressedScene = scene; pressedHost = uiScene; pressedUI = current; pressed.Add(b);
         }
     }
 
@@ -153,12 +155,12 @@ internal static partial class GameTouch
     internal static bool Accept(Command c, string expected) => c.epoch == expected &&
         c.id is { Length: > 0 and <= 160 } && c.text is { Length: <= 1024 } &&
         float.IsFinite(c.x) && float.IsFinite(c.y) && float.IsFinite(c.value) &&
-        c.action is "tap" or "adjust" or "scroll" or "swipe" or "swipeY" or "text";
+        c.action is "tap" or "adjust" or "scroll" or "swipe" or "swipeY" or "text" or "pan";
     internal static bool Fresh(long sent, long now) => sent > 0 && sent <= now + 100 && now - sent <= 1500;
 
-    internal static Snapshot? Capture(object? next) {
+    internal static Snapshot? Capture(object? next, string? mode = null) {
         if (!installed) return null;
-        try { Refresh(next); return kind == "" ? null : new(epoch, kind, viewport, targets.Select(t => t.View).ToArray()); }
+        try { Refresh(next, mode); return kind == "" ? null : new(epoch, kind, viewport, targets.Select(t => t.View).ToArray()); }
         catch (Exception e) {
             if (!failed) Console.WriteLine("[CeleMod] Unsupported direct UI layout: " + e.Message);
             failed = true; return null;
@@ -174,18 +176,35 @@ internal static partial class GameTouch
         targets.FirstOrDefault(t => t.View.id == command.id)?.Run(command);
     }
 
-    private static void Refresh(object? next) {
-        scene = next; current = R(scene, "Current"); targets.Clear(); kind = ""; root = current ?? scene;
-        var mode = GameControls.Classify(scene);
+    private static void Refresh(object? next, string? classifiedMode = null) {
+        scene = next; uiScene = GameModUi.Wrapped(scene) ?? scene;
+        current = R(uiScene, "Current"); targets.Clear(); kind = ""; root = current ?? uiScene;
+        // Capture is part of the same synchronous controls snapshot. Command
+        // dispatch still reclassifies before/after each callback for safety.
+        var mode = classifiedMode ?? GameControls.Classify(scene);
         hudWidth = N(engineType, "Width", 1920); hudHeight = N(engineType, "Height", 1080);
         var vp = R(engineType, "Viewport");
         var pp = R(R(R(engineType, "Graphics"), "GraphicsDevice"), "PresentationParameters");
         float bw = N(pp, "BackBufferWidth"), bh = N(pp, "BackBufferHeight");
         if (bw > 0 && bh > 0) viewport = new(N(vp, "X") / bw, N(vp, "Y") / bh, N(vp, "Width") / bw, N(vp, "Height") / bh);
         if (mode is "gameplay" or "loading" or "transition" or "pico8" or "fallback") { FinishSignature(mode); return; }
+        if (GameModUi.Chat(scene) is object chat) {
+            root = chat; BuildMiaoChat(chat); FinishSignature(mode); return;
+        }
         // An unknown modal must not expose clickable UI underneath it.
-        if (R(scene, "Overlay") != null) { FinishSignature("overlay:" + Identity(R(scene, "Overlay"))); return; }
-        var menus = List(R(scene, "Entities")).Where(e => Is(e, "TextMenu") && B(e, "Focused") && B(e, "Visible") && B(e, "Active")).ToList();
+        if (R(uiScene, "Overlay") != null) { FinishSignature("overlay:" + Identity(R(uiScene, "Overlay"))); return; }
+        var modals = (R(uiScene, "Entities") as IEnumerable)?.Cast<object>()
+            .Where(e => GameModUi.IsModal(e) && B(e, "Visible") && B(e, "Active")).ToList() ?? new();
+        if (modals.Count > 0) {
+            if (modals.Count == 1) {
+                root = modals[0];
+                if (GameControls.Is(root, GameModUi.Collab + "UI.LobbyMapUI")) BuildLobbyMap(root);
+                else BuildAssistSkip(root);
+            }
+            FinishSignature(mode); return;
+        }
+        var menus = (R(uiScene, "Entities") as IEnumerable)?.Cast<object>()
+            .Where(e => Is(e, "TextMenu") && B(e, "Focused") && B(e, "Visible") && B(e, "Active")).ToList() ?? new();
         if (Is(current, "Mod.UI.OuiMapSearch") && B(current, "Focused")) BuildSearch(current!);
         else if (menus.Count > 0) {
             // Lowest depth renders last; two simultaneous focused mod menus are ambiguous.
@@ -218,6 +237,7 @@ internal static partial class GameTouch
     }
     private static void FinishSignature(string mode) {
         var next = Identity(scene) + ":" + Identity(current) + ":" + Identity(root) + ":" + mode + ":" + kind + ":" +
+            (kind == "lobby_map" ? S(root, "selectedLobbyIndex") : "") + ":" +
             string.Join(";", targets.Select(t => t.View.id + ":" + Identity(t.Owner)));
         if (next != signature) { signature = next; epoch = session + ":" + ++generation; }
         if (targets.Count == 0) kind = "";

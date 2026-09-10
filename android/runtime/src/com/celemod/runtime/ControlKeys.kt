@@ -16,7 +16,8 @@ object ControlKeys {
         "Left" to KeyEvent.KEYCODE_DPAD_LEFT, "Right" to KeyEvent.KEYCODE_DPAD_RIGHT,
         "MenuUp" to KeyEvent.KEYCODE_DPAD_UP, "MenuDown" to KeyEvent.KEYCODE_DPAD_DOWN,
         "MenuLeft" to KeyEvent.KEYCODE_DPAD_LEFT, "MenuRight" to KeyEvent.KEYCODE_DPAD_RIGHT,
-        "ESC" to KeyEvent.KEYCODE_ESCAPE, "Enter" to KeyEvent.KEYCODE_ENTER, "Backspace" to KeyEvent.KEYCODE_DEL
+        "ESC" to KeyEvent.KEYCODE_ESCAPE, "Escape" to KeyEvent.KEYCODE_ESCAPE,
+        "Enter" to KeyEvent.KEYCODE_ENTER, "Backspace" to KeyEvent.KEYCODE_DEL
     )
     private val special = mapOf(
         "Up" to 19, "Down" to 20, "Left" to 21, "Right" to 22,

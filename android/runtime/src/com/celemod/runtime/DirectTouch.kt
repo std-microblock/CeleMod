@@ -36,7 +36,10 @@ class DirectGesture(private val scene: TouchScene, val target: TouchTarget, priv
         }
         var result: TouchIntent? = null
         if (moved) {
-            if (target.kind == "slider" && axis == "x") result = intent("adjust", p)
+            if (target.kind == "pan") {
+                if (p != previous) result = intent("pan", ControlPoint(p.x - previous.x, p.y - previous.y))
+            }
+            else if (target.kind == "slider" && axis == "x") result = intent("adjust", p)
             else if (scene.kind in setOf("menu", "search", "main") && axis == "y") {
                 scrollRemainder += (previous.y - p.y) * 1080 / 32
                 val steps = scrollRemainder.toInt().coerceIn(-12, 12)
@@ -44,7 +47,7 @@ class DirectGesture(private val scene: TouchScene, val target: TouchTarget, priv
                     scrollRemainder -= steps
                     result = intent("scroll", p, steps.toFloat())
                 }
-            } else if (!swipeSent && scene.kind in setOf("chapters", "journal", "cards", "main")) {
+            } else if (!swipeSent && scene.kind in setOf("chapters", "journal", "cards", "main", "chat")) {
                 // Respond as soon as direction is clear, not only after finger-up.
                 // One page/level-set change per gesture avoids skipping through animations.
                 swipeSent = true
