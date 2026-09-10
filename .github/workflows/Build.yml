@@ -62,11 +62,14 @@ jobs:
       - name: Typecheck frontend
         run: pnpm --dir src/celemod-ui typecheck
 
+      - name: Validate locked Rust dependencies
+        run: cargo tree --locked
+
       - name: Build Windows executable
         if: runner.os == 'Windows'
         env:
           CMAKE_POLICY_VERSION_MINIMUM: 3.5
-        run: node src/celemod-ui/scripts/tauri.mjs build --no-bundle
+        run: node src/celemod-ui/scripts/tauri.mjs build --no-bundle -- --locked
 
       - uses: tauri-apps/tauri-action@v0.6.2
         if: runner.os != 'Windows'
@@ -75,11 +78,29 @@ jobs:
           CMAKE_POLICY_VERSION_MINIMUM: 3.5
         with:
           projectPath: .
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} -- --locked
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: ${{ startsWith(github.ref, 'refs/tags/') && format('CeleMod {0}', github.ref_name) || '' }}
           releaseDraft: false
           prerelease: false
+
+      - name: Upload macOS bundles
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CeleMod-macos
+          path: target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+      - name: Upload Linux bundles
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CeleMod-linux
+          path: |
+            target/release/bundle/appimage/*.AppImage
+            target/release/bundle/deb/*.deb
+          if-no-files-found: error
 
       - name: Rename Windows executable
         if: runner.os == 'Windows'
@@ -173,8 +194,15 @@ jobs:
           workspaces: . -> target
           key: android-arm64
 
+      # Fail before downloading/repacking the runtime if Cargo.lock is stale.
+      - name: Validate locked Android dependencies
+        run: cargo tree --locked --target aarch64-linux-android
+
       - name: Install frontend dependencies
         run: pnpm --dir src/celemod-ui install --frozen-lockfile
+
+      - name: Test managed Android hooks
+        run: dotnet run --project android/runtime/tests/managed -c Release
 
       - name: Prepare pinned Android runtime
         run: ./scripts/prepare-android-runtime.ps1
@@ -190,6 +218,15 @@ jobs:
           $version = (Get-Content version.txt -Raw).Trim()
           New-Item -ItemType Directory -Force target/android | Out-Null
           Copy-Item src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk "target/android/CeleMod_${version}_android-arm64-debug.apk"
+
+      - name: Test Android runtime
+        run: |
+          . ./scripts/android-env.ps1
+          Push-Location src-tauri/gen/android
+          try {
+            ./gradlew.bat :app:testArm64DebugUnitTest -PcelemodPrebuiltRust=true --console=plain --no-daemon
+            if ($LASTEXITCODE) { throw 'Android runtime tests failed' }
+          } finally { Pop-Location }
 
       - name: Sign and verify release APK
         if: startsWith(github.ref, 'refs/tags/')
@@ -248,3 +285,36 @@ jobs:
           files: |
             target/android/*.apk
             target/android/*.sha256
+
+  nightly:
+    name: Publish nightly release
+    needs: [build, android]
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Only the publisher is serialized; every push still gets a build.
+    concurrency:
+      group: nightly-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test nightly publisher
+        run: node --test scripts/publish-nightly.test.cjs
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: CeleMod-*
+          path: nightly-artifacts
+
+      - name: Replace nightly release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const publish = require('./scripts/publish-nightly.cjs');
+            await publish({ github, context, core, directory: 'nightly-artifacts' });

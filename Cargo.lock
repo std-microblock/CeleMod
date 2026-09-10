@@ -1424,6 +1424,7 @@ dependencies = [
 [[package]]
 name = "game-scanner"
 version = "1.2.0"
+source = "git+https://github.com/EqualGames/game-scanner?branch=dependabot%2Fcargo%2Fsysinfo-0.28.2#b476668896d3f9496c858fa3c9b3f97735b3837c"
 dependencies = [
  "bytes",
  "case",
