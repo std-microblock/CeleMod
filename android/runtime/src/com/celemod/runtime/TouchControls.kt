@@ -162,7 +162,7 @@ class TouchControls(
             orientation = next
             savedPositions = ControlLayout.decode(preferences.getString(orientation, null))
             savedStyles = ControlStyle.decode(preferences.getString("$orientation/styles", null))
-            savedMergedButtons = preferences.getBoolean("$orientation/merged-buttons", false)
+            savedMergedButtons = savedStyles["game/stick"]?.directionLayout == DirectionLayoutMode.MERGED
             savedFullScreen = preferences.getBoolean("$orientation/full-screen-centers", false)
         }
         rebuild()
@@ -178,7 +178,7 @@ class TouchControls(
         val topSize = size * .78f
         layoutBounds = ControlBounds(0f, 0f, width.toFloat(), height.toFloat())
         legacyBounds = ControlBounds(safe.left + margin, safe.top + margin, w - margin, h - margin)
-        val toolbarCount = if (editing) 5 else if (buttons || joystick) 3 else 2
+        val toolbarCount = if (editing) 4 else if (buttons || joystick) 3 else 2
         toolbarBounds = ControlBounds(safe.left.toFloat(), safe.top.toFloat(),
             safe.left + margin + toolbarCount * (topSize + margin), safe.top + topSize + 2 * margin)
         profile = if (!editing) ControlProfile.forState(state, buttons, joystick, direct, directionMode)
@@ -203,7 +203,6 @@ class TouchControls(
             ControlAction("CancelLayout", "取消", ControlIcon.CLOSE),
             ControlAction("ResetLayout", "重置", ControlIcon.RESET),
             ControlAction("SwitchLayout", if (editingGame) "到菜单" else "到游戏"),
-            ControlAction("MergeButtons", if (draft?.mergedButtons == true) "取消合并" else "合并按钮")
         ) else buildList {
             add(ControlAction("Edit", "编辑", ControlIcon.EDIT))
             add(ControlAction("Exit", "返回管理器", ControlIcon.EXIT))
@@ -250,7 +249,7 @@ class TouchControls(
         val baseRadius = min((height - safe.top - safe.bottom) * .18f, 75 * density)
         stickCenter = place("game/stick", ControlPoint(safe.left + baseRadius + 26 * density,
             height - safe.bottom - baseRadius - 25 * density))
-        contentDescription = if (editing) "布局编辑：拖动调整位置，轻点设置方向模式、大小、滑出行为、震动和不透明度；左上角保存、取消、重置、切换布局、合并按钮"
+        contentDescription = if (editing) "布局编辑：拖动调整位置，轻点设置方向模式、大小、滑出行为、震动和不透明度；左上角保存、取消、重置、切换布局"
             else "游戏触控：${state.mode.name}；左上角编辑布局、返回管理器"
         invalidate()
     }
@@ -264,13 +263,12 @@ class TouchControls(
     }
 
     private fun editableCenters(): Map<String, ControlPoint> = buildMap {
-        for (key in this@TouchControls.keys) if (!key.id.startsWith("fixed/"))
+        for (key in this@TouchControls.keys) if (key.id.startsWith("$layoutGroup/dpad/"))
             put(key.id, ControlPoint(key.rect.centerX(), key.rect.centerY()))
         // A floating stick has no movable layout anchor, but still shares style edits.
-        if (profile.stick && !floating) put("game/stick", stickCenter)
     }
 
-    private fun editableIds() = editableCenters().keys + if (profile.stick) setOf("game/stick") else emptySet()
+    private fun editableIds() = editableCenters().keys
 
     private fun keyAt(x: Float, y: Float): Key? =
         keys.firstOrNull { it.id.startsWith("fixed/") && it.rect.contains(x, y) }
@@ -329,7 +327,7 @@ class TouchControls(
             val layer = saveControlLayer(canvas, key.id, key.rect)
             paint.style = Paint.Style.FILL
             paint.color = if ((key.codes.isNotEmpty() && key.codes.all { it in down }) || key in pointers.values || key.id in heldActions || drag?.id == key.id || drag?.centers?.containsKey(key.id) == true ||
-                key.action.binding == "MergeButtons" && draft?.mergedButtons == true)
+            drag?.centers?.containsKey(key.id) == true)
                 0xBB82B8FF.toInt() else 0x88313E51.toInt()
             canvas.drawRoundRect(key.rect, 12 * density, 12 * density, paint)
             if (editing && !key.id.startsWith("fixed/")) {
@@ -359,7 +357,7 @@ class TouchControls(
         if (editing) {
             paint.style = Paint.Style.FILL
             paint.color = Color.WHITE; paint.textAlign = Paint.Align.CENTER; paint.textSize = 13 * density
-            val hint = "${if (editingGame) "游戏" else "菜单"}布局 · ${if (draft?.mergedButtons == true) "合并编辑" else "单独编辑"} · 拖动移位 · 轻点设置 · 保存后生效"
+            val hint = "${if (editingGame) "游戏" else "菜单"}布局 · ${if (draft?.mergedButtons == true) "方向合并编辑" else "独立方向编辑"} · 拖动移位 · 轻点设置 · 保存后生效"
             canvas.drawText(hint, width / 2f, toolbarBounds.bottom + 20 * density, paint)
         }
     }
@@ -531,7 +529,6 @@ class TouchControls(
             savedFullScreen = true
             preferences.edit().putString(orientation, ControlLayout.encode(savedPositions))
                 .putString("$orientation/styles", ControlStyle.encode(savedStyles))
-                .putBoolean("$orientation/merged-buttons", savedMergedButtons)
                 .putBoolean("$orientation/full-screen-centers", true).apply()
         }
         draft = null
@@ -596,13 +593,15 @@ class TouchControls(
             setPadding(padding, padding / 2, padding, padding / 2)
         }
         var mergedButtons = editingDraft.mergedButtons
-        content.addView(CheckBox(context).apply {
-            text = "合并按钮"; isChecked = mergedButtons
-            setOnCheckedChangeListener { _, checked -> mergedButtons = checked }
-        })
-        content.addView(TextView(context).apply {
-            text = "开启后，当前布局所有按钮一起移动，修改的属性同步应用；未修改的属性保留各自设置。工具栏不参与，浮动摇杆只同步属性、不移动触发区域。"; textSize = 13f
-        })
+        if (canChangeMode) {
+            content.addView(CheckBox(context).apply {
+                text = "合并方向按钮（四键 / 八键）"; isChecked = mergedButtons
+                setOnCheckedChangeListener { _, checked -> mergedButtons = checked }
+            })
+            content.addView(TextView(context).apply {
+                text = "开启后只接管当前四键 / 八键方向盘：方向按钮作为整体移动、统一大小和属性。动作按钮、摇杆、工具栏仍独立调整。"; textSize = 13f
+            })
+        }
         if (canChangeMode) {
             content.addView(TextView(context).apply { text = "游戏方向控制（菜单仍为四键）"; textSize = 16f })
             content.addView(RadioGroup(context).apply {
@@ -777,10 +776,11 @@ class TouchControls(
                         stickDeadZoneStrength = stickDeadZoneStrength)
                     editingDraft.mergedButtons = mergedButtons
                     if (mergedButtons) {
-                        val ids = editableIds() + if (canChangeMode) selectedMode.buttonIds("game") else emptyList()
+                        val ids = selectedMode.buttonIds(if (id.startsWith("game/")) "game" else "menu")
                         editingDraft.applyStyles(ids, original, edited)
-                    }
-                    else editingDraft.setStyle(id, edited)
+                    } else editingDraft.setStyle(id, edited)
+                    if (canChangeMode) editingDraft.setStyle("game/stick", editingDraft.style("game/stick").copy(directionLayout =
+                        if (mergedButtons) DirectionLayoutMode.MERGED else DirectionLayoutMode.INDIVIDUAL))
                     batchToggle?.takeIf { it.isEnabled && it.isChecked }?.let {
                         editingDraft.setDirectionStyles(if (id.startsWith("game/")) "game" else "menu", batchMode(), editingDraft.style(id))
                     }
@@ -804,7 +804,7 @@ class TouchControls(
     }
 
     private fun beginDrag(pointer: Int, id: String, center: ControlPoint, x: Float, y: Float) {
-        val centers = if (draft?.mergedButtons == true) editableCenters()
+        val centers = if (draft?.mergedButtons == true && id.startsWith("$layoutGroup/dpad/")) editableCenters()
             else if (id == "game/stick" && floating) emptyMap() else mapOf(id to center)
         drag = Drag(pointer, id, centers,
             centers.mapValues { (key, _) -> draft?.get(key) }, x, y)
@@ -843,7 +843,6 @@ class TouchControls(
                         "SaveLayout" -> finishEditing(save = true)
                         "CancelLayout" -> finishEditing(save = false)
                         "SwitchLayout" -> { cancelDrag(); editingGame = !editingGame; rebuild() }
-                        "MergeButtons" -> { draft?.let { it.mergedButtons = !it.mergedButtons }; rebuild() }
                         "ResetLayout" -> {
                             resetDialog = AlertDialog.Builder(context).setTitle("恢复默认按键设置？")
                                 .setMessage("将重置当前屏幕方向的位置、大小、方向模式、滑出行为、震动和不透明度。点击保存后生效；取消编辑仍可撤销。")

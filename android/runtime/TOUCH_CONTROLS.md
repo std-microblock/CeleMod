@@ -81,13 +81,13 @@ one-tap resume.
   screen: controls may extend beyond its edges or overlap the toolbar area.
   The fixed toolbar draws on top and wins hit tests, keeping Save/Cancel/Exit
   reachable. Old safe-viewport coordinates are converted when saving an edit.
-- **合并按钮** (toolbar or button settings) treats the current preview's editable
-  controls as a group. Dragging any member translates the whole group with one
-  edge-clamped offset, preserving spacing. Changed properties apply to all members;
-  unrelated settings retain their individual values. Fixed toolbar controls are
-  excluded, and floating sticks share style edits but never move their activation
-  region or saved anchor. Shared pause/auxiliary controls remain shared across
-  previews. The toggle and group edits use the same Save/Cancel/Reset transaction.
+- **合并按钮** is a direction-pad option, shown when editing the four/eight
+  direction controls. In individual mode each direction is laid out separately;
+  in merged mode the four/eight controls become one direction-pad layout group.
+  Dragging any direction translates the whole group with one edge-clamped offset,
+  preserving spacing. Size and changed properties apply to that pad only; action
+  buttons, the stick, and toolbar remain independently editable. The mode and edits
+  use the same Save/Cancel/Reset transaction.
 - Editor controls are available even with touch gameplay disabled; previewing and
   saving do not change the user's touch-enable settings. The editor shows the
   selected gameplay direction style (stick or D-pad).

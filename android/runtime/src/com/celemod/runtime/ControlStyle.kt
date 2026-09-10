@@ -30,6 +30,12 @@ enum class DirectionControlMode(val label: String) {
     }
 }
 
+/** Whether the four/eight direction controls are laid out and edited as one pad. */
+enum class DirectionLayoutMode(val label: String) {
+    INDIVIDUAL("独立按钮"), MERGED("合并按钮");
+    companion object { fun parse(value: String?) = entries.firstOrNull { it.name == value } ?: INDIVIDUAL }
+}
+
 enum class StickDisplayMode(val label: String) {
     CLASSIC("经典摇杆"), RING("圆环模式");
 
@@ -67,6 +73,7 @@ data class ControlStyle(
     val leaveStrength: Int = 50,
     // Only game/stick uses this field. Null preserves the launcher's old preference.
     val directionMode: DirectionControlMode? = null,
+    val directionLayout: DirectionLayoutMode = DirectionLayoutMode.INDIVIDUAL,
     val directionSlide: DirectionSlideBehavior = DirectionSlideBehavior.RELEASE,
     val stickDiagonalVibration: Boolean = false,
     val stickCardinalVibration: Boolean = false,
@@ -101,6 +108,7 @@ data class ControlStyle(
     fun withChanges(before: ControlStyle, after: ControlStyle) = copy(
         scale = if (before.scale != after.scale) after.scale else scale,
         opacity = if (before.opacity != after.opacity) after.opacity else opacity,
+        directionLayout = if (before.directionLayout != after.directionLayout) after.directionLayout else directionLayout,
         slide = if (before.slide != after.slide) after.slide else slide,
         directionSlide = if (before.directionSlide != after.directionSlide) after.directionSlide else directionSlide,
         enterVibration = if (before.enterVibration != after.enterVibration) after.enterVibration else enterVibration,
@@ -122,7 +130,7 @@ data class ControlStyle(
         fun encode(styles: Map<String, ControlStyle>) = "v2\n" + styles.toSortedMap()
             .filterKeys { ControlLayout.validId(it) }.map { (id, style) ->
                 val value = style.normalized()
-                "$id=${value.scale},${value.slide.name},${value.opacity},${value.enterVibration},${value.leaveVibration},${value.enterStrength},${value.leaveStrength},${value.directionMode?.name ?: "DEFAULT"},${value.directionSlide.name},${value.stickDiagonalVibration},${value.stickCardinalVibration},${value.stickDiagonalStrength},${value.stickCardinalStrength},${value.stickDeadZone},${value.stickDeadZoneVibration},${value.stickDeadZoneStrength},${value.stickDisplay.name}"
+                "$id=${value.scale},${value.slide.name},${value.opacity},${value.enterVibration},${value.leaveVibration},${value.enterStrength},${value.leaveStrength},${value.directionMode?.name ?: "DEFAULT"},${value.directionLayout.name},${value.directionSlide.name},${value.stickDiagonalVibration},${value.stickCardinalVibration},${value.stickDiagonalStrength},${value.stickCardinalStrength},${value.stickDeadZone},${value.stickDeadZoneVibration},${value.stickDeadZoneStrength},${value.stickDisplay.name}"
             }.joinToString("\n")
 
         fun decode(raw: String?): Map<String, ControlStyle> {
@@ -130,10 +138,21 @@ data class ControlStyle(
             val legacy = raw.startsWith("v1\n")
             return buildMap {
                 for (line in raw.lineSequence().drop(1).take(128)) {
-                    val parts = line.split('=', ',', limit = 19)
-                    if ((if (legacy) parts.size != 3 else parts.size !in listOf(9, 10, 14, 17, 18)) || !ControlLayout.validId(parts[0])) continue
+                    val parts = line.split('=', ',', limit = 20)
+                    if ((if (legacy) parts.size != 3 else parts.size !in listOf(9, 10, 14, 17, 18, 19)) || !ControlLayout.validId(parts[0])) continue
                     val scale = parts[1].toFloatOrNull()?.takeIf { it.isFinite() } ?: continue
                     val style = ControlStyle(scale, ControlSlideBehavior.parse(parts[2]))
+                    val oldV2 = !legacy && parts.size < 19
+                    val directionLayoutIndex = if (oldV2) -1 else 9
+                    val directionSlideIndex = if (oldV2) 9 else 10
+                    val diagonalVibrationIndex = if (oldV2) 10 else 11
+                    val cardinalVibrationIndex = if (oldV2) 11 else 12
+                    val diagonalStrengthIndex = if (oldV2) 12 else 13
+                    val cardinalStrengthIndex = if (oldV2) 13 else 14
+                    val deadZoneIndex = if (oldV2) 14 else 15
+                    val deadZoneVibrationIndex = if (oldV2) 15 else 16
+                    val deadZoneStrengthIndex = if (oldV2) 16 else 17
+                    val displayIndex = if (oldV2) -1 else 18
                     put(parts[0], (if (legacy) style else style.copy(
                         opacity = parts[3].toFloatOrNull() ?: 1f,
                         enterVibration = parts[4].toBooleanStrictOrNull() ?: false,
@@ -141,15 +160,16 @@ data class ControlStyle(
                         enterStrength = parts[6].toIntOrNull() ?: 50,
                         leaveStrength = parts[7].toIntOrNull() ?: 50,
                         directionMode = DirectionControlMode.parse(parts[8]),
-                        directionSlide = DirectionSlideBehavior.parse(parts.getOrNull(9)),
-                        stickDiagonalVibration = parts.getOrNull(10)?.toBooleanStrictOrNull() ?: false,
-                        stickCardinalVibration = parts.getOrNull(11)?.toBooleanStrictOrNull() ?: false,
-                        stickDiagonalStrength = parts.getOrNull(12)?.toIntOrNull() ?: 50,
-                        stickCardinalStrength = parts.getOrNull(13)?.toIntOrNull() ?: 50,
-                        stickDeadZone = parts.getOrNull(14)?.toFloatOrNull() ?: .18f,
-                        stickDeadZoneVibration = parts.getOrNull(15)?.toBooleanStrictOrNull() ?: false,
-                        stickDeadZoneStrength = parts.getOrNull(16)?.toIntOrNull() ?: 50,
-                        stickDisplay = StickDisplayMode.parse(parts.getOrNull(17)))).normalized())
+                        directionLayout = DirectionLayoutMode.parse(if (directionLayoutIndex >= 0) parts.getOrNull(directionLayoutIndex) else null),
+                        directionSlide = DirectionSlideBehavior.parse(parts.getOrNull(directionSlideIndex)),
+                        stickDiagonalVibration = parts.getOrNull(diagonalVibrationIndex)?.toBooleanStrictOrNull() ?: false,
+                        stickCardinalVibration = parts.getOrNull(cardinalVibrationIndex)?.toBooleanStrictOrNull() ?: false,
+                        stickDiagonalStrength = parts.getOrNull(diagonalStrengthIndex)?.toIntOrNull() ?: 50,
+                        stickCardinalStrength = parts.getOrNull(cardinalStrengthIndex)?.toIntOrNull() ?: 50,
+                        stickDeadZone = parts.getOrNull(deadZoneIndex)?.toFloatOrNull() ?: .18f,
+                        stickDeadZoneVibration = parts.getOrNull(deadZoneVibrationIndex)?.toBooleanStrictOrNull() ?: false,
+                        stickDeadZoneStrength = parts.getOrNull(deadZoneStrengthIndex)?.toIntOrNull() ?: 50,
+                        stickDisplay = StickDisplayMode.parse(if (displayIndex >= 0) parts.getOrNull(displayIndex) else null))).normalized())
                 }
             }
         }
