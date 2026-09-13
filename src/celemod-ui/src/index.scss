@@ -75,6 +75,14 @@ textarea,
   user-select: none;
 }
 
+/* macOS uses a native overlay title bar: this strip must match the traffic
+   light area reserved by `trafficLightPosition` in tauri.macos.conf.json.
+   The component marks it with data-tauri-drag-region for window dragging. */
+.macos-titlebar {
+  flex: 0 0 32px;
+  min-height: 32px;
+}
+
 .window-caption {
   flex: 0 0 auto;
   padding: 0;
@@ -160,10 +168,6 @@ textarea,
   flex: 1;
   min-width: 0;
   min-height: 0;
-}
-
-html[data-platform="macos"] .app-shell {
-  padding-top: 32px;
 }
 
 .sidebar {
