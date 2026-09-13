@@ -47,6 +47,14 @@ export function WindowTitlebar() {
     };
   }, [platform]);
 
+  if (platform === "macos") {
+    // macOS keeps the native traffic lights via `titleBarStyle: "Overlay"`.
+    // This empty strip fills the reserved title bar area and makes the whole
+    // band draggable (Tauri handles dragging and double-click zoom; the native
+    // traffic lights stay clickable above the webview).
+    return <div className="macos-titlebar" data-tauri-drag-region />;
+  }
+
   if (platform !== "windows") return null;
 
   return (
