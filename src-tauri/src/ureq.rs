@@ -7,7 +7,6 @@ use std::sync::{
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, anyhow, bail};
-use url::Url;
 
 pub struct DownloadCallbackInfo {
     pub progress: f32,
@@ -33,51 +32,6 @@ fn make_request(url: &str) -> ureq::Request {
         .set("User-Agent", &user_agent())
         .set("Accept", "*/*")
         .set("Accept-Encoding", "identity")
-}
-
-/// WEGFan's API redirects downloads to `celeste-mirror-cdn-2`, whose CDN
-/// currently advertises `Accept-Ranges` but answers Range requests with a
-/// full `200` response.  The canonical WEGFan CDN hostname serves the same
-/// objects and supports real byte ranges, so resolve the redirect and use it
-/// before starting a parallel download.
-fn canonicalize_wegfan_cdn_url(url: &str) -> String {
-    let Ok(mut parsed) = Url::parse(url) else {
-        return url.to_string();
-    };
-
-    let host = parsed.host_str().unwrap_or_default();
-    if host == "celeste-mirror-cdn-2.wegfan.com" {
-        let _ = parsed.set_host(Some("celeste-mirror-cdn.wegfan.com"));
-        return parsed.to_string();
-    }
-    if host != "celeste.weg.fan" {
-        return url.to_string();
-    }
-
-    let Ok(response) = ureq::head(url)
-        .set("User-Agent", &user_agent())
-        .set("Accept", "*/*")
-        .set("Accept-Encoding", "identity")
-        .call()
-    else {
-        return url.to_string();
-    };
-
-    let Ok(mut redirected) = Url::parse(response.get_url()) else {
-        return url.to_string();
-    };
-    if redirected
-        .host_str()
-        .is_some_and(|host| host == "celeste-mirror-cdn-2.wegfan.com")
-    {
-        let _ = redirected.set_host(Some("celeste-mirror-cdn.wegfan.com"));
-        let redirected = redirected.to_string();
-        crate::logging::info(format_args!(
-            "Using Range-capable WEGFan CDN URL: {url} -> {redirected}"
-        ));
-        return redirected;
-    }
-    url.to_string()
 }
 
 fn parse_content_range(value: &str) -> Option<(u64, u64, u64)> {
@@ -495,33 +449,18 @@ pub fn download_file_to_path_with_progress(
         std::fs::create_dir_all(parent)?;
     }
 
-    let resolved_url = canonicalize_wegfan_cdn_url(url);
     let mut result = if multi_thread {
-        download_multi_thread(
-            &resolved_url,
-            output,
-            progress_callback,
-            cancel_flag,
-            pause_flag,
-        )
+        download_multi_thread(url, output, progress_callback, cancel_flag, pause_flag)
     } else {
-        download_single(
-            &resolved_url,
-            output,
-            progress_callback,
-            cancel_flag,
-            pause_flag,
-        )
+        download_single(url, output, progress_callback, cancel_flag, pause_flag)
     };
-    if result.is_err() && resolved_url != url {
+    // 不使用多线程分段时（服务器不支持 Range，或分段下载中途失败），
+    // 回退到同一 URL 的单连接下载，而不是改写到某个固定的镜像节点。
+    if result.is_err() && multi_thread && !cancel_flag.load(Ordering::Relaxed) {
         crate::logging::warn(format_args!(
-            "Range-capable WEGFan CDN failed; retrying original URL: {resolved_url}"
+            "Parallel download failed; retrying with a single connection: {url}"
         ));
-        result = if multi_thread {
-            download_multi_thread(url, output, progress_callback, cancel_flag, pause_flag)
-        } else {
-            download_single(url, output, progress_callback, cancel_flag, pause_flag)
-        };
+        result = download_single(url, output, progress_callback, cancel_flag, pause_flag);
     }
 
     match result {
@@ -589,23 +528,9 @@ pub fn download_file_with_progress(
 mod tests {
     use std::io::{Read, Write};
     use std::net::{TcpListener, TcpStream};
-    use std::sync::{Arc, atomic::AtomicBool};
+    use std::sync::{Arc, Mutex, atomic::AtomicBool};
 
-    use super::{canonicalize_wegfan_cdn_url, download_single, parse_content_range};
-
-    #[test]
-    fn canonicalizes_wegfan_cdn_hostname() {
-        assert_eq!(
-            canonicalize_wegfan_cdn_url(
-                "https://celeste-mirror-cdn-2.wegfan.com/gamebanana-file/a.zip"
-            ),
-            "https://celeste-mirror-cdn.wegfan.com/gamebanana-file/a.zip"
-        );
-        assert_eq!(
-            canonicalize_wegfan_cdn_url("https://example.com/file.zip"),
-            "https://example.com/file.zip"
-        );
-    }
+    use super::{download_file_to_path_with_progress, download_single, parse_content_range};
 
     fn read_request(stream: &mut TcpStream) -> String {
         let mut request = Vec::new();
@@ -674,6 +599,66 @@ mod tests {
         server.join().unwrap();
         result.unwrap();
         assert_eq!(std::fs::read(&output_path).unwrap(), b"0123456789");
+        std::fs::remove_file(output_path).unwrap();
+    }
+
+    #[test]
+    fn multi_thread_download_falls_back_to_single_connection() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let requests = Arc::new(Mutex::new(Vec::<String>::new()));
+        let server_requests = Arc::clone(&requests);
+        let server = std::thread::spawn(move || {
+            let payload = b"0123456789";
+            // HEAD、Range 探测和回退后的完整 GET 各占一个连接。
+            for _ in 0..3 {
+                let (mut stream, _) = listener.accept().unwrap();
+                let request = read_request(&mut stream);
+                let lower = request.to_ascii_lowercase();
+                server_requests.lock().unwrap().push(lower.clone());
+                if lower.starts_with("head ") {
+                    stream
+                        .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nAccept-Ranges: bytes\r\nConnection: close\r\n\r\n")
+                        .unwrap();
+                    continue;
+                }
+                // 模拟忽略 Range、始终返回完整 200 响应的镜像节点。
+                stream
+                    .write_all(
+                        b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\n",
+                    )
+                    .unwrap();
+                stream.write_all(payload).unwrap();
+            }
+        });
+
+        let output_path = std::env::temp_dir().join(format!(
+            "celemod-range-fallback-test-{}-{}.tmp",
+            std::process::id(),
+            address.port()
+        ));
+        let result = download_file_to_path_with_progress(
+            &format!("http://{address}/gamebanana-file/a.zip"),
+            output_path.to_string_lossy().as_ref(),
+            &mut |_| {},
+            true,
+            &Arc::new(AtomicBool::new(false)),
+            &Arc::new(AtomicBool::new(false)),
+        );
+
+        server.join().unwrap();
+        result.unwrap();
+        assert_eq!(std::fs::read(&output_path).unwrap(), b"0123456789");
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 3, "{requests:?}");
+        assert!(requests[0].starts_with("head "), "{requests:?}");
+        assert!(requests[1].contains("range:"), "{requests:?}");
+        assert!(
+            !requests[2].contains("range:"),
+            "fallback should keep the same URL with a plain GET: {requests:?}"
+        );
+        drop(requests);
         std::fs::remove_file(output_path).unwrap();
     }
 }
