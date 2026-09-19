@@ -46,6 +46,7 @@ sha2 = "0.10"
 url = "2"
 webpki-roots = "1"
 whoami = "1"
+notify = "8"
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 tauri-plugin-system-symbols = "0.3"
 tauri-plugin-window-controls = "0.1"

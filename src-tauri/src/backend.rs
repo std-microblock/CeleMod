@@ -71,6 +71,8 @@ mod everest;
 mod keybindings;
 #[path = "miaonet_atlas.rs"]
 mod miaonet_atlas;
+#[path = "mods_watch.rs"]
+mod mods_watch;
 #[path = "ureq.rs"]
 mod ureq;
 #[path = "wegfan.rs"]
@@ -3872,6 +3874,32 @@ fn cleanup_mod_download_temp_files(game_path: String) -> Result<usize, String> {
         .map_err(|error| format!("{error:#}"))
 }
 
+/// Starts watching `<game_path>/Mods` so the frontend can reload the Mod list
+/// when Everest or another tool installs Mods behind CeleMod's back. Passing an
+/// empty path stops watching.
+#[tauri::command]
+fn configure_mods_watcher(app: tauri::AppHandle, game_path: String) -> Result<String, String> {
+    let game_path = game_path.trim();
+    if game_path.is_empty() {
+        mods_watch::stop();
+        return Ok(String::new());
+    }
+    let game_path = normalize_game_path_impl(game_path);
+    mods_watch::watch(Path::new(&game_path), move |event| {
+        if let Err(error) = app.emit(mods_watch::MODS_CHANGED_EVENT, &event) {
+            crate::logging::warn(format_args!(
+                "Failed to report Mods folder changes: {error}"
+            ));
+        }
+    })
+    .map_err(|error| {
+        let message = format!("Failed to watch the Mods folder: {error:#}");
+        crate::logging::warn(format_args!("{message}"));
+        message
+    })?;
+    Ok(game_path)
+}
+
 #[tauri::command]
 fn get_celeste_dirs() -> String {
     if is_test_mode() {
@@ -6143,6 +6171,7 @@ pub fn run() {
             cancel_mod_download,
             set_mod_download_paused,
             cleanup_mod_download_temp_files,
+            configure_mods_watcher,
             get_celeste_dirs,
             get_installed_mod_ids,
             get_installed_mods,

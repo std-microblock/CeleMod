@@ -18,6 +18,7 @@ const parameterNames: Record<string, string[]> = {
   cancel_mod_download: ["name"],
   set_mod_download_paused: ["name", "paused"],
   cleanup_mod_download_temp_files: ["gamePath"],
+  configure_mods_watcher: ["gamePath"],
   get_celeste_dirs: [],
   take_pending_deep_links: [],
   get_installed_mod_ids: ["modsFolderPath", "onEvent"],

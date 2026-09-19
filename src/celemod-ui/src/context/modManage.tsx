@@ -9,6 +9,7 @@ import {
 import { useEffect, useContext } from "react";
 import { createPopup, PopupContext } from "src/components/Popup";
 import { ProgressIndicator } from "src/components/Progress";
+import { syncModsWatcher } from "../modsWatcher";
 
 export const createModManageContext = () => {
   initModComments();
@@ -127,6 +128,14 @@ export const createModManageContext = () => {
       window.clearTimeout(timer);
       popup?.hide();
     };
+  }, [gamePath]);
+
+  // Watch the Mods folder so Mods installed outside of CeleMod (Everest, the
+  // game itself, manual copies) show up without a manual reload.
+  useEffect(() => {
+    void syncModsWatcher(gamePath).catch((error) => {
+      console.error("Failed to configure the Mods folder watcher", error);
+    });
   }, [gamePath]);
 
   return ctx;
