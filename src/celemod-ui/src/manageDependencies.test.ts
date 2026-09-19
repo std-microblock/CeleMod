@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   collectOrphanDependencyNames,
+  collectDuplicateFixTargets,
   collectSwitchNames,
   normalizeManageDependencies,
   selectVisibleRootNames,
@@ -12,6 +13,7 @@ const node = (name: string, options: Partial<ManageNode> = {}): ManageNode => ({
   name,
   id: "0",
   enabled: true,
+  enabledByName: true,
   version: "1.0.0",
   file: `${name}.zip`,
   size: 0,
@@ -139,8 +141,8 @@ test("shows only Mods with duplicate installed files", () => {
   const nodes = {
     Duplicate: node("Duplicate", {
       duplicateFiles: [
-        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false },
-        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false },
+        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
+        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: true },
       ],
     }),
     Single: node("Single"),
@@ -165,4 +167,64 @@ test("shows only Mods with duplicate installed files", () => {
     }),
     ["Duplicate"],
   );
+});
+
+test("disables every enabled duplicate file but the kept one", () => {
+  const nodes = {
+    Duplicate: node("Duplicate", {
+      duplicateFiles: [
+        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
+        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: true },
+      ],
+    }),
+  };
+
+  assert.deepEqual(collectDuplicateFixTargets(nodes), [
+    {
+      name: "Duplicate",
+      keepFile: "Duplicate.zip",
+      disabledFiles: ["Duplicate-old.zip"],
+    },
+  ]);
+});
+
+test("enables one file again when every duplicate file is disabled", () => {
+  const nodes = {
+    Duplicate: node("Duplicate", {
+      enabled: false,
+      duplicateFiles: [
+        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: false },
+        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+      ],
+    }),
+  };
+
+  assert.deepEqual(collectDuplicateFixTargets(nodes), [
+    {
+      name: "Duplicate",
+      keepFile: "Duplicate.zip",
+      disabledFiles: ["Duplicate-old.zip"],
+    },
+  ]);
+});
+
+test("leaves resolved and disabled duplicate Mods untouched", () => {
+  const nodes = {
+    Resolved: node("Resolved", {
+      duplicateFiles: [
+        { file: "Resolved.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
+        { file: "Resolved-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+      ],
+    }),
+    DisabledByName: node("DisabledByName", {
+      enabled: false,
+      enabledByName: false,
+      duplicateFiles: [
+        { file: "DisabledByName.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: false },
+        { file: "DisabledByName-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+      ],
+    }),
+  };
+
+  assert.deepEqual(collectDuplicateFixTargets(nodes), []);
 });

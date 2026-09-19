@@ -51,6 +51,8 @@ export interface ManageNode {
   name: string;
   id: string;
   enabled: boolean;
+  /** Whether the Mod name itself is enabled by the active profile. */
+  enabledByName: boolean;
   version: string;
   file: string;
   size: number;
@@ -68,6 +70,7 @@ export interface ManageModFile {
   size: number;
   modifiedAt: number;
   isDirectory: boolean;
+  enabled: boolean;
 }
 
 const compareVersion = (left: string, right: string) => {
@@ -81,6 +84,47 @@ const compareVersion = (left: string, right: string) => {
   }
   return 0;
 };
+
+/// Picks the file that represents a Mod name in the tree.  An enabled file
+/// wins over a disabled one, so the row keeps showing what the game loads.
+const preferManageFile = (
+  candidate: Pick<ManageModFile, "enabled" | "version" | "modifiedAt">,
+  current:
+    | Pick<ManageModFile, "enabled" | "version" | "modifiedAt">
+    | undefined,
+) => {
+  if (!current) return true;
+  if (candidate.enabled !== current.enabled) return candidate.enabled;
+  const versionOrder = compareVersion(candidate.version, current.version);
+  if (versionOrder !== 0) return versionOrder > 0;
+  return candidate.modifiedAt > current.modifiedAt;
+};
+
+export interface DuplicateFixTarget {
+  name: string;
+  keepFile: string;
+  disabledFiles: string[];
+}
+
+/// Duplicate Mods that need attention: the Mod name is enabled but the number
+/// of enabled files of that name is not exactly one.
+export const collectDuplicateFixTargets = (
+  nodes: Record<string, ManageNode>,
+): DuplicateFixTarget[] =>
+  Object.values(nodes).flatMap((node) => {
+    if (node.duplicateFiles.length < 2 || !node.enabledByName) return [];
+    const enabledFiles = node.duplicateFiles.filter((file) => file.enabled);
+    if (enabledFiles.length === 1) return [];
+    return [
+      {
+        name: node.name,
+        keepFile: node.file,
+        disabledFiles: node.duplicateFiles
+          .filter((file) => file.file !== node.file)
+          .map((file) => file.file),
+      },
+    ];
+  });
 
 export const normalizeManageDependencies = (
   dependencies: readonly ManageDependency[],
@@ -164,28 +208,29 @@ export const useManageStore = create<ManageTreeState>()(
       hydrate({ installedMods, disabledNames, disabledFiles, catalogByName }) {
         set((state) => {
           const disabled = new Set(disabledNames);
-          const disabledPackages = new Set(disabledFiles);
+          const disabledPackages = new Set(
+            disabledFiles.map((file) => file.toLocaleLowerCase()),
+          );
           const nodes: Record<string, ManageNode> = {};
           for (const mod of installedMods) {
             const current = nodes[mod.name];
+            const enabledByName = !disabled.has(mod.name);
             const file = {
               file: mod.file,
               version: mod.version,
               size: mod.size,
               modifiedAt: mod.modified_at,
               isDirectory: mod.is_directory,
+              enabled:
+                enabledByName &&
+                !disabledPackages.has(mod.file.toLocaleLowerCase()),
             };
             if (current) {
               current.duplicateFiles.push(file);
-              const versionOrder = compareVersion(mod.version, current.version);
               const currentFile = current.duplicateFiles.find(
                 (item) => item.file === current.file,
               );
-              if (
-                versionOrder > 0 ||
-                (versionOrder === 0 &&
-                  mod.modified_at > (currentFile?.modifiedAt ?? 0))
-              ) {
+              if (preferManageFile(file, currentFile)) {
                 current.id = String(mod.game_banana_id);
                 current.version = mod.version;
                 current.file = mod.file;
@@ -194,13 +239,14 @@ export const useManageStore = create<ManageTreeState>()(
                 current.isDirectory = mod.is_directory;
                 current.dependencies = normalizeManageDependencies(mod.deps);
               }
+              current.enabled = current.enabled || file.enabled;
               continue;
             }
             nodes[mod.name] = {
               name: mod.name,
               id: String(mod.game_banana_id),
-              enabled:
-                !disabled.has(mod.name) && !disabledPackages.has(mod.file),
+              enabled: file.enabled,
+              enabledByName,
               version: mod.version,
               file: mod.file,
               size: mod.size,

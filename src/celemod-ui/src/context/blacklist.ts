@@ -75,11 +75,20 @@ export const createBlacklistContext = () => {
           enabled_mods: [],
         };
         const names = new Set(effectiveMods.map((mod) => mod.name));
+        const files = effectiveMods.map((mod) => mod.file);
+        const fileKeys = new Set(files.map((file) => file.toLocaleLowerCase()));
         const nextProfile = {
           ...directProfile,
           enabled_mods: enabled
             ? [...new Set([...directProfile.enabled_mods, ...names])]
             : directProfile.enabled_mods.filter((name) => !names.has(name)),
+          disabled_files: enabled
+            ? (directProfile.disabled_files ?? []).filter(
+                (file) => !fileKeys.has(file.toLocaleLowerCase()),
+              )
+            : [
+                ...new Set([...(directProfile.disabled_files ?? []), ...files]),
+              ],
         };
         setCurrentProfileName(nextProfile.name);
         setCurrentProfile(nextProfile);

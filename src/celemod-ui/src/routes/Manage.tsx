@@ -43,6 +43,8 @@ import {
   ManageNode,
   alternativesCovering,
   collectSwitchNames,
+  collectDuplicateFixTargets,
+  type DuplicateFixTarget,
   excludedDependencyNames,
   getDependencyHealth,
   normalizeManageDependencies,
@@ -989,13 +991,29 @@ const ManageTreeNode = ({
               </Badge>
             )}
             {node.duplicateFiles.length > 1 && (
-              <Badge
-                tone="danger"
-                title={node.duplicateFiles.map((item) => item.file).join("\n")}
-                onClick={() => actions.showDuplicates(name)}
+              <button
+                type="button"
+                className={`duplicate-badge ${
+                  node.duplicateFiles.filter((item) => item.enabled).length === 1
+                    ? "resolved"
+                    : ""
+                }`}
+                title={[
+                  _i18n.t("同名 Mod 只能启用一个文件，点击选择保留或删除"),
+                  ...node.duplicateFiles.map(
+                    (item) => `${item.enabled ? "✓" : "✕"} ${item.file}`,
+                  ),
+                ].join("\n")}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  actions.showDuplicates(name);
+                }}
               >
-                {_i18n.t("重复")} × {node.duplicateFiles.length}
-              </Badge>
+                <Icon name="warn" />
+                {_i18n.t("重复")}
+                <b>× {node.duplicateFiles.length}</b>
+                <Icon name="i-right" />
+              </button>
             )}
             {hasUpdate && (
               <Badge tone="warning" onClick={() => actions.updateNode(name)}>
@@ -1218,6 +1236,17 @@ export const Manage = () => {
       .catch(console.error);
   }, [gamePath, profileEnabled]);
 
+  /* Files that the active profile(s) blacklist individually.  Without them
+     same-name Mod files cannot be told apart from the enabled one. */
+  const activeDisabledFiles = useMemo(() => {
+    const active = profileEnabled
+      ? profiles.filter((profile) => activeProfileNames.includes(profile.name))
+      : [];
+    const source =
+      active.length > 0 ? active : currentProfile ? [currentProfile] : [];
+    return source.flatMap((profile) => profile.disabled_files ?? []);
+  }, [activeProfileNames, currentProfile, profileEnabled, profiles]);
+
   useEffect(() => {
     const enabledNames = new Set(currentProfile?.enabled_mods ?? []);
     hydrate({
@@ -1225,10 +1254,50 @@ export const Manage = () => {
       disabledNames: installedMods
         .filter((mod) => !enabledNames.has(mod.name))
         .map((mod) => mod.name),
-      disabledFiles: [],
+      disabledFiles: activeDisabledFiles,
       catalogByName: metaByName,
     });
-  }, [installedMods, currentProfile, metaByName]);
+  }, [installedMods, currentProfile, metaByName, activeDisabledFiles]);
+
+  /* Two installed files declaring the same Mod name clash in game, so keep a
+     single file enabled and blacklist the rest as soon as they are detected. */
+  const duplicateFixAttempts = useRef(new Set<string>());
+  const [duplicateFixRunning, setDuplicateFixRunning] = useState(false);
+  useEffect(() => {
+    if (!gamePath || duplicateFixRunning) return;
+    if (profileEnabled && !currentProfileName) return;
+    const fingerprint = (target: DuplicateFixTarget) =>
+      [target.name, target.keepFile, ...target.disabledFiles].join("|");
+    const target = collectDuplicateFixTargets(nodes).find(
+      (item) => !duplicateFixAttempts.current.has(fingerprint(item)),
+    );
+    if (!target) return;
+    duplicateFixAttempts.current.add(fingerprint(target));
+    setDuplicateFixRunning(true);
+    void callRemote<string>(
+      "resolve_duplicate_mod_files",
+      gamePath,
+      target.name,
+      target.keepFile,
+      JSON.stringify(target.disabledFiles),
+      profileEnabled,
+      currentProfileName,
+    )
+      .then(async (result) => {
+        if (result !== "Success") throw new Error(result);
+        await reloadBlacklistState(gamePath);
+      })
+      .catch((error) =>
+        console.error("Failed to resolve duplicate Mod files", error),
+      )
+      .finally(() => setDuplicateFixRunning(false));
+  }, [
+    currentProfileName,
+    duplicateFixRunning,
+    gamePath,
+    nodes,
+    profileEnabled,
+  ]);
 
   useEffect(() => {
     const close = (event: PointerEvent) => {
@@ -1402,6 +1471,7 @@ export const Manage = () => {
         );
       }
       const switchedNames = new Set(effectiveNames);
+      const switchedFiles = new Set(files.map((file) => file.toLocaleLowerCase()));
       const nextProfile = {
         ...currentProfile,
         enabled_mods: enabled
@@ -1409,6 +1479,21 @@ export const Manage = () => {
           : currentProfile.enabled_mods.filter(
               (name) => !switchedNames.has(name),
             ),
+        // blacklist.txt tracks files, so mirror the switch locally as well.
+        ...(profileEnabled
+          ? {}
+          : {
+              disabled_files: enabled
+                ? (currentProfile.disabled_files ?? []).filter(
+                    (file) => !switchedFiles.has(file.toLocaleLowerCase()),
+                  )
+                : [
+                    ...new Set([
+                      ...(currentProfile.disabled_files ?? []),
+                      ...files,
+                    ]),
+                  ],
+            }),
       };
       setCurrentProfile(nextProfile);
       setProfilesCallback((items) =>
@@ -1790,78 +1875,195 @@ export const Manage = () => {
         const versionOrder = compareVersion(right.version, left.version);
         return versionOrder || right.modifiedAt - left.modifiedAt;
       });
-      const latestFile = node.file;
+      const defaultKeepFile = node.file;
       createPopup(() => {
         const popup = useContext(PopupContext);
-        const [selected, setSelected] = useState<string[]>(
-          files
-            .filter((item) => item.file !== latestFile)
-            .map((item) => item.file),
-        );
+        const [keepFile, setKeepFile] = useState(defaultKeepFile);
+        const [deleteFiles, setDeleteFiles] = useState<string[]>([]);
+        const [busy, setBusy] = useState(false);
+        const [error, setError] = useState("");
+        const enabledCount = files.filter((item) => item.enabled).length;
+        const toggleDelete = (file: string) => {
+          const next = deleteFiles.includes(file)
+            ? deleteFiles.filter((value) => value !== file)
+            : [...deleteFiles, file];
+          setDeleteFiles(next);
+          setError("");
+          if (next.includes(keepFile)) {
+            setKeepFile(
+              files
+                .map((item) => item.file)
+                .find((value) => !next.includes(value)) ?? "",
+            );
+          }
+        };
+        const keepSelected = () => {
+          if (!keepFile || busy) return;
+          setBusy(true);
+          setError("");
+          const disabled = files
+            .map((item) => item.file)
+            .filter((file) => file !== keepFile);
+          void callRemote<string>(
+            "resolve_duplicate_mod_files",
+            gamePath,
+            name,
+            keepFile,
+            JSON.stringify(disabled),
+            profileEnabled,
+            currentProfileName,
+          )
+            .then(async (result) => {
+              if (result !== "Success") throw new Error(result);
+              await reloadBlacklistState(gamePath);
+              popup.hide();
+            })
+            .catch((reason) => {
+              console.error("Failed to keep duplicate Mod file", reason);
+              setError(_i18n.t("操作失败，请重试"));
+            })
+            .finally(() => setBusy(false));
+        };
         return (
           <div className="duplicate-mod-popup">
-            <div className="title">
-              {_i18n.t("重复 Mod ·")} {name}
+            <div className="duplicate-header">
+              <span className="duplicate-header-icon">
+                <Icon name="warn" />
+              </span>
+              <div className="duplicate-header-text">
+                <div className="title">
+                  {_i18n.t("重复 Mod ·")} {name}
+                </div>
+                <p>
+                  {_i18n.t(
+                    "同名 Mod 只能启用一个文件，其余文件已自动禁用。",
+                  )}
+                </p>
+              </div>
+              <b className="duplicate-count">{files.length}</b>
             </div>
-            <p>{_i18n.t("选择要删除的文件")}</p>
             <div className="duplicate-file-list">
               {files.map((item) => {
-                const latest = item.file === latestFile;
+                const kept = item.file === keepFile;
+                const marked = deleteFiles.includes(item.file);
                 return (
-                  <label key={item.file} className={latest ? "latest" : ""}>
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(item.file)}
-                      onChange={(event) =>
-                        setSelected(
-                          event.target.checked
-                            ? [...selected, item.file]
-                            : selected.filter((value) => value !== item.file),
-                        )
-                      }
-                    />
-                    <span>
-                      <strong>{item.file}</strong>
-                      <small>
-                        {item.version} · {formatSize(item.size)} ·{" "}
-                        {_i18n.t("上次修改")} {formatModifiedAt(item.modifiedAt)}
-                        {item.isDirectory && (
-                          <b className="folder-kind-badge">
-                            {_i18n.t("文件夹")}
-                          </b>
-                        )}
-                      </small>
+                  <div
+                    key={item.file}
+                    className={`duplicate-file ${kept ? "kept" : ""} ${
+                      marked ? "marked" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="duplicate-file-pick"
+                      onClick={() => setKeepFile(item.file)}
+                      title={_i18n.t("保留此文件")}
+                    >
+                      <span className="duplicate-radio" />
+                      <span className="duplicate-file-info">
+                        <strong>{item.file}</strong>
+                        <small>
+                          {item.version} · {formatSize(item.size)} ·{" "}
+                          {_i18n.t("上次修改")}{" "}
+                          {formatModifiedAt(item.modifiedAt)}
+                          {item.isDirectory && (
+                            <b className="folder-kind-badge">
+                              {_i18n.t("文件夹")}
+                            </b>
+                          )}
+                        </small>
+                      </span>
+                    </button>
+                    <span
+                      className={`duplicate-state ${
+                        kept === item.enabled
+                          ? item.enabled
+                            ? "on"
+                            : "off"
+                          : "pending"
+                      }`}
+                    >
+                      {_i18n.t(
+                        kept
+                          ? item.enabled
+                            ? "已启用"
+                            : "将启用"
+                          : item.enabled
+                            ? "将禁用"
+                            : "已禁用",
+                      )}
                     </span>
-                    {latest && <em>{_i18n.t("最新版本")}</em>}
-                  </label>
+                    <button
+                      type="button"
+                      className={`duplicate-delete-toggle ${
+                        marked ? "active" : ""
+                      }`}
+                      onClick={() => toggleDelete(item.file)}
+                      title={_i18n.t(marked ? "取消删除" : "标记删除")}
+                    >
+                      <Icon name="delete" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
+            {error && <div className="duplicate-error">{error}</div>}
             <div className="buttons">
-              <button onClick={popup.hide}>{_i18n.t("取消")}</button>
+              <span className="duplicate-summary">
+                {_i18n.t("已启用 {enabled} / {total} 个文件", {
+                  enabled: enabledCount,
+                  total: files.length,
+                })}
+              </span>
+              <button onClick={popup.hide} disabled={busy}>
+                {_i18n.t("取消")}
+              </button>
               <button
                 className="delete-confirm"
-                disabled={selected.length === 0}
+                disabled={deleteFiles.length === 0 || busy}
                 onClick={() => {
-                  callRemote(
+                  setBusy(true);
+                  setError("");
+                  void callRemote(
                     "delete_mod_files",
                     modPath,
-                    JSON.stringify(selected),
+                    JSON.stringify(deleteFiles),
                     () => {
                       reloadMods();
                       popup.hide();
                     },
-                  );
+                  ).catch((reason) => {
+                    console.error(
+                      "Failed to delete duplicate Mod files",
+                      reason,
+                    );
+                    setError(_i18n.t("操作失败，请重试"));
+                    setBusy(false);
+                  });
                 }}
               >
-                {_i18n.t("删除选中")} ({selected.length})
+                {_i18n.t("删除选中")} ({deleteFiles.length})
+              </button>
+              <button
+                className="duplicate-keep-confirm"
+                disabled={!keepFile || busy}
+                onClick={keepSelected}
+              >
+                {_i18n.t("保留此文件")}
               </button>
             </div>
           </div>
         );
       });
     },
-    [modPath, nodes, reloadMods],
+    [
+      currentProfileName,
+      gamePath,
+      modPath,
+      nodes,
+      profileEnabled,
+      reloadMods,
+    ],
   );
 
   const startFullCheck = () => {

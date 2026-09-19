@@ -19,6 +19,11 @@ pub struct ModBlacklistProfile {
     pub name: String,
     #[serde(default)]
     pub enabled_mods: Vec<String>,
+    /// Installed files that stay blacklisted even while their Mod name is
+    /// enabled.  Everest loads every non-blacklisted file, so two installed
+    /// files declaring the same Mod name would otherwise both load and clash.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub disabled_files: Vec<String>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub auto_deps: bool,
 }
@@ -123,6 +128,19 @@ fn profile_from_legacy_value(
         .or_else(|| object.get("enabledMods"))
         .and_then(serde_json::Value::as_array)
     {
+        let disabled_files = object
+            .get("disabled_files")
+            .or_else(|| object.get("disabledFiles"))
+            .and_then(serde_json::Value::as_array)
+            .map(|files| {
+                normalize_names(
+                    files
+                        .iter()
+                        .filter_map(serde_json::Value::as_str)
+                        .map(str::to_owned),
+                )
+            })
+            .unwrap_or_default();
         return Ok(ModBlacklistProfile {
             name,
             enabled_mods: normalize_names(
@@ -131,6 +149,7 @@ fn profile_from_legacy_value(
                     .filter_map(serde_json::Value::as_str)
                     .map(str::to_owned),
             ),
+            disabled_files,
             auto_deps,
         });
     }
@@ -146,28 +165,49 @@ fn profile_from_legacy_value(
                 .collect::<HashSet<_>>()
         })
         .unwrap_or_default();
-    let disabled_files = object
+    let legacy_disabled_files = object
         .get("mods")
         .and_then(serde_json::Value::as_array)
         .map(|mods| {
             mods.iter()
                 .filter_map(serde_json::Value::as_object)
                 .filter_map(|mod_info| mod_info.get("file").and_then(serde_json::Value::as_str))
-                .map(|file| file.to_ascii_lowercase())
-                .collect::<HashSet<_>>()
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let legacy_disabled_file_keys = legacy_disabled_files
+        .iter()
+        .map(|file| file.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    let enabled_mods = normalize_names(
+        installed
+            .iter()
+            .filter(|mod_info| {
+                !disabled_names.contains(&mod_info.name.to_ascii_lowercase())
+                    && !legacy_disabled_file_keys.contains(&mod_info.file.to_ascii_lowercase())
+            })
+            .map(|mod_info| mod_info.name.clone()),
+    );
+    let enabled_names = enabled_mods
+        .iter()
+        .map(|name| name.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
 
     Ok(ModBlacklistProfile {
         name,
-        enabled_mods: normalize_names(
+        enabled_mods,
+        // Legacy profiles only listed disabled files.  Keep those exclusions
+        // when the Mod name itself stays enabled so duplicate files stay
+        // disabled, but let name level disabling drive whole Mod toggles.
+        disabled_files: normalize_names(
             installed
                 .iter()
                 .filter(|mod_info| {
-                    !disabled_names.contains(&mod_info.name.to_ascii_lowercase())
-                        && !disabled_files.contains(&mod_info.file.to_ascii_lowercase())
+                    enabled_names.contains(&mod_info.name.to_ascii_lowercase())
+                        && legacy_disabled_file_keys.contains(&mod_info.file.to_ascii_lowercase())
                 })
-                .map(|mod_info| mod_info.name.clone()),
+                .map(|mod_info| mod_info.file.clone()),
         ),
         auto_deps,
     })
@@ -187,6 +227,7 @@ fn serialize_profile(profile: &ModBlacklistProfile) -> anyhow::Result<String> {
     let profile = ModBlacklistProfile {
         name: profile.name.clone(),
         enabled_mods: normalize_names(profile.enabled_mods.clone()),
+        disabled_files: normalize_names(profile.disabled_files.clone()),
         auto_deps: false,
     };
     Ok(serde_json::to_string_pretty(&ExportedProfile {
@@ -219,6 +260,7 @@ fn imported_profile_from_mod_list(
     Ok(ModBlacklistProfile {
         name: default_name.to_owned(),
         enabled_mods,
+        disabled_files: Vec::new(),
         auto_deps: false,
     })
 }
@@ -367,17 +409,30 @@ pub fn apply_mod_blacklist_profiles(
     }
 
     let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
-    let profile_enabled = profiles
+    let active_profiles = profiles
         .iter()
         .filter(|profile| requested.contains(&profile.name.to_ascii_lowercase()))
+        .collect::<Vec<_>>();
+    let profile_enabled = active_profiles
+        .iter()
         .flat_map(|profile| profile.enabled_mods.iter().cloned());
     let enabled_names = resolve_selected_names(
         &installed,
         profile_enabled.chain(always_on_mods.iter().cloned()),
     );
+    // Same-name Mod files that a profile disabled on purpose stay blacklisted
+    // even when the Mod name itself is enabled (or always-on).
+    let disabled_files = active_profiles
+        .iter()
+        .flat_map(|profile| profile.disabled_files.iter())
+        .map(|file| file.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
     let enabled_files = installed
         .iter()
-        .filter(|mod_info| enabled_names.contains(&mod_info.name))
+        .filter(|mod_info| {
+            enabled_names.contains(&mod_info.name)
+                && !disabled_files.contains(&mod_info.file.to_ascii_lowercase())
+        })
         .map(|mod_info| mod_info.file.clone())
         .collect::<HashSet<_>>();
     let blacklist_files = installed
@@ -453,13 +508,20 @@ pub fn get_active_profile_mods(game_path: &str, always_on_mods: &[String]) -> Ve
 
 pub fn get_direct_blacklist_profile(game_path: &str) -> anyhow::Result<ModBlacklistProfile> {
     let blacklisted = direct_blacklisted_files(game_path);
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
     Ok(ModBlacklistProfile {
         name: "blacklist.txt".to_string(),
         enabled_mods: normalize_names(
-            get_installed_mods_sync(format!("{game_path}/Mods"))
-                .into_iter()
+            installed
+                .iter()
                 .filter(|mod_info| !blacklisted.contains(&mod_info.file.to_ascii_lowercase()))
-                .map(|mod_info| mod_info.name),
+                .map(|mod_info| mod_info.name.clone()),
+        ),
+        disabled_files: normalize_names(
+            installed
+                .iter()
+                .filter(|mod_info| blacklisted.contains(&mod_info.file.to_ascii_lowercase()))
+                .map(|mod_info| mod_info.file.clone()),
         ),
         auto_deps: false,
     })
@@ -525,6 +587,77 @@ pub fn switch_mod_profile_mods(
     write_profile(game_path, &profile)
 }
 
+fn installed_files_of_mod(installed: &[super::LocalMod], mod_name: &str) -> HashSet<String> {
+    installed
+        .iter()
+        .filter(|mod_info| mod_info.name.eq_ignore_ascii_case(mod_name))
+        .map(|mod_info| mod_info.file.to_ascii_lowercase())
+        .collect()
+}
+
+/// Keeps a single installed file of `mod_name` enabled and blacklists every
+/// other file of the same Mod, so Everest never loads two Mods that declare
+/// the same name.  Profile mode stores the exclusions on the profile; without
+/// profiles they are written straight into `blacklist.txt`.
+pub fn resolve_duplicate_mod_files(
+    game_path: &str,
+    mod_name: &str,
+    keep_file: &str,
+    disabled_files: &[String],
+    profile_name: Option<&str>,
+) -> anyhow::Result<()> {
+    let mod_name = mod_name.trim();
+    let keep_file = keep_file.trim();
+    if mod_name.is_empty() || keep_file.is_empty() {
+        bail!("Resolving duplicate Mod files needs a Mod name and a kept file");
+    }
+    let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
+    let same_name_files = installed_files_of_mod(&installed, mod_name);
+    if !same_name_files.contains(&keep_file.to_ascii_lowercase()) {
+        bail!("{keep_file} is not an installed file of {mod_name}");
+    }
+    let mut targets = Vec::new();
+    for file in disabled_files {
+        let file = file.trim();
+        if file.is_empty() || file.eq_ignore_ascii_case(keep_file) {
+            continue;
+        }
+        if !same_name_files.contains(&file.to_ascii_lowercase()) {
+            bail!("{file} is not an installed file of {mod_name}");
+        }
+        targets.push(file.to_owned());
+    }
+    let targets = normalize_names(targets);
+
+    let Some(profile_name) = profile_name else {
+        switch_direct_blacklist(game_path, &targets, false)?;
+        return switch_direct_blacklist(game_path, &[keep_file.to_owned()], true);
+    };
+
+    let mut profile = get_mod_blacklist_profiles(game_path)
+        .into_iter()
+        .find(|profile| profile.name.eq_ignore_ascii_case(profile_name))
+        .context("Profile not found")?;
+    profile.enabled_mods = normalize_names(
+        profile
+            .enabled_mods
+            .into_iter()
+            .chain([mod_name.to_owned()]),
+    );
+    let keep_key = keep_file.to_ascii_lowercase();
+    let replaced = targets
+        .iter()
+        .map(|file| file.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    profile.disabled_files.retain(|file| {
+        let key = file.to_ascii_lowercase();
+        key != keep_key && !replaced.contains(&key)
+    });
+    profile.disabled_files.extend(targets);
+    profile.disabled_files = normalize_names(profile.disabled_files);
+    write_profile(game_path, &profile)
+}
+
 pub fn expand_mod_profile_dependencies(game_path: &str, profile_name: &str) -> anyhow::Result<()> {
     let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
     let mut profile = get_mod_blacklist_profiles(game_path)
@@ -549,6 +682,7 @@ pub fn new_mod_blacklist_profile(game_path: &str, profile_name: &str) -> anyhow:
         &ModBlacklistProfile {
             name: profile_name.to_owned(),
             enabled_mods: Vec::new(),
+            disabled_files: Vec::new(),
             auto_deps: false,
         },
     )
@@ -614,6 +748,7 @@ pub fn rename_mod_blacklist_profile(
     let renamed = ModBlacklistProfile {
         name: new_name.to_string(),
         enabled_mods: source.enabled_mods.clone(),
+        disabled_files: source.disabled_files.clone(),
         auto_deps: false,
     };
     let renamed_contents = serialize_profile(&renamed)?;
@@ -727,6 +862,7 @@ fn parse_olympus_presets(
         profiles.push(ModBlacklistProfile {
             name,
             enabled_mods: normalize_names(enabled_mods),
+            disabled_files: Vec::new(),
             auto_deps: false,
         });
         Ok(())
@@ -957,6 +1093,154 @@ mod tests {
         path.to_string_lossy().into_owned()
     }
 
+    fn write_directory_mod(game_path: &str, folder: &str, name: &str, version: &str) {
+        let path = Path::new(game_path).join("Mods").join(folder);
+        fs::create_dir_all(&path).unwrap();
+        fs::write(
+            path.join("everest.yaml"),
+            format!("- Name: {name}\n  Version: {version}\n"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn duplicate_mod_resolution_keeps_one_file_in_profile_mode() {
+        let game_path = test_game_path("duplicate-profile");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        write_directory_mod(&game_path, "Duplicate-Old", "Duplicate.Mod", "0.9.0");
+        new_mod_blacklist_profile(&game_path, "Default").unwrap();
+
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate",
+            &["Duplicate-Old".to_string()],
+            Some("Default"),
+        )
+        .unwrap();
+
+        let profile = get_mod_blacklist_profiles(&game_path)
+            .into_iter()
+            .find(|profile| profile.name == "Default")
+            .unwrap();
+        assert_eq!(profile.disabled_files, ["Duplicate-Old"]);
+        assert!(
+            profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == "Duplicate.Mod")
+        );
+
+        // Always-on Mods re-enable every file of a name, so the profile level
+        // exclusion has to survive applying the profile.
+        apply_mod_blacklist_profiles(
+            &game_path,
+            &["Default".to_string()],
+            &["Duplicate.Mod".to_string()],
+        )
+        .unwrap();
+        let blacklist =
+            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
+        assert!(
+            blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Duplicate-Old")),
+            "{blacklist}"
+        );
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Duplicate")),
+            "{blacklist}"
+        );
+
+        // Keeping the other file swaps the exclusion.
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate-Old",
+            &["Duplicate".to_string()],
+            Some("Default"),
+        )
+        .unwrap();
+        let profile = get_mod_blacklist_profiles(&game_path)
+            .into_iter()
+            .find(|profile| profile.name == "Default")
+            .unwrap();
+        assert_eq!(profile.disabled_files, ["Duplicate"]);
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn duplicate_mod_resolution_updates_direct_blacklist() {
+        let game_path = test_game_path("duplicate-direct");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        write_directory_mod(&game_path, "Duplicate-Old", "Duplicate.Mod", "0.9.0");
+
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate",
+            &["Duplicate-Old".to_string()],
+            None,
+        )
+        .unwrap();
+
+        let blacklist =
+            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
+        assert!(
+            blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Duplicate-Old")),
+            "{blacklist}"
+        );
+
+        let profile = get_direct_blacklist_profile(&game_path).unwrap();
+        assert_eq!(profile.disabled_files, ["Duplicate-Old"]);
+        assert_eq!(profile.enabled_mods, ["Duplicate.Mod"]);
+
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate-Old",
+            &["Duplicate".to_string()],
+            None,
+        )
+        .unwrap();
+        let blacklist =
+            fs::read_to_string(Path::new(&game_path).join("Mods/blacklist.txt")).unwrap();
+        assert!(
+            blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Duplicate")),
+            "{blacklist}"
+        );
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Duplicate-Old")),
+            "{blacklist}"
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn duplicate_mod_resolution_rejects_unknown_files() {
+        let game_path = test_game_path("duplicate-invalid");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        assert!(
+            resolve_duplicate_mod_files(
+                &game_path,
+                "Duplicate.Mod",
+                "Missing",
+                &[],
+                Some("Default"),
+            )
+            .is_err()
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
     #[test]
     fn accepts_human_readable_profile_names() {
         assert!(validate_profile_name("Default").is_ok());
@@ -1055,11 +1339,13 @@ mod tests {
         let first = ModBlacklistProfile {
             name: "First".to_string(),
             enabled_mods: vec!["One".to_string()],
+            disabled_files: Vec::new(),
             auto_deps: false,
         };
         let second = ModBlacklistProfile {
             name: "Second".to_string(),
             enabled_mods: vec!["Two".to_string()],
+            disabled_files: Vec::new(),
             auto_deps: false,
         };
         write_profile(&game_path, &first).unwrap();
@@ -1241,11 +1527,13 @@ mod tests {
                 ModBlacklistProfile {
                     name: "Valid".to_string(),
                     enabled_mods: vec!["One".to_string()],
+                    disabled_files: Vec::new(),
                     auto_deps: false,
                 },
                 ModBlacklistProfile {
                     name: "../Invalid".to_string(),
                     enabled_mods: vec!["Two".to_string()],
+                    disabled_files: Vec::new(),
                     auto_deps: false,
                 },
             ],
@@ -1263,6 +1551,7 @@ mod tests {
             &ModBlacklistProfile {
                 name: "Existing".to_string(),
                 enabled_mods: vec!["Old.Mod".to_string()],
+                disabled_files: Vec::new(),
                 auto_deps: false,
             },
         )

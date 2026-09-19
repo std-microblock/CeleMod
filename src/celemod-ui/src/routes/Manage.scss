@@ -624,6 +624,58 @@
   white-space: nowrap;
 }
 
+/* Duplicate Mods are actionable, so the badge is a real button. */
+.duplicate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 17px;
+  padding: 0 7px;
+  border: 1px solid color.change(#ffc66d, $alpha: 0.45);
+  border-radius: 99px;
+  background: color.change(#ffc66d, $alpha: 0.14);
+  box-shadow: none;
+  color: #ffd08a;
+  font-family: inherit;
+  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease,
+    transform 120ms ease;
+  b {
+    font-weight: 750;
+  }
+  .icon {
+    width: 0.85em;
+    height: 0.85em;
+    opacity: 0.85;
+  }
+  &:hover {
+    border-color: color.change(#ffc66d, $alpha: 0.8);
+    background: color.change(#ffc66d, $alpha: 0.26);
+    color: #ffe0ac;
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+  &.resolved {
+    border-color: color.change(theme.$fg, $alpha: 0.16);
+    background: color.change(theme.$fg, $alpha: 0.05);
+    color: theme.$fg2;
+    &:hover {
+      border-color: color.change(theme.$primary, $alpha: 0.55);
+      background: color.change(theme.$primary, $alpha: 0.18);
+      color: theme.$fg;
+    }
+  }
+}
+
 .tree-row-actions {
   display: flex;
   align-items: center;
@@ -1492,37 +1544,131 @@
   }
 }
 .duplicate-mod-popup {
-  width: min(560px, 84vw);
-  p {
-    margin: -5px 0 12px;
-    color: theme.$fg3;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+  width: min(620px, 86vw);
+}
+.duplicate-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+  .duplicate-header-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 10px;
+    background: color.change(#ffc66d, $alpha: 0.14);
+    color: #ffc66d;
+    font-size: 15px;
+  }
+  .duplicate-header-text {
+    min-width: 0;
+    .title {
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    p {
+      margin: 3px 0 0;
+      color: theme.$fg3;
+      font-size: calc(9px * var(--manage-font-scale, 1));
+      line-height: 1.4;
+    }
+  }
+  .duplicate-count {
+    display: grid;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    place-items: center;
+    border-radius: 99px;
+    background: color.change(#ffc66d, $alpha: 0.16);
+    color: #ffc66d;
+    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-weight: 750;
   }
 }
 .duplicate-file-list {
   display: grid;
   gap: 6px;
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
-  label {
+  padding-right: 2px;
+}
+.duplicate-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 5px;
+  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  border-radius: 9px;
+  background: theme.$bg1;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+  &:hover {
+    border-color: color.change(theme.$fg, $alpha: 0.15);
+  }
+  &.kept {
+    border-color: color.change(#4caf50, $alpha: 0.5);
+    background: color.change(#4caf50, $alpha: 0.1);
+    .duplicate-radio {
+      border-color: #6fce76;
+      &::after {
+        background: #6fce76;
+      }
+    }
+  }
+  &.marked {
+    border-color: color.change(#ef5350, $alpha: 0.55);
+    background: color.change(#ef5350, $alpha: 0.1);
+    .duplicate-file-info strong {
+      color: theme.$fg3;
+      text-decoration: line-through;
+    }
+  }
+  .duplicate-file-pick {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    min-height: 46px;
-    padding: 7px 9px;
-    gap: 9px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: theme.$bg1;
+    gap: 10px;
+    min-width: 0;
+    min-height: 0;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    letter-spacing: 0;
+    text-align: left;
     cursor: pointer;
-    &.latest {
-      border-color: color.change(#4caf50, $alpha: 0.24);
+  }
+  .duplicate-radio {
+    display: grid;
+    width: 15px;
+    height: 15px;
+    place-items: center;
+    border: 1.5px solid color.change(theme.$fg, $alpha: 0.35);
+    border-radius: 50%;
+    transition:
+      border-color 120ms ease,
+      background 120ms ease;
+    &::after {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: transparent;
+      transition: background 120ms ease;
     }
-    span {
-      display: grid;
-      min-width: 0;
-      gap: 3px;
-    }
+  }
+  .duplicate-file-info {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
     strong,
     small {
       overflow: hidden;
@@ -1530,18 +1676,75 @@
       white-space: nowrap;
     }
     strong {
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(10px * var(--manage-font-scale, 1));
     }
     small {
       color: theme.$fg3;
       font-size: calc(8px * var(--manage-font-scale, 1));
     }
-    em {
+  }
+  .duplicate-state {
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-weight: 700;
+    white-space: nowrap;
+    &.on {
+      background: color.change(#4caf50, $alpha: 0.16);
       color: #8cdb91;
-      font-size: calc(8px * var(--manage-font-scale, 1));
-      font-style: normal;
-      white-space: nowrap;
     }
+    &.off {
+      background: color.change(theme.$fg, $alpha: 0.08);
+      color: theme.$fg3;
+    }
+    &.pending {
+      border: 1px solid color.change(#ffc66d, $alpha: 0.5);
+      color: #ffd08a;
+    }
+  }
+  .duplicate-delete-toggle {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    min-height: 0;
+    padding: 0;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
+    color: theme.$fg3;
+    cursor: pointer;
+    &:hover {
+      border-color: color.change(#ef5350, $alpha: 0.5);
+      color: #ff8d8a;
+    }
+    &.active {
+      border-color: transparent;
+      background: color.change(#ef5350, $alpha: 0.2);
+      color: #ff8d8a;
+    }
+  }
+}
+.duplicate-error {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color.change(#ef5350, $alpha: 0.12);
+  color: #ff8d8a;
+  font-size: calc(9px * var(--manage-font-scale, 1));
+}
+.duplicate-mod-popup .buttons {
+  .duplicate-summary {
+    align-self: center;
+    margin-right: auto;
+    color: theme.$fg3;
+    font-size: calc(8px * var(--manage-font-scale, 1));
+    white-space: nowrap;
+  }
+  .duplicate-keep-confirm {
+    background: theme.$primary;
+    color: white;
   }
 }
 .delete-target {

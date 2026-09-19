@@ -4843,6 +4843,36 @@ fn switch_mod_profile_mods(
 }
 
 #[tauri::command]
+fn resolve_duplicate_mod_files(
+    game_path: String,
+    mod_name: String,
+    keep_file: String,
+    disabled_files: String,
+    profile_enabled: bool,
+    profile_name: String,
+) -> String {
+    let game_path = normalize_game_path_impl(&game_path);
+    let disabled_files: Vec<String> = match serde_json::from_str(&disabled_files) {
+        Ok(value) => value,
+        Err(error) => {
+            return logged_error(format!("Failed to parse duplicate Mod files: {error}"));
+        }
+    };
+    let profile_name = profile_name.trim();
+    let profile = (profile_enabled && !profile_name.is_empty()).then_some(profile_name);
+    match blacklist::resolve_duplicate_mod_files(
+        &game_path,
+        &mod_name,
+        &keep_file,
+        &disabled_files,
+        profile,
+    ) {
+        Ok(()) => "Success".to_string(),
+        Err(error) => logged_error(format!("Failed to resolve duplicate Mod files: {error}")),
+    }
+}
+
+#[tauri::command]
 fn get_current_profiles(game_path: String) -> String {
     let game_path = normalize_game_path_impl(&game_path);
     serde_json::to_string(&blacklist::get_current_profiles(&game_path))
@@ -6137,6 +6167,7 @@ pub fn run() {
             apply_mod_profiles,
             get_active_profile_mods,
             switch_mod_profile_mods,
+            resolve_duplicate_mod_files,
             get_current_profiles,
             get_olympus_presets,
             write_text_file,
