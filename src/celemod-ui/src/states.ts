@@ -122,6 +122,7 @@ interface AppState {
   enableAcrylic: boolean;
   profileEnabled: boolean;
   profileModeInitialized: boolean;
+  profileModeUserConfigured: boolean;
   enablePageTransitions: boolean;
   fontScale: FontScale;
   manageFontScale: FontScale;
@@ -274,8 +275,9 @@ export const useAppStore = create<AppState>()(
         hiddenModTypes: [],
         modCacheTtlHours: 1,
         enableAcrylic: true,
-        profileEnabled: false,
+        profileEnabled: true,
         profileModeInitialized: false,
+        profileModeUserConfigured: false,
         enablePageTransitions: true,
         fontScale: 100,
         manageFontScale: 100,
@@ -288,6 +290,7 @@ export const useAppStore = create<AppState>()(
           set((state) => {
             state.profileEnabled = value;
             state.profileModeInitialized = true;
+            state.profileModeUserConfigured = true;
           }),
         initializeProfileMode: (value) =>
           set((state) => {
@@ -371,6 +374,16 @@ export const useAppStore = create<AppState>()(
           merged.mirror,
           merged.useMultiThread,
         );
+        // Profile mode stays on by default until the user picks a value in
+        // Settings. Older builds auto-initialized it from the profile count, so
+        // only an explicit choice counts as a persisted preference.
+        if (persisted.profileModeUserConfigured === true) {
+          merged.profileModeUserConfigured = true;
+        } else {
+          merged.profileEnabled = true;
+          merged.profileModeInitialized = false;
+          merged.profileModeUserConfigured = false;
+        }
         return merged;
       },
       partialize: ({
@@ -398,6 +411,7 @@ export const useAppStore = create<AppState>()(
         enableAcrylic,
         profileEnabled,
         profileModeInitialized,
+        profileModeUserConfigured,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -430,6 +444,7 @@ export const useAppStore = create<AppState>()(
         enableAcrylic,
         profileEnabled,
         profileModeInitialized,
+        profileModeUserConfigured,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -470,20 +485,67 @@ const loadDirectBlacklist = (gamePath: string) =>
     ).catch(reject);
   });
 
+// Profile mode needs at least one profile. Seed a Default profile from the
+// direct blacklist so switching to profile mode keeps the current Mod selection
+// and Mod toggles keep working.
+let ensureDefaultProfileTask: {
+  gamePath: string;
+  promise: Promise<ModBlacklistProfile[]>;
+} | null = null;
+const ensureDefaultProfile = (gamePath: string) => {
+  if (ensureDefaultProfileTask?.gamePath === gamePath) {
+    return ensureDefaultProfileTask.promise;
+  }
+  const promise = (async () => {
+    try {
+      const profiles = await loadProfiles(gamePath);
+      if (profiles.length > 0) return profiles;
+      const direct = await loadDirectBlacklist(gamePath);
+      const created = await callRemote<string>(
+        "new_mod_blacklist_profile",
+        gamePath,
+        "Default",
+      );
+      if (created !== "Success") throw new Error(created);
+      if (direct.enabled_mods.length > 0) {
+        const switched = await callRemote<string>(
+          "switch_mod_profile_mods",
+          gamePath,
+          "Default",
+          JSON.stringify(direct.enabled_mods),
+          true,
+        );
+        if (switched !== "Success") throw new Error(switched);
+      }
+      return loadProfiles(gamePath);
+    } finally {
+      if (ensureDefaultProfileTask?.promise === promise) {
+        ensureDefaultProfileTask = null;
+      }
+    }
+  })();
+  ensureDefaultProfileTask = { gamePath, promise };
+  return promise;
+};
+
 export const reloadBlacklistState = async (gamePath: string) => {
   if (!gamePath) throw new Error("game path not set");
   const request = ++blacklistLoadRequest;
   let state = useAppStore.getState();
   if (!state.profileModeInitialized) {
     // Reading profiles converts legacy v1 files before choosing the default mode.
-    const profiles = await loadProfiles(gamePath);
-    state.initializeProfileMode(profiles.length > 1);
+    await loadProfiles(gamePath);
+    state.initializeProfileMode(true);
     state = useAppStore.getState();
   }
 
   if (state.profileEnabled) {
-    const profiles = await loadProfiles(gamePath);
+    let profiles = await loadProfiles(gamePath);
     if (request !== blacklistLoadRequest) return;
+    if (profiles.length === 0) {
+      profiles = await ensureDefaultProfile(gamePath);
+      if (request !== blacklistLoadRequest) return;
+    }
     if (profiles.length === 0) {
       state.setProfiles([]);
       state.setActiveProfileNames([]);
