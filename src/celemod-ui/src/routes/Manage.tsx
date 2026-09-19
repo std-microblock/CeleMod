@@ -1956,6 +1956,8 @@ export const Manage = () => {
                     <button
                       type="button"
                       className="duplicate-file-pick"
+                      role="radio"
+                      aria-checked={kept}
                       onClick={() => setKeepFile(item.file)}
                       title={_i18n.t("保留此文件")}
                     >
@@ -1998,6 +2000,7 @@ export const Manage = () => {
                       className={`duplicate-delete-toggle ${
                         marked ? "active" : ""
                       }`}
+                      aria-pressed={marked}
                       onClick={() => toggleDelete(item.file)}
                       title={_i18n.t(marked ? "取消删除" : "标记删除")}
                     >
