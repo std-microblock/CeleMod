@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ModBlacklistProfile } from "./ipc/blacklist";
+import { selectAdoptableModNames } from "./modAdoption";
 import { callRemote } from "./utils";
 import {
   DEFAULT_THEME_ID,
@@ -95,6 +96,12 @@ interface AppState {
   currentProfile: ModBlacklistProfile | null;
   installedMods: BackendModInfo[];
   installedModsLoaded: boolean;
+  /**
+   * Lowercase Mod names CeleMod already saw, per game path.  Mods that are not
+   * listed yet appeared inside the Mods folder without CeleMod installing
+   * them, so the install defaults decide whether they stay enabled.
+   */
+  knownMods: Record<string, string[]>;
   currentEverestVersion: string;
   currentEverestIsUltra: boolean;
   currentLang: string;
@@ -138,6 +145,7 @@ interface AppState {
   ) => void;
   setCurrentProfile: (value: ModBlacklistProfile | null) => void;
   setInstalledMods: (value: BackendModInfo[]) => void;
+  setKnownMods: (gamePath: string, names: string[]) => void;
   setCurrentEverestVersion: (value: string) => void;
   setCurrentEverestIsUltra: (value: boolean) => void;
   setCurrentLang: (value: string) => void;
@@ -248,6 +256,7 @@ export const useAppStore = create<AppState>()(
         currentProfile: null,
         installedMods: [],
         installedModsLoaded: false,
+        knownMods: {},
         currentEverestVersion: "",
         currentEverestIsUltra: false,
         currentLang: "",
@@ -312,6 +321,12 @@ export const useAppStore = create<AppState>()(
             state.gamePath = value;
             state.installedMods = [];
             state.installedModsLoaded = false;
+          }),
+        setKnownMods: (gamePath, names) =>
+          set((state) => {
+            state.knownMods[gamePath] = names.map((name) =>
+              name.trim().toLowerCase(),
+            );
           }),
         setAutoDisableNewMods: (value) => {
           set((state) => {
@@ -412,6 +427,7 @@ export const useAppStore = create<AppState>()(
         profileEnabled,
         profileModeInitialized,
         profileModeUserConfigured,
+        knownMods,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -445,6 +461,7 @@ export const useAppStore = create<AppState>()(
         profileEnabled,
         profileModeInitialized,
         profileModeUserConfigured,
+        knownMods,
         enablePageTransitions,
         fontScale,
         manageFontScale,
@@ -484,6 +501,57 @@ const loadDirectBlacklist = (gamePath: string) =>
       },
     ).catch(reject);
   });
+
+/**
+ * Mods that are copied into the Mods folder by hand are unknown to every
+ * profile, so applying the profiles used to blacklist them no matter what the
+ * install defaults said.  Adopt those Mods into the profiles that are about to
+ * be applied when the default is "enable", and remember the installed Mods so
+ * later reloads and profile switches can tell new arrivals from known ones.
+ */
+export const adoptUntrackedMods = async (
+  gamePath: string,
+  profiles: ModBlacklistProfile[],
+  selectedNames: string[],
+): Promise<ModBlacklistProfile[]> => {
+  const selected = new Set(selectedNames.map((name) => name.toLowerCase()));
+  const selectedProfiles = profiles.filter((profile) =>
+    selected.has(profile.name.toLowerCase()),
+  );
+  // The profiles are still loading: leave the Mods alone instead of adopting
+  // everything into a profile that is not known yet.
+  if (selectedProfiles.length === 0) return profiles;
+  const state = useAppStore.getState();
+  const installed = await reloadInstalledMods(gamePath);
+  const direct = await loadDirectBlacklist(gamePath);
+  const adoptable = selectAdoptableModNames({
+    installed,
+    profileEnabledNames: selectedProfiles.flatMap(
+      (profile) => profile.enabled_mods,
+    ),
+    blacklistEnabledNames: direct.enabled_mods,
+    knownNames: state.knownMods[gamePath] ?? [],
+    alwaysOnNames: state.alwaysOnMods,
+    enableNewMods: state.downloadDefaultEnabled,
+  });
+  if (adoptable.length > 0) {
+    for (const profileName of selectedNames) {
+      const result = await callRemote<string>(
+        "switch_mod_profile_mods",
+        gamePath,
+        profileName,
+        JSON.stringify(adoptable),
+        true,
+      );
+      if (result !== "Success") throw new Error(result);
+    }
+  }
+  state.setKnownMods(
+    gamePath,
+    installed.map((mod) => mod.name),
+  );
+  return adoptable.length > 0 ? loadProfiles(gamePath) : profiles;
+};
 
 // Profile mode needs at least one profile. Seed a Default profile from the
 // direct blacklist so switching to profile mode keeps the current Mod selection
@@ -561,6 +629,8 @@ export const reloadBlacklistState = async (gamePath: string) => {
     );
     const selectedNames =
       activeProfileNames.length > 0 ? activeProfileNames : [profiles[0].name];
+    profiles = await adoptUntrackedMods(gamePath, profiles, selectedNames);
+    if (request !== blacklistLoadRequest) return;
     const result = await callRemote<string>(
       "apply_mod_profiles",
       gamePath,

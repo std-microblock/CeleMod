@@ -295,9 +295,10 @@ export const DropInstaller = () => {
                   )
                 ) {
                   ctxRef.current.modManage.reloadMods().catch(console.error);
-                  if (autoDisableNewMods) {
-                    void reloadBlacklistState(gamePath).catch(console.error);
-                  }
+                  // Rebuild the blacklist so installed Mods follow the
+                  // "install/download default" setting (auto-disabled when it
+                  // is off, adopted by the active profiles when it is on).
+                  void reloadBlacklistState(gamePath).catch(console.error);
                 }
                 if (
                   results.some(

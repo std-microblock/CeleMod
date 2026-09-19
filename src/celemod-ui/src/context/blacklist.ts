@@ -1,4 +1,5 @@
 import {
+  adoptUntrackedMods,
   initAlwaysOnMods,
   reloadBlacklistState,
   useAlwaysOnMods,
@@ -22,6 +23,11 @@ export const createBlacklistContext = () => {
 
   const ctx = {
     switchProfile: async (name: string) => {
+      // Adopt Mods that arrived while CeleMod was not looking, otherwise
+      // applying the profile would disable them.
+      await adoptUntrackedMods(gamePath, useAppStore.getState().profiles, [
+        name,
+      ]);
       const result = await callRemote<string>(
         "apply_mod_profiles",
         gamePath,
@@ -32,6 +38,7 @@ export const createBlacklistContext = () => {
       await reloadBlacklistState(gamePath);
     },
     setActiveProfiles: async (names: string[]) => {
+      await adoptUntrackedMods(gamePath, useAppStore.getState().profiles, names);
       const result = await callRemote<string>(
         "apply_mod_profiles",
         gamePath,
@@ -85,6 +92,9 @@ export const createBlacklistContext = () => {
           (profile) => profile.name === state.currentProfileName,
         ) ?? state.profiles[0];
       if (!targetProfile) throw new Error("No CeleMod Profile is available");
+      await adoptUntrackedMods(targetGamePath, state.profiles, [
+        targetProfile.name,
+      ]);
       const result = await callRemote<string>(
         "switch_mod_profile_mods",
         targetGamePath,
