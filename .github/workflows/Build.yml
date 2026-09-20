@@ -177,6 +177,9 @@ jobs:
           dotnet-version: 8.0.x
 
       - uses: android-actions/setup-android@v3
+        with:
+          # Google removed the legacy "tools" package from the SDK repository.
+          packages: platform-tools
 
       - name: Install Android SDK and NDK
         run: |
