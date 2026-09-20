@@ -52,6 +52,10 @@ class TouchControls(
     private val pressedAt = mutableMapOf<Int, Long>()
     private val handler = Handler(Looper.getMainLooper())
     private var state = ControlState()
+    // Last real game-layout scene. Entering the editor pauses known gameplay, so the
+    // paused state no longer reports Mod shortcuts or fallback confirm/cancel; the
+    // preview keeps showing the buttons that scene exposes.
+    private var gameScene: ControlState? = null
     private var profile = ControlProfile.forState(state, buttons, joystick)
     private val stickGesture = StickGesture()
     private val stickPointer get() = stickGesture.pointer
@@ -128,6 +132,7 @@ class TouchControls(
             state.touch?.epoch != next.touch?.epoch || state.modEpoch != next.modEpoch || state.modButtons != next.modButtons)
             releaseAll()
         state = next
+        if (gameLayout(next.mode)) gameScene = next
         profile = ControlProfile.forState(state, buttons, joystick, direct, directionMode)
         rebuild()
     }
@@ -182,9 +187,9 @@ class TouchControls(
         toolbarBounds = ControlBounds(safe.left.toFloat(), safe.top.toFloat(),
             safe.left + margin + toolbarCount * (topSize + margin), safe.top + topSize + 2 * margin)
         profile = if (!editing) ControlProfile.forState(state, buttons, joystick, direct, directionMode)
-            // The editor previews every control of the selected layout, including the ones
-            // only some scenes show, so all of them can be positioned and styled.
-            else ControlProfile.forEditor(editingGame, joystick, directionMode)
+            // The preview follows the scene: conditional buttons stay editable exactly while
+            // that scene shows them, instead of being listed for every user.
+            else ControlProfile.forEditor(editingGame, joystick, directionMode, gameScene)
         fun key(id: String, action: ControlAction, x: Float, y: Float, side: Float = size,
                 direction: Boolean = false, iconOnly: Boolean = false, codes: Set<Int>? = null) {
             val actualSide = if (id.startsWith("fixed/")) side else side * style(id).scale

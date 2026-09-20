@@ -185,20 +185,34 @@ class ControlProfileTest {
         assertEquals(setOf(111), ControlKeys.resolveAll(state, "ESC"))
     }
 
-    @Test fun editorPreviewExposesSceneConditionalGameplayButtons() {
-        // Buttons that only appear in some scenes (Talk near an NPC, Mod shortcuts, the
-        // confirm/cancel pair of unknown Mod scenes) must stay editable in the preview.
-        val game = ControlProfile.forEditor(game = true, joystick = true)
-        assertEquals(listOf("Jump", "Dash", "Grab", "Talk", "MiaoChat", "MiaoPlayers", "CollabMap",
-            "MenuConfirm", "MenuCancel"), game.actions.map { it.binding })
-        assertTrue(game.stick); assertFalse(game.directions)
-        assertEquals("Pause", game.top?.binding)
-        // Live profiles stay conditional: the preview never invents runtime buttons.
+    @Test fun editorPreviewFollowsTheScenesConditionalButtons() {
+        // Conditional buttons stay editable exactly while the edited scene shows them.
+        val plain = ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.GAMEPLAY))
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk"), plain.actions.map { it.binding })
+        assertTrue(plain.stick); assertFalse(plain.directions)
+        assertEquals("Pause", plain.top?.binding)
+
+        val connected = ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.GAMEPLAY,
+            bindings = mapOf("MiaoChat" to listOf("Y"), "MiaoPlayers" to listOf("Tab"), "CollabMap" to emptyList())))
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk", "MiaoChat", "MiaoPlayers"), connected.actions.map { it.binding })
+
+        val lobby = ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.GAMEPLAY,
+            bindings = mapOf("CollabMap" to listOf("M"))))
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk", "CollabMap"), lobby.actions.map { it.binding })
+
+        val unknown = ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.FALLBACK))
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk", "MenuConfirm", "MenuCancel"), unknown.actions.map { it.binding })
+
+        // PICO-8 keeps the full game layout editable; without a game scene (editor opened
+        // from a menu) the preview stays minimal instead of listing buttons that may never
+        // appear, and the live profiles themselves never change.
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk"),
+            ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.PICO8)).actions.map { it.binding })
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk"), ControlProfile.forEditor(game = true, joystick = true).actions.map { it.binding })
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk"),
+            ControlProfile.forEditor(game = true, joystick = true, scene = ControlState(ControlMode.PAUSE)).actions.map { it.binding })
         val live = profile(ControlMode.GAMEPLAY)
         assertFalse(live.actions.any { it.binding in setOf("Talk", "MiaoChat", "MiaoPlayers", "CollabMap", "MenuConfirm") })
-        val available = ControlProfile.forState(ControlState(ControlMode.GAMEPLAY,
-            bindings = mapOf("MiaoChat" to listOf("Y"), "MiaoPlayers" to emptyList())), true, true)
-        assertEquals(listOf("Jump", "Dash", "Grab", "MiaoChat"), available.actions.map { it.binding })
     }
 
     @Test fun editorPreviewCoversEveryMenuControlAndStaysCardinal() {

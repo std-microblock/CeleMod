@@ -34,13 +34,9 @@ data class ControlProfile(
 ) {
     companion object {
         fun forState(state: ControlState, buttons: Boolean, joystick: Boolean, direct: Boolean = false,
-                     directionMode: DirectionControlMode = DirectionControlMode.default(joystick),
-                     preview: Boolean = false): ControlProfile {
+                     directionMode: DirectionControlMode = DirectionControlMode.default(joystick)): ControlProfile {
             val enabled = buttons || joystick
             val mode = state.mode
-            // The layout editor must show every control its layout can display, otherwise
-            // scene-conditional buttons stay stuck at an uneditable default position.
-            val conditional = preview && mode in setOf(ControlMode.GAMEPLAY, ControlMode.FALLBACK)
             val lobbyMap = mode in setOf(ControlMode.LOBBY_MAP, ControlMode.LOBBY_MAP_VIEW)
             val playing = mode in setOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK)
             val navigation = mode in setOf(ControlMode.PAUSE, ControlMode.PAUSE_MENU, ControlMode.MENU, ControlMode.CHAPTER,
@@ -51,14 +47,13 @@ data class ControlProfile(
             val actions = when (mode) {
                 ControlMode.GAMEPLAY, ControlMode.FALLBACK -> if (buttons) buildList {
                     add(ControlAction("Jump", "跳")); add(ControlAction("Dash", "冲")); add(ControlAction("Grab", "抓"))
-                    if (state.canTalk || conditional) add(ControlAction("Talk", "交互"))
+                    if (state.canTalk) add(ControlAction("Talk", "交互"))
                     if (mode == ControlMode.GAMEPLAY) {
-                        if (conditional || !state.bindings["MiaoChat"].isNullOrEmpty()) add(ControlAction("MiaoChat", "聊天", ControlIcon.CHAT))
-                        if (conditional || !state.bindings["MiaoPlayers"].isNullOrEmpty()) add(ControlAction("MiaoPlayers", "玩家"))
-                        if (conditional || !state.bindings["CollabMap"].isNullOrEmpty()) add(ControlAction("CollabMap", "大厅地图", ControlIcon.BOOK))
+                        if (!state.bindings["MiaoChat"].isNullOrEmpty()) add(ControlAction("MiaoChat", "聊天", ControlIcon.CHAT))
+                        if (!state.bindings["MiaoPlayers"].isNullOrEmpty()) add(ControlAction("MiaoPlayers", "玩家"))
+                        if (!state.bindings["CollabMap"].isNullOrEmpty()) add(ControlAction("CollabMap", "大厅地图", ControlIcon.BOOK))
                     }
-                    // Unknown Mod scenes add confirm/cancel; keep them editable as well.
-                    if (mode == ControlMode.FALLBACK || conditional) { add(confirm); add(cancel) }
+                    if (mode == ControlMode.FALLBACK) { add(confirm); add(cancel) }
                 } else emptyList()
                 ControlMode.PICO8 -> if (buttons) listOf(ControlAction("Jump", "跳"), ControlAction("Dash", "冲")) else emptyList()
                 ControlMode.TITLE -> listOf(confirm.copy(label = "开始"))
@@ -108,18 +103,24 @@ data class ControlProfile(
         }
 
         /**
-         * Layout editor preview. It shows every control the layout can display in any scene,
-         * including scene-conditional ones (Talk away from an NPC, MiaoNet 聊天 / 玩家,
-         * CollabUtils 大厅地图 and the confirm/cancel pair of unknown Mod scenes), so positions,
-         * sizes, slide behavior and feedback stay editable before a scene shows them.
+         * Layout editor preview. The game layout mirrors [scene], the last real gameplay scene,
+         * so conditional buttons stay editable exactly while that scene shows them: MiaoNet
+         * 聊天 / 玩家 while the connection binds them, CollabUtils 大厅地图 in lobbies with a map
+         * controller, and the 确定 / 返回 pair of unknown Mod scenes. Menu scenes keep their fixed
+         * slot preview, and 交互 (Talk) stays pinned so it can be placed without an NPC nearby.
          */
         fun forEditor(game: Boolean, joystick: Boolean,
-                      directionMode: DirectionControlMode = DirectionControlMode.default(joystick)): ControlProfile =
-            if (game) forState(ControlState(ControlMode.GAMEPLAY), true, joystick,
-                directionMode = directionMode, preview = true)
-            else forState(ControlState(ControlMode.PAUSE), true, false).let {
+                      directionMode: DirectionControlMode = DirectionControlMode.default(joystick),
+                      scene: ControlState? = null): ControlProfile {
+            if (!game) return forState(ControlState(ControlMode.PAUSE), true, false).let {
                 it.copy(actions = it.actions + ControlAction("Pause", "完成", ControlIcon.CONFIRM),
                     auxiliary = ControlAction("MenuJournal", "日志", ControlIcon.BOOK))
             }
+            val source = scene?.takeIf { it.mode in setOf(ControlMode.GAMEPLAY, ControlMode.PICO8, ControlMode.FALLBACK) }
+                ?: ControlState(ControlMode.GAMEPLAY)
+            // PICO-8 runs a reduced profile; the editor still covers the whole game layout.
+            val mode = if (source.mode == ControlMode.PICO8) ControlMode.GAMEPLAY else source.mode
+            return forState(source.copy(mode = mode, canTalk = true), true, joystick, directionMode = directionMode)
+        }
     }
 }
