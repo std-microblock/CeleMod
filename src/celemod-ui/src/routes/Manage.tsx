@@ -41,7 +41,6 @@ import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
 import {
   ManageCatalogMeta,
   ManageNode,
-  alternativesCovering,
   collectSwitchNames,
   collectDuplicateFixTargets,
   type DuplicateFixTarget,
@@ -843,7 +842,6 @@ const ManageTreeNode = ({
   const isAlwaysOn = actions.alwaysOnMods.some(
     (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
   );
-  const covered = alternativesCovering(name, nodes);
   const hasUpdate = actions.updateNames.has(name);
   const instanceId = JSON.stringify([...path, name]);
   const menuOpen = openMenuName === instanceId;
@@ -975,11 +973,6 @@ const ManageTreeNode = ({
               </Badge>
             )}
             {cycle && <Badge tone="accent">{_i18n.t("循环依赖")}</Badge>}
-            {covered.length > 0 && (
-              <Badge tone="info" title={covered.join(", ")}>
-                {_i18n.t("已被替代")}
-              </Badge>
-            )}
             {node.dependedBy.filter((dependent) => nodes[dependent]?.enabled)
               .length > 0 && (
               <Badge tone="info" title={node.dependedBy.join(", ")}>

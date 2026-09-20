@@ -265,7 +265,6 @@
   "依赖未启用": "Dependência não habilitada",
   "版本不匹配": "Versão incompatível",
   "循环依赖": "Dependência circular",
-  "已被替代": "Substituído",
   "{count} 个启用项依赖": "{count} dependências de itens habilitados",
   "重复": "Repetir",
   "可更新": "Atualizável",

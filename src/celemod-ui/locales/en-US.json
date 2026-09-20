@@ -273,7 +273,6 @@
   "依赖未启用": "Dependency not enabled",
   "版本不匹配": "Version mismatch",
   "循环依赖": "Circular dependency",
-  "已被替代": "Replaced",
   "{count} 个启用项依赖": "{count} enabled dependencies",
   "重复": "Duplicate",
   "可更新": "Update available",
