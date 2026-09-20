@@ -667,3 +667,16 @@ select option {
   overflow-x: hidden;
   overflow-y: auto;
 }
+
+.catalog-offline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 6px 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  small { opacity: 0.75; }
+  button { margin-left: auto; }
+}
+.loading-popup > button { margin-top: 16px; }

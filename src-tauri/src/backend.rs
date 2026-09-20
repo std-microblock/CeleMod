@@ -4604,6 +4604,16 @@ fn enable_window_controls(window: tauri::WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn set_catalog_offline(offline: bool) {
+    everest::set_catalog_offline(offline);
+}
+
+#[tauri::command]
+fn is_catalog_offline() -> bool {
+    everest::is_catalog_offline()
+}
+
+#[tauri::command]
 fn is_using_cache() -> bool {
     everest::is_using_cache()
 }
@@ -6234,6 +6244,8 @@ pub fn run() {
             get_mod_latest_info,
             show_log_window,
             write_frontend_log,
+            set_catalog_offline,
+            is_catalog_offline,
             is_using_cache,
             configure_mod_cache,
             get_mod_catalog,

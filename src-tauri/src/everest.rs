@@ -26,6 +26,18 @@ pub struct ModInfoCached {
     pub download_url: String,
 }
 
+static CATALOG_OFFLINE: AtomicBool = AtomicBool::new(false);
+static CATALOG_REQUEST_GENERATION: AtomicU64 = AtomicU64::new(0);
+
+pub fn set_catalog_offline(offline: bool) {
+    CATALOG_OFFLINE.store(offline, Ordering::SeqCst);
+    CATALOG_REQUEST_GENERATION.fetch_add(1, Ordering::SeqCst);
+}
+
+pub fn is_catalog_offline() -> bool {
+    CATALOG_OFFLINE.load(Ordering::SeqCst)
+}
+
 static USING_CACHE: AtomicBool = AtomicBool::new(false);
 static MOD_CACHE_TTL_SECONDS: AtomicU64 = AtomicU64::new(60 * 60);
 
@@ -115,6 +127,54 @@ fn fetch_raw_catalog() -> anyhow::Result<String> {
         .into_string()?)
 }
 
+// Only the raw response crosses the worker boundary: a skipped request must
+// never publish a late response or overwrite the cache. The HTTP worker itself
+// is bounded by fetch_raw_catalog's timeout.
+fn fetch_catalog_interruptible() -> anyhow::Result<String> {
+    let generation = CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst);
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = sender.send(fetch_raw_catalog());
+    });
+    wait_for_catalog(receiver, Duration::from_secs(8), || {
+        is_catalog_offline() || CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst) != generation
+    })
+}
+
+fn wait_for_catalog(
+    receiver: std::sync::mpsc::Receiver<anyhow::Result<String>>,
+    timeout: Duration,
+    cancelled: impl Fn() -> bool,
+) -> anyhow::Result<String> {
+    let started = std::time::Instant::now();
+    loop {
+        if started.elapsed() >= timeout {
+            bail!("Mod catalog download timed out; continuing offline");
+        }
+        if cancelled() {
+            bail!("Mod catalog download skipped");
+        }
+        match receiver.recv_timeout(Duration::from_millis(100)) {
+            Ok(result) => return result,
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(error) => return Err(error.into()),
+        }
+    }
+}
+
+fn offline_catalog() -> anyhow::Result<ModCatalogState> {
+    USING_CACHE.store(true, Ordering::Relaxed);
+    if let Some(mut state) = MOD_CATALOG_STATE.lock().unwrap().clone() {
+        state.status.source = "stale-cache".into();
+        return Ok(state);
+    }
+    if let Some((raw, modified)) = read_raw_cache() {
+        return catalog_state_from_raw(raw, "stale-cache", modified);
+    }
+    USING_CACHE.store(false, Ordering::Relaxed);
+    bail!("Mod catalog unavailable offline; installed Mods remain available")
+}
+
 fn read_raw_cache() -> Option<(String, SystemTime)> {
     let path = raw_mod_cache_path()?;
     let modified = std::fs::metadata(&path).ok()?.modified().ok()?;
@@ -165,6 +225,9 @@ fn cache_is_fresh(modified: SystemTime) -> bool {
 }
 
 fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
+    if is_catalog_offline() {
+        return offline_catalog();
+    }
     if !force_refresh {
         if let Some(current) = MOD_CATALOG_STATE.lock().unwrap().as_ref() {
             let updated_at = UNIX_EPOCH + Duration::from_millis(current.status.updated_at);
@@ -181,8 +244,12 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
         }
     }
 
-    match fetch_raw_catalog().and_then(|raw| {
+    let generation = CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst);
+    match fetch_catalog_interruptible().and_then(|raw| {
         let state = catalog_state_from_raw(raw.clone(), "network", SystemTime::now())?;
+        if is_catalog_offline() || CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst) != generation {
+            bail!("Mod catalog download skipped");
+        }
         save_raw_cache(&raw);
         Ok(state)
     }) {
@@ -194,12 +261,11 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
             crate::logging::error(format_args!(
                 "Failed to fetch Mod catalog: {network_error:#}"
             ));
-            if let Some((raw, modified)) = read_raw_cache() {
-                USING_CACHE.store(true, Ordering::Relaxed);
-                return catalog_state_from_raw(raw, "stale-cache", modified);
+            // Avoid retrying an unreachable server for every local operation.
+            if CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst) == generation {
+                CATALOG_OFFLINE.store(true, Ordering::SeqCst);
             }
-            USING_CACHE.store(false, Ordering::Relaxed);
-            Err(network_error)
+            offline_catalog().map_err(|_| network_error)
         }
     }
 }
@@ -531,8 +597,74 @@ pub fn download_and_install_everest(
 
 #[cfg(test)]
 mod tests {
-    use super::is_everest_ultra;
+    use super::{is_everest_ultra, wait_for_catalog};
+    use std::time::Duration;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn offline_catalog_reuses_stale_memory_even_for_forced_refresh() {
+        let state = super::catalog_state_from_raw(
+            r#"{"data":[]}"#.into(), "network", UNIX_EPOCH,
+        ).unwrap();
+        let previous = super::MOD_CATALOG_STATE.lock().unwrap().replace(state);
+        super::set_catalog_offline(true);
+        let result = super::load_catalog(true);
+        super::set_catalog_offline(false);
+        *super::MOD_CATALOG_STATE.lock().unwrap() = previous;
+        super::USING_CACHE.store(false, super::Ordering::Relaxed);
+        let cached = result.unwrap();
+        assert_eq!(cached.status.source, "stale-cache");
+        assert_eq!(cached.status.updated_at, 0);
+        assert_eq!(cached.raw, r#"{"data":[]}"#);
+    }
+
+    #[test]
+    fn catalog_wait_returns_success_and_network_errors() {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        sender.send(Ok("catalog".into())).unwrap();
+        assert_eq!(
+            wait_for_catalog(receiver, Duration::from_secs(1), || false).unwrap(),
+            "catalog"
+        );
+        let (sender, receiver) = std::sync::mpsc::channel();
+        sender.send(Err(anyhow::anyhow!("no network"))).unwrap();
+        assert!(
+            wait_for_catalog(receiver, Duration::from_secs(1), || false)
+                .unwrap_err()
+                .to_string()
+                .contains("no network")
+        );
+    }
+
+    #[test]
+    fn catalog_skip_discards_even_an_already_received_response() {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        sender.send(Ok("late catalog".into())).unwrap();
+        assert!(
+            wait_for_catalog(receiver, Duration::from_secs(1), || true)
+                .unwrap_err()
+                .to_string()
+                .contains("skipped")
+        );
+    }
+
+    #[test]
+    fn catalog_wait_is_bounded_without_network_response() {
+        let (_sender, receiver) = std::sync::mpsc::channel();
+        assert!(
+            wait_for_catalog(receiver, Duration::from_millis(1), || false)
+                .unwrap_err()
+                .to_string()
+                .contains("timed out")
+        );
+    }
+
+    #[test]
+    fn catalog_wait_handles_worker_failure() {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        drop(sender);
+        assert!(wait_for_catalog(receiver, Duration::from_secs(1), || false).is_err());
+    }
 
     #[test]
     fn detects_everest_ultra_marker_in_installed_binary() {

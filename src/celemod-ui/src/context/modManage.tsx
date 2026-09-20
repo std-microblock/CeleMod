@@ -6,7 +6,7 @@ import {
   initModComments,
   reloadInstalledMods,
 } from "../states";
-import { useEffect, useContext } from "react";
+import { useEffect, useContext, useState } from "react";
 import { createPopup, PopupContext } from "src/components/Popup";
 import { ProgressIndicator } from "src/components/Progress";
 import { syncModsWatcher } from "../modsWatcher";
@@ -15,10 +15,40 @@ export const createModManageContext = () => {
   initModComments();
 
   const [gamePath] = useGamePath();
+  const [offline, setOffline] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const skipCatalog = async () => {
+    await callRemote("set_catalog_offline", true);
+    setOffline(true);
+  };
+
+  useEffect(() => {
+    const onOffline = () => {
+      void skipCatalog().catch(console.error);
+    };
+    window.addEventListener("offline", onOffline);
+    return () => window.removeEventListener("offline", onOffline);
+  }, []);
 
   initGamePath();
 
   const ctx = {
+    offline,
+    loading,
+    retryCatalog: () => {
+      setLoading(true);
+      void callRemote("set_catalog_offline", false)
+        .then(() => {
+          setOffline(false);
+          setRetry((value) => value + 1);
+        })
+        .catch((error) => {
+          setLoading(false);
+          console.error(error);
+        });
+    },
     reloadMods: () => {
       if (!gamePath) {
         console.warn("game path not set");
@@ -81,8 +111,12 @@ export const createModManageContext = () => {
   };
 
   useEffect(() => {
-    if (!gamePath) return;
+    if (!gamePath) {
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
     let cancelled = false;
     let popup: ReturnType<typeof createPopup> | undefined;
     const timer = window.setTimeout(() => {
@@ -92,12 +126,22 @@ export const createModManageContext = () => {
           <div className="loading-popup">
             <ProgressIndicator infinite />
             <span>{_i18n.t("正在加载 Mod 列表，请稍等")}</span>
+            <button
+              type="button"
+              onClick={() => void skipCatalog().catch(console.error)}
+            >
+              {_i18n.t("跳过下载，离线继续")}
+            </button>
           </div>
         ),
         { cancelable: false },
       );
-      ctx
-        .reloadMods()
+      (async () => {
+        if (!navigator.onLine) await skipCatalog();
+        await ctx.reloadMods();
+        const isOffline = await callRemote<boolean>("is_catalog_offline");
+        if (!cancelled) setOffline(isOffline);
+      })()
         .then(() => {
           popup?.hide();
           if (!cancelled) ctx.checkInvalidZipMods();
@@ -120,6 +164,9 @@ export const createModManageContext = () => {
               </div>
             </div>
           ));
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
         });
     }, 10);
 
@@ -128,7 +175,7 @@ export const createModManageContext = () => {
       window.clearTimeout(timer);
       popup?.hide();
     };
-  }, [gamePath]);
+  }, [gamePath, retry]);
 
   // Watch the Mods folder so Mods installed outside of CeleMod (Everest, the
   // game itself, manual copies) show up without a manual reload.

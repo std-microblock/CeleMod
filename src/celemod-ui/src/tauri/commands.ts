@@ -123,6 +123,8 @@ const parameterNames: Record<string, string[]> = {
   get_mod_latest_info: ["onEvent"],
   show_log_window: [],
   write_frontend_log: ["level", "message"],
+  set_catalog_offline: ["offline"],
+  is_catalog_offline: [],
   is_using_cache: [],
   configure_mod_cache: ["ttlSeconds"],
   get_mod_catalog: ["forceRefresh"],

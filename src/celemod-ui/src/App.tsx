@@ -225,6 +225,19 @@ export default function App() {
   return (
     <div className="app-frame">
       <WindowTitlebar />
+      {modManage.offline && (
+        <div className="catalog-offline" role="status">
+          <span>{_i18n.t("模组目录离线模式")}</span>
+          <small>{_i18n.t("仍可启动游戏和管理本地模组")}</small>
+          <button
+            type="button"
+            disabled={modManage.loading}
+            onClick={modManage.retryCatalog}
+          >
+            {_i18n.t("重新连接")}
+          </button>
+        </div>
+      )}
       <div className="app-shell">
         <DropInstaller />
         <CrashAssistant />

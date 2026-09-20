@@ -640,5 +640,9 @@
   "生成并修补 Mod 接口": "Generating and patching Mod interfaces",
   "写入配置并完成安装": "Writing configuration and finishing installation",
   "安装阶段耗时": "Installer elapsed",
-  "补丁处理可能需要几分钟，请保持应用在前台。": "Patching can take several minutes. Keep the app in the foreground."
+  "补丁处理可能需要几分钟，请保持应用在前台。": "Patching can take several minutes. Keep the app in the foreground.",
+  "跳过下载，离线继续": "Skip download and continue offline",
+  "模组目录离线模式": "Mod catalog offline",
+  "仍可启动游戏和管理本地模组": "You can still play and manage installed mods.",
+  "重新连接": "Reconnect"
 }
