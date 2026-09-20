@@ -184,4 +184,33 @@ class ControlProfileTest {
             ("Jump" to listOf("K"))), "Jump"))
         assertEquals(setOf(111), ControlKeys.resolveAll(state, "ESC"))
     }
+
+    @Test fun editorPreviewExposesSceneConditionalGameplayButtons() {
+        // Buttons that only appear in some scenes (Talk near an NPC, Mod shortcuts, the
+        // confirm/cancel pair of unknown Mod scenes) must stay editable in the preview.
+        val game = ControlProfile.forEditor(game = true, joystick = true)
+        assertEquals(listOf("Jump", "Dash", "Grab", "Talk", "MiaoChat", "MiaoPlayers", "CollabMap",
+            "MenuConfirm", "MenuCancel"), game.actions.map { it.binding })
+        assertTrue(game.stick); assertFalse(game.directions)
+        assertEquals("Pause", game.top?.binding)
+        // Live profiles stay conditional: the preview never invents runtime buttons.
+        val live = profile(ControlMode.GAMEPLAY)
+        assertFalse(live.actions.any { it.binding in setOf("Talk", "MiaoChat", "MiaoPlayers", "CollabMap", "MenuConfirm") })
+        val available = ControlProfile.forState(ControlState(ControlMode.GAMEPLAY,
+            bindings = mapOf("MiaoChat" to listOf("Y"), "MiaoPlayers" to emptyList())), true, true)
+        assertEquals(listOf("Jump", "Dash", "Grab", "MiaoChat"), available.actions.map { it.binding })
+    }
+
+    @Test fun editorPreviewCoversEveryMenuControlAndStaysCardinal() {
+        val menu = ControlProfile.forEditor(game = false, joystick = true)
+        assertEquals(listOf("MenuConfirm", "MenuCancel", "Pause"), menu.actions.map { it.binding })
+        assertEquals("MenuJournal", menu.auxiliary?.binding)
+        assertEquals("Pause", menu.top?.binding)
+        assertTrue(menu.directions); assertTrue(menu.menuDirections); assertFalse(menu.stick)
+        // Eight-key gameplay previews keep the four diagonals of the game layout editable.
+        val eight = ControlProfile.forEditor(game = true, joystick = false, directionMode = DirectionControlMode.EIGHT_BUTTONS)
+        assertTrue(eight.directions); assertTrue(eight.diagonalDirections); assertFalse(eight.stick); assertFalse(eight.menuDirections)
+        val pad = ControlProfile.forEditor(game = true, joystick = false, directionMode = DirectionControlMode.FOUR_BUTTONS)
+        assertTrue(pad.directions); assertFalse(pad.diagonalDirections)
+    }
 }

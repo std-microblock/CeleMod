@@ -72,6 +72,11 @@ one-tap resume.
   actions/stick and menu actions/D-pad have separate positions; pause/resume and
   auxiliary icons use shared positions. Menu primary/secondary positions remain
   consistent when confirm changes to continue, character entry, or close.
+- The preview lists every control its layout can show, including the ones only
+  some scenes display: 交互 (Talk) away from an NPC, MiaoNet 聊天 / 玩家, CollabUtils
+  大厅地图 and the 确定 / 返回 pair of unknown Mod scenes. Each keeps an editable
+  position and style per layout instead of appearing only during play at a default
+  position no edit could reach.
 - **保存** applies and persists both previews. **取消** or Android Back discards
   edits. **重置** asks for confirmation and resets the current orientation's draft;
   it is not permanent until Save, and Cancel can still undo it.
@@ -315,9 +320,11 @@ direction and bind its MoveOnly/DashOnly alternatives; check movement and diagon
 dash with both stick and D-pad. Clear a binding and assign its old default to another
 action: the unbound virtual button must not trigger that other action. Change a
 binding during a hold and verify the old key is released without a delayed pulse.
-For the editor: drag jump and stick, switch preview and drag confirm, Save, reopen
-and verify, Cancel a second edit, verify Back cancels without unpausing, and test
-Reset both with Cancel and Save. Relaunch to verify positions persist.
+For the editor: drag jump and stick, switch preview and drag confirm, keep a
+聊天 / 玩家 / 大厅地图 Mod shortcut and the 确定 / 返回 pair of an unknown Mod scene
+editable instead of frozen at a default, Save, reopen and verify, Cancel a second
+edit, verify Back cancels without unpausing, and test Reset both with Cancel and
+Save. Relaunch to verify positions persist.
 For direct touch: initial title tap; main-menu button tap and swipe; pause row tap;
 horizontal slider drag followed by vertical list drag; verify no release-confirm;
 both chapter swipe axes and map-search shortcut; native text Cancel/accept; journal

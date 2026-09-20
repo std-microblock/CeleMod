@@ -182,12 +182,9 @@ class TouchControls(
         toolbarBounds = ControlBounds(safe.left.toFloat(), safe.top.toFloat(),
             safe.left + margin + toolbarCount * (topSize + margin), safe.top + topSize + 2 * margin)
         profile = if (!editing) ControlProfile.forState(state, buttons, joystick, direct, directionMode)
-            else if (editingGame) ControlProfile.forState(ControlState(ControlMode.GAMEPLAY, canTalk = true), true, joystick,
-                directionMode = directionMode)
-            else ControlProfile.forState(ControlState(ControlMode.PAUSE), true, false).let {
-                it.copy(actions = it.actions + ControlAction("Pause", "完成", ControlIcon.CONFIRM),
-                    auxiliary = ControlAction("MenuJournal", "日志", ControlIcon.BOOK))
-            }
+            // The editor previews every control of the selected layout, including the ones
+            // only some scenes show, so all of them can be positioned and styled.
+            else ControlProfile.forEditor(editingGame, joystick, directionMode)
         fun key(id: String, action: ControlAction, x: Float, y: Float, side: Float = size,
                 direction: Boolean = false, iconOnly: Boolean = false, codes: Set<Int>? = null) {
             val actualSide = if (id.startsWith("fixed/")) side else side * style(id).scale
