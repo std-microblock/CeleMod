@@ -147,8 +147,7 @@ const recommendedMaps = () => [
     alias: "Canvas Collab / Canvas Contest",
     previewUrl:
       "https://celeste.weg.fan/images/gamebanana-submissions/Mod/706886/waean3hb6tp6ql7csi77lnqi4qiwqy4d.jpg",
-    downloadUrl:
-      "https://celeste.weg.fan/api/v2/download/mods/CanvasContest",
+    downloadUrl: "https://celeste.weg.fan/api/v2/download/mods/CanvasContest",
     meta: "~ 458 MiB · 2026-08",
     recommendations: [
       _i18n.t("由中文社区举办，历时一年多打磨而成"),

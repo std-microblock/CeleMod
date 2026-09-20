@@ -81,7 +81,9 @@
   border-radius: 18px;
   color: theme.$fg1;
   background: color.mix(theme.$bg1, #16151b, 78%);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48), 0 3px 12px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.48),
+    0 3px 12px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(18px);
 }
 

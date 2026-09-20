@@ -26,7 +26,9 @@ export const GameSelector = (props: {
               {p}
             </option>
           ))}
-          {detectDesktopPlatform() !== "android" && <option value="__other__">{_i18n.t("选择其他路径")}</option>}
+          {detectDesktopPlatform() !== "android" && (
+            <option value="__other__">{_i18n.t("选择其他路径")}</option>
+          )}
         </select>
       </div>
       <div className="game-actions">
@@ -60,13 +62,15 @@ export const GameSelector = (props: {
           {_i18n.t("原版")}
         </button>
 
-        {detectDesktopPlatform() !== "android" && <button
-          onClick={() => {
-            callRemote("open_url", (gamePath || paths[0]) + "/Mods");
-          }}
-        >
-          {_i18n.t("Mods 文件夹")}
-        </button>}
+        {detectDesktopPlatform() !== "android" && (
+          <button
+            onClick={() => {
+              callRemote("open_url", (gamePath || paths[0]) + "/Mods");
+            }}
+          >
+            {_i18n.t("Mods 文件夹")}
+          </button>
+        )}
       </div>
     </div>
   );

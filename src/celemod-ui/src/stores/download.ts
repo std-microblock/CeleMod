@@ -101,7 +101,10 @@ const aggregateProgress = (
     .map((name) => byName.get(normalizeName(name)))
     .filter((task): task is Download.TaskInfo => Boolean(task));
   if (children.length === 0) return root.progress;
-  const values = [root.progress, ...children.map((task) => aggregateProgress(task, byName, seen))];
+  const values = [
+    root.progress,
+    ...children.map((task) => aggregateProgress(task, byName, seen)),
+  ];
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 };
 
@@ -160,7 +163,9 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           : appState.mirror === "0x0ade"
             ? `https://celestemodupdater.0x0a.de/banana-mirror/${source}.zip`
             : `https://gamebanana.com/dl/${source}`;
-    const roots = items.map(({ name, source }) => [name, resolveUrl(source)] as [string, string]);
+    const roots = items.map(
+      ({ name, source }) => [name, resolveUrl(source)] as [string, string],
+    );
     const attemptId = nextAttemptId++;
     const initial = items.map(({ name, source }) => ({
       name,
@@ -181,7 +186,10 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     set((state) => ({ tasks: replaceTasks(state.tasks, initial) }));
 
     return await new Promise<Download.TaskInfo[]>((resolve, reject) => {
-      const onDownloadEvent = (rawTasks: string, state: "pending" | "failed" | "finished") => {
+      const onDownloadEvent = (
+        rawTasks: string,
+        state: "pending" | "failed" | "finished",
+      ) => {
         let backendTasks: BackendModTaskInfo[];
         try {
           const parsed = JSON.parse(rawTasks) as unknown;
@@ -201,17 +209,27 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           source: task.url,
           ownerId,
           mod: { name: task.name },
-          state: (task.status === "Finished" ? "finished" : task.status === "Failed" ? "failed" : "pending") as Download.TaskInfo["state"],
-          progress: task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
+          state: (task.status === "Finished"
+            ? "finished"
+            : task.status === "Failed"
+              ? "failed"
+              : "pending") as Download.TaskInfo["state"],
+          progress:
+            task.status === "Finished"
+              ? 100
+              : Number.parseFloat(task.data) || 0,
           error: task.status === "Failed" ? task.data : undefined,
           downloadedBytes: task.downloaded_bytes || 0,
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
-          canceled: task.status === "Failed" && task.data === "Download canceled",
+          canceled:
+            task.status === "Failed" && task.data === "Download canceled",
           paused: get().tasks[normalizeName(task.name)]?.paused,
           attemptId: attemptId + index,
         }));
-        const byName = new Map(mapped.map((task) => [normalizeName(task.name), task]));
+        const byName = new Map(
+          mapped.map((task) => [normalizeName(task.name), task]),
+        );
         // Keep each task's own progress in the store. The aggregate is only
         // needed for callbacks and must not leak into the "主文件" row.
         const aggregated = mapped.map((task) =>
@@ -221,7 +239,9 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         );
         set((store) => ({ tasks: replaceTasks(store.tasks, mapped) }));
         const progress = aggregated.length
-          ? aggregated.filter((task) => task.requested).reduce((sum, task) => sum + task.progress, 0) /
+          ? aggregated
+              .filter((task) => task.requested)
+              .reduce((sum, task) => sum + task.progress, 0) /
             Math.max(1, aggregated.filter((task) => task.requested).length)
           : 0;
         onProgress?.(aggregated, progress);
@@ -233,7 +253,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
               resolve(aggregated);
             });
         } else if (state === "failed") {
-          const message = aggregated.find((task) => task.error)?.error || "Download failed";
+          const message =
+            aggregated.find((task) => task.error)?.error || "Download failed";
           onFailed?.(aggregated, message);
           reject(new Error(message));
         }
@@ -311,7 +332,8 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       return failedTask;
     }
 
-    if (existingTask && !force && existingTask.state === "pending") return existingTask;
+    if (existingTask && !force && existingTask.state === "pending")
+      return existingTask;
 
     const attemptId = nextAttemptId++;
     const initialTask: Download.TaskInfo = {
@@ -346,7 +368,11 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         backendTasks = parsed as BackendModTaskInfo[];
       } catch (error) {
         const message = `Invalid download status for ${name}: ${String(error)}`;
-        const failedTask = { ...current, state: "failed" as const, error: message };
+        const failedTask = {
+          ...current,
+          state: "failed" as const,
+          error: message,
+        };
         set((store) => ({ tasks: replaceTasks(store.tasks, [failedTask]) }));
         onFailed?.(failedTask, message);
         return;
@@ -378,12 +404,15 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           downloadedBytes: task.downloaded_bytes || 0,
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
-          canceled: task.status === "Failed" && task.data === "Download canceled",
+          canceled:
+            task.status === "Failed" && task.data === "Download canceled",
           paused: previous?.paused,
           attemptId: previous?.attemptId ?? attemptId,
         } satisfies Download.TaskInfo;
       });
-      const byName = new Map(mapped.map((task) => [normalizeName(task.name), task]));
+      const byName = new Map(
+        mapped.map((task) => [normalizeName(task.name), task]),
+      );
       const aggregated = mapped.map((task) =>
         task.requested
           ? { ...task, progress: aggregateProgress(task, byName) }
@@ -406,7 +435,9 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       if (state === "finished") {
         void reloadInstalledMods()
           .then(() => reloadBlacklistState(appState.gamePath))
-          .catch((error) => console.error("Failed to refresh installed Mods", error))
+          .catch((error) =>
+            console.error("Failed to refresh installed Mods", error),
+          )
           .finally(() => onFinished?.(rootTask));
       } else if (state === "failed") {
         onFailed?.(rootTask, rootTask.error || "Download failed");
@@ -436,7 +467,11 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
     ).catch((error) => {
       const current = get().tasks[key];
       if (!current || current.attemptId !== attemptId) return;
-      const failedTask = { ...current, state: "failed" as const, error: String(error) };
+      const failedTask = {
+        ...current,
+        state: "failed" as const,
+        error: String(error),
+      };
       set((store) => ({ tasks: replaceTasks(store.tasks, [failedTask]) }));
       onFailed?.(failedTask, failedTask.error!);
     });

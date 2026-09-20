@@ -76,8 +76,10 @@ const createDownloadTypeDefaults = (
 // The downloader probes Range support at runtime.  Keep the user's setting
 // intact for every mirror; WEGFan's CDN is normalized to a Range-capable host
 // by the backend before a download starts.
-export const resolveMultiThreadSetting = (_mirror: string, requested: boolean) =>
-  requested;
+export const resolveMultiThreadSetting = (
+  _mirror: string,
+  requested: boolean,
+) => requested;
 const normalizeFontScale = (value: unknown): FontScale => {
   const scale = Number(value);
   return Number.isFinite(scale)
@@ -85,7 +87,8 @@ const normalizeFontScale = (value: unknown): FontScale => {
     : 100;
 };
 const normalizeTheme = (value: unknown): ThemeId =>
-  typeof value === "string" && THEME_REGISTRY.some((theme) => theme.id === value)
+  typeof value === "string" &&
+  THEME_REGISTRY.some((theme) => theme.id === value)
     ? (value as ThemeId)
     : DEFAULT_THEME_ID;
 

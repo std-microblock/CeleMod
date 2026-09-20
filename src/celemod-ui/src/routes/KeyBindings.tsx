@@ -69,7 +69,7 @@ const entryKey = (entry: KeyBindingEntry) =>
 
 const normalizeGroup = (group: string[]) =>
   [...new Set(group.filter(Boolean))].sort((left, right) =>
-    left.localeCompare(right)
+    left.localeCompare(right),
   );
 
 const deviceTitle = (device: Device) =>
@@ -77,7 +77,7 @@ const deviceTitle = (device: Device) =>
     keyboard: _i18n.t("键盘"),
     controller: _i18n.t("手柄"),
     mouse: _i18n.t("鼠标"),
-  }[device]);
+  })[device];
 
 const keyName = (value: string) => {
   const aliases: Record<string, string> = {
@@ -133,7 +133,7 @@ const canonicalKeyboardKey = (value: string) =>
     Next: "PageDown",
     Prior: "PageUp",
     Return: "Enter",
-  }[value] ?? value);
+  })[value] ?? value;
 
 const keyboardCodeToXna = (code: string) => {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);
@@ -190,9 +190,9 @@ const keyboardCodeToXna = (code: string) => {
 };
 
 const mouseButtonName = (button: number) =>
-  ({ 0: "Left", 1: "Middle", 2: "Right", 3: "XButton1", 4: "XButton2" }[
+  ({ 0: "Left", 1: "Middle", 2: "Right", 3: "XButton1", 4: "XButton2" })[
     button
-  ]);
+  ];
 
 const GAMEPAD_BUTTONS: Record<number, string> = {
   0: "A",
@@ -238,8 +238,12 @@ const displayLabel = (entry: KeyBindingEntry) =>
     ? _i18n.t(`binding_${entry.action}`)
     : entry.label;
 
-export const KeyBindings = () => detectDesktopPlatform() === "android"
-  ? <AndroidKeyBindings /> : <DesktopKeyBindings />;
+export const KeyBindings = () =>
+  detectDesktopPlatform() === "android" ? (
+    <AndroidKeyBindings />
+  ) : (
+    <DesktopKeyBindings />
+  );
 
 const DesktopKeyBindings = () => {
   const [mobileOverviewOpen, setMobileOverviewOpen] = useState(false);
@@ -270,7 +274,7 @@ const DesktopKeyBindings = () => {
     void callRemote<KeyBindingCatalog>(
       "get_key_bindings",
       gamePath,
-      currentLang
+      currentLang,
     )
       .then((data) => {
         if (currentRequest !== requestId.current) return;
@@ -300,7 +304,7 @@ const DesktopKeyBindings = () => {
       showDisabled
         ? catalog.entries
         : catalog.entries.filter((entry) => entry.enabled),
-    [catalog.entries, showDisabled]
+    [catalog.entries, showDisabled],
   );
   const disabledCount =
     catalog.entries.length -
@@ -322,10 +326,10 @@ const DesktopKeyBindings = () => {
                 signature: `${device}:${normalized.join("+")}`,
               } satisfies BindingOccurrence;
             })
-            .filter((item) => item.group.length > 0)
-        )
+            .filter((item) => item.group.length > 0),
+        ),
       ),
-    [consideredEntries]
+    [consideredEntries],
   );
 
   const virtualKeyboardBindings = useMemo<VirtualKeyboardBinding[]>(
@@ -339,7 +343,7 @@ const DesktopKeyBindings = () => {
           combination: occurrence.group.map(keyName).join(" + "),
           keys: occurrence.group.map(canonicalKeyboardKey),
         })),
-    [occurrences]
+    [occurrences],
   );
 
   const virtualControllerBindings = useMemo<VirtualControllerBinding[]>(
@@ -353,7 +357,7 @@ const DesktopKeyBindings = () => {
           combination: occurrence.group.map(keyName).join(" + "),
           buttons: occurrence.group,
         })),
-    [occurrences]
+    [occurrences],
   );
 
   const conflictGroups = useMemo<ConflictGroup[]>(() => {
@@ -365,7 +369,7 @@ const DesktopKeyBindings = () => {
     }
     return [...grouped.entries()]
       .filter(
-        ([, items]) => new Set(items.map((item) => item.entryKey)).size > 1
+        ([, items]) => new Set(items.map((item) => item.entryKey)).size > 1,
       )
       .map(([signature, items]) => ({
         signature,
@@ -376,7 +380,7 @@ const DesktopKeyBindings = () => {
       .sort(
         (left, right) =>
           right.occurrences.length - left.occurrences.length ||
-          left.signature.localeCompare(right.signature)
+          left.signature.localeCompare(right.signature),
       );
   }, [occurrences]);
 
@@ -385,16 +389,16 @@ const DesktopKeyBindings = () => {
       conflictGroups.filter((group) =>
         inputMode === "controller"
           ? group.device === "controller"
-          : group.device === "keyboard" || group.device === "mouse"
+          : group.device === "keyboard" || group.device === "mouse",
       ),
-    [conflictGroups, inputMode]
+    [conflictGroups, inputMode],
   );
 
   useEffect(() => {
     if (!conflictOnly) return;
     if (
       !activeConflictGroups.some(
-        (group) => group.signature === selectedConflict
+        (group) => group.signature === selectedConflict,
       )
     ) {
       setSelectedConflict(activeConflictGroups[0]?.signature ?? "");
@@ -433,15 +437,15 @@ const DesktopKeyBindings = () => {
         selectedKeyboardKey &&
         !entry.keyboard.some((group) =>
           group.some(
-            (value) => canonicalKeyboardKey(value) === selectedKeyboardKey
-          )
+            (value) => canonicalKeyboardKey(value) === selectedKeyboardKey,
+          ),
         )
       )
         return false;
       if (
         selectedControllerButton &&
         !entry.controller.some((group) =>
-          group.includes(selectedControllerButton)
+          group.includes(selectedControllerButton),
         )
       )
         return false;
@@ -466,7 +470,7 @@ const DesktopKeyBindings = () => {
   const saveEntry = useCallback(
     async (
       entry: KeyBindingEntry,
-      next: Partial<Pick<KeyBindingEntry, Device>>
+      next: Partial<Pick<KeyBindingEntry, Device>>,
     ) => {
       const key = entryKey(entry);
       const updated = { ...entry, ...next };
@@ -484,7 +488,7 @@ const DesktopKeyBindings = () => {
         setCatalog((current) => ({
           ...current,
           entries: current.entries.map((item) =>
-            entryKey(item) === key ? updated : item
+            entryKey(item) === key ? updated : item,
           ),
         }));
         return true;
@@ -495,13 +499,13 @@ const DesktopKeyBindings = () => {
         setSaving("");
       }
     },
-    [gamePath]
+    [gamePath],
   );
 
   const beginCapture = (
     entry: KeyBindingEntry,
     device: Device,
-    replaceIndex?: number
+    replaceIndex?: number,
   ) => {
     const CapturePopup = () => {
       const popup = useContext(PopupContext);
@@ -525,16 +529,16 @@ const DesktopKeyBindings = () => {
               replaceIndex === undefined
                 ? [...current, [value]]
                 : current.map((group, index) =>
-                    index === replaceIndex ? [value] : group
+                    index === replaceIndex ? [value] : group,
                   );
             groups = groups.filter(
               (group, index) =>
-                groups.findIndex((item) => item[0] === group[0]) === index
+                groups.findIndex((item) => item[0] === group[0]) === index,
             );
           }
           if (await saveEntry(entry, { [device]: groups })) popup.hide();
         },
-        [popup]
+        [popup],
       );
 
       useEffect(() => {
@@ -593,8 +597,8 @@ const DesktopKeyBindings = () => {
             {device === "keyboard"
               ? _i18n.t("请按下新的键盘按键")
               : device === "controller"
-              ? _i18n.t("请按下手柄按键")
-              : _i18n.t("请点击鼠标按键")}
+                ? _i18n.t("请按下手柄按键")
+                : _i18n.t("请点击鼠标按键")}
           </strong>
           <span>
             {captured.length > 0
@@ -630,10 +634,10 @@ const DesktopKeyBindings = () => {
   const removeBinding = (
     entry: KeyBindingEntry,
     device: Device,
-    index: number
+    index: number,
   ) => {
     const groups = deviceValues(entry, device).filter(
-      (_, groupIndex) => groupIndex !== index
+      (_, groupIndex) => groupIndex !== index,
     );
     void saveEntry(entry, { [device]: groups });
   };
@@ -735,18 +739,18 @@ const DesktopKeyBindings = () => {
                 entry.action,
                 entry.description ?? "",
               ].some((value) =>
-                value.toLocaleLowerCase().includes(normalizedQuery)
+                value.toLocaleLowerCase().includes(normalizedQuery),
               )
             );
           }),
         }))
         .filter((group) => group.occurrences.length > 0),
-    [activeConflictGroups, query]
+    [activeConflictGroups, query],
   );
 
   const selectedConflictGroup =
     visibleConflictGroups.find(
-      (group) => group.signature === selectedConflict
+      (group) => group.signature === selectedConflict,
     ) ?? visibleConflictGroups[0];
 
   return (
@@ -877,7 +881,7 @@ const DesktopKeyBindings = () => {
           <div className="keybindings-warning">
             <Icon name="warn" />
             {_i18n.t(
-              "Celeste 正在运行，目前只能查看按键。退出游戏后即可编辑。"
+              "Celeste 正在运行，目前只能查看按键。退出游戏后即可编辑。",
             )}
           </div>
         )}
@@ -969,7 +973,7 @@ const DesktopKeyBindings = () => {
                           beginCapture(
                             occurrence.entry,
                             occurrence.device,
-                            occurrence.groupIndex
+                            occurrence.groupIndex,
                           )
                         }
                       >
@@ -991,7 +995,7 @@ const DesktopKeyBindings = () => {
                           removeBinding(
                             occurrence.entry,
                             occurrence.device,
-                            occurrence.groupIndex
+                            occurrence.groupIndex,
                           )
                         }
                       >

@@ -28,31 +28,31 @@ const getTaskProgress = (task: Download.TaskInfo) => {
   if (task.totalBytes > 0) {
     return Math.max(
       0,
-      Math.min(100, (task.downloadedBytes / task.totalBytes) * 100)
+      Math.min(100, (task.downloadedBytes / task.totalBytes) * 100),
     );
   }
   return Math.max(
     0,
-    Math.min(100, task.state === "finished" ? 100 : task.progress || 0)
+    Math.min(100, task.state === "finished" ? 100 : task.progress || 0),
   );
 };
 
 const getMetrics = (tasks: Download.TaskInfo[]) => {
   const downloadedBytes = tasks.reduce(
     (sum, task) => sum + task.downloadedBytes,
-    0
+    0,
   );
   const totalBytes = tasks.reduce((sum, task) => sum + task.totalBytes, 0);
   const speedBytesPerSec = tasks.reduce(
     (sum, task) => sum + task.speedBytesPerSec,
-    0
+    0,
   );
   const progress =
     totalBytes > 0
       ? (downloadedBytes / totalBytes) * 100
       : tasks.length > 0
-      ? tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length
-      : 0;
+        ? tasks.reduce((sum, task) => sum + task.progress, 0) / tasks.length
+        : 0;
   return {
     downloadedBytes,
     totalBytes,
@@ -63,7 +63,7 @@ const getMetrics = (tasks: Download.TaskInfo[]) => {
 
 const collectDependencies = (
   root: Download.TaskInfo,
-  taskMap: Map<string, Download.TaskInfo>
+  taskMap: Map<string, Download.TaskInfo>,
 ) => {
   const result: Download.TaskInfo[] = [];
   const seen = new Set<string>();
@@ -94,7 +94,10 @@ const stateLabel = (task: Download.TaskInfo) => {
   return { label: _i18n.t("下载中"), icon: "download", tone: "active" };
 };
 
-const getRootStatus = (task: Download.TaskInfo, dependencyTasks: Download.TaskInfo[]) => {
+const getRootStatus = (
+  task: Download.TaskInfo,
+  dependencyTasks: Download.TaskInfo[],
+) => {
   if (task.canceled) return task;
   if (dependencyTasks.some((dependency) => dependency.canceled)) {
     return { ...task, canceled: true };
@@ -125,7 +128,7 @@ const DownloadDetailRow = ({
 }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const togglePauseDownload = useDownloadStore(
-    (state) => state.togglePauseDownload
+    (state) => state.togglePauseDownload,
   );
   const progress = getTaskProgress(task);
   const status = stateLabel(task);
@@ -187,7 +190,7 @@ export const DownloadTask = ({
 }) => {
   const cancelDownload = useDownloadStore((state) => state.cancelDownload);
   const togglePauseDownload = useDownloadStore(
-    (state) => state.togglePauseDownload
+    (state) => state.togglePauseDownload,
   );
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const [expanded, setExpanded] = useState(initialExpanded);
@@ -309,12 +312,12 @@ export const DownloadListPage = () => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
   const allTasks = Object.values(downloadTasks);
   const taskMap = new Map(
-    allTasks.map((task) => [task.name.toLocaleLowerCase(), task])
+    allTasks.map((task) => [task.name.toLocaleLowerCase(), task]),
   );
   const roots = allTasks.filter((task) => task.requested);
   const visibleRoots = roots.length > 0 ? roots : allTasks;
   const visibleCount = allTasks.filter(
-    (task) => task.state !== "finished" || task.canceled
+    (task) => task.state !== "finished" || task.canceled,
   ).length;
 
   return (
@@ -345,7 +348,7 @@ export const DownloadListPage = () => {
                   : allTasks.filter(
                       (candidate) =>
                         !candidate.requested &&
-                        candidate.cancelKey === task.cancelKey
+                        candidate.cancelKey === task.cancelKey,
                     );
               })()}
             />

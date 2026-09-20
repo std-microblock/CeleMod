@@ -1,23 +1,67 @@
-.steam-entry, .steam-sheet {
+.steam-entry,
+.steam-sheet {
   --steam-accent: #66c8f4;
   --steam-on-accent: #082333;
   --steam-control-radius: 12px;
   --steam-line: color-mix(in srgb, var(--color-fg) 13%, transparent);
-  color: var(--color-fg); font: inherit; box-sizing: border-box;
+  color: var(--color-fg);
+  font: inherit;
+  box-sizing: border-box;
 }
 html button.steam-entry.steam-entry {
-  display: flex; align-items: center; gap: 14px;
-  width: 100%; min-height: 88px; padding: 16px; margin: 16px 0;
-  background: var(--color-surface-elevated) !important; border: 1px solid var(--steam-line) !important;
-  border-radius: 16px !important; text-align: left; box-shadow: none; text-transform: none;
-  letter-spacing: normal; cursor: pointer; color: var(--color-fg) !important;
-  &:hover { background: var(--color-surface-hover) !important; }
-  > svg { flex: 0 0 14px; color: var(--color-fg-muted); }
-  .steam-mark { display: grid; place-items: center; flex: 0 0 48px; height: 48px; border-radius: 14px; background: #153346; color: #b8e6fa; font-size: 29px; }
-  .steam-entry-copy { display: grid; gap: 5px; flex: 1; min-width: 0; }
-  strong { font-size: 15px; overflow-wrap: anywhere; }
-  .steam-entry-copy > span { font-size: 12px; line-height: 1.5; color: var(--color-fg-muted); }
-  .steam-entry-download { display: grid; gap: 7px; margin-top: 4px; }
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 88px;
+  padding: 16px;
+  margin: 16px 0;
+  background: var(--color-surface-elevated) !important;
+  border: 1px solid var(--steam-line) !important;
+  border-radius: 16px !important;
+  text-align: left;
+  box-shadow: none;
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  color: var(--color-fg) !important;
+  &:hover {
+    background: var(--color-surface-hover) !important;
+  }
+  > svg {
+    flex: 0 0 14px;
+    color: var(--color-fg-muted);
+  }
+  .steam-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #153346;
+    color: #b8e6fa;
+    font-size: 29px;
+  }
+  .steam-entry-copy {
+    display: grid;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+  }
+  strong {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+  .steam-entry-copy > span {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-fg-muted);
+  }
+  .steam-entry-download {
+    display: grid;
+    gap: 7px;
+    margin-top: 4px;
+  }
 }
 html[data-theme="fluent"] :is(.steam-entry, .steam-sheet) {
   --steam-accent: var(--fluent-accent);
@@ -31,161 +75,774 @@ html[data-theme="material-you"] :is(.steam-entry, .steam-sheet) {
 }
 // Shared by the collapsed entry and the sheet; theme runtime ripples remain untouched.
 :is(.steam-entry, dialog.steam-sheet.steam-sheet) {
-  .steam-download-stats { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 11px; line-height: 1.5; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
-  progress.steam-download-bar { display: block; appearance: none; width: 100%; height: 6px; min-height: 0; border: 0; border-radius: 8px; accent-color: var(--steam-accent); overflow: hidden; }
-  progress.steam-download-bar::-webkit-progress-bar { background: var(--color-surface-active); border-radius: 8px; }
-  progress.steam-download-bar::-webkit-progress-value { background: var(--steam-accent); border-radius: 8px; transition: width .3s; }
-  progress.steam-download-bar::-moz-progress-bar { background: var(--steam-accent); }
-  progress.steam-download-bar:indeterminate { background: linear-gradient(90deg, var(--color-surface-active), var(--steam-accent), var(--color-surface-active)); }
+  .steam-download-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  progress.steam-download-bar {
+    display: block;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    min-height: 0;
+    border: 0;
+    border-radius: 8px;
+    accent-color: var(--steam-accent);
+    overflow: hidden;
+  }
+  progress.steam-download-bar::-webkit-progress-bar {
+    background: var(--color-surface-active);
+    border-radius: 8px;
+  }
+  progress.steam-download-bar::-webkit-progress-value {
+    background: var(--steam-accent);
+    border-radius: 8px;
+    transition: width 0.3s;
+  }
+  progress.steam-download-bar::-moz-progress-bar {
+    background: var(--steam-accent);
+  }
+  progress.steam-download-bar:indeterminate {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-active),
+      var(--steam-accent),
+      var(--color-surface-active)
+    );
+  }
 }
 // Outrank Android's generic input/button rules without changing other screens.
 dialog.steam-sheet.steam-sheet {
-  width: min(480px, calc(100% - 24px)); max-width: none;
+  width: min(480px, calc(100% - 24px));
+  max-width: none;
   max-height: min(800px, calc(var(--steam-viewport, 100dvh) - 32px));
-  padding: 0; border: 1px solid var(--steam-line); border-radius: 24px;
-  background: var(--color-surface); overflow: auto; overscroll-behavior: contain;
-  box-shadow: 0 24px 100px #0008; color-scheme: inherit;
-  &::backdrop { background: #060c17b8; backdrop-filter: blur(5px); }
-  &[open] { animation: steam-sheet-enter .24s cubic-bezier(.2, .8, .2, 1) both; }
-  &[open]::backdrop { animation: steam-backdrop-enter .24s ease both; }
-  &[data-closing] { animation: steam-sheet-exit .18s ease-in both; pointer-events: none; }
-  &[data-closing]::backdrop { animation: steam-backdrop-exit .18s ease-in both; }
-  &, * { box-sizing: border-box; }
-  button, input { font: inherit; }
-  button {
-    min-height: 48px; padding: 12px 16px; border: 1px solid var(--steam-line) !important;
-    border-radius: var(--steam-control-radius) !important; color: var(--color-fg) !important; background: var(--color-surface-elevated) !important;
-    box-shadow: none; letter-spacing: normal; text-transform: none; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    white-space: normal; line-height: 1.4;
-    &:hover:not(:disabled) { background: var(--color-surface-hover) !important; }
-    &:disabled { opacity: .45; cursor: default; }
+  padding: 0;
+  border: 1px solid var(--steam-line);
+  border-radius: 24px;
+  background: var(--color-surface);
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 24px 100px #0008;
+  color-scheme: inherit;
+  &::backdrop {
+    background: #060c17b8;
+    backdrop-filter: blur(5px);
   }
-  :is(button, input, summary):focus-visible { outline: 2px solid var(--steam-accent); outline-offset: 3px; }
-  .steam-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 14px 0 24px; min-height: 64px; position: sticky; top: 0; z-index: 2; background: var(--color-surface); }
-  .steam-toolbar > svg { font-size: 24px; color: var(--color-fg-muted); }
-  .steam-toolbar > span { flex: 1; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; color: var(--color-fg-muted); }
-  .steam-toolbar-divider { opacity: .4; padding: 0 5px; }
-  button.steam-icon-button { flex: 0 0 44px; min-height: 44px; width: 44px; padding: 10px; background: transparent !important; border: 0 !important; }
-  .steam-back { display: flex; transform: rotate(180deg); }
-  .steam-body { display: grid; gap: 20px; padding: 18px 28px 28px; }
-  .steam-heading { display: grid; gap: 9px; }
-  .steam-eyebrow { font-size: 10px; letter-spacing: 1.5px; color: var(--color-fg-muted); font-weight: 600; }
-  h2 { font-size: 26px; line-height: 1.3; margin: 0; letter-spacing: -.5px; outline: none; }
-  p { margin: 0; line-height: 1.75; }
-  .steam-intro { color: var(--color-fg-muted); font-size: 14px; }
-  .steam-intro strong { color: var(--color-fg); overflow-wrap: anywhere; }
-  .steam-muted, .steam-footnote { font-size: 12px; color: var(--color-fg-muted); line-height: 1.7; }
-  .steam-footnote { text-align: center; }
-  .steam-form { display: grid; gap: 10px; min-width: 0; }
-  .steam-form > label { font-size: 12px; font-weight: 600; margin-top: 6px; }
-  input:not([type="checkbox"]) { width: 100%; min-width: 0; min-height: 50px; padding: 12px 14px; border: 1px solid var(--steam-line) !important; border-radius: var(--steam-control-radius) !important; color: var(--color-fg) !important; background: var(--color-surface-elevated) !important; font-size: 16px; box-shadow: none !important; }
-  input:not([type="checkbox"]):focus { border-color: var(--steam-accent) !important; }
-  input::placeholder { color: var(--color-fg-muted); opacity: .65; font-size: 14px; }
-  .steam-password { display: flex; position: relative; }
-  .steam-password input { padding-right: 52px; }
-  .steam-password button { position: absolute; right: 2px; top: 2px; bottom: 2px; min-height: 44px; width: 46px; padding: 10px; border: 0 !important; background: transparent !important; }
-  button.steam-primary { width: 100%; background: var(--steam-accent) !important; color: var(--steam-on-accent) !important; border-color: transparent !important; font-weight: 700; min-height: 50px; }
-  button.steam-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--steam-accent) 84%, white) !important; }
-  .steam-form > .steam-primary { margin-top: 12px; }
-  button.steam-text-button { border: 0 !important; background: transparent !important; color: var(--color-fg-muted) !important; }
-  .steam-help { font-size: 12px; color: var(--color-fg-muted); min-width: 0; }
-  summary { cursor: pointer; padding: 12px 0; min-height: 44px; line-height: 1.6; }
-  .steam-help p { margin: 8px 0 12px; }
-  .steam-check { display: flex; align-items: center; gap: 10px; min-height: 48px; }
-  input[type="checkbox"] { accent-color: #2585b2; width: 22px; height: 22px; flex: 0 0 22px; margin: 0; }
-  .steam-callout { padding: 14px 16px; background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface-elevated)); border: 1px solid var(--steam-line); border-radius: 12px; font-size: 13px; line-height: 1.7; }
-  .steam-error { border-color: #cb884a66; background: color-mix(in srgb, #bc7b37 10%, var(--color-surface)); }
-  .steam-launch-progress > strong { display: flex; align-items: center; gap: 10px; }
-  .steam-launch-progress > p { margin-top: 8px; }
-  .steam-error > strong { display: block; margin-bottom: 4px; }
-  .steam-error p { color: var(--color-fg-muted); }
-  .steam-technical { overflow-wrap: anywhere; user-select: text; font-size: 12px; max-height: 140px; overflow: auto; }
-  .steam-inline-error { color: var(--color-fg); border-left: 3px solid #d7924e; padding-left: 10px; font-size: 13px; }
-  .steam-verification, .steam-transfer-art { display: grid; place-items: center; width: 80px; height: 80px; border-radius: 24px; background: #153346; color: #b8e6fa; font-size: 32px; margin: 4px auto; }
-  .steam-wait { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: var(--color-fg-muted); }
-  .steam-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #6caecf44; border-top-color: #66c8f4; border-radius: 50%; animation: steam-spin 1s linear infinite; flex-shrink: 0; }
-  .steam-transfer-art { position: relative; }
-  .steam-transfer-art .steam-spinner { position: absolute; right: -4px; bottom: -4px; background: var(--color-surface); width: 26px; height: 26px; border-width: 3px; }
-  input.steam-code { letter-spacing: .22em; text-align: center; font-size: 24px; min-height: 62px; font-family: monospace; }
-  .steam-progress { display: grid; gap: 12px; font-size: 12px; }
-  .steam-progress > div { display: flex; justify-content: space-between; gap: 12px; }
-  progress { width: 100%; height: 6px; border: 0; border-radius: 8px; accent-color: #66c8f4; overflow: hidden; }
-  progress::-webkit-progress-bar { background: var(--color-surface-active); border-radius: 8px; }
-  progress::-webkit-progress-value { background: #66c8f4; border-radius: 8px; transition: width .3s; }
-  progress:indeterminate { background: linear-gradient(90deg, var(--color-surface-active), #66c8f4, var(--color-surface-active)); }
-  .steam-game-card { display: flex; align-items: center; gap: 14px; padding: 18px; border: 1px solid var(--steam-line); border-radius: 16px; background: linear-gradient(135deg, #7768cc18, #50afca12), var(--color-surface-elevated); }
-  .steam-mountain { display: grid; place-items: center; font-size: 36px; color: #c1bbf5; width: 44px; height: 54px; background: #302b51; border-radius: 10px; flex-shrink: 0; }
-  .steam-game-card > div:nth-child(2) { display: grid; gap: 6px; flex: 1; }
-  .steam-game-card strong { font-size: 20px; }
-  .steam-game-card span { font-size: 11px; color: var(--color-fg-muted); }
-  .steam-game-card .steam-tag { font-size: 9px; align-self: flex-start; white-space: nowrap; }
-  .steam-cloud-card { padding: 18px; border: 1px solid var(--steam-line); border-radius: 14px; display: grid; gap: 12px; }
-  .steam-cloud-card > div { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-  .steam-cloud-card p { font-size: 12px; color: var(--color-fg-muted); }
-  button.steam-settings-link { justify-content: space-between; background: transparent !important; border: 0 !important; padding: 8px 0; font-size: 13px; }
-  .steam-settings-link > .steam-settings-copy { display: flex; align-items: center; gap: 10px; }
-  .steam-steps { display: grid; gap: 22px; padding: 0; margin: 4px 0; list-style: none; }
-  .steam-steps li { display: flex; gap: 14px; }
-  .steam-steps li > span { display: grid; place-items: center; flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--color-surface-elevated); color: var(--color-fg-muted); font-size: 12px; }
-  .steam-steps strong { font-size: 14px; }
-  .steam-steps p { font-size: 12px; color: var(--color-fg-muted); margin-top: 5px; }
-  .steam-profile { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--color-surface-elevated); border-radius: 12px; }
-  .steam-profile > svg { font-size: 32px; flex-shrink: 0; }
-  .steam-profile > div { display: grid; gap: 5px; overflow-wrap: anywhere; min-width: 0; }
-  .steam-profile small { color: var(--color-fg-muted); font-size: 10px; }
-  .steam-setting { display: flex; gap: 16px; justify-content: space-between; align-items: center; min-height: 64px; cursor: pointer; }
-  .steam-setting > span { display: grid; gap: 7px; min-width: 0; }
-  .steam-setting strong { font-size: 14px; }
-  .steam-setting small { font-size: 12px; color: var(--color-fg-muted); }
+  &[open] {
+    animation: steam-sheet-enter 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  &[open]::backdrop {
+    animation: steam-backdrop-enter 0.24s ease both;
+  }
+  &[data-closing] {
+    animation: steam-sheet-exit 0.18s ease-in both;
+    pointer-events: none;
+  }
+  &[data-closing]::backdrop {
+    animation: steam-backdrop-exit 0.18s ease-in both;
+  }
+  &,
+  * {
+    box-sizing: border-box;
+  }
+  button,
+  input {
+    font: inherit;
+  }
+  button {
+    min-height: 48px;
+    padding: 12px 16px;
+    border: 1px solid var(--steam-line) !important;
+    border-radius: var(--steam-control-radius) !important;
+    color: var(--color-fg) !important;
+    background: var(--color-surface-elevated) !important;
+    box-shadow: none;
+    letter-spacing: normal;
+    text-transform: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: normal;
+    line-height: 1.4;
+    &:hover:not(:disabled) {
+      background: var(--color-surface-hover) !important;
+    }
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+  :is(button, input, summary):focus-visible {
+    outline: 2px solid var(--steam-accent);
+    outline-offset: 3px;
+  }
+  .steam-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px 0 24px;
+    min-height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--color-surface);
+  }
+  .steam-toolbar > svg {
+    font-size: 24px;
+    color: var(--color-fg-muted);
+  }
+  .steam-toolbar > span {
+    flex: 1;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    color: var(--color-fg-muted);
+  }
+  .steam-toolbar-divider {
+    opacity: 0.4;
+    padding: 0 5px;
+  }
+  button.steam-icon-button {
+    flex: 0 0 44px;
+    min-height: 44px;
+    width: 44px;
+    padding: 10px;
+    background: transparent !important;
+    border: 0 !important;
+  }
+  .steam-back {
+    display: flex;
+    transform: rotate(180deg);
+  }
+  .steam-body {
+    display: grid;
+    gap: 20px;
+    padding: 18px 28px 28px;
+  }
+  .steam-heading {
+    display: grid;
+    gap: 9px;
+  }
+  .steam-eyebrow {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--color-fg-muted);
+    font-weight: 600;
+  }
+  h2 {
+    font-size: 26px;
+    line-height: 1.3;
+    margin: 0;
+    letter-spacing: -0.5px;
+    outline: none;
+  }
+  p {
+    margin: 0;
+    line-height: 1.75;
+  }
+  .steam-intro {
+    color: var(--color-fg-muted);
+    font-size: 14px;
+  }
+  .steam-intro strong {
+    color: var(--color-fg);
+    overflow-wrap: anywhere;
+  }
+  .steam-muted,
+  .steam-footnote {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    line-height: 1.7;
+  }
+  .steam-footnote {
+    text-align: center;
+  }
+  .steam-form {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+  .steam-form > label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  input:not([type="checkbox"]) {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    padding: 12px 14px;
+    border: 1px solid var(--steam-line) !important;
+    border-radius: var(--steam-control-radius) !important;
+    color: var(--color-fg) !important;
+    background: var(--color-surface-elevated) !important;
+    font-size: 16px;
+    box-shadow: none !important;
+  }
+  input:not([type="checkbox"]):focus {
+    border-color: var(--steam-accent) !important;
+  }
+  input::placeholder {
+    color: var(--color-fg-muted);
+    opacity: 0.65;
+    font-size: 14px;
+  }
+  .steam-password {
+    display: flex;
+    position: relative;
+  }
+  .steam-password input {
+    padding-right: 52px;
+  }
+  .steam-password button {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
+    min-height: 44px;
+    width: 46px;
+    padding: 10px;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  button.steam-primary {
+    width: 100%;
+    background: var(--steam-accent) !important;
+    color: var(--steam-on-accent) !important;
+    border-color: transparent !important;
+    font-weight: 700;
+    min-height: 50px;
+  }
+  button.steam-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--steam-accent) 84%, white) !important;
+  }
+  .steam-form > .steam-primary {
+    margin-top: 12px;
+  }
+  button.steam-text-button {
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--color-fg-muted) !important;
+  }
+  .steam-help {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    min-width: 0;
+  }
+  summary {
+    cursor: pointer;
+    padding: 12px 0;
+    min-height: 44px;
+    line-height: 1.6;
+  }
+  .steam-help p {
+    margin: 8px 0 12px;
+  }
+  .steam-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+  }
+  input[type="checkbox"] {
+    accent-color: #2585b2;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    margin: 0;
+  }
+  .steam-callout {
+    padding: 14px 16px;
+    background: color-mix(
+      in srgb,
+      var(--color-primary) 8%,
+      var(--color-surface-elevated)
+    );
+    border: 1px solid var(--steam-line);
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .steam-error {
+    border-color: #cb884a66;
+    background: color-mix(in srgb, #bc7b37 10%, var(--color-surface));
+  }
+  .steam-launch-progress > strong {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .steam-launch-progress > p {
+    margin-top: 8px;
+  }
+  .steam-error > strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .steam-error p {
+    color: var(--color-fg-muted);
+  }
+  .steam-technical {
+    overflow-wrap: anywhere;
+    user-select: text;
+    font-size: 12px;
+    max-height: 140px;
+    overflow: auto;
+  }
+  .steam-inline-error {
+    color: var(--color-fg);
+    border-left: 3px solid #d7924e;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+  .steam-verification,
+  .steam-transfer-art {
+    display: grid;
+    place-items: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: #153346;
+    color: #b8e6fa;
+    font-size: 32px;
+    margin: 4px auto;
+  }
+  .steam-wait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--color-fg-muted);
+  }
+  .steam-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #6caecf44;
+    border-top-color: #66c8f4;
+    border-radius: 50%;
+    animation: steam-spin 1s linear infinite;
+    flex-shrink: 0;
+  }
+  .steam-transfer-art {
+    position: relative;
+  }
+  .steam-transfer-art .steam-spinner {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    background: var(--color-surface);
+    width: 26px;
+    height: 26px;
+    border-width: 3px;
+  }
+  input.steam-code {
+    letter-spacing: 0.22em;
+    text-align: center;
+    font-size: 24px;
+    min-height: 62px;
+    font-family: monospace;
+  }
+  .steam-progress {
+    display: grid;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .steam-progress > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  progress {
+    width: 100%;
+    height: 6px;
+    border: 0;
+    border-radius: 8px;
+    accent-color: #66c8f4;
+    overflow: hidden;
+  }
+  progress::-webkit-progress-bar {
+    background: var(--color-surface-active);
+    border-radius: 8px;
+  }
+  progress::-webkit-progress-value {
+    background: #66c8f4;
+    border-radius: 8px;
+    transition: width 0.3s;
+  }
+  progress:indeterminate {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-active),
+      #66c8f4,
+      var(--color-surface-active)
+    );
+  }
+  .steam-game-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--steam-line);
+    border-radius: 16px;
+    background:
+      linear-gradient(135deg, #7768cc18, #50afca12),
+      var(--color-surface-elevated);
+  }
+  .steam-mountain {
+    display: grid;
+    place-items: center;
+    font-size: 36px;
+    color: #c1bbf5;
+    width: 44px;
+    height: 54px;
+    background: #302b51;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .steam-game-card > div:nth-child(2) {
+    display: grid;
+    gap: 6px;
+    flex: 1;
+  }
+  .steam-game-card strong {
+    font-size: 20px;
+  }
+  .steam-game-card span {
+    font-size: 11px;
+    color: var(--color-fg-muted);
+  }
+  .steam-game-card .steam-tag {
+    font-size: 9px;
+    align-self: flex-start;
+    white-space: nowrap;
+  }
+  .steam-cloud-card {
+    padding: 18px;
+    border: 1px solid var(--steam-line);
+    border-radius: 14px;
+    display: grid;
+    gap: 12px;
+  }
+  .steam-cloud-card > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .steam-cloud-card p {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+  }
+  button.steam-settings-link {
+    justify-content: space-between;
+    background: transparent !important;
+    border: 0 !important;
+    padding: 8px 0;
+    font-size: 13px;
+  }
+  .steam-settings-link > .steam-settings-copy {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .steam-steps {
+    display: grid;
+    gap: 22px;
+    padding: 0;
+    margin: 4px 0;
+    list-style: none;
+  }
+  .steam-steps li {
+    display: flex;
+    gap: 14px;
+  }
+  .steam-steps li > span {
+    display: grid;
+    place-items: center;
+    flex: 0 0 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-surface-elevated);
+    color: var(--color-fg-muted);
+    font-size: 12px;
+  }
+  .steam-steps strong {
+    font-size: 14px;
+  }
+  .steam-steps p {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+    margin-top: 5px;
+  }
+  .steam-profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    background: var(--color-surface-elevated);
+    border-radius: 12px;
+  }
+  .steam-profile > svg {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .steam-profile > div {
+    display: grid;
+    gap: 5px;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .steam-profile small {
+    color: var(--color-fg-muted);
+    font-size: 10px;
+  }
+  .steam-setting {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 64px;
+    cursor: pointer;
+  }
+  .steam-setting > span {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+  }
+  .steam-setting strong {
+    font-size: 14px;
+  }
+  .steam-setting small {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+  }
   // A switch is not a theme checkbox: reset the checked glyph and geometry in all states.
-  .steam-setting input[role="switch"] { appearance: none; position: relative; width: 44px; min-width: 44px; flex: 0 0 44px; height: 26px; min-height: 26px; padding: 0; margin: 0; border-radius: 20px !important; background: var(--color-surface-active) !important; border: 1px solid var(--steam-line) !important; box-shadow: none; opacity: 1; cursor: pointer; transition: background .15s; }
-  .steam-setting input[role="switch"]::before { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-fg-muted); transition: transform .15s; }
-  .steam-setting input[role="switch"]:checked { background: var(--steam-accent) !important; border-color: transparent !important; }
-  .steam-setting input[role="switch"]:checked::before { transform: translateX(18px); background: var(--steam-on-accent); }
-  .steam-setting input[role="switch"]:disabled { opacity: .45; cursor: default; }
-  button.steam-choice { text-align: left; justify-content: flex-start; padding: 18px 14px; }
-  .steam-choice > svg { flex-shrink: 0; }
-  .steam-choice > .steam-choice-copy { flex: 1; min-width: 0; display: grid; gap: 7px; }
-  .steam-choice small { font-size: 11px; color: var(--color-fg-muted); }
-  .steam-conflict-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-height: 220px; overflow: auto; }
-  .steam-conflict-files li { display: grid; gap: 5px; overflow-wrap: anywhere; }
+  .steam-setting input[role="switch"] {
+    appearance: none;
+    position: relative;
+    width: 44px;
+    min-width: 44px;
+    flex: 0 0 44px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0;
+    margin: 0;
+    border-radius: 20px !important;
+    background: var(--color-surface-active) !important;
+    border: 1px solid var(--steam-line) !important;
+    box-shadow: none;
+    opacity: 1;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .steam-setting input[role="switch"]::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-fg-muted);
+    transition: transform 0.15s;
+  }
+  .steam-setting input[role="switch"]:checked {
+    background: var(--steam-accent) !important;
+    border-color: transparent !important;
+  }
+  .steam-setting input[role="switch"]:checked::before {
+    transform: translateX(18px);
+    background: var(--steam-on-accent);
+  }
+  .steam-setting input[role="switch"]:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  button.steam-choice {
+    text-align: left;
+    justify-content: flex-start;
+    padding: 18px 14px;
+  }
+  .steam-choice > svg {
+    flex-shrink: 0;
+  }
+  .steam-choice > .steam-choice-copy {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 7px;
+  }
+  .steam-choice small {
+    font-size: 11px;
+    color: var(--color-fg-muted);
+  }
+  .steam-conflict-files {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+    max-height: 220px;
+    overflow: auto;
+  }
+  .steam-conflict-files li {
+    display: grid;
+    gap: 5px;
+    overflow-wrap: anywhere;
+  }
 }
-@keyframes steam-spin { to { transform: rotate(360deg); } }
-@keyframes steam-sheet-enter { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes steam-sheet-exit { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(36px); } }
-@keyframes steam-backdrop-enter { from { opacity: 0; } to { opacity: 1; } }
-@keyframes steam-backdrop-exit { from { opacity: 1; } to { opacity: 0; } }
+@keyframes steam-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes steam-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes steam-sheet-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+}
+@keyframes steam-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes steam-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
 @media (max-width: 540px) {
   dialog.steam-sheet.steam-sheet {
-    width: 100%; max-height: calc(var(--steam-viewport, 100dvh) - max(12px, env(safe-area-inset-top)));
-    margin: 0; top: auto; bottom: max(0px, calc(100dvh - var(--steam-viewport, 100dvh) - var(--steam-viewport-top, 0px)));
-    border-radius: 24px 24px 0 0; border-bottom: 0;
-    .steam-body { padding: 18px 24px max(28px, env(safe-area-inset-bottom)); }
+    width: 100%;
+    max-height: calc(
+      var(--steam-viewport, 100dvh) - max(12px, env(safe-area-inset-top))
+    );
+    margin: 0;
+    top: auto;
+    bottom: max(
+      0px,
+      calc(
+        100dvh - var(--steam-viewport, 100dvh) - var(--steam-viewport-top, 0px)
+      )
+    );
+    border-radius: 24px 24px 0 0;
+    border-bottom: 0;
+    .steam-body {
+      padding: 18px 24px max(28px, env(safe-area-inset-bottom));
+    }
   }
 }
 @media (max-width: 360px) {
-  dialog.steam-sheet .steam-body { padding-left: 18px; padding-right: 18px; }
-  dialog.steam-sheet .steam-tag { display: none; }
+  dialog.steam-sheet .steam-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  dialog.steam-sheet .steam-tag {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  dialog.steam-sheet.steam-sheet, dialog.steam-sheet.steam-sheet::backdrop { animation: none; }
-  dialog.steam-sheet *, dialog.steam-sheet *::before { animation-duration: 4s; transition: none; }
+  dialog.steam-sheet.steam-sheet,
+  dialog.steam-sheet.steam-sheet::backdrop {
+    animation: none;
+  }
+  dialog.steam-sheet *,
+  dialog.steam-sheet *::before {
+    animation-duration: 4s;
+    transition: none;
+  }
 }
 // Shared by the Home entry and the modal, so synchronization is never hidden.
 .steam-sync-progress {
-  display: grid; gap: 8px; width: 100%; min-width: 0; margin-top: 10px;
-  font-size: 12px; line-height: 1.5; font-weight: 400; text-align: left;
-  .steam-sync-heading { display: flex; justify-content: space-between; gap: 12px; }
-  .steam-sync-count { font-size: 11px; opacity: .8; }
-  .steam-sync-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
-  progress { width: 100%; min-width: 0; height: 8px; }
-  .steam-sync-metrics {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 10px;
-    > span { display: grid; gap: 3px; min-width: 0; }
-    small { opacity: .65; font-size: 10px; }
-    > span > span { white-space: nowrap; font-size: 11px; font-variant-numeric: tabular-nums; }
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 400;
+  text-align: left;
+  .steam-sync-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
   }
-  .steam-sync-summary { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  &.steam-sync-compact { margin-top: 3px; gap: 5px; }
+  .steam-sync-count {
+    font-size: 11px;
+    opacity: 0.8;
+  }
+  .steam-sync-file {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  progress {
+    width: 100%;
+    min-width: 0;
+    height: 8px;
+  }
+  .steam-sync-metrics {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 10px;
+    > span {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+    small {
+      opacity: 0.65;
+      font-size: 10px;
+    }
+    > span > span {
+      white-space: nowrap;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+  .steam-sync-summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  &.steam-sync-compact {
+    margin-top: 3px;
+    gap: 5px;
+  }
 }

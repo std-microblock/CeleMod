@@ -38,7 +38,11 @@ export const createBlacklistContext = () => {
       await reloadBlacklistState(gamePath);
     },
     setActiveProfiles: async (names: string[]) => {
-      await adoptUntrackedMods(gamePath, useAppStore.getState().profiles, names);
+      await adoptUntrackedMods(
+        gamePath,
+        useAppStore.getState().profiles,
+        names,
+      );
       const result = await callRemote<string>(
         "apply_mod_profiles",
         gamePath,
@@ -86,9 +90,7 @@ export const createBlacklistContext = () => {
             ? (directProfile.disabled_files ?? []).filter(
                 (file) => !fileKeys.has(file.toLocaleLowerCase()),
               )
-            : [
-                ...new Set([...(directProfile.disabled_files ?? []), ...files]),
-              ],
+            : [...new Set([...(directProfile.disabled_files ?? []), ...files])],
         };
         setCurrentProfileName(nextProfile.name);
         setCurrentProfile(nextProfile);

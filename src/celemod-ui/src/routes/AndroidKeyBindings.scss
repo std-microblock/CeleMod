@@ -2,49 +2,236 @@
 @use "../styles/theme" as theme;
 
 .android-keybindings {
-  box-sizing: border-box; width: 100%; height: 100%; min-width: 0; overflow-y: auto;
-  padding: 18px 16px max(32px, env(safe-area-inset-bottom)); color: theme.$fg;
-  > * { max-width: 860px; margin-left: auto; margin-right: auto; }
-  h2, h3, p { margin-top: 0; }
-  p { line-height: 1.6; }
-  header, .touch-summary, .touch-button-title, .touch-card-actions, footer {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 18px 16px max(32px, env(safe-area-inset-bottom));
+  color: theme.$fg;
+  > * {
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  button, input:not([type=checkbox]), select { box-sizing: border-box; min-height: 44px; font: inherit; border-radius: 10px; }
-  button { padding: 8px 14px; white-space: normal; }
-  button:disabled { opacity: .5; }
-  input:not([type=checkbox]), select { padding: 10px; min-width: 0; width: 100%; }
-  input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; accent-color: theme.$fg; }
-  small { display: block; color: theme.$fg3; line-height: 1.5; overflow-wrap: anywhere; }
-  .touch-help { color: theme.$fg3; font-size: 13px; }
-  .touch-error, .touch-notice { padding: 12px; border: 1px solid currentColor; border-radius: 10px; margin-bottom: 14px; overflow-wrap: anywhere; }
-  .touch-error { color: #da6357; }
-  .touch-button-card, .touch-button-editor, .touch-empty { padding: 16px; border: 1px solid color.change(theme.$fg, $alpha: .15); border-radius: 16px; margin-top: 14px; background: color.change(theme.$bg, $alpha: .5); }
-  .touch-button-title > strong { font-size: 18px; overflow-wrap: anywhere; }
-  .touch-button-title label { display: flex; align-items: center; gap: 8px; min-height: 44px; }
-  .touch-button-card ul { padding-left: 18px; line-height: 1.8; overflow-wrap: anywhere; }
-  .touch-name { display: grid; gap: 6px; }
-  .touch-icon-picker { min-width: 0; padding: 12px 0; margin: 12px 0; border: 0; }
-  .touch-icon-picker legend { font-size: 14px; }
-  .touch-icon-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); gap: 6px; }
-  .touch-icon-options button { padding: 8px 4px; min-height: 66px; border: 1px solid transparent; }
-  .touch-icon-options button[aria-pressed=true] { border-color: currentColor; background: color.change(theme.$fg, $alpha: .15); }
-  .touch-icon-options svg { display: block; width: 24px; height: 24px; margin: auto; }
-  .touch-icon-options small { font-size: 11px; }
-  .touch-icon-preview { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 13px; }
-  .touch-icon-preview > div, .touch-card-icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; flex-shrink: 0; background: #313e5188; border-radius: 10px; color: white; }
-  .touch-icon-preview > div span, .touch-card-icon span { font-size: 10px; text-align: center; overflow-wrap: anywhere; }
-  .touch-icon-preview svg, .touch-card-icon svg { width: 32px; height: 32px; }
-  .touch-card-name { display: flex; align-items: center; gap: 12px; min-width: 0; overflow-wrap: anywhere; }
-  .touch-selected { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-  .touch-selected strong { width: 100%; }
-  .touch-selected button { font-size: 13px; overflow-wrap: anywhere; }
-  .touch-filters { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .touch-action-list { max-height: 48vh; overflow-y: auto; margin: 12px 0; overscroll-behavior: contain; }
-  .touch-action-list > label { display: flex; align-items: center; gap: 12px; padding: 12px 4px; min-height: 48px; border-bottom: 1px solid color.change(theme.$fg, $alpha: .1); }
-  .touch-action-list > label > span { min-width: 0; overflow-wrap: anywhere; }
-  .unavailable { opacity: .6; }
-  footer { padding: 12px 0; position: sticky; bottom: 0; z-index: 1; background: theme.$bg; }
-  footer > span { width: 100%; color: theme.$fg3; font-size: 13px; }
-  @media (min-width: 650px) { .touch-filters { grid-template-columns: 1fr 220px; } }
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+  p {
+    line-height: 1.6;
+  }
+  header,
+  .touch-summary,
+  .touch-button-title,
+  .touch-card-actions,
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  button,
+  input:not([type="checkbox"]),
+  select {
+    box-sizing: border-box;
+    min-height: 44px;
+    font: inherit;
+    border-radius: 10px;
+  }
+  button {
+    padding: 8px 14px;
+    white-space: normal;
+  }
+  button:disabled {
+    opacity: 0.5;
+  }
+  input:not([type="checkbox"]),
+  select {
+    padding: 10px;
+    min-width: 0;
+    width: 100%;
+  }
+  input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    accent-color: theme.$fg;
+  }
+  small {
+    display: block;
+    color: theme.$fg3;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .touch-help {
+    color: theme.$fg3;
+    font-size: 13px;
+  }
+  .touch-error,
+  .touch-notice {
+    padding: 12px;
+    border: 1px solid currentColor;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow-wrap: anywhere;
+  }
+  .touch-error {
+    color: #da6357;
+  }
+  .touch-button-card,
+  .touch-button-editor,
+  .touch-empty {
+    padding: 16px;
+    border: 1px solid color.change(theme.$fg, $alpha: 0.15);
+    border-radius: 16px;
+    margin-top: 14px;
+    background: color.change(theme.$bg, $alpha: 0.5);
+  }
+  .touch-button-title > strong {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+  .touch-button-title label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+  .touch-button-card ul {
+    padding-left: 18px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+  .touch-name {
+    display: grid;
+    gap: 6px;
+  }
+  .touch-icon-picker {
+    min-width: 0;
+    padding: 12px 0;
+    margin: 12px 0;
+    border: 0;
+  }
+  .touch-icon-picker legend {
+    font-size: 14px;
+  }
+  .touch-icon-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+    gap: 6px;
+  }
+  .touch-icon-options button {
+    padding: 8px 4px;
+    min-height: 66px;
+    border: 1px solid transparent;
+  }
+  .touch-icon-options button[aria-pressed="true"] {
+    border-color: currentColor;
+    background: color.change(theme.$fg, $alpha: 0.15);
+  }
+  .touch-icon-options svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    margin: auto;
+  }
+  .touch-icon-options small {
+    font-size: 11px;
+  }
+  .touch-icon-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .touch-icon-preview > div,
+  .touch-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    background: #313e5188;
+    border-radius: 10px;
+    color: white;
+  }
+  .touch-icon-preview > div span,
+  .touch-card-icon span {
+    font-size: 10px;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .touch-icon-preview svg,
+  .touch-card-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+  .touch-card-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .touch-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .touch-selected strong {
+    width: 100%;
+  }
+  .touch-selected button {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .touch-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .touch-action-list {
+    max-height: 48vh;
+    overflow-y: auto;
+    margin: 12px 0;
+    overscroll-behavior: contain;
+  }
+  .touch-action-list > label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 4px;
+    min-height: 48px;
+    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  }
+  .touch-action-list > label > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .unavailable {
+    opacity: 0.6;
+  }
+  footer {
+    padding: 12px 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: theme.$bg;
+  }
+  footer > span {
+    width: 100%;
+    color: theme.$fg3;
+    font-size: 13px;
+  }
+  @media (min-width: 650px) {
+    .touch-filters {
+      grid-template-columns: 1fr 220px;
+    }
+  }
 }

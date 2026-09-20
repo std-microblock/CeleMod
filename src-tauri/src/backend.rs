@@ -8,7 +8,9 @@ use everest::get_mod_cached_new;
 #[cfg(not(target_os = "android"))]
 use game_scanner::prelude::Game;
 #[cfg(target_os = "android")]
-struct Game { path: Option<PathBuf> }
+struct Game {
+    path: Option<PathBuf>,
+}
 use parking_lot::Mutex as ParkingMutex;
 use pbkdf2::pbkdf2_hmac;
 use rand::RngCore;
@@ -186,7 +188,10 @@ fn miaonet_settings_directories(game_path: &Path) -> Vec<PathBuf> {
     miaonet_settings_directories_for_platform(game_path, cfg!(target_os = "android"))
 }
 
-fn miaonet_settings_directories_for_platform(game_path: &Path, android_runtime: bool) -> Vec<PathBuf> {
+fn miaonet_settings_directories_for_platform(
+    game_path: &Path,
+    android_runtime: bool,
+) -> Vec<PathBuf> {
     // RuntimeHost sets EVEREST_SAVEPATH only in the separate :game process.
     // The manager must resolve the same per-install Saves directory itself,
     // never the app-wide Linux/XDG directory (which can contain stale tokens).
@@ -550,7 +555,8 @@ fn read_miaonet_auth_state(game_path: &Path) -> (bool, Option<String>) {
 #[tauri::command]
 async fn logout_miaonet(game_path: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || logout_miaonet_impl(game_path))
-        .await.map_err(|error| format!("退出群服登录失败：{error}"))?
+        .await
+        .map_err(|error| format!("退出群服登录失败：{error}"))?
 }
 
 fn ensure_miaonet_game_stopped(game_path: &Path) -> Result<(), String> {
@@ -572,7 +578,10 @@ fn logout_miaonet_impl(game_path: String) -> Result<(), String> {
     let game_path = Path::new(&game_path);
     ensure_miaonet_game_stopped(game_path)?;
     let mut authorization = MIAONET_AUTHORIZATION.lock();
-    if authorization.as_ref().is_some_and(|(path, _)| path == game_path) {
+    if authorization
+        .as_ref()
+        .is_some_and(|(path, _)| path == game_path)
+    {
         *authorization = None;
     }
     drop(authorization);
@@ -625,7 +634,9 @@ fn get_miaonet_local_state(game_path: String) -> MiaoNetLocalState {
         installed,
         authenticated,
         last_name,
-        authorization: MIAONET_AUTHORIZATION.lock().as_ref()
+        authorization: MIAONET_AUTHORIZATION
+            .lock()
+            .as_ref()
             .filter(|(path, _)| path == Path::new(&game_path))
             .map(|(_, status)| status.clone()),
     }
@@ -647,7 +658,9 @@ async fn save_miaonet_settings(
         let game_path = Path::new(&game_path);
         ensure_miaonet_game_stopped(game_path)?;
         save_miaonet_settings_update(game_path, &settings)
-    }).await.map_err(|error| format!("保存群服设置失败：{error}"))?
+    })
+    .await
+    .map_err(|error| format!("保存群服设置失败：{error}"))?
 }
 
 fn installed_miaonet_protocol_version(game_path: &Path) -> Result<[u16; 3], String> {
@@ -692,15 +705,32 @@ impl Drop for MiaoNetOauthGuard {
     }
 }
 
-fn miaonet_oauth_event(game_path: &Path, channel: &Channel<IpcEvent>, state: &str, detail: Option<&str>) {
+fn miaonet_oauth_event(
+    game_path: &Path,
+    channel: &Channel<IpcEvent>,
+    state: &str,
+    detail: Option<&str>,
+) {
     // Channel callbacks belong to the original WebView. Keep a snapshot so a
     // resumed/recreated page can recover even when a callback was not delivered.
     let revision = MIAONET_AUTHORIZATION_REVISION.fetch_add(1, Ordering::Relaxed) + 1;
-    *MIAONET_AUTHORIZATION.lock() = Some((game_path.to_path_buf(), MiaoNetAuthorization {
-        state: state.to_string(), detail: detail.map(str::to_string), revision,
-    }));
+    *MIAONET_AUTHORIZATION.lock() = Some((
+        game_path.to_path_buf(),
+        MiaoNetAuthorization {
+            state: state.to_string(),
+            detail: detail.map(str::to_string),
+            revision,
+        },
+    ));
     crate::logging::info(format_args!("MiaoNet authorization stage: {state}"));
-    send_event(channel, vec![serde_json::json!(state), serde_json::json!(detail), serde_json::json!(revision)]);
+    send_event(
+        channel,
+        vec![
+            serde_json::json!(state),
+            serde_json::json!(detail),
+            serde_json::json!(revision),
+        ],
+    );
 }
 
 fn make_miaonet_oauth_url(state: &str) -> Result<String, String> {
@@ -1005,14 +1035,24 @@ fn save_miaonet_login(
 
 fn miaonet_callback_page(title: &str, message: &str, android: bool) -> String {
     fn escape(value: &str) -> String {
-        value.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
-            .replace('"', "&quot;").replace('\'', "&#39;")
+        value
+            .replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+            .replace('"', "&quot;")
+            .replace('\'', "&#39;")
     }
     let title = escape(title);
     let message = escape(message);
     // A user-activated wake-up link, never an OAuth credential transport.
-    let return_link = if android { "<p><a href=\"celemod-auth://return\">返回 CeleMod</a></p>" } else { "" };
-    format!("<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{margin:0;background:#101114;color:#eee;font:16px system-ui,-apple-system,sans-serif;display:grid;min-height:100vh;place-items:center}}main{{max-width:520px;padding:32px;text-align:center;overflow-wrap:anywhere}}h1{{font-size:24px}}p{{color:#aeb2ba;line-height:1.7}}a{{display:inline-block;padding:14px 24px;color:#fff;background:#365caa;border-radius:8px}}</style></head><body><main><h1>{title}</h1><p>{message}</p>{return_link}</main></body></html>")
+    let return_link = if android {
+        "<p><a href=\"celemod-auth://return\">返回 CeleMod</a></p>"
+    } else {
+        ""
+    };
+    format!(
+        "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{margin:0;background:#101114;color:#eee;font:16px system-ui,-apple-system,sans-serif;display:grid;min-height:100vh;place-items:center}}main{{max-width:520px;padding:32px;text-align:center;overflow-wrap:anywhere}}h1{{font-size:24px}}p{{color:#aeb2ba;line-height:1.7}}a{{display:inline-block;padding:14px 24px;color:#fff;background:#365caa;border-radius:8px}}</style></head><body><main><h1>{title}</h1><p>{message}</p>{return_link}</main></body></html>"
+    )
 }
 
 fn save_miaonet_login_at_path(
@@ -1040,7 +1080,8 @@ fn save_miaonet_login_at_path(
 
     let serialized = serde_yaml::to_string(&settings)
         .map_err(|error| format!("保存 MiaoNet 设置失败：{error}"))?;
-    let directory = settings_path.parent()
+    let directory = settings_path
+        .parent()
         .ok_or_else(|| "MiaoNet 设置路径无效。".to_string())?;
     fs::create_dir_all(directory).map_err(|error| format!("创建 MiaoNet 设置目录失败：{error}"))?;
     fs::write(&settings_path, serialized).map_err(|error| format!("写入 MiaoNet 设置失败：{error}"))
@@ -1059,7 +1100,10 @@ fn run_miaonet_oauth_listener(
         let mut connection = None;
         for listener in &listeners {
             match listener.accept() {
-                Ok(accepted) => { connection = Some(accepted); break; }
+                Ok(accepted) => {
+                    connection = Some(accepted);
+                    break;
+                }
                 Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {}
                 Err(error) => return Err(format!("接收浏览器授权回调失败：{error}")),
             }
@@ -1153,12 +1197,21 @@ fn run_miaonet_oauth_listener(
         match result {
             Ok(()) => {
                 miaonet_oauth_event(game_path, on_event, "complete", None);
-                write_http_page(&mut stream, "200 OK", "MiaoNet+ 登录成功",
-                    "登录信息已保存。请返回 CeleMod，群服页面会自动更新。不要刷新此授权页面。");
+                write_http_page(
+                    &mut stream,
+                    "200 OK",
+                    "MiaoNet+ 登录成功",
+                    "登录信息已保存。请返回 CeleMod，群服页面会自动更新。不要刷新此授权页面。",
+                );
                 return Ok(());
             }
             Err(error) => {
-                write_http_page(&mut stream, "502 Bad Gateway", "MiaoNet+ 登录未完成", &error);
+                write_http_page(
+                    &mut stream,
+                    "502 Bad Gateway",
+                    "MiaoNet+ 登录未完成",
+                    &error,
+                );
                 return Err(error);
             }
         }
@@ -1169,7 +1222,8 @@ fn run_miaonet_oauth_listener(
 #[tauri::command]
 async fn start_miaonet_oauth(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || start_miaonet_oauth_impl(game_path, on_event))
-        .await.map_err(|error| format!("启动群服授权失败：{error}"))?
+        .await
+        .map_err(|error| format!("启动群服授权失败：{error}"))?
 }
 
 fn start_miaonet_oauth_impl(game_path: String, on_event: Channel<IpcEvent>) -> Result<(), String> {
@@ -1220,7 +1274,8 @@ fn start_miaonet_oauth_impl(game_path: String, on_event: Channel<IpcEvent>) -> R
         // Use the platform-aware opener: Android launches an ACTION_VIEW intent,
         // not the desktop opener's subprocess (which can fail with os error 13).
         #[cfg(target_os = "android")]
-        let open_result = crate::android::open_miaonet_auth(&authorization_url).map_err(|e| e.to_string());
+        let open_result =
+            crate::android::open_miaonet_auth(&authorization_url).map_err(|e| e.to_string());
         #[cfg(not(target_os = "android"))]
         let open_result = open_url(authorization_url);
         if let Err(error) = open_result {
@@ -1228,9 +1283,14 @@ fn start_miaonet_oauth_impl(game_path: String, on_event: Channel<IpcEvent>) -> R
             miaonet_oauth_event(&game_path, &on_event, "failed", Some(&message));
             return;
         }
-        if let Err(error) =
-            run_miaonet_oauth_listener(listeners, &state, &game_path, protocol_version, &on_event, Duration::from_secs(300))
-        {
+        if let Err(error) = run_miaonet_oauth_listener(
+            listeners,
+            &state,
+            &game_path,
+            protocol_version,
+            &on_event,
+            Duration::from_secs(300),
+        ) {
             logged_error(format!("MiaoNet OAuth 失败：{error}"));
             miaonet_oauth_event(&game_path, &on_event, "failed", Some(&error));
         }
@@ -2133,20 +2193,23 @@ fn rm_mod_sync(mods_folder_path: &str, mod_name: &str) -> anyhow::Result<()> {
 
 fn get_celestes() -> Vec<Game> {
     #[cfg(target_os = "android")]
-    return crate::android::game_dirs().into_iter().map(|path| Game { path: Some(path) }).collect();
+    return crate::android::game_dirs()
+        .into_iter()
+        .map(|path| Game { path: Some(path) })
+        .collect();
     #[cfg(not(target_os = "android"))]
     {
-    let mut games = vec![];
-    use game_scanner::*;
-    if let Ok(game) = steam::find("504230") {
-        games.push(game);
-    };
+        let mut games = vec![];
+        use game_scanner::*;
+        if let Ok(game) = steam::find("504230") {
+            games.push(game);
+        };
 
-    if let Ok(game) = epicgames::find("9ae799adceab466a97fbc0408d12c5b8") {
-        games.push(game);
-    };
+        if let Ok(game) = epicgames::find("9ae799adceab466a97fbc0408d12c5b8") {
+            games.push(game);
+        };
 
-    games
+        games
     }
 }
 
@@ -3923,43 +3986,43 @@ fn start_game_directly_with_loader_impl(
     return crate::android::launch(&path, origin, legacy_loader);
     #[cfg(not(target_os = "android"))]
     {
-    let path = normalize_game_path_impl(&path);
-    let path = Path::new(&path);
+        let path = normalize_game_path_impl(&path);
+        let path = Path::new(&path);
 
-    #[cfg(windows)]
-    let game = path.join("Celeste.exe");
-    #[cfg(all(unix, not(target_os = "macos")))]
-    let game = path.join("Celeste");
-    #[cfg(target_os = "macos")]
-    let game = {
-        let direct = path.join("Celeste");
-        if direct.exists() {
-            direct
-        } else if path.file_name().and_then(|name| name.to_str()) == Some("Resources") {
-            path.parent().unwrap_or(path).join("MacOS").join("Celeste")
+        #[cfg(windows)]
+        let game = path.join("Celeste.exe");
+        #[cfg(all(unix, not(target_os = "macos")))]
+        let game = path.join("Celeste");
+        #[cfg(target_os = "macos")]
+        let game = {
+            let direct = path.join("Celeste");
+            if direct.exists() {
+                direct
+            } else if path.file_name().and_then(|name| name.to_str()) == Some("Resources") {
+                path.parent().unwrap_or(path).join("MacOS").join("Celeste")
+            } else {
+                direct
+            }
+        };
+
+        let game_origin = path.join("orig").join(
+            game.file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("Celeste")),
+        );
+        let executable = if origin && game_origin.exists() {
+            &game_origin
         } else {
-            direct
+            &game
+        };
+        let mut command = std::process::Command::new(executable);
+        if origin && game_origin.exists() {
+            command.arg("--vanilla");
         }
-    };
-
-    let game_origin = path.join("orig").join(
-        game.file_name()
-            .unwrap_or_else(|| std::ffi::OsStr::new("Celeste")),
-    );
-    let executable = if origin && game_origin.exists() {
-        &game_origin
-    } else {
-        &game
-    };
-    let mut command = std::process::Command::new(executable);
-    if origin && game_origin.exists() {
-        command.arg("--vanilla");
-    }
-    if legacy_loader {
-        configure_legacy_loader_environment(&mut command);
-    }
-    command.spawn()?;
-    Ok(())
+        if legacy_loader {
+            configure_legacy_loader_environment(&mut command);
+        }
+        command.spawn()?;
+        Ok(())
     }
 }
 
@@ -4353,19 +4416,34 @@ fn runtime_platform() -> &'static str {
 #[tauri::command]
 async fn android_steam(request: serde_json::Value) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    return tauri::async_runtime::spawn_blocking(move || crate::android::steam(request)).await
-        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    return tauri::async_runtime::spawn_blocking(move || crate::android::steam(request))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
-    { let _ = request; Err("Android only".into()) }
+    {
+        let _ = request;
+        Err("Android only".into())
+    }
 }
 
 #[tauri::command]
-async fn android_runtime_settings(joystick: Option<bool>, game_rumble: Option<bool>) -> Result<serde_json::Value, String> {
+async fn android_runtime_settings(
+    joystick: Option<bool>,
+    game_rumble: Option<bool>,
+) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    return tauri::async_runtime::spawn_blocking(move || crate::android::settings(joystick, game_rumble)).await
-        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    return tauri::async_runtime::spawn_blocking(move || {
+        crate::android::settings(joystick, game_rumble)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
-    { let _ = (joystick, game_rumble); Err("Android only".into()) }
+    {
+        let _ = (joystick, game_rumble);
+        Err("Android only".into())
+    }
 }
 
 #[tauri::command]
@@ -4373,16 +4451,24 @@ async fn android_read_log(source: String) -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
     return tauri::async_runtime::spawn_blocking(move || {
         crate::android::read_log(&source).and_then(|log| Ok(serde_json::to_value(log)?))
-    }).await.map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
-    { let _ = source; Err("Android only".into()) }
+    {
+        let _ = source;
+        Err("Android only".into())
+    }
 }
 
 #[tauri::command]
 async fn android_pick_package() -> Result<serde_json::Value, String> {
     #[cfg(target_os = "android")]
-    return tauri::async_runtime::spawn_blocking(crate::android::pick_package).await
-        .map_err(|e| e.to_string())?.map_err(|e| format!("{e:#}"));
+    return tauri::async_runtime::spawn_blocking(crate::android::pick_package)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
     Err("Android only".into())
 }
@@ -4472,23 +4558,27 @@ fn start_game_impl(path: String) -> Result<(), String> {
     return crate::android::launch(&path, false, false).map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
     {
-    let path = normalize_game_path_impl(&path);
-    let celestes = get_celestes();
-    if let Some(game) = celestes.iter().find(|game| {
-        game.path
-            .as_ref()
-            .map(|game_path| normalize_game_path_buf(game_path).to_string_lossy() == path)
-            .unwrap_or(false)
-    }) {
-        game_scanner::manager::launch_game(game).map_err(|error| error.to_string())
-    } else {
-        start_game_directly_impl(path, false).map_err(|error| format!("{error:#}"))
-    }
+        let path = normalize_game_path_impl(&path);
+        let celestes = get_celestes();
+        if let Some(game) = celestes.iter().find(|game| {
+            game.path
+                .as_ref()
+                .map(|game_path| normalize_game_path_buf(game_path).to_string_lossy() == path)
+                .unwrap_or(false)
+        }) {
+            game_scanner::manager::launch_game(game).map_err(|error| error.to_string())
+        } else {
+            start_game_directly_impl(path, false).map_err(|error| format!("{error:#}"))
+        }
     }
 }
 
 #[tauri::command]
-async fn start_game_directly(path: String, origin: bool, legacy_loader: bool) -> Result<(), String> {
+async fn start_game_directly(
+    path: String,
+    origin: bool,
+    legacy_loader: bool,
+) -> Result<(), String> {
     // run_mobile_plugin waits for Kotlin to resolve the invocation, including cloud
     // sync. Never block the IPC/event-loop thread: it also delivers progress and cancel.
     tauri::async_runtime::spawn_blocking(move || {
@@ -4519,7 +4609,8 @@ fn stop_game_for_restart(game_path: String) -> Result<usize, String> {
 #[tauri::command]
 async fn restart_game_with_loader(game_path: String, legacy_loader: bool) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        restart_game_with_loader_impl(game_path, legacy_loader).map_err(|error| format!("{error:#}"))
+        restart_game_with_loader_impl(game_path, legacy_loader)
+            .map_err(|error| format!("{error:#}"))
     })
     .await
     .map_err(|error| format!("Game restart worker failed: {error}"))?
@@ -4625,14 +4716,18 @@ fn configure_mod_cache(ttl_seconds: u64) {
 
 #[tauri::command]
 async fn get_mod_catalog(force_refresh: bool) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || everest::get_mod_catalog_json(force_refresh)).await
-        .map_err(|e| e.to_string())?.map_err(|error| format!("{error:#}"))
+    tauri::async_runtime::spawn_blocking(move || everest::get_mod_catalog_json(force_refresh))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
 async fn get_mod_cache_status() -> Result<everest::ModCacheStatus, String> {
-    tauri::async_runtime::spawn_blocking(everest::get_mod_catalog_status).await
-        .map_err(|e| e.to_string())?.map_err(|error| format!("{error:#}"))
+    tauri::async_runtime::spawn_blocking(everest::get_mod_catalog_status)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|error| format!("{error:#}"))
 }
 
 #[tauri::command]
@@ -5808,12 +5903,23 @@ mod miaonet_oauth_tests {
             };
             let address = listener.local_addr().unwrap();
             listener.set_nonblocking(true).unwrap();
-            let worker = std::thread::spawn(move || run_miaonet_oauth_listener(
-                vec![listener], "test-state", Path::new("/test/game"), [0, 0, 0],
-                &Channel::new(|_| Ok(())), Duration::from_secs(3)));
-            for (state, expected) in [("wrong", "授权请求已失效"), ("test-state", "未完成授权")] {
-                let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(1)).unwrap();
-                stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+            let worker = std::thread::spawn(move || {
+                run_miaonet_oauth_listener(
+                    vec![listener],
+                    "test-state",
+                    Path::new("/test/game"),
+                    [0, 0, 0],
+                    &Channel::new(|_| Ok(())),
+                    Duration::from_secs(3),
+                )
+            });
+            for (state, expected) in [("wrong", "授权请求已失效"), ("test-state", "未完成授权")]
+            {
+                let mut stream =
+                    TcpStream::connect_timeout(&address, Duration::from_secs(1)).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
                 write!(stream, "GET /auth?state={state}&error=access_denied HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n").unwrap();
                 let mut response = String::new();
                 stream.read_to_string(&mut response).unwrap();
@@ -5821,7 +5927,13 @@ mod miaonet_oauth_tests {
                 assert!(response.contains(expected));
                 assert!(response.contains("Referrer-Policy: no-referrer"));
             }
-            assert!(worker.join().unwrap().unwrap_err().contains("access_denied"));
+            assert!(
+                worker
+                    .join()
+                    .unwrap()
+                    .unwrap_err()
+                    .contains("access_denied")
+            );
         }
     }
 }
@@ -5832,27 +5944,54 @@ mod miaonet_settings_tests {
 
     #[test]
     fn android_settings_are_per_game_not_app_wide_linux_settings() {
-        for game in ["/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/Steam-123", "/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/imported"] {
+        for game in [
+            "/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/Steam-123",
+            "/storage/emulated/0/Android/data/cc.microblock.celemod/files/games/imported",
+        ] {
             let game = Path::new(game);
-            assert_eq!(miaonet_settings_directories_for_platform(game, true), vec![game.join("Saves")]);
+            assert_eq!(
+                miaonet_settings_directories_for_platform(game, true),
+                vec![game.join("Saves")]
+            );
         }
     }
 
     #[test]
     fn first_login_creates_saves_and_preserves_settings_on_reauthorization() {
-        let root = std::env::temp_dir().join(format!("celemod-miaonet-login-{}-{}",
-            std::process::id(), SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos()));
+        let root = std::env::temp_dir().join(format!(
+            "celemod-miaonet-login-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let path = root.join("game/Saves/modsettings-MiaoNet.celeste");
         assert!(!path.parent().unwrap().exists());
-        save_miaonet_login_at_path(&path, b"test-authentication-data", Some("Test player")).unwrap();
+        save_miaonet_login_at_path(&path, b"test-authentication-data", Some("Test player"))
+            .unwrap();
         let mut document = read_miaonet_settings_document(&path).unwrap();
-        assert!(yaml_string_property(&document, "TokenDataEncrypted").is_some_and(|token| !token.is_empty()));
-        assert_eq!(yaml_string_property(&document, "LastName").as_deref(), Some("Test player"));
+        assert!(
+            yaml_string_property(&document, "TokenDataEncrypted")
+                .is_some_and(|token| !token.is_empty())
+        );
+        assert_eq!(
+            yaml_string_property(&document, "LastName").as_deref(),
+            Some("Test player")
+        );
         apply_miaonet_settings_update(&mut document, &sample_update()).unwrap();
         fs::write(&path, serde_yaml::to_string(&document).unwrap()).unwrap();
-        save_miaonet_login_at_path(&path, b"replacement-authentication-data", Some("Other player")).unwrap();
+        save_miaonet_login_at_path(
+            &path,
+            b"replacement-authentication-data",
+            Some("Other player"),
+        )
+        .unwrap();
         let document = read_miaonet_settings_document(&path).unwrap();
-        assert_eq!(yaml_string_property(&document, "LastName").as_deref(), Some("Other player"));
+        assert_eq!(
+            yaml_string_property(&document, "LastName").as_deref(),
+            Some("Other player")
+        );
         let settings = miaonet_settings_from_document(&document).unwrap();
         assert!(!settings.show_avatar);
         assert_eq!(settings.player_opacity, 7);
@@ -6123,9 +6262,15 @@ pub fn run() {
     }
     let mut builder = tauri::Builder::default();
     #[cfg(target_os = "android")]
-    { builder = builder.plugin(crate::android::init()); }
+    {
+        builder = builder.plugin(crate::android::init());
+    }
     #[cfg(desktop)]
-    { builder = builder.plugin(tauri_plugin_system_symbols::init()).plugin(tauri_plugin_window_controls::init()); }
+    {
+        builder = builder
+            .plugin(tauri_plugin_system_symbols::init())
+            .plugin(tauri_plugin_window_controls::init());
+    }
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {

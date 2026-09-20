@@ -953,9 +953,7 @@ const ManageTreeNode = ({
             {node.meta?.category && (
               <Badge tone="neutral">{node.meta.category}</Badge>
             )}
-            {node.isDirectory && (
-              <Badge tone="info">{_i18n.t("文件夹")}</Badge>
-            )}
+            {node.isDirectory && <Badge tone="info">{_i18n.t("文件夹")}</Badge>}
             {optional && <Badge tone="warning">{_i18n.t("可选依赖")}</Badge>}
             {health.status === "missing" && (
               <Badge tone="danger" title={health.messages.join("\n")}>
@@ -987,7 +985,8 @@ const ManageTreeNode = ({
               <button
                 type="button"
                 className={`duplicate-badge ${
-                  node.duplicateFiles.filter((item) => item.enabled).length === 1
+                  node.duplicateFiles.filter((item) => item.enabled).length ===
+                  1
                     ? "resolved"
                     : ""
                 }`}
@@ -1018,7 +1017,7 @@ const ManageTreeNode = ({
             )}
             {actions.showDetailed && (
               <span className="tree-file-detail">
-                {formatSize(node.size)} · {_i18n.t("上次修改")} {" "}
+                {formatSize(node.size)} · {_i18n.t("上次修改")}{" "}
                 {formatModifiedAt(node.modifiedAt)} · {node.file}
               </span>
             )}
@@ -1147,9 +1146,7 @@ export const Manage = () => {
   const setHealthFilter = useManageStore((state) => state.setHealthFilter);
   const toggleType = useManageStore((state) => state.toggleType);
   const setUpdateOnly = useManageStore((state) => state.setUpdateOnly);
-  const setDuplicateOnly = useManageStore(
-    (state) => state.setDuplicateOnly,
-  );
+  const setDuplicateOnly = useManageStore((state) => state.setDuplicateOnly);
   const setShowHiddenTypes = useManageStore(
     (state) => state.setShowHiddenTypes,
   );
@@ -1464,7 +1461,9 @@ export const Manage = () => {
         );
       }
       const switchedNames = new Set(effectiveNames);
-      const switchedFiles = new Set(files.map((file) => file.toLocaleLowerCase()));
+      const switchedFiles = new Set(
+        files.map((file) => file.toLocaleLowerCase()),
+      );
       const nextProfile = {
         ...currentProfile,
         enabled_mods: enabled
@@ -1604,12 +1603,18 @@ export const Manage = () => {
               callRemote("get_mod_update", name, (data: string) => {
                 if (!data) return resolve(null);
                 const [fileId, , url] = JSON.parse(data);
-                resolve({ name, source: fileId === "-1" ? String(url || "") : String(fileId) });
+                resolve({
+                  name,
+                  source: fileId === "-1" ? String(url || "") : String(fileId),
+                });
               }).catch(() => resolve(null));
             }),
         ),
       );
-      const valid = items.filter((item): item is { name: string; source: string } => Boolean(item?.source));
+      const valid = items.filter(
+        (item): item is { name: string; source: string } =>
+          Boolean(item?.source),
+      );
       if (valid.length !== names.length) return false;
       try {
         await downloadMods(valid, { autoDisableNewMods: false });
@@ -1781,7 +1786,9 @@ export const Manage = () => {
                         <input
                           type="checkbox"
                           checked={selected.includes(orphan)}
-                          disabled={excludeEnabled && Boolean(orphanNode?.enabled)}
+                          disabled={
+                            excludeEnabled && Boolean(orphanNode?.enabled)
+                          }
                           onChange={(event) =>
                             setSelected(
                               event.target.checked
@@ -1928,9 +1935,7 @@ export const Manage = () => {
                   {_i18n.t("重复 Mod ·")} {name}
                 </div>
                 <p>
-                  {_i18n.t(
-                    "同名 Mod 只能启用一个文件，其余文件已自动禁用。",
-                  )}
+                  {_i18n.t("同名 Mod 只能启用一个文件，其余文件已自动禁用。")}
                 </p>
               </div>
               <b className="duplicate-count">{files.length}</b>
@@ -2052,14 +2057,7 @@ export const Manage = () => {
         );
       });
     },
-    [
-      currentProfileName,
-      gamePath,
-      modPath,
-      nodes,
-      profileEnabled,
-      reloadMods,
-    ],
+    [currentProfileName, gamePath, modPath, nodes, profileEnabled, reloadMods],
   );
 
   const startFullCheck = () => {
@@ -2239,12 +2237,30 @@ export const Manage = () => {
   if (noEverest) return noEverest;
 
   return (
-    <div className={`manage-page${profileEnabled ? "" : " profiles-disabled"}${mobileProfilesOpen ? " mobile-profiles-open" : ""}`}>
+    <div
+      className={`manage-page${profileEnabled ? "" : " profiles-disabled"}${mobileProfilesOpen ? " mobile-profiles-open" : ""}`}
+    >
       <ManageActionsContext.Provider value={actions}>
-        {profileEnabled && <div className="mobile-manage-tabs centered-tab-buttons">
-          <button type="button" aria-pressed={!mobileProfilesOpen} className={!mobileProfilesOpen ? "selected" : ""} onClick={() => setMobileProfilesOpen(false)}>{_i18n.t("Mod 管理")}</button>
-          <button type="button" aria-pressed={mobileProfilesOpen} className={mobileProfilesOpen ? "selected" : ""} onClick={() => setMobileProfilesOpen(true)}>{_i18n.t("Profile 选择")} ({profiles.length})</button>
-        </div>}
+        {profileEnabled && (
+          <div className="mobile-manage-tabs centered-tab-buttons">
+            <button
+              type="button"
+              aria-pressed={!mobileProfilesOpen}
+              className={!mobileProfilesOpen ? "selected" : ""}
+              onClick={() => setMobileProfilesOpen(false)}
+            >
+              {_i18n.t("Mod 管理")}
+            </button>
+            <button
+              type="button"
+              aria-pressed={mobileProfilesOpen}
+              className={mobileProfilesOpen ? "selected" : ""}
+              onClick={() => setMobileProfilesOpen(true)}
+            >
+              {_i18n.t("Profile 选择")} ({profiles.length})
+            </button>
+          </div>
+        )}
         <section className="manage-main">
           <header className="manage-toolbar">
             <div className="manage-title-block">
@@ -2451,7 +2467,9 @@ export const Manage = () => {
                   disabled={fixingDependencies}
                   onClick={() => {
                     setFixingDependencies(true);
-                    void downloadMissingBatch(missingDependencies.map((dependency) => dependency.name))
+                    void downloadMissingBatch(
+                      missingDependencies.map((dependency) => dependency.name),
+                    )
                       .then(() => reloadMods())
                       .finally(() => setFixingDependencies(false));
                   }}

@@ -16,16 +16,58 @@
   color: var(--fg, #fff);
   text-align: left;
   cursor: pointer;
-  transition: border-color .18s ease, box-shadow .18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
-.theme-option:hover { box-shadow: var(--elevation, 0 8px 24px #0004); }
-.theme-option.selected { border-color: var(--primary, #a77fdb); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #a77fdb) 38%, transparent); }
-.theme-option img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-.theme-option-copy { display: flex; flex-direction: column; padding: 10px 12px 12px; }
-.theme-option-copy strong { font-size: 13px; }
-.theme-option-check { position: absolute; top: 8px; right: 8px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--primary, #a77fdb); color: #111; font-size: 13px; font-weight: 700; }
-.theme-option-check .icon { width: 12px; height: 12px; }
+.theme-option:hover {
+  box-shadow: var(--elevation, 0 8px 24px #0004);
+}
+.theme-option.selected {
+  border-color: var(--primary, #a77fdb);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--primary, #a77fdb) 38%, transparent);
+}
+.theme-option img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.theme-option-copy {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+}
+.theme-option-copy strong {
+  font-size: 13px;
+}
+.theme-option-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary, #a77fdb);
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+}
+.theme-option-check .icon {
+  width: 12px;
+  height: 12px;
+}
 
-.theme-picker.compact { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-.theme-picker.compact .theme-option-copy { padding: 8px 10px 10px; }
-.theme-picker.compact .theme-option-copy strong { font-size: 12px; }
+.theme-picker.compact {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+.theme-picker.compact .theme-option-copy {
+  padding: 8px 10px 10px;
+}
+.theme-picker.compact .theme-option-copy strong {
+  font-size: 12px;
+}

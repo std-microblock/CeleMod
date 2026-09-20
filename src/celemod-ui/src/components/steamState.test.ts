@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canUseSavedSteamPassword, steamActivity, steamIssue, steamProgress, steamScreen, type SteamStatus } from "./steamState";
+import {
+  canUseSavedSteamPassword,
+  steamActivity,
+  steamIssue,
+  steamProgress,
+  steamScreen,
+  type SteamStatus,
+} from "./steamState";
 
-const idle: SteamStatus = { account: "", steamId: "", busy: false, cloud: true, offline: false, pending: false };
+const idle: SteamStatus = {
+  account: "",
+  steamId: "",
+  busy: false,
+  cloud: true,
+  offline: false,
+  pending: false,
+};
 test("logged-out entry opens login, not settings or a fake connected state", () => {
   assert.equal(steamScreen(undefined, "main"), "loading");
   assert.equal(steamScreen(idle, "main"), "login");
@@ -11,11 +25,23 @@ test("logged-out entry opens login, not settings or a fake connected state", () 
 });
 test("Steam Guard and transfers replace forms, even for recovered jobs", () => {
   for (const panel of ["main", "login", "settings"] as const) {
-    assert.equal(steamScreen({ ...idle, busy: true, stage: "guard-confirm" }, panel), "approval");
+    assert.equal(
+      steamScreen({ ...idle, busy: true, stage: "guard-confirm" }, panel),
+      "approval",
+    );
     for (const stage of ["guard-device", "guard-email"])
       assert.equal(steamScreen({ ...idle, busy: true, stage }, panel), "code");
-    for (const stage of ["connecting", "authenticating", "manifest", "downloading", "syncing"])
-      assert.equal(steamScreen({ ...idle, busy: true, stage }, panel), "progress");
+    for (const stage of [
+      "connecting",
+      "authenticating",
+      "manifest",
+      "downloading",
+      "syncing",
+    ])
+      assert.equal(
+        steamScreen({ ...idle, busy: true, stage }, panel),
+        "progress",
+      );
   }
 });
 test("conflict is persistent but allows explicit confirmation and account settings", () => {
@@ -28,9 +54,18 @@ test("conflict is persistent but allows explicit confirmation and account settin
 test("cancelled/interrupted jobs do not leave a disabled busy form", () => {
   for (const stage of ["cancelled", "interrupted", "error"])
     assert.equal(steamScreen({ ...idle, stage }, "main"), "login");
-  assert.equal(steamScreen({ ...idle, account: "test", stage: "cancelled" }, "main"), "overview");
+  assert.equal(
+    steamScreen({ ...idle, account: "test", stage: "cancelled" }, "main"),
+    "overview",
+  );
   for (const stage of ["error", "cancelled", "interrupted", "complete"])
-    assert.equal(steamScreen({ ...idle, account: "test", operation: "login", stage }, "main"), "overview");
+    assert.equal(
+      steamScreen(
+        { ...idle, account: "test", operation: "login", stage },
+        "main",
+      ),
+      "overview",
+    );
 });
 test("saved passwords are available only for the matching account", () => {
   const saved = { ...idle, account: "MyAccount", hasSavedPassword: true };
@@ -38,7 +73,13 @@ test("saved passwords are available only for the matching account", () => {
   assert.equal(canUseSavedSteamPassword(saved, "another_account"), false);
   assert.equal(canUseSavedSteamPassword(saved, ""), false);
   assert.equal(canUseSavedSteamPassword(undefined, "MyAccount"), false);
-  assert.equal(canUseSavedSteamPassword({ ...saved, hasSavedPassword: false }, "MyAccount"), false);
+  assert.equal(
+    canUseSavedSteamPassword(
+      { ...saved, hasSavedPassword: false },
+      "MyAccount",
+    ),
+    false,
+  );
   assert.equal(canUseSavedSteamPassword({ ...saved, account: "" }, ""), false);
 });
 test("progress is indeterminate without a total, and bounded when measured", () => {

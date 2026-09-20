@@ -33,7 +33,10 @@ pub(crate) fn read(path: &Path) -> io::Result<LogSnapshot> {
     };
     let metadata = file.metadata()?;
     if !metadata.is_file() {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Not a log file"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Not a log file",
+        ));
     }
     let size = metadata.len();
     let start = size.saturating_sub(MAX_LOG_BYTES);
@@ -44,7 +47,11 @@ pub(crate) fn read(path: &Path) -> io::Result<LogSnapshot> {
     // The tail may start inside a UTF-8 character. Skip only continuation bytes;
     // retain invalid bytes elsewhere as replacement characters for diagnostics.
     let skip = if start > 0 {
-        bytes.iter().take(3).take_while(|b| (**b & 0xc0) == 0x80).count()
+        bytes
+            .iter()
+            .take(3)
+            .take_while(|b| (**b & 0xc0) == 0x80)
+            .count()
     } else {
         0
     };
@@ -53,7 +60,9 @@ pub(crate) fn read(path: &Path) -> io::Result<LogSnapshot> {
         exists: true,
         truncated: start > 0,
         size,
-        modified_at: metadata.modified().ok()
+        modified_at: metadata
+            .modified()
+            .ok()
             .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|duration| duration.as_millis() as u64),
     })
@@ -68,14 +77,22 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             static NEXT: AtomicUsize = AtomicUsize::new(0);
-            let path = std::env::temp_dir().join(format!("celemod-log-test-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+            let path = std::env::temp_dir().join(format!(
+                "celemod-log-test-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
             std::fs::create_dir(&path).unwrap();
             Self(path)
         }
-        fn log(&self) -> std::path::PathBuf { self.0.join("game.log") }
+        fn log(&self) -> std::path::PathBuf {
+            self.0.join("game.log")
+        }
     }
     impl Drop for Fixture {
-        fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); }
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
     }
 
     #[test]
@@ -93,7 +110,10 @@ mod tests {
     fn preserves_text_and_reads_new_content_on_refresh() {
         let fixture = Fixture::new();
         std::fs::write(fixture.log(), "游戏启动\r\n<error> & details\n").unwrap();
-        assert_eq!(read(&fixture.log()).unwrap().content, "游戏启动\r\n<error> & details\n");
+        assert_eq!(
+            read(&fixture.log()).unwrap().content,
+            "游戏启动\r\n<error> & details\n"
+        );
         std::fs::write(fixture.log(), "new session").unwrap();
         assert_eq!(read(&fixture.log()).unwrap().content, "new session");
     }

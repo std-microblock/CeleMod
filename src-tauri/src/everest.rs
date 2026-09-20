@@ -370,75 +370,75 @@ fn run_command(
     return crate::android::install_everest(&installer_path, step_label, progress_callback);
     #[cfg(not(target_os = "android"))]
     {
-    let mut cmd = Command::new(&installer_path);
-    cmd.stdout(Stdio::piped());
-    cmd.stderr(Stdio::piped());
-    #[cfg(target_os = "windows")]
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
-    #[cfg(target_os = "windows")]
-    use std::os::windows::process::CommandExt;
-    #[cfg(target_os = "windows")]
-    let cmd = cmd.creation_flags(CREATE_NO_WINDOW);
+        let mut cmd = Command::new(&installer_path);
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+        #[cfg(target_os = "windows")]
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        #[cfg(target_os = "windows")]
+        use std::os::windows::process::CommandExt;
+        #[cfg(target_os = "windows")]
+        let cmd = cmd.creation_flags(CREATE_NO_WINDOW);
 
-    cmd.current_dir(
-        installer_path
-            .parent()
-            .ok_or_else(|| anyhow::anyhow!("Invalid installer path"))?,
-    );
+        cmd.current_dir(
+            installer_path
+                .parent()
+                .ok_or_else(|| anyhow::anyhow!("Invalid installer path"))?,
+        );
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let metadata = std::fs::metadata(&installer_path)?;
-        let mut permissions = metadata.permissions();
-        permissions.set_mode(permissions.mode() | 0o755);
-        std::fs::set_permissions(&installer_path, permissions)?;
-    }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let metadata = std::fs::metadata(&installer_path)?;
+            let mut permissions = metadata.permissions();
+            permissions.set_mode(permissions.mode() | 0o755);
+            std::fs::set_permissions(&installer_path, permissions)?;
+        }
 
-    let mut child = cmd.spawn()?;
-    let stdout = child
-        .stdout
-        .take()
-        .context("Failed to capture installer stdout")?;
-    let stderr = child
-        .stderr
-        .take()
-        .context("Failed to capture installer stderr")?;
-    let reader = BufReader::new(stdout);
-    let stderr_handle = std::thread::spawn(move || {
-        let mut lines = Vec::new();
-        for line in BufReader::new(stderr).lines() {
-            match line {
-                Ok(line) => lines.push(line),
-                Err(err) => {
-                    lines.push(format!("Failed to read installer stderr: {err}"));
-                    break;
+        let mut child = cmd.spawn()?;
+        let stdout = child
+            .stdout
+            .take()
+            .context("Failed to capture installer stdout")?;
+        let stderr = child
+            .stderr
+            .take()
+            .context("Failed to capture installer stderr")?;
+        let reader = BufReader::new(stdout);
+        let stderr_handle = std::thread::spawn(move || {
+            let mut lines = Vec::new();
+            for line in BufReader::new(stderr).lines() {
+                match line {
+                    Ok(line) => lines.push(line),
+                    Err(err) => {
+                        lines.push(format!("Failed to read installer stderr: {err}"));
+                        break;
+                    }
                 }
             }
+            lines
+        });
+
+        let mut line_count = 0f32;
+        for line in reader.lines() {
+            let line = line?;
+            line_count = (line_count + 1.0).min(99.0);
+            progress_callback(format!("{step_label}: {line}"), line_count);
         }
-        lines
-    });
 
-    let mut line_count = 0f32;
-    for line in reader.lines() {
-        let line = line?;
-        line_count = (line_count + 1.0).min(99.0);
-        progress_callback(format!("{step_label}: {line}"), line_count);
-    }
+        let status = child.wait()?;
+        let stderr = stderr_handle
+            .join()
+            .unwrap_or_else(|_| vec!["Failed to join installer stderr reader".to_string()])
+            .join("\n");
 
-    let status = child.wait()?;
-    let stderr = stderr_handle
-        .join()
-        .unwrap_or_else(|_| vec!["Failed to join installer stderr reader".to_string()])
-        .join("\n");
+        if !status.success() {
+            bail!("Command failed with error: {}", stderr);
+        }
 
-    if !status.success() {
-        bail!("Command failed with error: {}", stderr);
-    }
+        progress_callback(step_label.to_string(), 100.0);
 
-    progress_callback(step_label.to_string(), 100.0);
-
-    Ok(())
+        Ok(())
     }
 }
 
@@ -507,7 +507,9 @@ fn install_everest_archive_with_steps(
 
     for i in 0..archive_len {
         let mut file = archive.by_index(i)?;
-        let safe_name = file.enclosed_name().context("Unsafe Everest archive path")?;
+        let safe_name = file
+            .enclosed_name()
+            .context("Unsafe Everest archive path")?;
         let dist_name = safe_name.strip_prefix("main/")?.to_path_buf();
         let outpath = game_path.join(&dist_name);
         let status_str = format!("{extract_step}: {}", outpath.display());
@@ -603,9 +605,8 @@ mod tests {
 
     #[test]
     fn offline_catalog_reuses_stale_memory_even_for_forced_refresh() {
-        let state = super::catalog_state_from_raw(
-            r#"{"data":[]}"#.into(), "network", UNIX_EPOCH,
-        ).unwrap();
+        let state =
+            super::catalog_state_from_raw(r#"{"data":[]}"#.into(), "network", UNIX_EPOCH).unwrap();
         let previous = super::MOD_CATALOG_STATE.lock().unwrap().replace(state);
         super::set_catalog_offline(true);
         let result = super::load_catalog(true);

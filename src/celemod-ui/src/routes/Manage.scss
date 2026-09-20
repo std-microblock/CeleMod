@@ -68,8 +68,8 @@
     color: theme.$fg3;
     pointer-events: none;
   }
-    input {
-      width: 100%;
+  input {
+    width: 100%;
     height: 30px;
     padding: 0 34px 0 32px;
     border: 1px solid color.change(theme.$fg, $alpha: 0.08);
@@ -79,16 +79,16 @@
     color: theme.$fg;
     outline: none;
     font-size: calc(11px * var(--manage-font-scale, 1));
-      &:focus {
-        border-color: color.change(theme.$primary, $alpha: 0.6);
-      }
-
-      // The toolbar has its own clear button; hide the browser-provided one
-      // so search controls are not duplicated in WebKit-based builds.
-      &::-webkit-search-cancel-button {
-        display: none;
-      }
+    &:focus {
+      border-color: color.change(theme.$primary, $alpha: 0.6);
     }
+
+    // The toolbar has its own clear button; hide the browser-provided one
+    // so search controls are not duplicated in WebKit-based builds.
+    &::-webkit-search-cancel-button {
+      display: none;
+    }
+  }
   button {
     position: absolute;
     right: 5px;

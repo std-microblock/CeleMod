@@ -37,7 +37,11 @@ type LocalState = {
   installed: boolean;
   authenticated: boolean;
   lastName?: string | null;
-  authorization?: { state: AuthorizationState | "complete"; detail?: string | null; revision: number } | null;
+  authorization?: {
+    state: AuthorizationState | "complete";
+    detail?: string | null;
+    revision: number;
+  } | null;
 };
 
 type MiaoNetSettings = {
@@ -176,10 +180,22 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
       setLocalState(state);
       setLocalStateError("");
       const snapshot = state.authorization;
-      if (!authorizationPending.current && snapshot && snapshot.revision > authorizationRevision.current) {
+      if (
+        !authorizationPending.current &&
+        snapshot &&
+        snapshot.revision > authorizationRevision.current
+      ) {
         authorizationRevision.current = snapshot.revision;
-        setAuthorizationState(state.authenticated || snapshot.state === "complete" ? "idle" : snapshot.state);
-        setAuthorizationError(snapshot.state === "failed" ? snapshot.detail || _i18n.t("授权未完成，请重试。") : "");
+        setAuthorizationState(
+          state.authenticated || snapshot.state === "complete"
+            ? "idle"
+            : snapshot.state,
+        );
+        setAuthorizationError(
+          snapshot.state === "failed"
+            ? snapshot.detail || _i18n.t("授权未完成，请重试。")
+            : "",
+        );
       }
     } catch (error) {
       if (request !== localStateRequest.current) return;
@@ -605,7 +621,9 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
           <>
             <FaCircleExclamation />
             <span className="multiplayer-auth-error">{localStateError}</span>
-            <button type="button" onClick={refreshLocalState}>{_i18n.t("重试")}</button>
+            <button type="button" onClick={refreshLocalState}>
+              {_i18n.t("重试")}
+            </button>
           </>
         ) : (
           <>
@@ -804,7 +822,9 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
                 disabled={!settingsDirty || settingsSaving}
                 onClick={() => {
                   if (!savedMiaoNetSettings) return;
-                  setMiaoNetSettings(cloneMiaoNetSettings(savedMiaoNetSettings));
+                  setMiaoNetSettings(
+                    cloneMiaoNetSettings(savedMiaoNetSettings),
+                  );
                   setSettingsError("");
                   setSettingsNotice("");
                 }}
@@ -1081,7 +1101,6 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
               </button>
             </div>
           </section>
-
         </div>
       </MultiplayerFrame>
     );

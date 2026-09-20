@@ -1,22 +1,22 @@
 html[data-theme="fluent"] {
   --fluent-bg: #202020;
-  --fluent-mica-base: rgba(32, 32, 32, .84);
-  --fluent-mica-alt: rgba(39, 39, 39, .88);
-  --fluent-acrylic-base: rgba(44, 44, 44, .76);
-  --fluent-acrylic-strong: rgba(48, 48, 48, .9);
-  --fluent-smoke: rgba(0, 0, 0, .42);
-  --fluent-fill-subtle: rgba(255, 255, 255, .035);
-  --fluent-fill-control: rgba(255, 255, 255, .06);
-  --fluent-fill-control-hover: rgba(255, 255, 255, .09);
-  --fluent-fill-control-pressed: rgba(255, 255, 255, .04);
-  --fluent-fill-control-selected: rgba(255, 255, 255, .12);
-  --fluent-fill-secondary: rgba(255, 255, 255, .08);
-  --fluent-fill-tertiary: rgba(255, 255, 255, .12);
-  --fluent-fill-disabled: rgba(255, 255, 255, .03);
-  --fluent-stroke-subtle: rgba(255, 255, 255, .075);
-  --fluent-stroke-control: rgba(255, 255, 255, .12);
-  --fluent-stroke-strong: rgba(255, 255, 255, .2);
-  --fluent-stroke-divider: rgba(255, 255, 255, .085);
+  --fluent-mica-base: rgba(32, 32, 32, 0.84);
+  --fluent-mica-alt: rgba(39, 39, 39, 0.88);
+  --fluent-acrylic-base: rgba(44, 44, 44, 0.76);
+  --fluent-acrylic-strong: rgba(48, 48, 48, 0.9);
+  --fluent-smoke: rgba(0, 0, 0, 0.42);
+  --fluent-fill-subtle: rgba(255, 255, 255, 0.035);
+  --fluent-fill-control: rgba(255, 255, 255, 0.06);
+  --fluent-fill-control-hover: rgba(255, 255, 255, 0.09);
+  --fluent-fill-control-pressed: rgba(255, 255, 255, 0.04);
+  --fluent-fill-control-selected: rgba(255, 255, 255, 0.12);
+  --fluent-fill-secondary: rgba(255, 255, 255, 0.08);
+  --fluent-fill-tertiary: rgba(255, 255, 255, 0.12);
+  --fluent-fill-disabled: rgba(255, 255, 255, 0.03);
+  --fluent-stroke-subtle: rgba(255, 255, 255, 0.075);
+  --fluent-stroke-control: rgba(255, 255, 255, 0.12);
+  --fluent-stroke-strong: rgba(255, 255, 255, 0.2);
+  --fluent-stroke-divider: rgba(255, 255, 255, 0.085);
   --fluent-text-primary: #f5f5f5;
   --fluent-text-secondary: #d6d6d6;
   --fluent-text-tertiary: #a6a6a6;
@@ -29,9 +29,12 @@ html[data-theme="fluent"] {
   --fluent-warning: #fce100;
   --fluent-danger: #ff99a4;
   --fluent-info: #75b6e7;
-  --fluent-shadow-card: 0 2px 8px rgba(0, 0, 0, .18), inset 0 1px rgba(255, 255, 255, .025);
-  --fluent-shadow-flyout: 0 8px 18px rgba(0, 0, 0, .34), 0 2px 4px rgba(0, 0, 0, .2);
-  --fluent-shadow-dialog: 0 24px 54px rgba(0, 0, 0, .5), 0 4px 12px rgba(0, 0, 0, .28);
+  --fluent-shadow-card:
+    0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px rgba(255, 255, 255, 0.025);
+  --fluent-shadow-flyout:
+    0 8px 18px rgba(0, 0, 0, 0.34), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --fluent-shadow-dialog:
+    0 24px 54px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.28);
   --fluent-radius-control: 4px;
   --fluent-radius-card: 8px;
   --fluent-radius-overlay: 8px;
@@ -47,9 +50,9 @@ html[data-theme="fluent"] {
   --fluent-duration-fast: 83ms;
   --fluent-duration-normal: 167ms;
   --fluent-duration-slow: 250ms;
-  --fluent-ease-standard: cubic-bezier(.33, 0, .67, 1);
-  --fluent-ease-decelerate: cubic-bezier(.1, .9, .2, 1);
-  --fluent-ease-accelerate: cubic-bezier(.9, .1, 1, .2);
+  --fluent-ease-standard: cubic-bezier(0.33, 0, 0.67, 1);
+  --fluent-ease-decelerate: cubic-bezier(0.1, 0.9, 0.2, 1);
+  --fluent-ease-accelerate: cubic-bezier(0.9, 0.1, 1, 0.2);
   --bg: var(--fluent-bg);
   --bg1: #292929;
   --bg2: #333;
@@ -80,7 +83,18 @@ html[data-theme="fluent"] {
   color-scheme: dark;
   color: var(--fluent-text-primary);
   font-family: var(--font);
-  background: radial-gradient(110% 92% at 6% 0%, rgba(73, 88, 122, .25), transparent 61%), radial-gradient(105% 110% at 100% 100%, rgba(22, 104, 132, .18), transparent 68%), var(--fluent-bg);
+  background:
+    radial-gradient(
+      110% 92% at 6% 0%,
+      rgba(73, 88, 122, 0.25),
+      transparent 61%
+    ),
+    radial-gradient(
+      105% 110% at 100% 100%,
+      rgba(22, 104, 132, 0.18),
+      transparent 68%
+    ),
+    var(--fluent-bg);
 }
 
 html[data-theme="fluent"] body {
@@ -97,7 +111,7 @@ html[data-theme="fluent"] ::selection {
 }
 
 html[data-theme="fluent"] * {
-  scrollbar-color: rgba(255, 255, 255, .28) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
 }
 
 html[data-theme="fluent"] *::-webkit-scrollbar {
@@ -113,11 +127,11 @@ html[data-theme="fluent"] *::-webkit-scrollbar-thumb {
   min-height: 36px;
   border: 4px solid transparent;
   border-radius: 8px;
-  background: rgba(255, 255, 255, .26);
+  background: rgba(255, 255, 255, 0.26);
   background-clip: padding-box;
 }
 
 html[data-theme="fluent"] *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, .4);
+  background: rgba(255, 255, 255, 0.4);
   background-clip: padding-box;
 }

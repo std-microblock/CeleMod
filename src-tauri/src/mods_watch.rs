@@ -270,16 +270,15 @@ pub fn watch(
     let snapshot = mods_snapshot(&mods_dir);
     let (sender, receiver) = mpsc::channel::<()>();
     let stop = Arc::new(AtomicBool::new(false));
-    let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
-        match result {
+    let mut watcher =
+        notify::recommended_watcher(move |result: notify::Result<notify::Event>| match result {
             Ok(_) => {
                 let _ = sender.send(());
             }
             Err(error) => {
                 crate::logging::warn(format_args!("Mods folder watcher error: {error}"));
             }
-        }
-    })?;
+        })?;
     watcher.watch(&mods_dir, RecursiveMode::Recursive)?;
     let worker_stop = Arc::clone(&stop);
     let worker_game_path = game_path.clone();
@@ -339,7 +338,11 @@ mod tests {
         fs::write(mods.join("notes.txt"), b"not a mod").unwrap();
         fs::write(mods.join("blacklist.txt"), b"Archive.zip\n").unwrap();
         fs::create_dir_all(mods.join("FolderMod")).unwrap();
-        fs::write(mods.join("FolderMod").join("everest.yaml"), b"- Name: Folder").unwrap();
+        fs::write(
+            mods.join("FolderMod").join("everest.yaml"),
+            b"- Name: Folder",
+        )
+        .unwrap();
         fs::create_dir_all(mods.join("JustAFolder")).unwrap();
 
         let snapshot = mods_snapshot(&mods);

@@ -109,10 +109,9 @@ test("does not treat optional dependencies as orphan deletion candidates", () =>
     RequiredMod: node("RequiredMod", { dependedBy: ["Root"] }),
   };
 
-  assert.deepEqual(
-    collectOrphanDependencyNames({ name: "Root", nodes }),
-    ["RequiredMod"],
-  );
+  assert.deepEqual(collectOrphanDependencyNames({ name: "Root", nodes }), [
+    "RequiredMod",
+  ]);
 });
 
 test("collects transitive required orphan dependencies", () => {
@@ -123,26 +122,38 @@ test("collects transitive required orphan dependencies", () => {
       ],
     }),
     RequiredMod: node("RequiredMod", {
-      dependencies: [
-        { name: "NestedMod", version: "1.0.0", optional: false },
-      ],
+      dependencies: [{ name: "NestedMod", version: "1.0.0", optional: false }],
       dependedBy: ["Root"],
     }),
     NestedMod: node("NestedMod", { dependedBy: ["RequiredMod"] }),
   };
 
-  assert.deepEqual(
-    collectOrphanDependencyNames({ name: "Root", nodes }),
-    ["RequiredMod", "NestedMod"],
-  );
+  assert.deepEqual(collectOrphanDependencyNames({ name: "Root", nodes }), [
+    "RequiredMod",
+    "NestedMod",
+  ]);
 });
 
 test("shows only Mods with duplicate installed files", () => {
   const nodes = {
     Duplicate: node("Duplicate", {
       duplicateFiles: [
-        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
-        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: true },
+        {
+          file: "Duplicate.zip",
+          version: "1.0.0",
+          size: 1,
+          modifiedAt: 1,
+          isDirectory: false,
+          enabled: true,
+        },
+        {
+          file: "Duplicate-old.zip",
+          version: "0.9.0",
+          size: 1,
+          modifiedAt: 0,
+          isDirectory: false,
+          enabled: true,
+        },
       ],
     }),
     Single: node("Single"),
@@ -173,8 +184,22 @@ test("disables every enabled duplicate file but the kept one", () => {
   const nodes = {
     Duplicate: node("Duplicate", {
       duplicateFiles: [
-        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
-        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: true },
+        {
+          file: "Duplicate.zip",
+          version: "1.0.0",
+          size: 1,
+          modifiedAt: 1,
+          isDirectory: false,
+          enabled: true,
+        },
+        {
+          file: "Duplicate-old.zip",
+          version: "0.9.0",
+          size: 1,
+          modifiedAt: 0,
+          isDirectory: false,
+          enabled: true,
+        },
       ],
     }),
   };
@@ -193,8 +218,22 @@ test("enables one file again when every duplicate file is disabled", () => {
     Duplicate: node("Duplicate", {
       enabled: false,
       duplicateFiles: [
-        { file: "Duplicate.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: false },
-        { file: "Duplicate-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+        {
+          file: "Duplicate.zip",
+          version: "1.0.0",
+          size: 1,
+          modifiedAt: 1,
+          isDirectory: false,
+          enabled: false,
+        },
+        {
+          file: "Duplicate-old.zip",
+          version: "0.9.0",
+          size: 1,
+          modifiedAt: 0,
+          isDirectory: false,
+          enabled: false,
+        },
       ],
     }),
   };
@@ -212,16 +251,44 @@ test("leaves resolved and disabled duplicate Mods untouched", () => {
   const nodes = {
     Resolved: node("Resolved", {
       duplicateFiles: [
-        { file: "Resolved.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: true },
-        { file: "Resolved-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+        {
+          file: "Resolved.zip",
+          version: "1.0.0",
+          size: 1,
+          modifiedAt: 1,
+          isDirectory: false,
+          enabled: true,
+        },
+        {
+          file: "Resolved-old.zip",
+          version: "0.9.0",
+          size: 1,
+          modifiedAt: 0,
+          isDirectory: false,
+          enabled: false,
+        },
       ],
     }),
     DisabledByName: node("DisabledByName", {
       enabled: false,
       enabledByName: false,
       duplicateFiles: [
-        { file: "DisabledByName.zip", version: "1.0.0", size: 1, modifiedAt: 1, isDirectory: false, enabled: false },
-        { file: "DisabledByName-old.zip", version: "0.9.0", size: 1, modifiedAt: 0, isDirectory: false, enabled: false },
+        {
+          file: "DisabledByName.zip",
+          version: "1.0.0",
+          size: 1,
+          modifiedAt: 1,
+          isDirectory: false,
+          enabled: false,
+        },
+        {
+          file: "DisabledByName-old.zip",
+          version: "0.9.0",
+          size: 1,
+          modifiedAt: 0,
+          isDirectory: false,
+          enabled: false,
+        },
       ],
     }),
   };

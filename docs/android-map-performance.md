@@ -78,11 +78,11 @@ collection were performed. A short Enter-key pause comparison was restored to
 
 SurfaceFlinger presentation timestamps (126–127 frames per snapshot):
 
-| State | Mean interval | Observed FPS | p95 interval |
-| --- | ---: | ---: | ---: |
-| Playing, sample 1 | 26.00 ms | 38.47 | 33.42 ms |
-| Playing, sample 2 | 25.73 ms | 38.87 | 33.44 ms |
-| Paused | 16.64 ms | 60.09 | 25.06 ms |
+| State             | Mean interval | Observed FPS | p95 interval |
+| ----------------- | ------------: | -----------: | -----------: |
+| Playing, sample 1 |      26.00 ms |        38.47 |     33.42 ms |
+| Playing, sample 2 |      25.73 ms |        38.87 |     33.44 ms |
+| Paused            |      16.64 ms |        60.09 |     25.06 ms |
 
 The game main thread sampled at about 97% of one core during play and 85.5%
 while paused (with more frames rendered). This supports investigating per-update

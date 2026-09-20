@@ -95,6 +95,7 @@ scripts/build-android.ps1
 - 断网退出、联网重试、系统杀进程恢复、云配额不足、批次上传部分失败、跨账号隔离；先备份测试账号的云存档。
 
 协议实现参考（不依赖这些站点作为资源服务器）：
+
 - SteamKit2 3.4.0： https://github.com/SteamRE/SteamKit/tree/1c7bc9c41a529e8fbb1e6890f1e4dbcdc5200cb7
 - SteamKit `SteamMsgCloud.cs`、Authentication、CDN APIs。
 - DepotDownloader 的授权 CDN 调用方式： https://github.com/SteamRE/DepotDownloader

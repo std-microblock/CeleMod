@@ -7,8 +7,15 @@
   margin: 14px auto;
   text-align: center;
   font-size: 14px;
-  > span { font-variant-numeric: tabular-nums; opacity: .75; }
-  p { margin: 0; font-size: 12px; opacity: .7; }
+  > span {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+  p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.7;
+  }
   pre {
     margin: 0;
     padding: 10px;
@@ -17,7 +24,7 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     border-radius: 8px;
-    background: rgba(127, 127, 127, .12);
+    background: rgba(127, 127, 127, 0.12);
     font-size: 12px;
     text-align: left;
   }

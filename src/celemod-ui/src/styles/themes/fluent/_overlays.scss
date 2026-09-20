@@ -314,20 +314,20 @@ html[data-theme="fluent"] .snackbar.error {
 
 html[data-theme="fluent"] .blocking-mask {
   color: var(--fluent-text-primary);
-  background: rgba(18,18,18,.75);
+  background: rgba(18, 18, 18, 0.75);
   backdrop-filter: blur(8px);
 }
 
 html[data-theme="fluent"] .blocking-mask-spinner {
-  border-color: rgba(255,255,255,.18);
+  border-color: rgba(255, 255, 255, 0.18);
   border-top-color: var(--fluent-accent);
 }
 
 html[data-theme="fluent"] .drop-install-overlay,
 html[data-theme="fluent"] .drop-installer-overlay {
-  border: 2px dashed rgba(96,205,255,.55);
+  border: 2px dashed rgba(96, 205, 255, 0.55);
   border-radius: 8px;
-  background: rgba(32,32,32,.82);
+  background: rgba(32, 32, 32, 0.82);
   backdrop-filter: blur(24px);
 }
 

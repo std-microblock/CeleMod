@@ -36,7 +36,8 @@ const listen = <K extends keyof DocumentEventMap>(
   options?: AddEventListenerOptions,
 ): Cleanup => {
   target.addEventListener(type, handler as EventListener, options);
-  return () => target.removeEventListener(type, handler as EventListener, options);
+  return () =>
+    target.removeEventListener(type, handler as EventListener, options);
 };
 
 const listenWindow = <K extends keyof WindowEventMap>(
@@ -53,8 +54,14 @@ const setRevealCoordinates = (event: PointerEvent) => {
   );
   if (!target) return;
   const rect = target.getBoundingClientRect();
-  target.style.setProperty("--fluent-reveal-x", `${event.clientX - rect.left}px`);
-  target.style.setProperty("--fluent-reveal-y", `${event.clientY - rect.top}px`);
+  target.style.setProperty(
+    "--fluent-reveal-x",
+    `${event.clientX - rect.left}px`,
+  );
+  target.style.setProperty(
+    "--fluent-reveal-y",
+    `${event.clientY - rect.top}px`,
+  );
   target.style.setProperty("--fluent-reveal-opacity", "1");
 };
 
@@ -67,13 +74,14 @@ const clearReveal = (event: PointerEvent) => {
 
 const setOverlayOrigin = (element: HTMLElement) => {
   const rect = element.getBoundingClientRect();
-  const horizontal = rect.left + rect.width / 2 > window.innerWidth / 2
-    ? "right"
-    : "left";
-  const vertical = rect.top + rect.height / 2 > window.innerHeight / 2
-    ? "bottom"
-    : "top";
-  element.style.setProperty("--fluent-overlay-origin", `${vertical} ${horizontal}`);
+  const horizontal =
+    rect.left + rect.width / 2 > window.innerWidth / 2 ? "right" : "left";
+  const vertical =
+    rect.top + rect.height / 2 > window.innerHeight / 2 ? "bottom" : "top";
+  element.style.setProperty(
+    "--fluent-overlay-origin",
+    `${vertical} ${horizontal}`,
+  );
 };
 
 const decorateOverlay = (element: Element) => {
@@ -112,7 +120,9 @@ const updateMicaState = () => {
 };
 
 const updateNavigationPosition = () => {
-  const selected = document.querySelector<HTMLElement>(".sidebar .navBtn.selected");
+  const selected = document.querySelector<HTMLElement>(
+    ".sidebar .navBtn.selected",
+  );
   const sidebar = document.querySelector<HTMLElement>(".sidebar");
   if (!selected || !sidebar) return;
   const sidebarRect = sidebar.getBoundingClientRect();
@@ -191,17 +201,19 @@ export const mountFluentInteractions = (): Cleanup => {
   return () => {
     observer.disconnect();
     cleanup.forEach((dispose) => dispose());
-    document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR).forEach((element) => {
-      element.style.removeProperty("--fluent-reveal-x");
-      element.style.removeProperty("--fluent-reveal-y");
-      element.style.removeProperty("--fluent-reveal-opacity");
-    });
-    document.querySelectorAll<HTMLElement>("[data-fluent-layer]").forEach(
-      (element) => delete element.dataset.fluentLayer,
-    );
-    document.querySelectorAll<HTMLElement>("[data-fluent-command-bar]").forEach(
-      (element) => delete element.dataset.fluentCommandBar,
-    );
+    document
+      .querySelectorAll<HTMLElement>(REVEAL_SELECTOR)
+      .forEach((element) => {
+        element.style.removeProperty("--fluent-reveal-x");
+        element.style.removeProperty("--fluent-reveal-y");
+        element.style.removeProperty("--fluent-reveal-opacity");
+      });
+    document
+      .querySelectorAll<HTMLElement>("[data-fluent-layer]")
+      .forEach((element) => delete element.dataset.fluentLayer);
+    document
+      .querySelectorAll<HTMLElement>("[data-fluent-command-bar]")
+      .forEach((element) => delete element.dataset.fluentCommandBar);
     delete root.dataset.fluentMounted;
     delete root.dataset.fluentKeyboard;
     delete root.dataset.fluentMaterial;

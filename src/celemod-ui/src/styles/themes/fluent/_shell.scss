@@ -12,7 +12,13 @@ html[data-theme="fluent"] .app-frame::before {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background: linear-gradient(135deg, rgba(255,255,255,.035), transparent 42%), radial-gradient(70% 80% at 82% 8%, rgba(96,205,255,.08), transparent 70%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 42%),
+    radial-gradient(
+      70% 80% at 82% 8%,
+      rgba(96, 205, 255, 0.08),
+      transparent 70%
+    );
 }
 
 html[data-theme="fluent"] .app-frame::after {
@@ -21,7 +27,7 @@ html[data-theme="fluent"] .app-frame::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: .2;
+  opacity: 0.2;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
 }
@@ -40,7 +46,7 @@ html[data-theme="fluent"] .window-caption {
   color: var(--fluent-text-primary);
   font-size: 14px;
   font-weight: 500;
-  opacity: .92;
+  opacity: 0.92;
 }
 
 html[data-theme="fluent"] .caption-version {
@@ -65,9 +71,14 @@ html[data-theme="fluent"] .sidebar {
   box-sizing: border-box;
 }
 
-html[data-theme="fluent"] .sidebar-scroll { width: 212px; }
+html[data-theme="fluent"] .sidebar-scroll {
+  width: 212px;
+}
 
-html[data-theme="fluent"] .sidebar-items { width: 212px; gap: 2px; }
+html[data-theme="fluent"] .sidebar-items {
+  width: 212px;
+  gap: 2px;
+}
 
 html[data-theme="fluent"] .sidebar .navBtn,
 html[data-theme="fluent"] .downloadListBtn {
@@ -87,7 +98,9 @@ html[data-theme="fluent"] .downloadListBtn {
   background: transparent !important;
   box-shadow: none;
   overflow: hidden;
-  transition: background-color var(--fluent-duration-fast) var(--fluent-ease-standard), color var(--fluent-duration-fast) var(--fluent-ease-standard);
+  transition:
+    background-color var(--fluent-duration-fast) var(--fluent-ease-standard),
+    color var(--fluent-duration-fast) var(--fluent-ease-standard);
 }
 
 /* NavigationView items are flat rows, not elevated cards. */
@@ -106,14 +119,18 @@ html[data-theme="fluent"] .downloadListBtn::before {
   inset: 0;
   pointer-events: none;
   opacity: var(--fluent-reveal-opacity, 0);
-  background: radial-gradient(84px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%), rgba(255,255,255,.2), transparent 68%);
+  background: radial-gradient(
+    84px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%),
+    rgba(255, 255, 255, 0.2),
+    transparent 68%
+  );
   transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
 }
 
 html[data-theme="fluent"] .sidebar .navBtn:hover,
 html[data-theme="fluent"] .downloadListBtn:hover {
   color: var(--fluent-text-primary);
-  background: rgba(255,255,255,.055) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
 }
 
 html[data-theme="fluent"] .sidebar .navBtn:active,
@@ -124,7 +141,7 @@ html[data-theme="fluent"] .downloadListBtn:active {
 html[data-theme="fluent"] .sidebar .navBtn.selected {
   color: var(--fluent-text-primary);
   border-color: transparent !important;
-  background: rgba(255,255,255,.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   box-shadow: none !important;
 }
 
@@ -137,7 +154,7 @@ html[data-theme="fluent"] .sidebar .navBtn.selected::after {
   width: 3px;
   border-radius: 0 2px 2px 0;
   background: var(--fluent-accent);
-  box-shadow: 0 0 10px rgba(96,205,255,.42);
+  box-shadow: 0 0 10px rgba(96, 205, 255, 0.42);
 }
 
 html[data-theme="fluent"] .sidebar .navBtn .icon {
@@ -150,7 +167,7 @@ html[data-theme="fluent"] .sidebar .title {
   color: inherit;
   font-size: 13px;
   line-height: 1.2;
-  opacity: .9;
+  opacity: 0.9;
   text-align: left;
 }
 
@@ -173,7 +190,14 @@ html[data-theme="fluent"] .app-content {
 
 html[data-theme="fluent"] .celemod-version,
 html[data-theme="fluent"] #tbo-controls,
-html[data-theme="fluent"] #tbo-controls .tbo-btn { min-height: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+html[data-theme="fluent"] #tbo-controls .tbo-btn {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 
 html[data-theme="fluent"] .page {
   width: 100%;
@@ -190,7 +214,9 @@ html[data-theme="fluent"] .page-leaving {
 html[data-theme="fluent"][data-fluent-keyboard="true"] :focus-visible {
   outline: 2px solid var(--fluent-focus) !important;
   outline-offset: 2px;
-  box-shadow: 0 0 0 1px var(--fluent-bg), 0 0 0 4px rgba(96,205,255,.24) !important;
+  box-shadow:
+    0 0 0 1px var(--fluent-bg),
+    0 0 0 4px rgba(96, 205, 255, 0.24) !important;
 }
 
 html[data-theme="fluent"] .sidebar-footer {

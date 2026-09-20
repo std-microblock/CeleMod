@@ -1,5 +1,11 @@
 // Match the native Canvas symbols so the launcher previews the actual game button.
-export function TouchButtonIcon({ icon, label }: { icon?: string; label: string }) {
+export function TouchButtonIcon({
+  icon,
+  label,
+}: {
+  icon?: string;
+  label: string;
+}) {
   const paths: Record<string, string> = {
     CHAT: "M-10-8H10V5H0L-6 10V5H-10Z",
     BOLT: "M2-11L-8 2H-1L-3 11L9-3H2Z",
@@ -11,6 +17,18 @@ export function TouchButtonIcon({ icon, label }: { icon?: string; label: string 
     CONFIRM: "M-9 0L-3 6L10-7",
     BACK: "M-2-8L-10 0L-2 8M-10 0H10",
   };
-  return paths[icon ?? ""] ? <svg viewBox="-14 -14 28 28" aria-hidden="true" focusable="false"><path d={paths[icon!]} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-    : <span>{label || "文字"}</span>;
+  return paths[icon ?? ""] ? (
+    <svg viewBox="-14 -14 28 28" aria-hidden="true" focusable="false">
+      <path
+        d={paths[icon!]}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ) : (
+    <span>{label || "文字"}</span>
+  );
 }

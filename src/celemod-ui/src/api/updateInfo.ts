@@ -158,7 +158,10 @@ export const getLatestUpdateInfo = (forceRefresh = false) => {
 export const refreshLatestUpdateInfo = () => {
   if (forcedUpdateInfoRequest) return forcedUpdateInfoRequest;
   const now = Date.now();
-  if (cachedUpdateInfo && now - lastForcedUpdateAt < MANUAL_REFRESH_COOLDOWN_MS) {
+  if (
+    cachedUpdateInfo &&
+    now - lastForcedUpdateAt < MANUAL_REFRESH_COOLDOWN_MS
+  ) {
     console.info(
       `[update-info] Manual refresh throttled; using cached request ${cachedUpdateInfoRequestId}`,
     );
@@ -204,8 +207,7 @@ export const useUpdateInfo = () => {
         }
       },
       (reason) => {
-        if (active && requestId === cachedUpdateInfoRequestId)
-          setError(reason);
+        if (active && requestId === cachedUpdateInfoRequestId) setError(reason);
       },
     );
     return () => {
@@ -222,4 +224,3 @@ export const featureVisible = (
   currentLang: string,
 ) =>
   Boolean(feature?.enabled && (!feature.only_zh_cn || currentLang === "zh-CN"));
-

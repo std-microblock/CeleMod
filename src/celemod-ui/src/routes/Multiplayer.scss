@@ -843,9 +843,14 @@ html[data-platform="android"] {
     flex-wrap: wrap;
     z-index: auto;
     margin-top: 8px;
-    button { min-height: 44px; font-size: 13px; }
+    button {
+      min-height: 44px;
+      font-size: 13px;
+    }
   }
-  .multiplayer-emote-footer { flex-wrap: wrap; }
+  .multiplayer-emote-footer {
+    flex-wrap: wrap;
+  }
   .multiplayer-page > .multiplayer-settings-message {
     flex: 0 0 auto;
     font-size: 12px;

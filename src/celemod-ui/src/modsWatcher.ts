@@ -1,6 +1,10 @@
 import { listen } from "@tauri-apps/api/event";
 import { callRemote } from "./tauri/commands";
-import { reloadBlacklistState, reloadInstalledMods, useAppStore } from "./states";
+import {
+  reloadBlacklistState,
+  reloadInstalledMods,
+  useAppStore,
+} from "./states";
 
 export const MODS_CHANGED_EVENT = "celemod://mods-changed";
 
@@ -12,7 +16,10 @@ type ModsChangedPayload = {
 };
 
 const normalizePath = (path: string) =>
-  path.replace(/[\\/]+$/, "").replace(/\\/g, "/").toLowerCase();
+  path
+    .replace(/[\\/]+$/, "")
+    .replace(/\\/g, "/")
+    .toLowerCase();
 
 const describeChange = (payload: ModsChangedPayload) =>
   [
@@ -44,7 +51,9 @@ const reloadMods = (payload: ModsChangedPayload) => {
   reloadQueue = reloadQueue
     .then(async () => {
       if (!matchesWatchedPath(payload.gamePath)) return;
-      console.log(`Mods 文件夹发生变化（${summary || "内容变更"}），正在重新加载 Mod 列表`);
+      console.log(
+        `Mods 文件夹发生变化（${summary || "内容变更"}），正在重新加载 Mod 列表`,
+      );
       await reloadInstalledMods(useAppStore.getState().gamePath);
       await reloadBlacklistState(useAppStore.getState().gamePath);
     })

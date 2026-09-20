@@ -78,16 +78,16 @@ export default function App() {
   const activeDownloadCount = useDownloadStore(
     (state) =>
       Object.values(state.tasks).filter(
-        (task) => task.state === "pending" && !task.canceled
-      ).length
+        (task) => task.state === "pending" && !task.canceled,
+      ).length,
   );
   const fontScale = useAppStore((state) => state.fontScale);
   const manageFontScale = useAppStore((state) => state.manageFontScale);
   const keyBindingsFontScale = useAppStore(
-    (state) => state.keyBindingsFontScale
+    (state) => state.keyBindingsFontScale,
   );
   const enablePageTransitions = useAppStore(
-    (state) => state.enablePageTransitions
+    (state) => state.enablePageTransitions,
   );
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
@@ -114,7 +114,7 @@ export default function App() {
     setSidebarFade((current) =>
       current.top === top && current.bottom === bottom
         ? current
-        : { top, bottom }
+        : { top, bottom },
     );
   }, []);
 
@@ -147,11 +147,11 @@ export default function App() {
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--manage-font-scale",
-      String(manageFontScale / 100)
+      String(manageFontScale / 100),
     );
     document.documentElement.style.setProperty(
       "--keybindings-font-scale",
-      String(keyBindingsFontScale / 100)
+      String(keyBindingsFontScale / 100),
     );
   }, [keyBindingsFontScale, manageFontScale]);
 

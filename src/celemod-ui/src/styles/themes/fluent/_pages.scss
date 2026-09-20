@@ -14,7 +14,7 @@ html[data-theme="fluent"] .settings-header {
 html[data-theme="fluent"] .settings-header h1 {
   font-size: 28px;
   font-weight: 600;
-  letter-spacing: -.02em;
+  letter-spacing: -0.02em;
 }
 
 html[data-theme="fluent"] .settings-header p {
@@ -31,7 +31,7 @@ html[data-theme="fluent"] .settings-section-title {
   color: var(--fluent-text-tertiary);
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
 }
 
 html[data-theme="fluent"] .settings-card {
@@ -104,7 +104,9 @@ html[data-theme="fluent"] .theme-option {
   border: 1px solid var(--fluent-stroke-control) !important;
   border-radius: 6px !important;
   background: var(--fluent-fill-subtle) !important;
-  transition: border-color var(--fluent-duration-fast), background var(--fluent-duration-fast) !important;
+  transition:
+    border-color var(--fluent-duration-fast),
+    background var(--fluent-duration-fast) !important;
 }
 
 html[data-theme="fluent"] .theme-option:hover {
@@ -115,7 +117,7 @@ html[data-theme="fluent"] .theme-option:hover {
 
 html[data-theme="fluent"] .theme-option.selected {
   border-color: var(--fluent-accent) !important;
-  background: rgba(96,205,255,.09) !important;
+  background: rgba(96, 205, 255, 0.09) !important;
   box-shadow: inset 0 0 0 1px var(--fluent-accent) !important;
 }
 
@@ -125,19 +127,19 @@ html[data-theme="fluent"] .theme-option.selected::after {
   top: 8px;
   left: 8px;
   padding: 3px 7px;
-  border: 1px solid rgba(8,38,48,.24);
+  border: 1px solid rgba(8, 38, 48, 0.24);
   border-radius: 3px;
   color: var(--fluent-accent-fg);
   background: var(--fluent-accent);
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
   line-height: 1.2;
 }
 
 html[data-theme="fluent"] .theme-option img {
   aspect-ratio: 16 / 8;
-  opacity: .9;
+  opacity: 0.9;
 }
 
 html[data-theme="fluent"] .theme-option-copy {
@@ -183,7 +185,7 @@ html[data-theme="fluent"] .theme-preview-switcher {
   padding: 3px;
   border: 1px solid var(--fluent-stroke-subtle);
   border-radius: 6px;
-  background: rgba(0,0,0,.16);
+  background: rgba(0, 0, 0, 0.16);
 }
 
 html[data-theme="fluent"] .theme-preview-switcher button {
@@ -365,13 +367,13 @@ html[data-theme="fluent"] .home-brand {
 html[data-theme="fluent"] .home-brand img {
   width: 88px;
   height: 88px;
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,.3));
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.3));
 }
 
 html[data-theme="fluent"] .home-brand h1 {
   font-size: 38px;
   font-weight: 600;
-  letter-spacing: -.025em;
+  letter-spacing: -0.025em;
 }
 
 html[data-theme="fluent"] .home-brand p {
@@ -410,9 +412,9 @@ html[data-theme="fluent"] .home-section-heading h2 {
 }
 
 html[data-theme="fluent"] .home-keyboard-input-banner {
-  border: 1px solid rgba(252,225,0,.25);
+  border: 1px solid rgba(252, 225, 0, 0.25);
   border-radius: 6px;
-  background: rgba(252,225,0,.06);
+  background: rgba(252, 225, 0, 0.06);
 }
 
 html[data-theme="fluent"] .home-profiles-section .profile,
@@ -421,7 +423,9 @@ html[data-theme="fluent"] .home-active-mod-list > * {
   border-radius: 6px;
   background: var(--fluent-fill-subtle);
   box-shadow: none;
-  transition: background var(--fluent-duration-fast), border-color var(--fluent-duration-fast);
+  transition:
+    background var(--fluent-duration-fast),
+    border-color var(--fluent-duration-fast);
 }
 
 html[data-theme="fluent"] .home-profiles-section .profile:hover,
@@ -436,7 +440,11 @@ html[data-theme="fluent"] .keybindings-toolbar {
   min-height: 46px;
   padding: 6px 10px !important;
   border-bottom: 1px solid var(--fluent-stroke-divider) !important;
-  background: color-mix(in srgb, var(--fluent-mica-alt) 82%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--fluent-mica-alt) 82%,
+    transparent
+  ) !important;
   backdrop-filter: blur(20px) saturate(120%);
 }
 
@@ -468,7 +476,7 @@ html[data-theme="fluent"] .manage-search input,
 html[data-theme="fluent"] .keybindings-search input {
   height: 32px;
   border-radius: 4px !important;
-  background: rgba(0,0,0,.18) !important;
+  background: rgba(0, 0, 0, 0.18) !important;
 }
 
 html[data-theme="fluent"] .searchinput:focus,
@@ -493,7 +501,9 @@ html[data-theme="fluent"] .mod-card {
   border-radius: 6px !important;
   background: var(--fluent-fill-subtle) !important;
   box-shadow: none !important;
-  transition: border-color var(--fluent-duration-fast), background var(--fluent-duration-fast);
+  transition:
+    border-color var(--fluent-duration-fast),
+    background var(--fluent-duration-fast);
 }
 
 html[data-theme="fluent"] .search-result-card:hover,
@@ -551,8 +561,8 @@ html[data-theme="fluent"] .mod .mod-info-backdrop {
 }
 
 html[data-theme="fluent"] .mod .mod-info-backdrop img {
-  opacity: .28;
-  filter: blur(42px) brightness(.34) saturate(.72);
+  opacity: 0.28;
+  filter: blur(42px) brightness(0.34) saturate(0.72);
 }
 
 html[data-theme="fluent"] .manage-page {
@@ -579,7 +589,10 @@ html[data-theme="fluent"] .theme-preview-content .manage-page {
   min-height: 260px;
 }
 
-html[data-theme="fluent"] .theme-preview-content .manage-page .linear-command-bar {
+html[data-theme="fluent"]
+  .theme-preview-content
+  .manage-page
+  .linear-command-bar {
   flex: 0 0 auto;
 }
 
@@ -617,7 +630,9 @@ html[data-theme="fluent"] .manage-tree-row {
   position: relative;
   min-height: 38px;
   border-radius: 0;
-  transition: background var(--fluent-duration-fast), color var(--fluent-duration-fast);
+  transition:
+    background var(--fluent-duration-fast),
+    color var(--fluent-duration-fast);
 }
 
 /* Fluent ListView rows use one flat surface; inline controls must not become
@@ -664,19 +679,21 @@ html[data-theme="fluent"] .manage-tree-row .state-switch {
 }
 
 html[data-theme="fluent"] .manage-tree-row .state-switch.enabled {
-  border-color: rgba(91, 209, 117, .42) !important;
+  border-color: rgba(91, 209, 117, 0.42) !important;
   color: #9be6a4;
-  background: rgba(65, 184, 117, .14) !important;
+  background: rgba(65, 184, 117, 0.14) !important;
 }
 
 html[data-theme="fluent"] .manage-tree-row .state-switch.always {
-  border-color: rgba(96, 205, 255, .42) !important;
+  border-color: rgba(96, 205, 255, 0.42) !important;
   color: #9cddff;
-  background: rgba(96, 205, 255, .12) !important;
+  background: rgba(96, 205, 255, 0.12) !important;
 }
 
-html[data-theme="fluent"] .manage-tree-row .state-switch:not(.enabled):not(.always) {
-  background: rgba(255, 255, 255, .045) !important;
+html[data-theme="fluent"]
+  .manage-tree-row
+  .state-switch:not(.enabled):not(.always) {
+  background: rgba(255, 255, 255, 0.045) !important;
 }
 
 html[data-theme="fluent"] .manage-tree-row:hover {
@@ -699,7 +716,7 @@ html[data-theme="fluent"] .manage-tree-row.selected::before {
 }
 
 html[data-theme="fluent"] .manage-side {
-  background: rgba(0,0,0,.08);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 html[data-theme="fluent"] .manage-side .profile-row {
@@ -832,7 +849,7 @@ html[data-theme="fluent"] .page-Downloads .download-page-heading h1 {
   color: var(--fluent-text-primary);
   font-size: 20px;
   font-weight: 600;
-  letter-spacing: -.015em;
+  letter-spacing: -0.015em;
 }
 
 html[data-theme="fluent"] .page-Downloads .download-page-heading p {
@@ -874,7 +891,10 @@ html[data-theme="fluent"] .page-Downloads .download-task-toggle {
 
 html[data-theme="fluent"] .page-Downloads .download-task-toggle:hover,
 html[data-theme="fluent"] .page-Downloads .download-task-action:hover,
-html[data-theme="fluent"] .page-Downloads .download-dependency-actions button:hover {
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-dependency-actions
+  button:hover {
   color: var(--fluent-text-primary) !important;
   background: var(--fluent-fill-control-hover) !important;
   box-shadow: none !important;
@@ -912,31 +932,64 @@ html[data-theme="fluent"] .page-Downloads .download-dependency-progress > span {
   background: var(--fluent-accent);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-progress > span,
-html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-progress > span {
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-failed
+  .download-task-progress
+  > span,
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-detail-row-failed
+  .download-dependency-progress
+  > span {
   background: var(--fluent-danger);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-canceled .download-task-progress > span,
-html[data-theme="fluent"] .page-Downloads .download-task-paused .download-task-progress > span {
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-canceled
+  .download-task-progress
+  > span,
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-paused
+  .download-task-progress
+  > span {
   background: var(--fluent-text-tertiary);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-status-icon,
-html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-main > .icon,
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-failed
+  .download-task-status-icon,
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-detail-row-failed
+  .download-dependency-main
+  > .icon,
 html[data-theme="fluent"] .page-Downloads .download-task-error-details,
 html[data-theme="fluent"] .page-Downloads .download-dependency-error {
   color: var(--fluent-danger);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-canceled .download-task-status-icon,
-html[data-theme="fluent"] .page-Downloads .download-task-paused .download-task-status-icon {
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-canceled
+  .download-task-status-icon,
+html[data-theme="fluent"]
+  .page-Downloads
+  .download-task-paused
+  .download-task-status-icon {
   color: var(--fluent-text-tertiary);
 }
 
 html[data-theme="fluent"] .page-Downloads .download-task-cancel:hover {
   color: var(--fluent-danger) !important;
-  background: color-mix(in srgb, var(--fluent-danger) 13%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--fluent-danger) 13%,
+    transparent
+  ) !important;
 }
 
 html[data-theme="fluent"] .page-Downloads .download-dependency-list {
@@ -1051,12 +1104,20 @@ html[data-theme="fluent"] .virtual-keyboard-key {
 
 html[data-theme="fluent"] .virtual-keyboard-key.used {
   border: 1px solid color-mix(in srgb, var(--fluent-accent) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--fluent-accent) 11%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--fluent-accent) 11%,
+    transparent
+  ) !important;
 }
 
 html[data-theme="fluent"] .virtual-keyboard-key.multiple {
   border: 1px solid color-mix(in srgb, var(--fluent-warning) 42%, transparent) !important;
-  background: color-mix(in srgb, var(--fluent-warning) 11%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--fluent-warning) 11%,
+    transparent
+  ) !important;
 }
 
 html[data-theme="fluent"] .virtual-keyboard-key:hover,

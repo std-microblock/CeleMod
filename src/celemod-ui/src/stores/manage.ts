@@ -510,10 +510,7 @@ export const collectOrphanDependencyNames = ({
     for (const dependency of nodes[nodeName]?.dependencies ?? []) {
       // Optional dependencies (and engine-provided dependencies) are not
       // candidates for automatic deletion.
-      if (
-        dependency.optional ||
-        EXCLUDED_DEPENDENCIES.has(dependency.name)
-      )
+      if (dependency.optional || EXCLUDED_DEPENDENCIES.has(dependency.name))
         continue;
       const dependencyNode = nodes[dependency.name];
       if (!dependencyNode || orphanedSet.has(dependency.name)) continue;

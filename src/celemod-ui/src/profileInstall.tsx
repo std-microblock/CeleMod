@@ -163,7 +163,9 @@ const downloadPlannedMods = async (
   const rootNames = roots.map(([name]) => name);
   let snapshot: Download.TaskInfo[] = [];
   const report = (current = "") => {
-    const finished = snapshot.filter((task) => task.state === "finished").length;
+    const finished = snapshot.filter(
+      (task) => task.state === "finished",
+    ).length;
     const failed = snapshot.filter((task) => task.state === "failed").length;
     const active = snapshot.find((task) => task.state === "pending");
     onProgress({
@@ -172,7 +174,8 @@ const downloadPlannedMods = async (
       failed,
       current: active?.name ?? current,
       progress: snapshot.length
-        ? snapshot.reduce((sum, task) => sum + task.progress, 0) / snapshot.length
+        ? snapshot.reduce((sum, task) => sum + task.progress, 0) /
+          snapshot.length
         : 0,
       discovered: snapshot
         .map((task) => task.name)
@@ -207,7 +210,8 @@ const downloadPlannedMods = async (
       }
       const mapped: Download.TaskInfo[] = backendTasks.map((task, index) => ({
         name: task.name,
-        progress: task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
+        progress:
+          task.status === "Finished" ? 100 : Number.parseFloat(task.data) || 0,
         requested: task.requested,
         dependencies: task.dependencies ?? [],
         cancelKey: task.cancel_key,
@@ -215,7 +219,9 @@ const downloadPlannedMods = async (
         mod: { name: task.name },
         state: (state === "finished" || task.status === "Finished"
           ? "finished"
-          : task.status === "Failed" ? "failed" : "pending") as Download.TaskInfo["state"],
+          : task.status === "Failed"
+            ? "failed"
+            : "pending") as Download.TaskInfo["state"],
         error: task.status === "Failed" ? task.data : undefined,
         downloadedBytes: task.downloaded_bytes || 0,
         totalBytes: task.total_bytes || 0,
@@ -224,8 +230,13 @@ const downloadPlannedMods = async (
         paused: false,
         attemptId: -1000 - index,
       }));
-      const byName = new Map(mapped.map((task) => [task.name.toLocaleLowerCase(), task]));
-      const aggregate = (task: Download.TaskInfo, seen = new Set<string>()): number => {
+      const byName = new Map(
+        mapped.map((task) => [task.name.toLocaleLowerCase(), task]),
+      );
+      const aggregate = (
+        task: Download.TaskInfo,
+        seen = new Set<string>(),
+      ): number => {
         const key = task.name.toLocaleLowerCase();
         if (seen.has(key)) return 0;
         seen.add(key);
@@ -233,21 +244,34 @@ const downloadPlannedMods = async (
           .map((name) => byName.get(name.toLocaleLowerCase()))
           .filter((value): value is Download.TaskInfo => Boolean(value));
         if (dependencies.length === 0) return task.progress;
-        return [task.progress, ...dependencies.map((dependency) => aggregate(dependency, seen))]
-          .reduce((sum, value) => sum + value, 0) / (dependencies.length + 1);
+        return (
+          [
+            task.progress,
+            ...dependencies.map((dependency) => aggregate(dependency, seen)),
+          ].reduce((sum, value) => sum + value, 0) /
+          (dependencies.length + 1)
+        );
       };
       snapshot = mapped.map((task) =>
         task.requested ? { ...task, progress: aggregate(task) } : task,
       );
       report();
       if (state === "finished") resolve();
-      if (state === "failed") reject(new Error(snapshot.find((task) => task.error)?.error || "Download failed"));
+      if (state === "failed")
+        reject(
+          new Error(
+            snapshot.find((task) => task.error)?.error || "Download failed",
+          ),
+        );
     };
     void callRemote(
       "download_mod_batch",
       JSON.stringify(roots),
       `${useAppStore.getState().gamePath}/Mods/`,
-      JSON.stringify({ ...useAppStore.getState().downloadTypeDefaults, __default: true }),
+      JSON.stringify({
+        ...useAppStore.getState().downloadTypeDefaults,
+        __default: true,
+      }),
       false,
       "",
       JSON.stringify(useAppStore.getState().alwaysOnMods),

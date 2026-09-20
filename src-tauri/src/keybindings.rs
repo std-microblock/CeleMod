@@ -72,28 +72,51 @@ pub(super) struct TouchButton {
     icon: String,
 }
 
-fn default_touch_icon() -> String { "NONE".into() }
-const TOUCH_ICONS: &[&str] = &["NONE", "CHAT", "BOLT", "STAR", "BOOK", "KEYBOARD", "PAUSE", "PLAY", "CONFIRM", "BACK"];
+fn default_touch_icon() -> String {
+    "NONE".into()
+}
+const TOUCH_ICONS: &[&str] = &[
+    "NONE", "CHAT", "BOLT", "STAR", "BOOK", "KEYBOARD", "PAUSE", "PLAY", "CONFIRM", "BACK",
+];
 
 const TOUCH_BUTTON_FILE: &str = "celemod-touch-buttons.json";
 const TOUCH_BUTTON_MAX_BYTES: usize = 262144;
 const TOUCH_GAME_ACTIONS: &[&str] = &[
-    "/Jump", "/Dash", "/Grab", "/Talk", "/Pause", "/Confirm", "/Cancel", "/Journal",
-    "/QuickRestart", "/DemoDash",
+    "/Jump",
+    "/Dash",
+    "/Grab",
+    "/Talk",
+    "/Pause",
+    "/Confirm",
+    "/Cancel",
+    "/Journal",
+    "/QuickRestart",
+    "/DemoDash",
 ];
 
 fn validate_touch_buttons(buttons: &[TouchButton]) -> Result<(), String> {
-    if buttons.len() > 24 { return Err("最多可创建 24 个虚拟按键。".into()); }
+    if buttons.len() > 24 {
+        return Err("最多可创建 24 个虚拟按键。".into());
+    }
     let mut ids = HashSet::new();
     for button in buttons {
-        if !TOUCH_ICONS.contains(&button.icon.as_str()) { return Err("未知的虚拟按键图标。".into()); }
-        if button.id.is_empty() || button.id.len() > 48 ||
-            !button.id.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_') ||
-            !ids.insert(&button.id) {
+        if !TOUCH_ICONS.contains(&button.icon.as_str()) {
+            return Err("未知的虚拟按键图标。".into());
+        }
+        if button.id.is_empty()
+            || button.id.len() > 48
+            || !button
+                .id
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+            || !ids.insert(&button.id)
+        {
             return Err("虚拟按键标识无效或重复。".into());
         }
-        if button.label.trim().is_empty() || button.label.chars().count() > 16 ||
-            button.label.chars().any(char::is_control) {
+        if button.label.trim().is_empty()
+            || button.label.chars().count() > 16
+            || button.label.chars().any(char::is_control)
+        {
             return Err("按键名称须为 1–16 个可见字符。".into());
         }
         if button.actions.is_empty() || button.actions.len() > 16 {
@@ -101,13 +124,18 @@ fn validate_touch_buttons(buttons: &[TouchButton]) -> Result<(), String> {
         }
         let mut actions = HashSet::new();
         for action in &button.actions {
-            if action.source.is_empty() || action.source.len() > 200 ||
-                action.source.contains(['/', '\\', '\0']) ||
-                !action.action_path.starts_with('/') || action.action_path.len() > 512 ||
-                action.action_path.chars().any(char::is_control) ||
-                !(action.format == "standard" || action.format == "vanilla" &&
-                    action.source == "Celeste" && TOUCH_GAME_ACTIONS.contains(&action.action_path.as_str())) ||
-                !actions.insert((&action.source, &action.action_path, &action.format)) {
+            if action.source.is_empty()
+                || action.source.len() > 200
+                || action.source.contains(['/', '\\', '\0'])
+                || !action.action_path.starts_with('/')
+                || action.action_path.len() > 512
+                || action.action_path.chars().any(char::is_control)
+                || !(action.format == "standard"
+                    || action.format == "vanilla"
+                        && action.source == "Celeste"
+                        && TOUCH_GAME_ACTIONS.contains(&action.action_path.as_str()))
+                || !actions.insert((&action.source, &action.action_path, &action.format))
+            {
                 return Err("虚拟按键功能无效、重复或不支持直接绑定。".into());
             }
         }
@@ -117,24 +145,35 @@ fn validate_touch_buttons(buttons: &[TouchButton]) -> Result<(), String> {
 
 fn read_touch_buttons(game_path: &Path) -> Result<Vec<TouchButton>, String> {
     let path = game_path.join(TOUCH_BUTTON_FILE);
-    if !path.exists() { return Ok(Vec::new()); }
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
     let file = fs::File::open(path).map_err(|e| format!("读取虚拟按键失败：{e}"))?;
     let mut content = String::new();
-    file.take((TOUCH_BUTTON_MAX_BYTES + 1) as u64).read_to_string(&mut content)
+    file.take((TOUCH_BUTTON_MAX_BYTES + 1) as u64)
+        .read_to_string(&mut content)
         .map_err(|e| format!("读取虚拟按键失败：{e}"))?;
-    if content.len() > TOUCH_BUTTON_MAX_BYTES { return Err("虚拟按键配置过大。".into()); }
-    let buttons: Vec<TouchButton> = serde_json::from_str(&content).map_err(|e| format!("虚拟按键配置损坏：{e}"))?;
+    if content.len() > TOUCH_BUTTON_MAX_BYTES {
+        return Err("虚拟按键配置过大。".into());
+    }
+    let buttons: Vec<TouchButton> =
+        serde_json::from_str(&content).map_err(|e| format!("虚拟按键配置损坏：{e}"))?;
     validate_touch_buttons(&buttons)?;
     Ok(buttons)
 }
 
 #[tauri::command]
-pub(super) fn save_touch_buttons(game_path: String, buttons: Vec<TouchButton>) -> Result<(), String> {
+pub(super) fn save_touch_buttons(
+    game_path: String,
+    buttons: Vec<TouchButton>,
+) -> Result<(), String> {
     validate_touch_buttons(&buttons)?;
     let game_path = PathBuf::from(normalize_game_path_impl(&game_path));
     // A dedicated file, never game/Mod settings. The game reads it on next launch.
     let content = serde_json::to_string_pretty(&buttons).map_err(|e| e.to_string())?;
-    if content.len() > TOUCH_BUTTON_MAX_BYTES { return Err("虚拟按键配置过大。".into()); }
+    if content.len() > TOUCH_BUTTON_MAX_BYTES {
+        return Err("虚拟按键配置过大。".into());
+    }
     let path = game_path.join(TOUCH_BUTTON_FILE);
     static SAVE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     let _guard = SAVE_LOCK.lock().map_err(|e| e.to_string())?;
@@ -1071,14 +1110,27 @@ mod tests {
     use super::*;
 
     fn touch_button() -> TouchButton {
-        TouchButton { id: "chat-1".into(), label: "聊天".into(), enabled: true, icon: "CHAT".into(),
-            actions: vec![TouchAction { source: "MiaoNet".into(), action_path: "/ChatButton".into(), format: "standard".into() }] }
+        TouchButton {
+            id: "chat-1".into(),
+            label: "聊天".into(),
+            enabled: true,
+            icon: "CHAT".into(),
+            actions: vec![TouchAction {
+                source: "MiaoNet".into(),
+                action_path: "/ChatButton".into(),
+                format: "standard".into(),
+            }],
+        }
     }
 
     #[test]
     fn touch_buttons_round_trip_multiple_semantic_actions() {
         let mut button = touch_button();
-        button.actions.push(TouchAction { source: "Celeste".into(), action_path: "/Jump".into(), format: "vanilla".into() });
+        button.actions.push(TouchAction {
+            source: "Celeste".into(),
+            action_path: "/Jump".into(),
+            format: "vanilla".into(),
+        });
         let json = serde_json::to_string(&vec![button]).unwrap();
         assert!(json.contains("actionPath"));
         let result: Vec<TouchButton> = serde_json::from_str(&json).unwrap();
@@ -1087,13 +1139,22 @@ mod tests {
         assert_eq!(result[0].icon, "CHAT");
         let mut old = serde_json::to_value(&result[0]).unwrap();
         old.as_object_mut().unwrap().remove("icon");
-        assert_eq!(serde_json::from_value::<TouchButton>(old).unwrap().icon, "NONE");
+        assert_eq!(
+            serde_json::from_value::<TouchButton>(old).unwrap().icon,
+            "NONE"
+        );
     }
 
     #[test]
     fn touch_buttons_file_replacement_and_size_limit() {
-        let suffix = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let root = std::env::temp_dir().join(format!("celemod-touch-test-{}-{suffix}", std::process::id()));
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "celemod-touch-test-{}-{suffix}",
+            std::process::id()
+        ));
         fs::create_dir(&root).unwrap();
         let path = root.to_string_lossy().into_owned();
         assert!(read_touch_buttons(&root).unwrap().is_empty());
@@ -1105,7 +1166,11 @@ mod tests {
         assert_eq!(read_touch_buttons(&root).unwrap()[0].icon, "BOLT");
         assert!(save_touch_buttons(path.clone(), vec![touch_button(), touch_button()]).is_err());
         assert_eq!(read_touch_buttons(&root).unwrap()[0].icon, "BOLT");
-        fs::write(root.join(TOUCH_BUTTON_FILE), " ".repeat(TOUCH_BUTTON_MAX_BYTES + 1)).unwrap();
+        fs::write(
+            root.join(TOUCH_BUTTON_FILE),
+            " ".repeat(TOUCH_BUTTON_MAX_BYTES + 1),
+        )
+        .unwrap();
         assert!(read_touch_buttons(&root).unwrap_err().contains("过大"));
         save_touch_buttons(path, vec![]).unwrap();
         assert!(read_touch_buttons(&root).unwrap().is_empty());
@@ -1120,16 +1185,21 @@ mod tests {
         button.id = "../bad".into();
         assert!(validate_touch_buttons(&[button]).is_err());
         for format in ["legacyChord", "unknown", "vanilla"] {
-            let mut button = touch_button(); button.actions[0].format = format.into();
+            let mut button = touch_button();
+            button.actions[0].format = format.into();
             assert!(validate_touch_buttons(&[button]).is_err());
         }
-        let mut button = touch_button(); button.actions.clear();
+        let mut button = touch_button();
+        button.actions.clear();
         assert!(validate_touch_buttons(&[button]).is_err());
-        let mut button = touch_button(); button.actions.push(button.actions[0].clone());
+        let mut button = touch_button();
+        button.actions.push(button.actions[0].clone());
         assert!(validate_touch_buttons(&[button]).is_err());
-        let mut button = touch_button(); button.label = "\n".into();
+        let mut button = touch_button();
+        button.label = "\n".into();
         assert!(validate_touch_buttons(&[button]).is_err());
-        let mut button = touch_button(); button.label = "a".repeat(17);
+        let mut button = touch_button();
+        button.label = "a".repeat(17);
         assert!(validate_touch_buttons(&[button]).is_err());
         assert!(validate_touch_buttons(&[]).is_ok());
     }

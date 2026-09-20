@@ -27,12 +27,12 @@
 
 在仓库 **Settings → Secrets and variables → Actions** 配置：
 
-| Secret | 内容 |
-| --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | 正式签名 keystore 文件的 Base64 编码 |
-| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
-| `ANDROID_KEY_ALIAS` | 签名密钥别名 |
-| `ANDROID_KEY_PASSWORD` | 签名密钥密码（与 keystore 密码相同也要设置） |
+| Secret                      | 内容                                         |
+| --------------------------- | -------------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | 正式签名 keystore 文件的 Base64 编码         |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码                                |
+| `ANDROID_KEY_ALIAS`         | 签名密钥别名                                 |
+| `ANDROID_KEY_PASSWORD`      | 签名密钥密码（与 keystore 密码相同也要设置） |
 
 使用并备份长期有效的正式签名密钥；已经发行过 APK 时，必须沿用原密钥才能覆盖升级。
 不要把 keystore、密码或 Base64 内容提交到 Git。CI 只在签名步骤临时还原 keystore，

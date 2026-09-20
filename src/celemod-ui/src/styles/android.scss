@@ -310,8 +310,11 @@ html[data-mobile-layout] {
     gap: 6px 8px;
     padding: 12px 10px;
 
-    .shortcut-copy { display: contents; }
-    strong, small {
+    .shortcut-copy {
+      display: contents;
+    }
+    strong,
+    small {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -394,8 +397,8 @@ html[data-mobile-layout] {
     right: 12px;
     width: auto;
     max-height: calc(
-      100dvh - 180px - env(safe-area-inset-top, 0px) -
-        env(safe-area-inset-bottom, 0px)
+      100dvh -
+        180px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
     );
     box-sizing: border-box;
     overflow-y: auto;
