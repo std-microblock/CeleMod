@@ -7,11 +7,12 @@ import { useGlobalContext } from "../App";
 import { useGamePath } from "../states";
 import { useDownloadStore } from "../stores/download";
 import { callRemote } from "../utils";
+import { displayException, formatStacktrace } from "./crashTrace";
 import { Icon } from "./Icon";
 import { createPopup, PopupContext } from "./Popup";
 import "./CrashAssistant.scss";
 
-interface CrashSuspect {
+export interface CrashSuspect {
   name: string;
   file: string;
   installedVersion: string;
@@ -24,7 +25,7 @@ interface CrashSuspect {
   dependents: { name: string; optional: boolean }[];
 }
 
-interface CrashAnalysis {
+export interface CrashAnalysis {
   fingerprint: string;
   eventId: string;
   crashIndex: number;
@@ -194,58 +195,6 @@ const startReportDrag = (event: DragEvent<HTMLDivElement>, path: string) => {
   );
   event.dataTransfer.setData("text/uri-list", uri);
   event.dataTransfer.setData("text/plain", path);
-};
-
-const cleanLogPrefix = (line: string) =>
-  line
-    .replace(
-      /^\([^)]*\)\s+\[Everest\]\s+\[[^\]]+\]\s+\[[^\]]+\]\s*(?:>>\s*)?/,
-      "",
-    )
-    .trim();
-
-const displayException = (analysis: CrashAnalysis) => {
-  const fromLog = analysis.excerpt
-    .split(/\r?\n/)
-    .map(cleanLogPrefix)
-    .find(
-      (line) =>
-        /\b(?:System\.)?[\w.`+]+Exception(?::|\s)/.test(line) &&
-        !/^\s*(?:at|在)\s/.test(line),
-    );
-  return fromLog || analysis.exception;
-};
-
-const formatStacktrace = (analysis: CrashAnalysis, exception: string) => {
-  const lines = analysis.excerpt.split(/\r?\n/);
-  const markerIndex = lines.findLastIndex((line) =>
-    /critical error/i.test(line),
-  );
-  const exceptionIndex = lines.findIndex(
-    (line, index) =>
-      index >= Math.max(0, markerIndex) &&
-      /\b(?:System\.)?[\w.`+]+Exception(?::|\s)/.test(line),
-  );
-  const start =
-    exceptionIndex >= 0 ? exceptionIndex : Math.max(0, markerIndex + 1);
-  const cleaned = lines
-    .slice(start, start + 180)
-    .map((line) =>
-      line
-        .replace(
-          /^\([^)]*\)\s+\[Everest\]\s+\[[^\]]+\]\s+\[[^\]]+\]\s*(?:>>\s*)?/,
-          "",
-        )
-        .replace(/^\s*--->\s*/, "↳ ")
-        .replace(/^\s+(at|在)\s+/, "  $1 ")
-        .trimEnd(),
-    )
-    .filter((line, index) => {
-      if (index === 0 && cleanLogPrefix(line) === exception.trim())
-        return false;
-      return !/ENCOUNTERED A CRITICAL ERROR/i.test(line);
-    });
-  return cleaned.join("\n").trim() || analysis.excerpt;
 };
 
 const CrashPopup = ({

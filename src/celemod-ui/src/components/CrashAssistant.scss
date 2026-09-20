@@ -19,7 +19,10 @@
   max-height: none;
   margin: 0;
   padding: 16px 28px 18px;
-  overflow: hidden;
+  overflow-x: hidden;
+  /* Safety net: the popup is a blocking overlay, so a window too short for the
+     fixed rows must scroll instead of hiding the action buttons below the edge. */
+  overflow-y: auto;
   border: 0;
   border-radius: 0;
   box-sizing: border-box;
@@ -98,7 +101,7 @@
   display: grid;
   grid-template-columns: minmax(255px, 0.82fr) minmax(0, 1.18fr);
   flex: 1;
-  min-height: 0;
+  min-height: 180px;
   max-height: none;
   margin-bottom: 8px;
   overflow: hidden;
