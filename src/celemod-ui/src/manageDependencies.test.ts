@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   collectOrphanDependencyNames,
   collectDuplicateFixTargets,
+  profileDisabledFilesAfterSwitch,
   collectSwitchNames,
   normalizeManageDependencies,
   selectVisibleRootNames,
@@ -294,4 +295,67 @@ test("leaves resolved and disabled duplicate Mods untouched", () => {
   };
 
   assert.deepEqual(collectDuplicateFixTargets(nodes), []);
+});
+
+const modFile = (file: string) => ({
+  file,
+  version: "1.0.0",
+  size: 0,
+  modifiedAt: 0,
+  isDirectory: false,
+  enabled: false,
+});
+
+test("profile toggle clears the only remaining file's stale exclusion", () => {
+  const nodes = {
+    Remaining: node("Remaining", {
+      enabled: false,
+      duplicateFiles: [modFile("Remaining.zip")],
+    }),
+  };
+  assert.deepEqual(
+    profileDisabledFilesAfterSwitch(
+      nodes,
+      ["Remaining"],
+      ["REMAINING.ZIP", "Other.zip"],
+      true,
+    ),
+    ["Other.zip"],
+  );
+});
+
+test("profile toggle retains duplicate selection and unrelated exclusions", () => {
+  const nodes = {
+    Duplicate: node("Duplicate", {
+      duplicateFiles: [modFile("New.zip"), modFile("Old.zip")],
+    }),
+  };
+  for (const enabled of [false, true]) {
+    assert.deepEqual(
+      profileDisabledFilesAfterSwitch(
+        nodes,
+        ["Duplicate"],
+        ["New.zip", "Other.zip"],
+        enabled,
+      ),
+      ["New.zip", "Other.zip"],
+    );
+  }
+});
+
+test("disabling a remaining file does not discard its exclusion", () => {
+  const nodes = {
+    Remaining: node("Remaining", {
+      duplicateFiles: [modFile("Remaining.zip")],
+    }),
+  };
+  assert.deepEqual(
+    profileDisabledFilesAfterSwitch(
+      nodes,
+      ["Remaining"],
+      ["Remaining.zip"],
+      false,
+    ),
+    ["Remaining.zip"],
+  );
 });

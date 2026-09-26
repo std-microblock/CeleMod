@@ -43,6 +43,7 @@ import {
   ManageNode,
   collectSwitchNames,
   collectDuplicateFixTargets,
+  profileDisabledFilesAfterSwitch,
   type DuplicateFixTarget,
   excludedDependencyNames,
   getDependencyHealth,
@@ -1473,7 +1474,14 @@ export const Manage = () => {
             ),
         // blacklist.txt tracks files, so mirror the switch locally as well.
         ...(profileEnabled
-          ? {}
+          ? {
+              disabled_files: profileDisabledFilesAfterSwitch(
+                nodes,
+                effectiveNames,
+                currentProfile.disabled_files ?? [],
+                enabled,
+              ),
+            }
           : {
               disabled_files: enabled
                 ? (currentProfile.disabled_files ?? []).filter(

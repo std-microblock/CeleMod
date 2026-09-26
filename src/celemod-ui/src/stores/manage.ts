@@ -126,6 +126,29 @@ export const collectDuplicateFixTargets = (
     ];
   });
 
+/** Mirror profile toggles without reviving intentionally excluded duplicates. */
+export const profileDisabledFilesAfterSwitch = (
+  nodes: Record<string, ManageNode>,
+  names: readonly string[],
+  disabledFiles: readonly string[],
+  enabled: boolean,
+): string[] => {
+  const restoredFiles = new Set<string>();
+  if (enabled) {
+    for (const name of names) {
+      const files = new Set(
+        (nodes[name]?.duplicateFiles ?? []).map((file) =>
+          file.file.toLowerCase(),
+        ),
+      );
+      if (files.size === 1) {
+        for (const file of files) restoredFiles.add(file);
+      }
+    }
+  }
+  return disabledFiles.filter((file) => !restoredFiles.has(file.toLowerCase()));
+};
+
 export const normalizeManageDependencies = (
   dependencies: readonly ManageDependency[],
 ) => {

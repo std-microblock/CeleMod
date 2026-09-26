@@ -577,6 +577,19 @@ pub fn switch_mod_profile_mods(
     let installed = get_installed_mods_sync(format!("{game_path}/Mods"));
     let package_names = resolve_selected_names(&installed, mod_names.iter().cloned());
     if enabled {
+        // A duplicate exclusion must not make the only remaining file
+        // impossible to enable after the kept version has been removed.
+        // Keep exclusions for names that still have multiple installed files.
+        let mut restored_files = HashSet::new();
+        for name in mod_names {
+            let files = installed_files_of_mod(&installed, name);
+            if files.len() == 1 {
+                restored_files.extend(files);
+            }
+        }
+        profile
+            .disabled_files
+            .retain(|file| !restored_files.contains(&file.to_ascii_lowercase()));
         profile.enabled_mods =
             normalize_names(profile.enabled_mods.into_iter().chain(package_names));
     } else {
@@ -1168,6 +1181,64 @@ mod tests {
             .find(|profile| profile.name == "Default")
             .unwrap();
         assert_eq!(profile.disabled_files, ["Duplicate"]);
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn profile_toggle_reenables_the_only_remaining_duplicate_file() {
+        let game_path = test_game_path("toggle-remaining-duplicate");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        write_directory_mod(&game_path, "Duplicate-Old", "Duplicate.Mod", "0.9.0");
+        new_mod_blacklist_profile(&game_path, "Default").unwrap();
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate",
+            &["Duplicate-Old".into()],
+            Some("Default"),
+        )
+        .unwrap();
+        // The kept version was removed outside CeleMod; no duplicate remains
+        // for the automatic resolver to fix.
+        fs::remove_dir_all(Path::new(&game_path).join("Mods/Duplicate")).unwrap();
+        for enabled in [true, false, true] {
+            switch_mod_profile_mods(&game_path, "Default", &["Duplicate.Mod".into()], enabled)
+                .unwrap();
+            apply_mod_blacklist_profiles(&game_path, &["Default".into()], &[]).unwrap();
+            let direct = get_direct_blacklist_profile(&game_path).unwrap();
+            assert_eq!(
+                direct.enabled_mods.contains(&"Duplicate.Mod".to_string()),
+                enabled
+            );
+        }
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
+    fn profile_toggle_preserves_existing_duplicate_file_selection() {
+        let game_path = test_game_path("toggle-kept-duplicate");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        write_directory_mod(&game_path, "Duplicate-Old", "Duplicate.Mod", "0.9.0");
+        new_mod_blacklist_profile(&game_path, "Default").unwrap();
+        resolve_duplicate_mod_files(
+            &game_path,
+            "Duplicate.Mod",
+            "Duplicate-Old",
+            &["Duplicate".into()],
+            Some("Default"),
+        )
+        .unwrap();
+        for enabled in [false, true, false, true] {
+            switch_mod_profile_mods(&game_path, "Default", &["Duplicate.Mod".into()], enabled)
+                .unwrap();
+            apply_mod_blacklist_profiles(&game_path, &["Default".into()], &[]).unwrap();
+            let direct = get_direct_blacklist_profile(&game_path).unwrap();
+            assert!(direct.disabled_files.contains(&"Duplicate".to_string()));
+            assert_eq!(
+                direct.disabled_files.contains(&"Duplicate-Old".to_string()),
+                !enabled
+            );
+        }
         fs::remove_dir_all(game_path).unwrap();
     }
 
