@@ -57,6 +57,8 @@
   }
 }
 
+// Keep this list in normal flow: .download-page is the only scroll container.
+// A nested overflow:auto + overscroll-behavior:contain would trap wheel input.
 .download-page-list {
   min-height: 180px;
   padding: 0;
@@ -152,14 +154,6 @@
     background: color.change(theme.$fg, $alpha: 0.1);
     box-shadow: none;
   }
-}
-
-.taskList {
-  min-height: 74px;
-  padding: 10px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .download-task {

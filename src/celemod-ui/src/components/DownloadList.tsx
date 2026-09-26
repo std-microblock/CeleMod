@@ -335,7 +335,7 @@ export const DownloadListPage = () => {
           </div>
         </div>
       </header>
-      <div className="taskList download-page-list">
+      <div className="download-page-list">
         {visibleRoots.length > 0 ? (
           visibleRoots.map((task) => (
             <DownloadTask
