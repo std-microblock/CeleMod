@@ -14,7 +14,7 @@ use std::{
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self, JoinHandle},
-    time::{Duration, UNIX_EPOCH},
+    time::{Duration, Instant, UNIX_EPOCH},
 };
 
 use notify::{RecursiveMode, Watcher};
@@ -23,9 +23,12 @@ use serde::Serialize;
 pub const MODS_CHANGED_EVENT: &str = "celemod://mods-changed";
 
 /// Folders are written as a burst of events. Wait until the burst settles
-/// before looking at the folder, otherwise archives would be parsed while they
-/// are still being copied.
+/// before looking at the folder to reduce scans of archives still being copied.
+/// The periodic reconciliation below bounds the wait if events never settle.
 const QUIET_PERIOD: Duration = Duration::from_millis(600);
+/// Reconcile even when native events are lost, the directory is replaced, or
+/// an event burst never becomes quiet. This scans metadata, not archive contents.
+const RECONCILE_INTERVAL: Duration = Duration::from_secs(2);
 /// How often the worker wakes up to notice a stop request.
 const STOP_POLL_INTERVAL: Duration = Duration::from_millis(200);
 
@@ -159,15 +162,18 @@ fn describe_change(game_path: &str, before: &Snapshot, after: &Snapshot) -> Mods
 struct ActiveWatcher {
     stop: Arc<AtomicBool>,
     watcher: Option<notify::RecommendedWatcher>,
+    // Keep polling alive even if the native watcher cannot be started.
+    sender: Option<mpsc::SyncSender<()>>,
     worker: Option<JoinHandle<()>>,
 }
 
 impl ActiveWatcher {
     fn shutdown(mut self) {
         self.stop.store(true, Ordering::SeqCst);
-        // Dropping the watcher closes the event stream, which disconnects the
-        // channel and lets the worker leave its wait loop immediately.
+        // Drop both senders to disconnect the event stream and let the worker
+        // leave its wait loop immediately, including in polling-only mode.
         self.watcher = None;
+        self.sender = None;
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
         }
@@ -203,6 +209,13 @@ fn report_change(
     let event = describe_change(&game_path.to_string_lossy(), snapshot, &next);
     *snapshot = next;
     if !event.is_empty() {
+        crate::logging::info(format_args!(
+            "Mods folder changed at {}: added={:?}, removed={:?}, changed={:?}",
+            game_path.display(),
+            event.added,
+            event.removed,
+            event.changed
+        ));
         on_change(event);
     }
 }
@@ -218,32 +231,30 @@ fn run_worker(
     // Reconcile Mods that appeared between the initial scan and the watcher
     // being registered, so nothing can slip through unnoticed.
     report_change(&mut snapshot, &mods_dir, &game_path, &on_change);
+    let mut next_scan = Instant::now() + RECONCILE_INTERVAL;
+    let mut quiet_until: Option<Instant> = None;
     loop {
-        match receiver.recv_timeout(STOP_POLL_INTERVAL) {
-            Ok(()) => {}
-            Err(RecvTimeoutError::Timeout) => {
-                if stop.load(Ordering::SeqCst) {
-                    return;
-                }
-                continue;
-            }
-            Err(RecvTimeoutError::Disconnected) => return,
+        if stop.load(Ordering::SeqCst) {
+            return;
         }
-        // Coalesce the burst of events: keep draining until the folder is calm.
-        loop {
-            match receiver.recv_timeout(QUIET_PERIOD) {
-                Ok(()) => {}
-                Err(RecvTimeoutError::Timeout) => break,
-                Err(RecvTimeoutError::Disconnected) => return,
-            }
-            if stop.load(Ordering::SeqCst) {
-                return;
-            }
+        let deadline = quiet_until.map_or(next_scan, |quiet| quiet.min(next_scan));
+        let timeout = deadline
+            .saturating_duration_since(Instant::now())
+            .min(STOP_POLL_INTERVAL);
+        match receiver.recv_timeout(timeout) {
+            Ok(()) => quiet_until = Some(Instant::now() + QUIET_PERIOD),
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => return,
         }
         if stop.load(Ordering::SeqCst) {
             return;
         }
-        report_change(&mut snapshot, &mods_dir, &game_path, &on_change);
+        let now = Instant::now();
+        if now >= next_scan || quiet_until.is_some_and(|quiet| now >= quiet) {
+            report_change(&mut snapshot, &mods_dir, &game_path, &on_change);
+            quiet_until = None;
+            next_scan = Instant::now() + RECONCILE_INTERVAL;
+        }
     }
 }
 
@@ -259,27 +270,41 @@ pub fn watch(
     if !mods_dir.is_dir() {
         // Everest creates the folder on first launch. Watching needs it to
         // exist and CeleMod manages this folder anyway, so create it up front.
-        if let Err(error) = fs::create_dir_all(&mods_dir) {
-            crate::logging::warn(format_args!(
-                "Cannot watch {}: {error:#}",
-                mods_dir.display()
-            ));
-            return Ok(());
-        }
+        fs::create_dir_all(&mods_dir)?;
     }
     let snapshot = mods_snapshot(&mods_dir);
-    let (sender, receiver) = mpsc::channel::<()>();
+    // Notifications are only wakeups; one pending wakeup is enough regardless
+    // of the number of files being copied into a directory Mod.
+    let (sender, receiver) = mpsc::sync_channel::<()>(1);
+    let event_sender = sender.clone();
     let stop = Arc::new(AtomicBool::new(false));
-    let mut watcher =
-        notify::recommended_watcher(move |result: notify::Result<notify::Event>| match result {
-            Ok(_) => {
-                let _ = sender.send(());
-            }
-            Err(error) => {
-                crate::logging::warn(format_args!("Mods folder watcher error: {error}"));
-            }
-        })?;
-    watcher.watch(&mods_dir, RecursiveMode::Recursive)?;
+    let native_watcher = (|| -> notify::Result<notify::RecommendedWatcher> {
+        let mut watcher =
+            notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
+                match result {
+                    Ok(event) if matches!(event.kind, notify::EventKind::Access(_)) => return,
+                    Ok(_) => {}
+                    Err(error) => {
+                        crate::logging::warn(format_args!(
+                            "Mods folder watcher error: {error}; reconciling folder"
+                        ));
+                    }
+                }
+                let _ = event_sender.try_send(());
+            })?;
+        watcher.watch(&mods_dir, RecursiveMode::Recursive)?;
+        Ok(watcher)
+    })();
+    let watcher = match native_watcher {
+        Ok(watcher) => Some(watcher),
+        Err(error) => {
+            crate::logging::warn(format_args!(
+                "Cannot start native watcher for {}: {error}; using periodic reconciliation",
+                mods_dir.display()
+            ));
+            None
+        }
+    };
     let worker_stop = Arc::clone(&stop);
     let worker_game_path = game_path.clone();
     let worker_mods_dir = mods_dir.clone();
@@ -300,7 +325,8 @@ pub fn watch(
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     *slot = Some(ActiveWatcher {
         stop,
-        watcher: Some(watcher),
+        watcher,
+        sender: Some(sender),
         worker: Some(worker),
     });
     drop(slot);
@@ -393,6 +419,89 @@ mod tests {
         fs::remove_dir_all(root).ok();
     }
 
+    // Start with a reconciliation event as a barrier: subsequent changes must
+    // be detected by the worker loop, not its initial snapshot reconciliation.
+    fn start_test_worker(
+        root: &Path,
+    ) -> (
+        mpsc::Sender<()>,
+        mpsc::Receiver<ModsChangedEvent>,
+        Arc<AtomicBool>,
+        JoinHandle<()>,
+    ) {
+        let mods = root.join("Mods");
+        fs::create_dir_all(&mods).unwrap();
+        fs::write(mods.join("Initial.zip"), b"initial").unwrap();
+        let (sender, receiver) = mpsc::channel();
+        let (events, changes) = mpsc::channel();
+        let stop = Arc::new(AtomicBool::new(false));
+        let worker_stop = Arc::clone(&stop);
+        let game_path = root.to_path_buf();
+        let worker = thread::spawn(move || {
+            run_worker(
+                receiver,
+                worker_stop,
+                game_path,
+                mods,
+                Snapshot::new(),
+                move |event| {
+                    let _ = events.send(event);
+                },
+            );
+        });
+        assert_eq!(
+            changes.recv_timeout(Duration::from_secs(5)).unwrap().added,
+            vec!["Initial.zip"]
+        );
+        (sender, changes, stop, worker)
+    }
+
+    #[test]
+    fn worker_recovers_when_native_notifications_are_missing() {
+        let root = test_dir("missed-notifications");
+        let (sender, changes, stop, worker) = start_test_worker(&root);
+        fs::write(root.join("Mods/NewMod.zip"), b"new mod").unwrap();
+        // Deliberately do not send a filesystem notification.
+        let result = changes.recv_timeout(Duration::from_secs(5));
+        stop.store(true, Ordering::SeqCst);
+        drop(sender);
+        worker.join().unwrap();
+        fs::remove_dir_all(root).ok();
+        assert_eq!(
+            result
+                .expect("missed notifications must be reconciled")
+                .added,
+            vec!["NewMod.zip"]
+        );
+    }
+
+    #[test]
+    fn worker_does_not_starve_during_continuous_notifications() {
+        let root = test_dir("busy-folder");
+        let (sender, changes, stop, worker) = start_test_worker(&root);
+        fs::write(root.join("Mods/NewMod.zip"), b"new mod").unwrap();
+        let producer_stop = Arc::clone(&stop);
+        let producer = thread::spawn(move || {
+            while !producer_stop.load(Ordering::SeqCst) {
+                if sender.send(()).is_err() {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(50));
+            }
+        });
+        let result = changes.recv_timeout(Duration::from_secs(5));
+        stop.store(true, Ordering::SeqCst);
+        producer.join().unwrap();
+        worker.join().unwrap();
+        fs::remove_dir_all(root).ok();
+        assert_eq!(
+            result
+                .expect("a busy directory must not postpone refresh forever")
+                .added,
+            vec!["NewMod.zip"]
+        );
+    }
+
     #[test]
     fn watcher_reports_new_mods() {
         let root = test_dir("watcher");
@@ -411,7 +520,15 @@ mod tests {
             .expect("watcher did not report the new Mod");
         assert_eq!(event.added, vec!["NewMod.zip"]);
         assert_eq!(event.game_path, root.to_string_lossy());
+        // The first event can come from startup reconciliation. A second copy
+        // proves that changes are still reported after initialization.
+        fs::write(mods.join("LaterMod.zip"), b"later zip contents").unwrap();
+        let later = receiver.recv_timeout(Duration::from_secs(5));
         stop();
         fs::remove_dir_all(root).ok();
+        assert_eq!(
+            later.expect("watcher stopped after initialization").added,
+            vec!["LaterMod.zip"]
+        );
     }
 }
