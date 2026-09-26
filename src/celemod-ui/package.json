@@ -14,18 +14,22 @@
     "translate": "di18n sync",
     "test:i18n": "node --test scripts/deepseek-translator.test.cjs",
     "test:crash-trace": "node --import tsx --test src/components/crashTrace.test.ts",
-    "test:deep-link": "node --import tsx --test src/deepLink.test.ts"
+    "test:deep-link": "node --import tsx --test src/deepLink.test.ts",
+    "test:update-notes": "node --import tsx --test src/components/UpdateNotes.test.tsx"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.9",
     "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-deep-link": "^2.4.9",
     "@tauri-apps/plugin-dialog": "^2.3.2",
     "@tauri-apps/plugin-http": "^2.5.2",
-    "@tauri-apps/plugin-deep-link": "^2.4.9",
     "immer": "^10.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.7.0",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.7"
   },
   "devDependencies": {

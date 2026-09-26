@@ -44,21 +44,136 @@
       opacity: 0.6;
     }
 
-    pre {
+    .update-notes {
+      min-width: 0;
       min-height: 0;
       flex: 1 1 auto;
       margin: 0;
       padding: 12px;
       overflow: auto;
       border-radius: 8px;
-      background: theme.$bg1;
+      background: var(--color-surface-elevated, #{theme.$bg1});
       box-sizing: border-box;
       font-family: inherit;
       font-size: 13px;
       line-height: 1.55;
       overflow-wrap: anywhere;
       user-select: text;
-      white-space: pre-wrap;
+      white-space: normal;
+      text-align: left;
+
+      > :first-child {
+        margin-top: 0;
+      }
+      > :last-child {
+        margin-bottom: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        margin: 1em 0 0.5em;
+        font-weight: 600;
+        line-height: 1.35;
+      }
+      h1 {
+        font-size: 1.5em;
+      }
+      h2 {
+        font-size: 1.3em;
+      }
+      h3 {
+        font-size: 1.15em;
+      }
+      h4,
+      h5,
+      h6 {
+        font-size: 1em;
+      }
+
+      p,
+      ul,
+      ol,
+      blockquote,
+      pre,
+      table {
+        margin: 0 0 0.75em;
+      }
+      ul,
+      ol {
+        padding-left: 1.6em;
+      }
+      li + li {
+        margin-top: 0.25em;
+      }
+      li > ul,
+      li > ol {
+        margin-bottom: 0;
+      }
+      .contains-task-list {
+        list-style: none;
+      }
+
+      a {
+        display: inline;
+        margin: 0;
+        color: var(--color-primary, #{theme.$primary});
+        text-decoration: underline;
+      }
+
+      blockquote {
+        margin-left: 0;
+        padding-left: 0.8em;
+        border-left: 3px solid var(--color-primary, #{theme.$primary});
+        color: var(--color-fg-muted, #{theme.$fg1});
+      }
+
+      code {
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+        background: var(--color-surface-hover, #{theme.$bg2});
+        font-family: ui-monospace, Consolas, monospace;
+      }
+      pre {
+        padding: 10px;
+        overflow-x: auto;
+        border-radius: 6px;
+        background: var(--color-surface-hover, #{theme.$bg2});
+        white-space: pre;
+        overflow-wrap: normal;
+
+        code {
+          padding: 0;
+          background: none;
+        }
+      }
+
+      table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 6px 10px;
+        border: 1px solid var(--color-surface-active, #{theme.$bg3});
+      }
+      th {
+        background: var(--color-surface-hover, #{theme.$bg2});
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      hr {
+        margin: 1em 0;
+        border: 0;
+        border-top: 1px solid var(--color-surface-active, #{theme.$bg3});
+      }
     }
   }
 

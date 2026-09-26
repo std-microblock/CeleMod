@@ -5,6 +5,7 @@ import "./SelfUpdate.scss";
 import { useState } from "react";
 import { detectDesktopPlatform } from "../tauri/window";
 import { ProgressIndicator } from "./Progress";
+import { UpdateNotes } from "./UpdateNotes";
 import {
   getLatestUpdateInfo,
   refreshLatestUpdateInfo,
@@ -42,7 +43,13 @@ export const checkUpdate = async (forceRefresh = false) => {
             <div className="info">
               <div className="vernum">{info.version}</div>
               <div className="detail-text">{_i18n.t("更新详情")}</div>
-              <pre>{info.info}</pre>
+              <UpdateNotes
+                onOpenLink={(url) => {
+                  void callRemote("open_url", url).catch(console.error);
+                }}
+              >
+                {info.info}
+              </UpdateNotes>
             </div>
 
             <div className="update-footer">
