@@ -13,6 +13,7 @@
     "lint": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "translate": "di18n sync",
     "test:i18n": "node --test scripts/deepseek-translator.test.cjs",
+    "test:catalog-download": "node --import tsx --test src/catalogDownload.test.ts",
     "test:crash-trace": "node --import tsx --test src/components/crashTrace.test.ts",
     "test:deep-link": "node --import tsx --test src/deepLink.test.ts",
     "test:update-notes": "node --import tsx --test src/components/UpdateNotes.test.tsx"

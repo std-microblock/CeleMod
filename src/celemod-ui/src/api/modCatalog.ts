@@ -1,5 +1,6 @@
 import type { Content, File as SubmissionFile } from "./wegfan";
-import { callRemote } from "../utils";
+import { callRemote, sleep } from "../utils";
+import { waitForCatalogDownload } from "../catalogDownload";
 
 export interface CatalogSubmission {
   id: string;
@@ -81,6 +82,28 @@ let catalog: CatalogMod[] | null = null;
 let catalogPromise: Promise<CatalogMod[]> | null = null;
 let catalogRequestId = 0;
 
+/**
+ * Whether the native side is still downloading the Mod catalog. It keeps a slow
+ * download running after the first screen stopped waiting for it, so the UI can
+ * wait for it to land instead of showing an empty catalog.
+ */
+export const isCatalogDownloading = async (): Promise<boolean> => {
+  try {
+    return await callRemote<boolean>("is_mod_catalog_downloading");
+  } catch (error) {
+    console.warn("Failed to query the Mod catalog download state", error);
+    return false;
+  }
+};
+
+const requestModCatalog = (requestId: number, forceRefresh: boolean) =>
+  callRemote<string>("get_mod_catalog", forceRefresh).then((raw) => {
+    const parsed = JSON.parse(raw) as CatalogResponse;
+    const nextCatalog = Array.isArray(parsed.data) ? parsed.data : [];
+    if (requestId === catalogRequestId) catalog = nextCatalog;
+    return nextCatalog;
+  });
+
 export const loadModCatalog = async (
   ttlHours = 1,
   forceRefresh = false,
@@ -91,16 +114,30 @@ export const loadModCatalog = async (
 
   const requestId = ++catalogRequestId;
   let request: Promise<CatalogMod[]>;
-  request = callRemote<string>("get_mod_catalog", forceRefresh)
-    .then((raw) => {
-      const parsed = JSON.parse(raw) as CatalogResponse;
-      const nextCatalog = Array.isArray(parsed.data) ? parsed.data : [];
-      if (requestId === catalogRequestId) catalog = nextCatalog;
-      return nextCatalog;
-    })
-    .finally(() => {
-      if (catalogPromise === request) catalogPromise = null;
-    });
+  request = (async () => {
+    try {
+      return await requestModCatalog(requestId, forceRefresh);
+    } catch (error) {
+      // A slow connection makes the native side give up on the first screen
+      // while it keeps downloading: wait for that download and retry once, so
+      // the catalog is not lost to an 8s timeout. A real failure marks the
+      // catalog offline, and retrying that would only fail again.
+      const superseded = requestId !== catalogRequestId;
+      const offline = await callRemote<boolean>("is_catalog_offline").catch(
+        () => false,
+      );
+      if (
+        superseded ||
+        offline ||
+        !(await waitForCatalogDownload(isCatalogDownloading, sleep))
+      ) {
+        throw error;
+      }
+      return await requestModCatalog(requestId, false);
+    }
+  })().finally(() => {
+    if (catalogPromise === request) catalogPromise = null;
+  });
   catalogPromise = request;
   return request;
 };

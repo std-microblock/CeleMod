@@ -1,5 +1,5 @@
 import _i18n from "src/i18n";
-import { callRemote } from "../utils";
+import { callRemote, sleep } from "../utils";
 import {
   useGamePath,
   initGamePath,
@@ -10,6 +10,8 @@ import { useEffect, useContext, useState } from "react";
 import { createPopup, PopupContext } from "src/components/Popup";
 import { ProgressIndicator } from "src/components/Progress";
 import { syncModsWatcher } from "../modsWatcher";
+import { waitForCatalogDownload } from "../catalogDownload";
+import { isCatalogDownloading } from "../api/modCatalog";
 
 export const createModManageContext = () => {
   initModComments();
@@ -141,6 +143,18 @@ export const createModManageContext = () => {
         await ctx.reloadMods();
         const isOffline = await callRemote<boolean>("is_catalog_offline");
         if (!cancelled) setOffline(isOffline);
+        // A slow connection can still be downloading the catalog after the
+        // first screen stopped waiting for it: refresh the Mod list once it
+        // lands instead of leaving the Mod metadata missing.
+        if (!isOffline && (await isCatalogDownloading())) {
+          void waitForCatalogDownload(isCatalogDownloading, sleep).then(
+            (settled) => {
+              if (settled && !cancelled) {
+                void ctx.reloadMods().catch(console.error);
+              }
+            },
+          );
+        }
       })()
         .then(() => {
           popup?.hide();

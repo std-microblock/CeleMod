@@ -28,6 +28,24 @@ pub struct ModInfoCached {
 
 static CATALOG_OFFLINE: AtomicBool = AtomicBool::new(false);
 static CATALOG_REQUEST_GENERATION: AtomicU64 = AtomicU64::new(0);
+// Downloads that are still running because a caller stopped waiting for them
+// (see CATALOG_SOFT_TIMEOUT). The UI polls this to know that a fresh catalog is
+// on its way, so a slow connection is not mistaken for an offline one.
+static CATALOG_DOWNLOADS_IN_FLIGHT: AtomicU64 = AtomicU64::new(0);
+
+/// How long the catalog download itself may take. This is only a bound for a
+/// server that stops sending: the first screen no longer blocks on the download
+/// (see [`CATALOG_SOFT_TIMEOUT`]), so the request may be given the room a slow
+/// connection needs instead of being cut short.
+const CATALOG_FETCH_TIMEOUT: Duration = Duration::from_secs(60);
+/// How long a caller waits for the catalog before continuing with whatever is
+/// already cached. The download keeps running in the background and publishes
+/// its response when it lands, so exceeding this is a slow connection rather
+/// than an offline server.
+const CATALOG_SOFT_TIMEOUT: Duration = Duration::from_secs(8);
+/// Polling granularity of `wait_for_catalog`: the worker is checked at least
+/// this often so a cancellation is noticed quickly.
+const CATALOG_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
 pub fn set_catalog_offline(offline: bool) {
     CATALOG_OFFLINE.store(offline, Ordering::SeqCst);
@@ -36,6 +54,10 @@ pub fn set_catalog_offline(offline: bool) {
 
 pub fn is_catalog_offline() -> bool {
     CATALOG_OFFLINE.load(Ordering::SeqCst)
+}
+
+pub fn is_catalog_downloading() -> bool {
+    CATALOG_DOWNLOADS_IN_FLIGHT.load(Ordering::SeqCst) > 0
 }
 
 static USING_CACHE: AtomicBool = AtomicBool::new(false);
@@ -121,43 +143,115 @@ fn fetch_raw_catalog() -> anyhow::Result<String> {
             "User-Agent",
             &format!("CeleMod/{}-{}", env!("VERSION"), &env!("GIT_HASH")[..6]),
         )
-        .timeout(std::time::Duration::from_secs(20))
+        .timeout(CATALOG_FETCH_TIMEOUT)
         .set("Accept-Encoding", "gzip, deflate, br")
         .call()?
         .into_string()?)
 }
 
-// Only the raw response crosses the worker boundary: a skipped request must
-// never publish a late response or overwrite the cache. The HTTP worker itself
-// is bounded by fetch_raw_catalog's timeout.
+/// How a wait for the catalog worker ended.
+enum CatalogWait {
+    /// The worker answered, successfully or not.
+    Finished(anyhow::Result<String>),
+    /// The caller ran out of patience while the worker keeps downloading. This
+    /// is not a failure: the response is still on its way.
+    StillDownloading,
+    /// The request was cancelled: offline mode was enabled or a newer request
+    /// superseded this one.
+    Skipped,
+}
+
+/// The catalog download is still running even though the caller stopped waiting
+/// for it. Unlike a network failure this must not switch the app to offline
+/// mode, because the response is on its way and will be published as soon as it
+/// lands.
+#[derive(Debug)]
+struct CatalogDownloadPending;
+
+impl std::fmt::Display for CatalogDownloadPending {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "Mod catalog is still downloading; continuing with the cached catalog"
+        )
+    }
+}
+
+impl std::error::Error for CatalogDownloadPending {}
+
+/// A catalog fetch that only ran out of time is not evidence of an unreachable
+/// server, so it must not latch offline mode for the rest of the session.
+fn is_catalog_download_pending(error: &anyhow::Error) -> bool {
+    error.downcast_ref::<CatalogDownloadPending>().is_some()
+}
+
+/// Whether a finished response still belongs to the request the app wants.
+fn request_is_still_wanted(offline: bool, current_generation: u64, generation: u64) -> bool {
+    !offline && current_generation == generation
+}
+
+/// A skipped request must never overwrite the cache with a late response or
+/// latch offline mode for it.
+fn catalog_response_is_still_wanted(generation: u64) -> bool {
+    request_is_still_wanted(
+        is_catalog_offline(),
+        CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst),
+        generation,
+    )
+}
+
+// The worker outlives the caller: a slow connection is not a reason to throw a
+// response away, but a cancelled request must still publish nothing.
 fn fetch_catalog_interruptible() -> anyhow::Result<String> {
     let generation = CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst);
     let (sender, receiver) = std::sync::mpsc::channel();
+    CATALOG_DOWNLOADS_IN_FLIGHT.fetch_add(1, Ordering::SeqCst);
     std::thread::spawn(move || {
-        let _ = sender.send(fetch_raw_catalog());
+        let result = fetch_raw_catalog();
+        let still_wanted = catalog_response_is_still_wanted(generation);
+        match &result {
+            // Nobody may be waiting for a slow connection anymore: keep the
+            // response in the cache so the next catalog read (or the frontend
+            // retry) picks it up instead of giving up on it.
+            Ok(raw) if still_wanted => save_raw_cache(raw),
+            // Remember an unreachable server even when the caller already moved
+            // on, so local operations stop retrying it in a loop.
+            Err(_) if still_wanted => CATALOG_OFFLINE.store(true, Ordering::SeqCst),
+            _ => {}
+        }
+        CATALOG_DOWNLOADS_IN_FLIGHT.fetch_sub(1, Ordering::SeqCst);
+        let _ = sender.send(result);
     });
-    wait_for_catalog(receiver, Duration::from_secs(8), || {
+    match wait_for_catalog(receiver, CATALOG_SOFT_TIMEOUT, || {
         is_catalog_offline() || CATALOG_REQUEST_GENERATION.load(Ordering::SeqCst) != generation
-    })
+    }) {
+        CatalogWait::Finished(result) => result,
+        CatalogWait::StillDownloading => Err(CatalogDownloadPending.into()),
+        CatalogWait::Skipped => bail!("Mod catalog download skipped"),
+    }
 }
 
 fn wait_for_catalog(
     receiver: std::sync::mpsc::Receiver<anyhow::Result<String>>,
     timeout: Duration,
     cancelled: impl Fn() -> bool,
-) -> anyhow::Result<String> {
+) -> CatalogWait {
     let started = std::time::Instant::now();
     loop {
         if started.elapsed() >= timeout {
-            bail!("Mod catalog download timed out; continuing offline");
+            return CatalogWait::StillDownloading;
         }
         if cancelled() {
-            bail!("Mod catalog download skipped");
+            return CatalogWait::Skipped;
         }
-        match receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(result) => return result,
+        match receiver.recv_timeout(CATALOG_POLL_INTERVAL) {
+            Ok(result) => return CatalogWait::Finished(result),
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
-            Err(error) => return Err(error.into()),
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                return CatalogWait::Finished(Err(anyhow::anyhow!(
+                    "Mod catalog worker stopped without a response"
+                )));
+            }
         }
     }
 }
@@ -258,6 +352,12 @@ fn load_catalog(force_refresh: bool) -> anyhow::Result<ModCatalogState> {
             Ok(state)
         }
         Err(network_error) => {
+            // A download that is still running is not an offline server: serve
+            // the cached catalog, keep offline mode off, and let the background
+            // download publish the fresh catalog once it lands.
+            if is_catalog_download_pending(&network_error) {
+                return offline_catalog().map_err(|_| network_error);
+            }
             crate::logging::error(format_args!(
                 "Failed to fetch Mod catalog: {network_error:#}"
             ));
@@ -599,7 +699,7 @@ pub fn download_and_install_everest(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_everest_ultra, wait_for_catalog};
+    use super::{CatalogWait, is_everest_ultra, wait_for_catalog};
     use std::time::Duration;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -623,48 +723,72 @@ mod tests {
     fn catalog_wait_returns_success_and_network_errors() {
         let (sender, receiver) = std::sync::mpsc::channel();
         sender.send(Ok("catalog".into())).unwrap();
-        assert_eq!(
-            wait_for_catalog(receiver, Duration::from_secs(1), || false).unwrap(),
-            "catalog"
-        );
+        match wait_for_catalog(receiver, Duration::from_secs(1), || false) {
+            CatalogWait::Finished(Ok(raw)) => assert_eq!(raw, "catalog"),
+            _ => panic!("a received response must finish the wait"),
+        }
         let (sender, receiver) = std::sync::mpsc::channel();
         sender.send(Err(anyhow::anyhow!("no network"))).unwrap();
-        assert!(
-            wait_for_catalog(receiver, Duration::from_secs(1), || false)
-                .unwrap_err()
-                .to_string()
-                .contains("no network")
-        );
+        match wait_for_catalog(receiver, Duration::from_secs(1), || false) {
+            CatalogWait::Finished(Err(error)) => {
+                assert!(error.to_string().contains("no network"))
+            }
+            _ => panic!("a worker error must finish the wait"),
+        }
     }
 
     #[test]
     fn catalog_skip_discards_even_an_already_received_response() {
         let (sender, receiver) = std::sync::mpsc::channel();
         sender.send(Ok("late catalog".into())).unwrap();
-        assert!(
-            wait_for_catalog(receiver, Duration::from_secs(1), || true)
-                .unwrap_err()
-                .to_string()
-                .contains("skipped")
-        );
+        assert!(matches!(
+            wait_for_catalog(receiver, Duration::from_secs(1), || true),
+            CatalogWait::Skipped
+        ));
     }
 
     #[test]
-    fn catalog_wait_is_bounded_without_network_response() {
+    fn slow_catalog_download_keeps_the_wait_open_instead_of_failing() {
+        // A connection that is merely slow must not be reported as an error:
+        // the download keeps running and publishes the catalog when it lands.
         let (_sender, receiver) = std::sync::mpsc::channel();
-        assert!(
-            wait_for_catalog(receiver, Duration::from_millis(1), || false)
-                .unwrap_err()
-                .to_string()
-                .contains("timed out")
-        );
+        assert!(matches!(
+            wait_for_catalog(receiver, Duration::from_millis(1), || false),
+            CatalogWait::StillDownloading
+        ));
     }
 
     #[test]
     fn catalog_wait_handles_worker_failure() {
         let (sender, receiver) = std::sync::mpsc::channel();
         drop(sender);
-        assert!(wait_for_catalog(receiver, Duration::from_secs(1), || false).is_err());
+        assert!(matches!(
+            wait_for_catalog(receiver, Duration::from_secs(1), || false),
+            CatalogWait::Finished(Err(_))
+        ));
+    }
+
+    #[test]
+    fn only_real_catalog_failures_switch_to_offline_mode() {
+        // The regression behind the slow-network bug: running out of the 8s
+        // wait used to latch offline mode and drop the response that was still
+        // on its way.
+        assert!(super::is_catalog_download_pending(
+            &super::CatalogDownloadPending.into()
+        ));
+        assert!(!super::is_catalog_download_pending(&anyhow::anyhow!(
+            "no network"
+        )));
+    }
+
+    #[test]
+    fn late_catalog_responses_are_only_published_while_still_wanted() {
+        // A response that lands after the caller gave up is still published, so
+        // a slow connection ends up with a fresh catalog. A request that was
+        // cancelled (offline mode or a newer request) must be dropped instead.
+        assert!(super::request_is_still_wanted(false, 7, 7));
+        assert!(!super::request_is_still_wanted(true, 7, 7));
+        assert!(!super::request_is_still_wanted(false, 8, 7));
     }
 
     #[test]
