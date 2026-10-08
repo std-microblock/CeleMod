@@ -1968,8 +1968,26 @@ fn modified_at_millis(metadata: &fs::Metadata) -> u64 {
         .unwrap_or_default()
 }
 
+/// Resolves the type of a `Mods` folder entry, following symlinks.
+///
+/// `DirEntry::file_type` reports the link itself, so a Mod installed as a
+/// symlinked folder (a convenient setup while iterating on a skin) would look
+/// like a plain file and be dropped from the installed Mod list. Classify the
+/// entry by its link target instead, so those Mods stay manageable.
+fn resolved_entry_file_type(entry: &fs::DirEntry) -> Option<fs::FileType> {
+    let file_type = entry.file_type().ok()?;
+    if !file_type.is_symlink() {
+        return Some(file_type);
+    }
+    fs::metadata(entry.path())
+        .ok()
+        .map(|metadata| metadata.file_type())
+}
+
 fn mod_path_stats(path: &Path) -> anyhow::Result<(u64, u64)> {
-    let metadata = fs::symlink_metadata(path).context("Failed to read Mod metadata")?;
+    // Follow symlinks so a linked Mod reports its target's stats instead of the
+    // link's own byte length.
+    let metadata = fs::metadata(path).context("Failed to read Mod metadata")?;
     // Directory Mods can contain tens of thousands of map/assets files.  A
     // recursive size walk makes every installed-Mod IPC scan needlessly slow,
     // so directory size is intentionally reported as zero.  Keep only the
@@ -2043,7 +2061,9 @@ fn get_installed_mods_sync_with_catalog(
                 anyhow::Ok(())?
             }
 
-            let is_directory = entry.file_type().context("invalid file type")?.is_dir();
+            let is_directory = resolved_entry_file_type(&entry)
+                .context("invalid file type")?
+                .is_dir();
             let yaml = if is_directory {
                 let cache_path = fs::read_dir(entry.path())
                     .context("Failed to read directory Mod")?
@@ -3191,6 +3211,20 @@ mod local_package_tests {
         writer.finish().unwrap();
     }
 
+    /// Creates a directory symlink and reports whether the platform allowed it
+    /// (Windows needs developer mode or an elevated shell). Tests that depend on
+    /// symlinks return early when this is `false`.
+    fn symlink_dir(target: &Path, link: &Path) -> bool {
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(target, link).is_ok()
+        }
+        #[cfg(windows)]
+        {
+            std::os::windows::fs::symlink_dir(target, link).is_ok()
+        }
+    }
+
     #[test]
     fn download_defaults_only_apply_to_new_mods() {
         let installed_before = HashSet::from(["existing.mod".to_string()]);
@@ -3337,6 +3371,41 @@ mod local_package_tests {
         delete_mod_files_sync(&mods_path.to_string_lossy(), &["DirectoryMod".to_string()]).unwrap();
         assert!(!mod_path.exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn lists_symlinked_directory_mods() {
+        let root = test_dir("symlinked-directory-mod");
+        let source_path = test_dir("symlinked-directory-mod-source");
+        let mods_path = root.join("Mods");
+        fs::write(
+            source_path.join("everest.yaml"),
+            b"- Name: HildaSkinMod\n  Version: 1.0.0\n",
+        )
+        .unwrap();
+        fs::create_dir_all(&mods_path).unwrap();
+        let mod_path = mods_path.join("hilda_skinmod");
+        if !symlink_dir(&source_path, &mod_path) {
+            fs::remove_dir_all(root).ok();
+            fs::remove_dir_all(source_path).ok();
+            return;
+        }
+
+        let installed =
+            get_installed_mods_sync_with_catalog(mods_path.to_string_lossy().into_owned(), None);
+
+        assert_eq!(installed.len(), 1);
+        assert_eq!(installed[0].name, "HildaSkinMod");
+        assert_eq!(installed[0].file, "hilda_skinmod");
+        assert!(installed[0].is_directory);
+        // The link itself is only a few bytes long; the list must describe the
+        // linked Mod folder instead.
+        assert_eq!(installed[0].size, 0);
+
+        fs::remove_dir_all(root).unwrap();
+        // Cleaning the Mods folder removes the link, never the linked sources.
+        assert!(source_path.join("everest.yaml").exists());
+        fs::remove_dir_all(source_path).unwrap();
     }
 
     #[test]

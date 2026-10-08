@@ -117,7 +117,7 @@ fn mods_snapshot(mods_dir: &Path) -> Snapshot {
         if is_ignored_entry(&name) {
             continue;
         }
-        let Ok(file_type) = entry.file_type() else {
+        let Some(file_type) = super::resolved_entry_file_type(&entry) else {
             continue;
         };
         let path = entry.path();
@@ -377,6 +377,33 @@ mod tests {
             .map(|entry| entry.file.as_str())
             .collect::<Vec<_>>();
         assert_eq!(files, vec!["Archive.zip", "FolderMod"]);
+        fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
+    fn snapshot_reports_symlinked_directory_mods() {
+        let root = test_dir("symlinked-snapshot");
+        let mods = root.join("Mods");
+        let source = root.join("LinkedMod");
+        fs::create_dir_all(&source).unwrap();
+        fs::write(source.join("everest.yaml"), b"- Name: Linked").unwrap();
+        fs::create_dir_all(&mods).unwrap();
+        let link = mods.join("LinkedMod");
+        #[cfg(unix)]
+        let created = std::os::unix::fs::symlink(&source, &link).is_ok();
+        #[cfg(windows)]
+        let created = std::os::windows::fs::symlink_dir(&source, &link).is_ok();
+        if !created {
+            fs::remove_dir_all(root).ok();
+            return;
+        }
+
+        let snapshot = mods_snapshot(&mods);
+        let files = snapshot
+            .values()
+            .map(|entry| entry.file.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(files, vec!["LinkedMod"]);
         fs::remove_dir_all(root).ok();
     }
 
