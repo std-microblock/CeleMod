@@ -4705,6 +4705,11 @@ fn is_catalog_offline() -> bool {
 }
 
 #[tauri::command]
+fn is_mod_catalog_downloading() -> bool {
+    everest::is_catalog_downloading()
+}
+
+#[tauri::command]
 fn is_using_cache() -> bool {
     everest::is_using_cache()
 }
@@ -6391,6 +6396,7 @@ pub fn run() {
             write_frontend_log,
             set_catalog_offline,
             is_catalog_offline,
+            is_mod_catalog_downloading,
             is_using_cache,
             configure_mod_cache,
             get_mod_catalog,
