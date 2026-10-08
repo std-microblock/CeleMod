@@ -14,7 +14,7 @@ module.exports = async function publishNightly({ github, context, core, director
   // Never hide the previous release unless all platforms produced their assets.
   const files = collectAssets(directory);
   const names = files.map(file => path.basename(file));
-  for (const suffix of ['.exe', '.dmg', '.AppImage', '.deb', '.apk', '.apk.sha256']) {
+  for (const suffix of ['.exe', '.dmg', '.AppImage', '.AppImage.zsync', '.deb', '.apk', '.apk.sha256']) {
     if (!names.some(name => name.endsWith(suffix))) {
       throw new Error(`Missing nightly asset: ${suffix}`);
     }

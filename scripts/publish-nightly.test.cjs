@@ -9,7 +9,9 @@ const publish = require('./publish-nightly.cjs');
 function fixture(t, options = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'celemod-nightly-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
-  const assets = ['CeleMod.exe', 'CeleMod.dmg', 'CeleMod.AppImage', 'CeleMod.deb', 'CeleMod.apk'];
+  const assets = [
+    'CeleMod.exe', 'CeleMod.dmg', 'CeleMod.AppImage', 'CeleMod.AppImage.zsync', 'CeleMod.deb', 'CeleMod.apk',
+  ];
   for (const name of assets) fs.writeFileSync(path.join(directory, name), name);
   const hash = crypto.createHash('sha256').update('CeleMod.apk').digest('hex');
   fs.writeFileSync(path.join(directory, 'CeleMod.apk.sha256'), `${hash}  CeleMod.apk\n`);
@@ -53,7 +55,7 @@ function fixture(t, options = {}) {
 test('creates a prerelease and tag only after uploading all platforms', async t => {
   const f = fixture(t, { newRelease: true, newTag: true });
   await publish(f);
-  assert.equal(f.calls.filter(c => c.name === 'uploadReleaseAsset').length, 6);
+  assert.equal(f.calls.filter(c => c.name === 'uploadReleaseAsset').length, 7);
   const created = f.calls.find(c => c.name === 'createRelease').args;
   assert.equal(created.draft, true);
   assert.equal(created.prerelease, true);
@@ -69,7 +71,7 @@ test('replaces all old assets and moves only the nightly tag', async t => {
   await publish(f);
   assert.equal(f.calls.find(c => c.name === 'updateRelease').args.draft, true);
   assert.deepEqual(f.calls.filter(c => c.name === 'deleteReleaseAsset').map(c => c.args.asset_id), [11, 12]);
-  assert.equal(f.calls.filter(c => c.name === 'uploadReleaseAsset').length, 6);
+  assert.equal(f.calls.filter(c => c.name === 'uploadReleaseAsset').length, 7);
   const moved = f.calls.find(c => c.name === 'updateRef').args;
   assert.equal(moved.ref, 'tags/nightly');
   assert.equal(moved.sha, 'commit');
@@ -88,6 +90,13 @@ test('missing platform assets leave the previous release untouched', async t => 
   const f = fixture(t);
   fs.unlinkSync(path.join(f.directory, 'CeleMod.apk'));
   await assert.rejects(publish(f), /Missing nightly asset: .apk/);
+  assert.equal(f.calls.length, 0);
+});
+
+test('missing AppImage delta update leaves the previous release untouched', async t => {
+  const f = fixture(t);
+  fs.unlinkSync(path.join(f.directory, 'CeleMod.AppImage.zsync'));
+  await assert.rejects(publish(f), /Missing nightly asset: .AppImage.zsync/);
   assert.equal(f.calls.length, 0);
 });
 
