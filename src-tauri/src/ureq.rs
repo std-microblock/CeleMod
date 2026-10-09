@@ -1,7 +1,8 @@
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::{
-    Arc, Mutex,
+    Arc, Mutex, OnceLock,
     atomic::{AtomicBool, Ordering},
 };
 use std::time::{Duration, Instant};
@@ -26,8 +27,52 @@ fn user_agent() -> String {
     )
 }
 
+/// 所有下载请求共用的 agent：代理走 ureq 的 `proxy-from-env`（`ALL_PROXY` /
+/// `HTTPS_PROXY` / `HTTP_PROXY`，大小写都认；一个都没配就是直连），并补上 ureq
+/// 默认没有的读/写超时——连接建立后服务端不再发数据时读操作必须报错，否则会一直
+/// 卡住：既不触发已有的重试，分段下载里的 `join` 也永远不返回。
+///
+/// 回环地址单独用直连 agent：本机地址不该被代理接管（本地测试服务器、开发环境）。
+fn download_agent(url: &str) -> &'static ureq::Agent {
+    static DIRECT_AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+    static PROXY_AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+
+    fn build(try_proxy_from_env: bool) -> ureq::Agent {
+        // 必须显式写 `try_proxy_from_env`：开了 `proxy-from-env` 之后
+        // `AgentBuilder::new()` 的默认值就是 true。
+        ureq::AgentBuilder::new()
+            .timeout_connect(Duration::from_secs(30))
+            .timeout_read(Duration::from_secs(30))
+            .timeout_write(Duration::from_secs(30))
+            .try_proxy_from_env(try_proxy_from_env)
+            .build()
+    }
+
+    if is_loopback_url(url) {
+        DIRECT_AGENT.get_or_init(|| build(false))
+    } else {
+        PROXY_AGENT.get_or_init(|| build(true))
+    }
+}
+
+/// 目标是本机地址（`localhost`、`127.0.0.0/8`、`::1`）时不需要代理。
+fn is_loopback_url(url: &str) -> bool {
+    let Ok(url) = url::Url::parse(url) else {
+        return false;
+    };
+    let Some(host) = url.host_str() else {
+        return false;
+    };
+    let host = host.trim_matches(['[', ']']);
+    host.eq_ignore_ascii_case("localhost")
+        || host
+            .parse::<IpAddr>()
+            .is_ok_and(|address| address.is_loopback())
+}
+
 fn make_request(url: &str) -> ureq::Request {
-    ureq::get(url)
+    download_agent(url)
+        .get(url)
         .set("Connection", "keep-alive")
         .set("User-Agent", &user_agent())
         .set("Accept", "*/*")
@@ -327,7 +372,8 @@ fn download_multi_thread(
     cancel_flag: &Arc<AtomicBool>,
     pause_flag: &Arc<AtomicBool>,
 ) -> anyhow::Result<()> {
-    let head = ureq::head(url)
+    let head = download_agent(url)
+        .head(url)
         .set("User-Agent", &user_agent())
         .set("Accept", "*/*")
         .set("Accept-Encoding", "identity")
@@ -543,6 +589,26 @@ mod tests {
             request.extend_from_slice(&buffer[..length]);
         }
         String::from_utf8(request).unwrap()
+    }
+
+    #[test]
+    fn loopback_targets_skip_the_proxy() {
+        for url in [
+            "http://127.0.0.1:8080/x",
+            "http://127.1.2.3/x",
+            "http://[::1]:8080/x",
+            "http://localhost:8080/x",
+        ] {
+            assert!(super::is_loopback_url(url), "{url}");
+        }
+        for url in [
+            "https://gamebanana.com/dl/1",
+            "http://192.168.8.1/x",
+            "http://localhost.example.com/x",
+            "not a url",
+        ] {
+            assert!(!super::is_loopback_url(url), "{url}");
+        }
     }
 
     #[test]
