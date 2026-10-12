@@ -6341,19 +6341,23 @@ pub fn run() {
     // before it is able to show anything (see `http_plugin_cache`).
     let http_available = match http_plugin_cache(&identifier) {
         Ok(_) => true,
-        Err(directory) => {
+        Err(failure) => {
             crate::logging::error(format_args!(
-                "CeleMod cannot write its cache directory {}; starting without network features",
-                directory.display()
+                "CeleMod cannot write its cache directory: {}; starting without network features",
+                failure.reason
             ));
             crate::native_dialog::error(
                 "CeleMod - 缓存目录不可写",
                 &format!(
-                    "CeleMod 无法读写自己的缓存目录，网络功能（Mod 列表、下载、更新）这次被跳过。\n\n\
-                     常见原因是安全软件、系统权限或组策略拦住了它：\n\
-                     可以先删除这个目录后重新打开，或把 CeleMod 加入安全软件白名单。\n\n\
+                    "CeleMod 无法读写自己的缓存目录，这次跳过了联网检查更新、Mod 站搜索、\
+                     Everest/Loenn 版本查询（Mod 列表、下载、启动游戏不受影响）。\n\n\
+                     失败的操作：{}\n\n\
+                     常见原因是安全软件拦写、目录权限或属主异常、\
+                     %LOCALAPPDATA% 被重定向或策略限制：\n\
+                     可以先删除下面的目录后重新打开，或把 CeleMod 加入安全软件白名单。\n\n\
                      目录：{}\n日志：{}",
-                    directory.display(),
+                    failure.reason,
+                    failure.directory.display(),
                     crate::logging::path().display()
                 ),
             );
@@ -6556,6 +6560,14 @@ fn startup_failure_hint(error: &tauri::Error, identifier: &str) -> String {
     }
 }
 
+/// Why the cookie cache of `tauri-plugin-http` cannot be used.
+#[derive(Debug)]
+struct HttpCacheFailure {
+    directory: PathBuf,
+    /// Which operation failed, with the operating system message.
+    reason: String,
+}
+
 /// Resolves the directory `tauri-plugin-http` uses for its cookie cache.
 ///
 /// The plugin creates (`create_dir_all`) and opens `<app cache>/.cookies` while
@@ -6566,7 +6578,7 @@ fn startup_failure_hint(error: &tauri::Error, identifier: &str) -> String {
 ///
 /// The path is probed first so the caller can start without the plugin instead
 /// of dying; see `prepare_http_cache`.
-fn http_plugin_cache(identifier: &str) -> Result<PathBuf, PathBuf> {
+fn http_plugin_cache(identifier: &str) -> Result<PathBuf, HttpCacheFailure> {
     let Some(directory) = dirs::cache_dir().map(|dir| dir.join(identifier)) else {
         // Without a cache directory we cannot probe; let the plugin report it.
         return Ok(PathBuf::new());
@@ -6577,30 +6589,33 @@ fn http_plugin_cache(identifier: &str) -> Result<PathBuf, PathBuf> {
 /// Creates and opens the cookie file exactly like `tauri-plugin-http` does.
 ///
 /// Returns the directory on success; on failure it drops a stale cookie file
-/// once and retries, and otherwise returns the directory as `Err`.
-fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, PathBuf> {
+/// once and retries, and otherwise reports which operation failed so the user
+/// (and the log) can tell a blocked directory from a blocked cookie file.
+fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, HttpCacheFailure> {
     let cookies = directory.join(".cookies");
-    let probe = || -> std::io::Result<()> {
-        fs::create_dir_all(&directory)?;
-        drop(
-            fs::File::options()
-                .create(true)
-                .append(true)
-                .read(true)
-                .open(&cookies)?,
-        );
+    let probe = || {
+        fs::create_dir_all(&directory)
+            .map_err(|error| format!("create {} ({error})", directory.display()))?;
+        fs::File::options()
+            .create(true)
+            .append(true)
+            .read(true)
+            .open(&cookies)
+            .map_err(|error| format!("open {} ({error})", cookies.display()))?;
         Ok(())
     };
 
-    if probe().is_ok() {
-        return Ok(directory);
-    }
+    let mut reason = match probe() {
+        Ok(()) => return Ok(directory),
+        Err(reason) => reason,
+    };
     // A stale cookie file is the only thing we can safely drop on our own.
     let _ = fs::remove_file(&cookies);
-    if probe().is_ok() {
-        return Ok(directory);
+    if let Err(retry_reason) = probe() {
+        reason = format!("{reason}; retry: {retry_reason}");
+        return Err(HttpCacheFailure { directory, reason });
     }
-    Err(directory)
+    Ok(directory)
 }
 
 #[cfg(test)]
@@ -6630,8 +6645,13 @@ mod http_plugin_cache_tests {
     fn reports_a_directory_that_cannot_hold_the_cookie_file() {
         let directory = fixture();
         fs::create_dir_all(directory.join(".cookies")).unwrap();
-        let error = prepare_http_cache(directory.clone()).expect_err("cache is not writable");
-        assert_eq!(error, directory);
+        let failure = prepare_http_cache(directory.clone()).expect_err("cache is not writable");
+        assert_eq!(failure.directory, directory);
+        assert!(
+            failure.reason.contains(".cookies"),
+            "the failing operation is reported: {}",
+            failure.reason
+        );
         let _ = fs::remove_dir_all(&directory);
     }
 
