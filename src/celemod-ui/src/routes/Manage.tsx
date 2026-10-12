@@ -12,6 +12,7 @@ import {
 import "./Manage.scss";
 import {
   MOD_TYPE_OPTIONS,
+  currentMirror,
   reloadBlacklistState,
   reloadInstalledMods,
   useAlwaysOnMods,
@@ -38,6 +39,11 @@ import { CatalogMod, loadModCatalog } from "../api/modCatalog";
 import { Content, searchSubmission } from "../api/wegfan";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
+import {
+  collectModUpdates,
+  type LatestModInfo,
+  type LatestModTuple,
+} from "../modUpdates";
 import {
   ManageCatalogMeta,
   ManageNode,
@@ -422,14 +428,6 @@ const ProfileExportPopup = ({
       </div>
     </div>
   );
-};
-
-type LatestModInfo = {
-  name: string;
-  version: string;
-  gbFile: string;
-  current: string;
-  url: string;
 };
 
 type FullModCheckProgress = {
@@ -1118,9 +1116,10 @@ export const Manage = () => {
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const downloadMods = useDownloadStore((state) => state.downloadMods);
   const [catalog, setCatalog] = useState<CatalogMod[]>([]);
-  const [latestRaw, setLatestRaw] = useState<
-    [string, string, string, string][]
-  >([]);
+  const [latestRaw, setLatestRaw] = useState<LatestModTuple[]>([]);
+  const [archiveHashes, setArchiveHashes] = useState<Record<string, string>>(
+    {},
+  );
   const [updateStates, setUpdateStates] = useState<Record<string, string>>({});
   const [batchUpdateProgress, setBatchUpdateProgress] =
     useState<BatchUpdateProgress | null>(null);
@@ -1210,6 +1209,24 @@ export const Manage = () => {
       setLatestRaw(JSON.parse(data)),
     );
   }, [cacheTtl]);
+
+  /* Archive hashes decide whether an installed Mod still matches the newest
+     released file, the way Everest and Olympus check for updates.  They are
+     only needed here and are cached per file by the backend, so the Mod list
+     itself keeps loading without reading every archive. */
+  useEffect(() => {
+    if (!gamePath) {
+      setArchiveHashes({});
+      return;
+    }
+    let canceled = false;
+    callRemote("get_mod_archive_hashes", `${gamePath}/Mods`, (data: string) => {
+      if (!canceled) setArchiveHashes(JSON.parse(data));
+    }).catch((error) => console.error("Failed to hash installed Mods", error));
+    return () => {
+      canceled = true;
+    };
+  }, [gamePath, installedMods]);
 
   useEffect(() => {
     if (!gamePath || !profileEnabled) {
@@ -1306,20 +1323,17 @@ export const Manage = () => {
 
   const updates = useMemo<LatestModInfo[]>(
     () =>
-      Object.values(nodes).flatMap((node) => {
-        const latest = latestRaw.find((item) => item[0] === node.name);
-        if (!latest || compareVersion(latest[1], node.version) <= 0) return [];
-        return [
-          {
-            name: node.name,
-            version: latest[1],
-            gbFile: latest[2],
-            current: node.version,
-            url: latest[3],
-          },
-        ];
-      }),
-    [nodes, latestRaw],
+      collectModUpdates(
+        Object.values(nodes).map((node) => ({
+          name: node.name,
+          version: node.version,
+          file: node.file,
+          isDirectory: node.isDirectory,
+        })),
+        archiveHashes,
+        latestRaw,
+      ),
+    [nodes, archiveHashes, latestRaw],
   );
   const updateNames = useMemo(
     () => new Set(updates.map((update) => update.name)),
@@ -1328,7 +1342,13 @@ export const Manage = () => {
   const updateVersions = useMemo(
     () =>
       Object.fromEntries(
-        updates.map((update) => [update.name, update.version]),
+        updates.map((update) => [
+          update.name,
+          // A release that keeps the old version number only differs by archive.
+          compareVersion(update.version, update.current) > 0
+            ? update.version
+            : _i18n.t("最新版"),
+        ]),
       ),
     [updates],
   );
@@ -1634,6 +1654,56 @@ export const Manage = () => {
     [downloadMods],
   );
 
+  /* A mirror may serve an archive the catalog does not know (for example an
+     old build stored under the new file id), which would leave the Mod
+     outdated while looking updated.  Updates are therefore verified against
+     the catalog hash the way Everest does it, and another source is tried
+     when the download does not match. */
+  const updateSources = useCallback((update: LatestModInfo): string[] => {
+    if (update.gbFile === "-1") return update.url ? [update.url] : [];
+    const urlFor = (mirror: string) =>
+      mirror === "wegfan"
+        ? `https://celeste.weg.fan/api/v2/download/gamebanana-files/${update.gbFile}`
+        : mirror === "0x0ade"
+          ? `https://celestemodupdater.0x0a.de/banana-mirror/${update.gbFile}.zip`
+          : `https://gamebanana.com/dl/${update.gbFile}`;
+    return [...new Set([currentMirror(), "0x0ade", "gamebanana"].map(urlFor))];
+  }, []);
+
+  const downloadUpdate = useCallback(
+    (name: string, source: string): Promise<boolean> =>
+      new Promise((resolve) => {
+        downloadMod(name, source, {
+          force: true,
+          onProgress: (_task, progress) =>
+            setUpdateStates((state) => ({
+              ...state,
+              [name]: `${progress.toFixed(0)}%`,
+            })),
+          onFinished: () => resolve(true),
+          onFailed: () => resolve(false),
+        });
+      }),
+    [downloadMod],
+  );
+
+  const installedArchiveMatches = useCallback(
+    async (name: string, update: LatestModInfo) => {
+      if (update.xxHash.length === 0) return true;
+      const hashes = await callRemote<Record<string, string>>(
+        "get_mod_archive_hashes",
+        `${gamePath}/Mods`,
+      );
+      const installed = (await reloadInstalledMods(gamePath)).find(
+        (mod) => mod.name === name,
+      );
+      const hash = installed ? hashes[installed.file] : undefined;
+      // Unpacked Mods cannot be compared, and neither can a failed hash.
+      return !hash || update.xxHash.includes(hash);
+    },
+    [gamePath],
+  );
+
   const updateNode = useCallback(
     (name: string): Promise<boolean> => {
       const update = updates.find((item) => item.name === name);
@@ -1641,34 +1711,34 @@ export const Manage = () => {
         return Promise.resolve(false);
       activeUpdates.current.add(name);
       setUpdateStates((state) => ({ ...state, [name]: _i18n.t("更新中…") }));
-      return new Promise((resolve) => {
-        downloadMod(name, update.gbFile === "-1" ? update.url : update.gbFile, {
-          force: true,
-          onProgress: (_task, progress) =>
-            setUpdateStates((state) => ({
-              ...state,
-              [name]: `${progress.toFixed(0)}%`,
-            })),
-          onFinished: () => {
-            activeUpdates.current.delete(name);
-            setUpdateStates((state) => ({
-              ...state,
-              [name]: _i18n.t("已更新"),
-            }));
-            resolve(true);
-          },
-          onFailed: () => {
-            activeUpdates.current.delete(name);
-            setUpdateStates((state) => ({
-              ...state,
-              [name]: _i18n.t("更新失败"),
-            }));
-            resolve(false);
-          },
-        });
-      });
+      const attempt = async () => {
+        for (const source of updateSources(update)) {
+          if (!(await downloadUpdate(name, source))) continue;
+          if (await installedArchiveMatches(name, update)) return true;
+        }
+        return false;
+      };
+      return attempt().then(
+        (updated) => {
+          activeUpdates.current.delete(name);
+          setUpdateStates((state) => ({
+            ...state,
+            [name]: _i18n.t(updated ? "已更新" : "更新失败"),
+          }));
+          return updated;
+        },
+        (error) => {
+          console.error("Failed to update Mod", name, error);
+          activeUpdates.current.delete(name);
+          setUpdateStates((state) => ({
+            ...state,
+            [name]: _i18n.t("更新失败"),
+          }));
+          return false;
+        },
+      );
     },
-    [downloadMod, updates],
+    [downloadUpdate, installedArchiveMatches, updateSources, updates],
   );
 
   const updateAll = useCallback(() => {

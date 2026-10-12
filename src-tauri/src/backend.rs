@@ -63,6 +63,8 @@ lazy_static::lazy_static! {
     static ref MIAONET_AUTHORIZATION: ParkingMutex<Option<(PathBuf, MiaoNetAuthorization)>> = ParkingMutex::new(None);
 }
 
+#[path = "archive_hash.rs"]
+mod archive_hash;
 #[path = "blacklist.rs"]
 mod blacklist;
 #[path = "crash_analysis.rs"]
@@ -3234,6 +3236,37 @@ mod local_package_tests {
     }
 
     #[test]
+    fn hashes_installed_mod_archives_for_the_update_check() {
+        let root = test_dir("mod-archive-hashes");
+        let mods = root.join("Mods");
+        fs::create_dir_all(&mods).unwrap();
+        let archive = mods.join("HashCheck.zip");
+        write_zip(
+            &archive,
+            &[("everest.yaml", b"- Name: HashCheck\n  Version: 0.19.7\n")],
+        );
+        // Unpacked Mods and non-archive files have no hash to compare.
+        fs::create_dir_all(mods.join("UnpackedMod")).unwrap();
+        fs::write(mods.join("notes.txt"), b"not a Mod").unwrap();
+
+        let hashes = mod_archive_hashes_sync(mods.to_string_lossy().as_ref());
+        assert_eq!(hashes.len(), 1);
+        let hash = hashes.get("HashCheck.zip").unwrap();
+        assert_eq!(hash, &archive_hash::hash_file(&archive).unwrap());
+
+        // Replacing the archive changes the hash instead of reusing the cache.
+        write_zip(
+            &archive,
+            &[(
+                "everest.yaml",
+                b"- Name: HashCheck\n  Version: 0.19.8\n  Dependencies:\n    - Name: EverestCore\n      Version: 1.6531.0\n",
+            )],
+        );
+        let replaced = mod_archive_hashes_sync(mods.to_string_lossy().as_ref());
+        assert_ne!(replaced.get("HashCheck.zip"), Some(hash));
+    }
+
+    #[test]
     fn identifies_and_installs_mod_archives() {
         let root = test_dir("drop-mod");
         let package = root.join("Test Mod.zip");
@@ -5244,7 +5277,8 @@ fn get_mod_update(name: String, on_event: Channel<IpcEvent>) {
 #[tauri::command]
 fn get_mod_latest_info(on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
-        let values: Vec<(String, String, String, String)> = match get_mod_cached_new() {
+        let values: Vec<(String, String, String, String, Vec<String>)> = match get_mod_cached_new()
+        {
             Ok(mods) => mods
                 .iter()
                 .map(|(name, item)| {
@@ -5253,6 +5287,7 @@ fn get_mod_latest_info(on_event: Channel<IpcEvent>) {
                         item.version.clone(),
                         item.game_banana_file_id.to_string(),
                         item.download_url.clone(),
+                        item.xx_hash.clone(),
                     )
                 })
                 .collect(),
@@ -5262,6 +5297,52 @@ fn get_mod_latest_info(on_event: Channel<IpcEvent>) {
             }
         };
         let data = serde_json::to_string(&values).unwrap_or_else(|_| "[]".to_string());
+        send_event(&on_event, vec![serde_json::json!(data)]);
+    });
+}
+
+/// Hashes the archives of a `Mods` folder, keyed by file name.
+///
+/// The UI compares these with the catalog's `xxHash` entries to find Mods whose
+/// newest release does not bump the version in `everest.yaml`.  Results are
+/// cached per file, so calling this repeatedly only stats the archives.
+fn mod_archive_hashes_sync(mods_folder_path: &str) -> HashMap<String, String> {
+    let mut hashes = HashMap::new();
+    let Ok(entries) = fs::read_dir(mods_folder_path) else {
+        return hashes;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("zip"))
+        {
+            continue;
+        }
+        let Ok(metadata) = fs::metadata(&path) else {
+            continue;
+        };
+        if !metadata.is_file() {
+            continue;
+        }
+        match archive_hash::ensure_hash(&path, metadata.len(), modified_at_millis(&metadata)) {
+            Ok(hash) => {
+                hashes.insert(entry.file_name().to_string_lossy().to_string(), hash);
+            }
+            Err(error) => crate::logging::warn(format_args!(
+                "[ WARNING ] Failed to hash {:?}: {error:#}",
+                entry.file_name()
+            )),
+        }
+    }
+    hashes
+}
+
+#[tauri::command]
+fn get_mod_archive_hashes(mods_folder_path: String, on_event: Channel<IpcEvent>) {
+    std::thread::spawn(move || {
+        let hashes = mod_archive_hashes_sync(&mods_folder_path);
+        let data = serde_json::to_string(&hashes).unwrap_or_else(|_| "{}".to_string());
         send_event(&on_event, vec![serde_json::json!(data)]);
     });
 }
@@ -6461,6 +6542,7 @@ pub fn run() {
             verify_celeste_install,
             normalize_game_path,
             get_mod_latest_info,
+            get_mod_archive_hashes,
             show_log_window,
             write_frontend_log,
             set_catalog_offline,

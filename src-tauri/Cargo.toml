@@ -43,6 +43,7 @@ pbkdf2 = "0.12"
 rand = "0.8"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 sha2 = "0.10"
+xxhash-rust = { version = "0.8", features = ["xxh64"] }
 url = "2"
 webpki-roots = "1"
 whoami = "1"
