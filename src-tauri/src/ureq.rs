@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{
@@ -17,6 +18,8 @@ pub struct DownloadCallbackInfo {
 
 const NUM_THREADS: usize = 8;
 const MAX_RETRIES: usize = 3;
+/// 进度回调的最小间隔。多线程路径一直按这个节奏上报，单线程路径现在也一样。
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(200);
 
 fn user_agent() -> String {
     format!(
@@ -73,23 +76,63 @@ fn wait_if_paused(
     Ok(())
 }
 
+/// 报告「当前」下载速度的滑动窗口。
+///
+/// 之前上报的是 `已下载字节 / 从开始到现在的秒数`，也就是整段下载的平均速度：
+/// 只要镜像中途变慢或卡住，界面上的速度就会一路平滑下滑（用户看到的是「越下越
+/// 慢」，而不是「卡住了」），重试等待期间也不会有任何变化。改成用最近几秒的窗口
+/// 计算，速度才会如实反映当下。
+struct SpeedMeter {
+    started: Instant,
+    samples: VecDeque<(Instant, u64)>,
+}
+
+impl SpeedMeter {
+    /// 采样窗口。比进度回调间隔（200ms）长得多，足以抹平抖动；又足够短，
+    /// 卡顿几秒就能看出来。
+    const WINDOW: Duration = Duration::from_secs(3);
+
+    fn new(now: Instant) -> Self {
+        Self {
+            started: now,
+            samples: VecDeque::with_capacity(8),
+        }
+    }
+
+    /// 记一次采样（累计字节数），返回最近一个窗口内的平均速度。
+    fn record(&mut self, now: Instant, downloaded: u64) -> f64 {
+        self.samples.push_back((now, downloaded));
+        // 多留一个窗口外的采样点，避免窗口起点离 now 太近导致速度跳动剧烈。
+        while self.samples.len() > 2 && now.duration_since(self.samples[0].0) > Self::WINDOW {
+            self.samples.pop_front();
+        }
+        // 下载刚开始、窗口还没铺满时，退回「从开始到现在」的平均速度。
+        let (from_time, from_bytes) = if now.duration_since(self.started) < Self::WINDOW {
+            (self.started, 0)
+        } else {
+            self.samples[0]
+        };
+        let elapsed = now.duration_since(from_time).as_secs_f64().max(0.001);
+        downloaded.saturating_sub(from_bytes) as f64 / elapsed
+    }
+}
+
 fn report_progress(
     progress_callback: &mut dyn FnMut(DownloadCallbackInfo),
     downloaded: u64,
     total: u64,
-    started: Instant,
+    speed_bytes_per_sec: f64,
 ) {
     let progress = if total == 0 {
         0.0
     } else {
         (downloaded as f32 / total as f32) * 100.0
     };
-    let elapsed = started.elapsed().as_secs_f64().max(0.001);
     progress_callback(DownloadCallbackInfo {
         progress: progress.min(100.0),
         downloaded_bytes: downloaded,
         total_bytes: total,
-        speed_bytes_per_sec: downloaded as f64 / elapsed,
+        speed_bytes_per_sec,
     });
 }
 
@@ -113,6 +156,8 @@ fn download_single(
     let mut retries_used = 0usize;
     let mut retrying = false;
     let started = Instant::now();
+    let mut last_report = started;
+    let mut speed_meter = SpeedMeter::new(started);
 
     loop {
         if cancel_flag.load(Ordering::Relaxed) {
@@ -134,7 +179,10 @@ fn download_single(
                     file.seek(SeekFrom::Start(0))?;
                     downloaded = 0;
                     total_size = 0;
-                    report_progress(progress_callback, 0, 0, started);
+                    report_progress(progress_callback, 0, 0, 0.0);
+                    let now = Instant::now();
+                    last_report = now;
+                    speed_meter = SpeedMeter::new(now);
                 }
             }
         }
@@ -210,9 +258,15 @@ fn download_single(
             downloaded += n as u64;
             if total_size > 0 {
                 let progress = (downloaded as f32 / total_size as f32) * 100.0;
-                if progress - last_progress >= 0.1 {
-                    report_progress(progress_callback, downloaded, total_size, started);
+                let now = Instant::now();
+                // 即使进度没动也要定时上报，卡住时界面上的速度才会掉下去。
+                if progress - last_progress >= 0.1
+                    || now.duration_since(last_report) >= PROGRESS_INTERVAL
+                {
+                    let speed = speed_meter.record(now, downloaded);
+                    report_progress(progress_callback, downloaded, total_size, speed);
                     last_progress = progress;
+                    last_report = now;
                 }
             }
         };
@@ -362,6 +416,7 @@ fn download_multi_thread(
     let downloaded_bytes = Arc::new(Mutex::new(0u64));
     let errors = Arc::new(Mutex::new(Vec::<String>::new()));
     let started = Instant::now();
+    let mut speed_meter = SpeedMeter::new(started);
     let mut handles = Vec::with_capacity(NUM_THREADS);
 
     for index in 0..NUM_THREADS {
@@ -399,11 +454,12 @@ fn download_multi_thread(
     loop {
         let all_done = handles.iter().all(|handle| handle.is_finished());
         let downloaded = *downloaded_bytes.lock().unwrap();
-        report_progress(progress_callback, downloaded, content_length, started);
+        let speed = speed_meter.record(Instant::now(), downloaded);
+        report_progress(progress_callback, downloaded, content_length, speed);
         if all_done || cancel_flag.load(Ordering::Relaxed) {
             break;
         }
-        std::thread::sleep(Duration::from_millis(200));
+        std::thread::sleep(PROGRESS_INTERVAL);
     }
 
     for handle in handles {
@@ -430,7 +486,8 @@ fn download_multi_thread(
         bail!("Download ended after {downloaded} of {content_length} bytes");
     }
 
-    report_progress(progress_callback, content_length, content_length, started);
+    let speed = speed_meter.record(Instant::now(), content_length);
+    report_progress(progress_callback, content_length, content_length, speed);
     Ok(())
 }
 
@@ -529,8 +586,11 @@ mod tests {
     use std::io::{Read, Write};
     use std::net::{TcpListener, TcpStream};
     use std::sync::{Arc, Mutex, atomic::AtomicBool};
+    use std::time::{Duration, Instant};
 
-    use super::{download_file_to_path_with_progress, download_single, parse_content_range};
+    use super::{
+        SpeedMeter, download_file_to_path_with_progress, download_single, parse_content_range,
+    };
 
     fn read_request(stream: &mut TcpStream) -> String {
         let mut request = Vec::new();
@@ -550,6 +610,39 @@ mod tests {
         assert_eq!(parse_content_range("bytes 10-19/100"), Some((10, 19, 100)));
         assert_eq!(parse_content_range("bytes */100"), None);
         assert_eq!(parse_content_range("invalid"), None);
+    }
+
+    const MIB: f64 = 1024.0 * 1024.0;
+
+    #[test]
+    fn speed_meter_reports_current_not_lifetime_average() {
+        let start = Instant::now();
+        let mut meter = SpeedMeter::new(start);
+
+        // 第一秒下了 4 MiB，窗口还没铺满，退回整段平均：4 MiB/s。
+        let speed = meter.record(start + Duration::from_secs(1), 4 * MIB as u64);
+        assert!((speed - 4.0 * MIB).abs() < 1.0, "{speed}");
+
+        // 之后镜像卡了 4 秒：旧的「整段平均」只会从 4 MiB/s 慢慢往下掉，
+        // 新的窗口速度直接是 0。
+        let speed = meter.record(start + Duration::from_secs(5), 4 * MIB as u64);
+        assert_eq!(speed, 0.0);
+
+        // 又恢复成 1 MiB/s，报出来的也是 1 MiB/s，而不是被前面的高速率拉高。
+        let speed = meter.record(start + Duration::from_secs(6), 5 * MIB as u64);
+        assert!((speed - MIB).abs() < 1.0, "{speed}");
+    }
+
+    #[test]
+    fn speed_meter_drops_samples_outside_the_window() {
+        let start = Instant::now();
+        let mut meter = SpeedMeter::new(start);
+        for second in 1..=5 {
+            meter.record(start + Duration::from_secs(second), second * MIB as u64);
+        }
+        // 最近 3 秒共 3 MiB -> 1 MiB/s；如果窗口没丢掉旧采样点会报得更高。
+        let speed = meter.record(start + Duration::from_secs(5), 5 * MIB as u64);
+        assert!((speed - MIB).abs() < 1.0, "{speed}");
     }
 
     #[test]
