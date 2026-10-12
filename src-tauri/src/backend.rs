@@ -6586,36 +6586,107 @@ fn http_plugin_cache(identifier: &str) -> Result<PathBuf, HttpCacheFailure> {
     prepare_http_cache(directory)
 }
 
-/// Creates and opens the cookie file exactly like `tauri-plugin-http` does.
+/// Creates and opens the cookie file exactly like `tauri-plugin-http` does, and
+/// makes sure the plugin will not start from a store it cannot use.
 ///
-/// Returns the directory on success; on failure it drops a stale cookie file
-/// once and retries, and otherwise reports which operation failed so the user
-/// (and the log) can tell a blocked directory from a blocked cookie file.
+/// The plugin only fails on `create_dir_all` and on opening `.cookies`; a file
+/// it can open but not parse is silently dropped ("empty store"). Both are
+/// handled here: a cookie file that cannot be opened is moved aside and
+/// recreated, and one the plugin cannot parse is backed up for inspection.
 fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, HttpCacheFailure> {
     let cookies = directory.join(".cookies");
-    let probe = || {
-        fs::create_dir_all(&directory)
-            .map_err(|error| format!("create {} ({error})", directory.display()))?;
-        fs::File::options()
-            .create(true)
-            .append(true)
-            .read(true)
-            .open(&cookies)
-            .map_err(|error| format!("open {} ({error})", cookies.display()))?;
-        Ok(())
-    };
+    if let Err(reason) = probe_http_cache(&directory, &cookies) {
+        let disposition = move_cookie_file_aside(&cookies);
+        return match probe_http_cache(&directory, &cookies) {
+            Ok(()) => {
+                crate::logging::warn(format_args!(
+                    "Replaced the unusable cookie file {} ({reason}); it was {disposition}",
+                    cookies.display()
+                ));
+                Ok(directory)
+            }
+            Err(retry) => Err(HttpCacheFailure {
+                directory,
+                reason: format!("{reason}; after {disposition}: {retry}"),
+            }),
+        };
+    }
 
-    let mut reason = match probe() {
-        Ok(()) => return Ok(directory),
-        Err(reason) => reason,
-    };
-    // A stale cookie file is the only thing we can safely drop on our own.
-    let _ = fs::remove_file(&cookies);
-    if let Err(retry_reason) = probe() {
-        reason = format!("{reason}; retry: {retry_reason}");
-        return Err(HttpCacheFailure { directory, reason });
+    if let Some(reason) = cookie_store_problem(&cookies) {
+        let disposition = move_cookie_file_aside(&cookies);
+        if let Err(error) = fs::write(&cookies, "") {
+            crate::logging::warn(format_args!(
+                "Failed to recreate the cookie file {}: {error}",
+                cookies.display()
+            ));
+        }
+        crate::logging::warn(format_args!(
+            "Cookie file {} is not a usable cookie store ({reason}); it was {disposition}",
+            cookies.display()
+        ));
     }
     Ok(directory)
+}
+
+/// The two file operations the plugin performs while the app starts.
+fn probe_http_cache(directory: &Path, cookies: &Path) -> Result<(), String> {
+    fs::create_dir_all(directory)
+        .map_err(|error| format!("create {} ({error})", directory.display()))?;
+    fs::File::options()
+        .create(true)
+        .append(true)
+        .read(true)
+        .open(cookies)
+        .map(|_| ())
+        .map_err(|error| format!("open {} ({error})", cookies.display()))
+}
+
+/// The plugin loads its store as JSON (`cookie_store 0.22`) and falls back to an
+/// empty store without a word when that fails, so a file it cannot parse is
+/// reported here instead of being dropped silently.
+fn cookie_store_problem(cookies: &Path) -> Option<String> {
+    let bytes = match fs::read(cookies) {
+        Ok(bytes) => bytes,
+        Err(error) => return Some(format!("it cannot be read ({error})")),
+    };
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        return Some("it starts with a UTF-8 BOM, which the cookie store never writes".to_string());
+    }
+    if bytes.iter().all(u8::is_ascii_whitespace) {
+        return None;
+    }
+    match serde_json::from_slice::<serde_json::Value>(&bytes) {
+        Ok(_) => None,
+        Err(error) => Some(format!("it is not valid JSON ({error})")),
+    }
+}
+
+/// Moves the cookie file out of the way. A read-only file cannot be opened for
+/// writing on Windows — nor deleted — so the attribute is cleared first.
+/// Returns what happened, for the log.
+fn move_cookie_file_aside(cookies: &Path) -> String {
+    if let Ok(metadata) = fs::metadata(cookies) {
+        let mut permissions = metadata.permissions();
+        if permissions.readonly() {
+            permissions.set_readonly(false);
+            let _ = fs::set_permissions(cookies, permissions);
+        }
+    }
+
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis())
+        .unwrap_or_default();
+    let backup = cookies.with_extension(format!("bad-{timestamp}"));
+    match fs::rename(cookies, &backup) {
+        Ok(()) => format!("moved to {}", backup.display()),
+        Err(rename_error) => match fs::remove_file(cookies) {
+            Ok(()) => format!("removed ({rename_error})"),
+            Err(remove_error) => {
+                format!("neither moved ({rename_error}) nor removed ({remove_error})")
+            }
+        },
+    }
 }
 
 #[cfg(test)]
@@ -6623,53 +6694,114 @@ mod http_plugin_cache_tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    fn fixture() -> PathBuf {
-        static NEXT: AtomicUsize = AtomicUsize::new(0);
-        std::env::temp_dir().join(format!(
-            "celemod-http-cache-test-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ))
+    struct Fixture(PathBuf);
+
+    impl Fixture {
+        fn new() -> Self {
+            static NEXT: AtomicUsize = AtomicUsize::new(0);
+            let path = std::env::temp_dir().join(format!(
+                "celemod-http-cache-test-{}-{}",
+                std::process::id(),
+                NEXT.fetch_add(1, Ordering::Relaxed)
+            ));
+            Self(path)
+        }
+
+        fn cookies(&self) -> PathBuf {
+            self.0.join(".cookies")
+        }
+
+        /// The backup `move_cookie_file_aside` leaves behind, if any.
+        fn backup(&self) -> Option<PathBuf> {
+            fs::read_dir(&self.0)
+                .ok()?
+                .flatten()
+                .map(|entry| entry.path())
+                .find(|path| {
+                    path.file_name()
+                        .map(|name| name.to_string_lossy().starts_with(".cookies.bad-"))
+                        .unwrap_or(false)
+                })
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
     }
 
     #[test]
     fn creates_the_directory_and_cookie_file() {
-        let directory = fixture();
-        let result = prepare_http_cache(directory.clone());
-        assert_eq!(result.expect("cache is writable"), directory);
-        assert!(directory.join(".cookies").is_file());
-        let _ = fs::remove_dir_all(&directory);
+        let fixture = Fixture::new();
+        let directory = prepare_http_cache(fixture.0.clone()).expect("cache is writable");
+        assert_eq!(directory, fixture.0);
+        assert!(fixture.cookies().is_file());
+        assert!(fixture.backup().is_none());
     }
 
     #[test]
-    fn reports_a_directory_that_cannot_hold_the_cookie_file() {
-        let directory = fixture();
-        fs::create_dir_all(directory.join(".cookies")).unwrap();
-        let failure = prepare_http_cache(directory.clone()).expect_err("cache is not writable");
-        assert_eq!(failure.directory, directory);
+    fn keeps_a_readable_cookie_store() {
+        let fixture = Fixture::new();
+        fs::create_dir_all(&fixture.0).unwrap();
+        fs::write(fixture.cookies(), "[]").unwrap();
+
+        prepare_http_cache(fixture.0.clone()).expect("cache is writable");
+
+        assert_eq!(
+            fs::read_to_string(fixture.cookies()).unwrap(),
+            "[]",
+            "a usable store is left alone"
+        );
+        assert!(fixture.backup().is_none());
+    }
+
+    /// A cookie file the plugin cannot open is what kills the launcher, so it is
+    /// moved aside and recreated (a directory works as an unopenable file on
+    /// every platform).
+    #[test]
+    fn replaces_a_cookie_file_that_cannot_be_opened() {
+        let fixture = Fixture::new();
+        fs::create_dir_all(fixture.cookies()).unwrap();
+
+        let directory = prepare_http_cache(fixture.0.clone()).expect("cache is repaired");
+
+        assert_eq!(directory, fixture.0);
+        assert!(fixture.cookies().is_file());
         assert!(
-            failure.reason.contains(".cookies"),
+            fixture.backup().is_some(),
+            "the old file is kept as a backup"
+        );
+    }
+
+    /// The plugin silently drops a store it cannot parse; keep a copy instead.
+    #[test]
+    fn backs_up_a_cookie_store_that_cannot_be_parsed() {
+        let fixture = Fixture::new();
+        fs::create_dir_all(&fixture.0).unwrap();
+        let bom_only = [0xEFu8, 0xBB, 0xBF];
+        fs::write(fixture.cookies(), bom_only).unwrap();
+
+        prepare_http_cache(fixture.0.clone()).expect("cache is writable");
+
+        assert_eq!(fs::read(fixture.cookies()).unwrap(), Vec::<u8>::new());
+        let backup = fixture.backup().expect("the broken store is kept");
+        assert_eq!(fs::read(backup).unwrap(), bom_only);
+    }
+
+    #[test]
+    fn reports_a_directory_that_cannot_be_used_at_all() {
+        let fixture = Fixture::new();
+        fs::write(&fixture.0, "not a directory").unwrap();
+
+        let failure = prepare_http_cache(fixture.0.clone()).expect_err("cache is not writable");
+
+        assert_eq!(failure.directory, fixture.0);
+        assert!(
+            failure.reason.contains("create"),
             "the failing operation is reported: {}",
             failure.reason
         );
-        let _ = fs::remove_dir_all(&directory);
-    }
-
-    /// A symlink in place of the cookie file cannot be opened, but removing it
-    /// makes the directory usable again — the one repair we can do ourselves.
-    #[cfg(unix)]
-    #[test]
-    fn repairs_a_stale_cookie_entry() {
-        let directory = fixture();
-        fs::create_dir_all(&directory).unwrap();
-        fs::create_dir_all(directory.join("stale")).unwrap();
-        std::os::unix::fs::symlink(directory.join("stale"), directory.join(".cookies")).unwrap();
-
-        let result = prepare_http_cache(directory.clone());
-
-        assert_eq!(result.expect("cache is repaired"), directory);
-        assert!(directory.join(".cookies").is_file());
-        let _ = fs::remove_dir_all(&directory);
     }
 }
 
