@@ -24,6 +24,8 @@ pub struct ModInfoCached {
     pub game_banana_id: i64,
     pub game_banana_file_id: i64,
     pub download_url: String,
+    /// xxHash64 of the newest file, the check Everest and Olympus use.
+    pub xx_hash: Vec<String>,
 }
 
 static CATALOG_OFFLINE: AtomicBool = AtomicBool::new(false);
@@ -119,6 +121,11 @@ fn compact_catalog(mods: &[wegfan::Mod]) -> HashMap<String, ModInfoCached> {
                 download_url: item.submission_file.url.clone(),
                 name: item.name.clone(),
                 version: item.version.clone(),
+                xx_hash: item
+                    .xx_hash
+                    .iter()
+                    .map(|hash| hash.trim().to_ascii_lowercase())
+                    .collect(),
             };
             (compact.name.clone(), compact)
         })
