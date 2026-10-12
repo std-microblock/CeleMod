@@ -6595,9 +6595,9 @@ fn http_plugin_cache(identifier: &str) -> Result<PathBuf, HttpCacheFailure> {
 /// recreated, and one the plugin cannot parse is backed up for inspection.
 fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, HttpCacheFailure> {
     let cookies = directory.join(".cookies");
-    if let Err(reason) = probe_http_cache(&directory, &cookies) {
+    if let Err(reason) = probe_http_cache_with_retries(&directory, &cookies) {
         let disposition = move_cookie_file_aside(&cookies);
-        return match probe_http_cache(&directory, &cookies) {
+        return match probe_http_cache_with_retries(&directory, &cookies) {
             Ok(()) => {
                 crate::logging::warn(format_args!(
                     "Replaced the unusable cookie file {} ({reason}); it was {disposition}",
@@ -6626,6 +6626,26 @@ fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, HttpCacheFailure> {
         ));
     }
     Ok(directory)
+}
+
+/// Antivirus and sync clients hold a file exclusively for a moment while they
+/// scan it, and that also fails the open; do not repair (or degrade) on the
+/// first refusal.
+const HTTP_CACHE_PROBE_ATTEMPTS: usize = 3;
+const HTTP_CACHE_PROBE_RETRY_DELAY: Duration = Duration::from_millis(200);
+
+fn probe_http_cache_with_retries(directory: &Path, cookies: &Path) -> Result<(), String> {
+    let mut last_error = String::new();
+    for attempt in 1..=HTTP_CACHE_PROBE_ATTEMPTS {
+        match probe_http_cache(directory, cookies) {
+            Ok(()) => return Ok(()),
+            Err(reason) => last_error = reason,
+        }
+        if attempt < HTTP_CACHE_PROBE_ATTEMPTS {
+            std::thread::sleep(HTTP_CACHE_PROBE_RETRY_DELAY);
+        }
+    }
+    Err(last_error)
 }
 
 /// The two file operations the plugin performs while the app starts.
