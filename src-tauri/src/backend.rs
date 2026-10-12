@@ -4831,6 +4831,11 @@ fn show_log_window() -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_log_folder() -> Result<(), String> {
+    reveal_log_folder()
+}
+
+#[tauri::command]
 fn write_frontend_log(level: String, message: String) {
     crate::logging::frontend(&level, &message);
 }
@@ -6304,11 +6309,6 @@ pub fn run() {
         return;
     }
 
-    crate::logging::info(format_args!(
-        "CeleMod v{} ({})",
-        env!("VERSION"),
-        env!("GIT_HASH")
-    ));
     let startup_game_paths = if is_test_mode() {
         vec![get_test_game_path()]
     } else {
@@ -6335,6 +6335,31 @@ pub fn run() {
         }
     }
     let mut builder = tauri::Builder::default();
+    let context = tauri::generate_context!();
+    let identifier = context.config().identifier.clone();
+    // A plugin that cannot initialize must not take the whole launcher down
+    // before it is able to show anything (see `http_plugin_cache`).
+    let http_available = match http_plugin_cache(&identifier) {
+        Ok(_) => true,
+        Err(directory) => {
+            crate::logging::error(format_args!(
+                "CeleMod cannot write its cache directory {}; starting without network features",
+                directory.display()
+            ));
+            crate::native_dialog::error(
+                "CeleMod - 缓存目录不可写",
+                &format!(
+                    "CeleMod 无法读写自己的缓存目录，网络功能（Mod 列表、下载、更新）这次被跳过。\n\n\
+                     常见原因是安全软件、系统权限或组策略拦住了它：\n\
+                     可以先删除这个目录后重新打开，或把 CeleMod 加入安全软件白名单。\n\n\
+                     目录：{}\n日志：{}",
+                    directory.display(),
+                    crate::logging::path().display()
+                ),
+            );
+            false
+        }
+    };
     #[cfg(target_os = "android")]
     {
         builder = builder.plugin(crate::android::init());
@@ -6351,7 +6376,10 @@ pub fn run() {
             focus_main_window(app);
         }));
     }
-    builder
+    if http_available {
+        builder = builder.plugin(tauri_plugin_http::init());
+    }
+    let result = builder
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
             #[cfg(any(windows, target_os = "linux"))]
@@ -6392,7 +6420,6 @@ pub fn run() {
 
             Ok(())
         })
-        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             take_pending_deep_links,
@@ -6462,6 +6489,7 @@ pub fn run() {
             normalize_game_path,
             get_mod_latest_info,
             show_log_window,
+            open_log_folder,
             write_frontend_log,
             set_catalog_offline,
             is_catalog_offline,
@@ -6484,6 +6512,178 @@ pub fn run() {
             keybindings::update_key_binding,
             keybindings::save_touch_buttons,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running CeleMod");
+        .run(context);
+
+    if let Err(error) = result {
+        report_startup_failure(&error, &identifier);
+    }
+}
+
+/// Reports a startup failure that happened before the first window existed.
+///
+/// Release builds run with `windows_subsystem = "windows"` and a hidden console,
+/// so a failed `run` used to be a silent no-op for the user: no window, no
+/// dialog, nothing but a line in the log file.
+fn report_startup_failure(error: &tauri::Error, identifier: &str) {
+    crate::logging::error(format_args!("CeleMod failed to start: {error}"));
+    let message = format!(
+        "CeleMod 启动失败，界面没有创建出来。\n\n{error}{}\n\n\
+         日志：{}\n\n点「是」打开日志文件夹，把最新的 celemod.log 发出来就能定位问题。",
+        startup_failure_hint(error, identifier),
+        crate::logging::path().display()
+    );
+    if crate::native_dialog::confirm("CeleMod - 启动失败", &message)
+        && let Err(error) = reveal_log_folder()
+    {
+        crate::logging::error(format_args!("Failed to open the log folder: {error}"));
+    }
+}
+
+/// Extra advice for the failures users actually run into.
+fn startup_failure_hint(error: &tauri::Error, identifier: &str) -> String {
+    let text = error.to_string();
+    let access_denied = text.contains("os error 5")
+        || text.contains("拒绝访问")
+        || text.contains("Access is denied");
+    if access_denied {
+        format!(
+            "\n\n提示：这通常是安全软件、系统权限或组策略拦住了 CeleMod 读写自己的目录。\n\
+             可以先删除 %LOCALAPPDATA%\\{identifier} 后重新打开，\n\
+             或把 CeleMod 加入安全软件白名单。"
+        )
+    } else {
+        String::new()
+    }
+}
+
+/// Resolves the directory `tauri-plugin-http` uses for its cookie cache.
+///
+/// The plugin creates (`create_dir_all`) and opens `<app cache>/.cookies` while
+/// the app starts, and Tauri turns an error there into a fatal
+/// `PluginInitialization("http", …)` — on Windows a machine where that path is
+/// not writable (antivirus, ACLs, redirected `%LOCALAPPDATA%`) fails with
+/// "拒绝访问。 (os error 5)" and the launcher dies without any UI.
+///
+/// The path is probed first so the caller can start without the plugin instead
+/// of dying; see `prepare_http_cache`.
+fn http_plugin_cache(identifier: &str) -> Result<PathBuf, PathBuf> {
+    let Some(directory) = dirs::cache_dir().map(|dir| dir.join(identifier)) else {
+        // Without a cache directory we cannot probe; let the plugin report it.
+        return Ok(PathBuf::new());
+    };
+    prepare_http_cache(directory)
+}
+
+/// Creates and opens the cookie file exactly like `tauri-plugin-http` does.
+///
+/// Returns the directory on success; on failure it drops a stale cookie file
+/// once and retries, and otherwise returns the directory as `Err`.
+fn prepare_http_cache(directory: PathBuf) -> Result<PathBuf, PathBuf> {
+    let cookies = directory.join(".cookies");
+    let probe = || -> std::io::Result<()> {
+        fs::create_dir_all(&directory)?;
+        drop(
+            fs::File::options()
+                .create(true)
+                .append(true)
+                .read(true)
+                .open(&cookies)?,
+        );
+        Ok(())
+    };
+
+    if probe().is_ok() {
+        return Ok(directory);
+    }
+    // A stale cookie file is the only thing we can safely drop on our own.
+    let _ = fs::remove_file(&cookies);
+    if probe().is_ok() {
+        return Ok(directory);
+    }
+    Err(directory)
+}
+
+#[cfg(test)]
+mod http_plugin_cache_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn fixture() -> PathBuf {
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        std::env::temp_dir().join(format!(
+            "celemod-http-cache-test-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ))
+    }
+
+    #[test]
+    fn creates_the_directory_and_cookie_file() {
+        let directory = fixture();
+        let result = prepare_http_cache(directory.clone());
+        assert_eq!(result.expect("cache is writable"), directory);
+        assert!(directory.join(".cookies").is_file());
+        let _ = fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn reports_a_directory_that_cannot_hold_the_cookie_file() {
+        let directory = fixture();
+        fs::create_dir_all(directory.join(".cookies")).unwrap();
+        let error = prepare_http_cache(directory.clone()).expect_err("cache is not writable");
+        assert_eq!(error, directory);
+        let _ = fs::remove_dir_all(&directory);
+    }
+
+    /// A symlink in place of the cookie file cannot be opened, but removing it
+    /// makes the directory usable again — the one repair we can do ourselves.
+    #[cfg(unix)]
+    #[test]
+    fn repairs_a_stale_cookie_entry() {
+        let directory = fixture();
+        fs::create_dir_all(&directory).unwrap();
+        fs::create_dir_all(directory.join("stale")).unwrap();
+        std::os::unix::fs::symlink(directory.join("stale"), directory.join(".cookies")).unwrap();
+
+        let result = prepare_http_cache(directory.clone());
+
+        assert_eq!(result.expect("cache is repaired"), directory);
+        assert!(directory.join(".cookies").is_file());
+        let _ = fs::remove_dir_all(&directory);
+    }
+}
+
+/// Reveals the log file in the file manager; the folder also holds the logs of
+/// the previous runs (`celemod.1.log` …).
+fn reveal_log_folder() -> Result<(), String> {
+    let log = crate::logging::path();
+    let directory = log.parent().map(Path::to_path_buf).unwrap_or_default();
+
+    #[cfg(target_os = "windows")]
+    let result = std::process::Command::new("explorer")
+        .arg(if log.is_file() {
+            format!("/select,{}", log.display())
+        } else {
+            directory.display().to_string()
+        })
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string());
+    #[cfg(target_os = "macos")]
+    let result = std::process::Command::new("open")
+        .args(["-R", &log.display().to_string()])
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string());
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let result = open::that(&directory).map_err(|error| error.to_string());
+
+    result.map_err(|error| {
+        let message = format!(
+            "Failed to open the log folder {}: {error}",
+            directory.display()
+        );
+        crate::logging::error(format_args!("{message}"));
+        message
+    })
 }

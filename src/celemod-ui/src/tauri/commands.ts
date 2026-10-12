@@ -122,6 +122,7 @@ const parameterNames: Record<string, string[]> = {
   normalize_game_path: ["path"],
   get_mod_latest_info: ["onEvent"],
   show_log_window: [],
+  open_log_folder: [],
   write_frontend_log: ["level", "message"],
   set_catalog_offline: ["offline"],
   is_catalog_offline: [],

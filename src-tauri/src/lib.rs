@@ -8,6 +8,7 @@ mod installer_progress;
 #[cfg(any(target_os = "android", test))]
 mod log_viewer;
 mod logging;
+mod native_dialog;
 mod webview_runtime;
 
 pub use backend::run;
