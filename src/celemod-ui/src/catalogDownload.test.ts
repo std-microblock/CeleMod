@@ -34,10 +34,15 @@ test("waits for a slow download to settle", async () => {
 
 test("gives up after the polling budget instead of hanging", async () => {
   let waits = 0;
-  const settled = await waitForCatalogDownload(always, () => {
-    waits += 1;
-    return Promise.resolve();
-  }, 4, 25);
+  const settled = await waitForCatalogDownload(
+    always,
+    () => {
+      waits += 1;
+      return Promise.resolve();
+    },
+    4,
+    25,
+  );
   assert.equal(settled, false);
   assert.equal(waits, 4);
 });

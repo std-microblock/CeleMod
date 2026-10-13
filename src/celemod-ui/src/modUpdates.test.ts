@@ -33,11 +33,9 @@ const latestMod = (overrides: LatestModOverrides = {}): LatestModTuple => [
 ];
 
 test("detects updates from the version number", () => {
-  const updates = collectModUpdates(
-    [installedMod()],
-    {},
-    [latestMod({ version: "1.1.0" })],
-  );
+  const updates = collectModUpdates([installedMod()], {}, [
+    latestMod({ version: "1.1.0" }),
+  ]);
   assert.deepEqual(
     updates.map((update) => [update.name, update.current, update.version]),
     [["SampleMod", "1.0.0", "1.1.0"]],
@@ -52,10 +50,20 @@ test("detects an update when only the archive changed", () => {
   // aonHelper 0.19.8 still declares 0.19.7, so the version numbers are equal
   // while the installed archive is not the newest file.
   const updates = collectModUpdates(
-    [installedMod({ name: "aonHelper", version: "0.19.7", file: "aonHelper.zip" })],
+    [
+      installedMod({
+        name: "aonHelper",
+        version: "0.19.7",
+        file: "aonHelper.zip",
+      }),
+    ],
     { "aonHelper.zip": "749a898300d45f58" },
     [
-      latestMod({ name: "aonHelper", version: "0.19.7", xxHash: ["1111111111111111"] }),
+      latestMod({
+        name: "aonHelper",
+        version: "0.19.7",
+        xxHash: ["1111111111111111"],
+      }),
     ],
   );
   assert.equal(updates.length, 1);
@@ -65,10 +73,20 @@ test("detects an update when only the archive changed", () => {
 
 test("keeps Mods whose archive matches the newest file", () => {
   const updates = collectModUpdates(
-    [installedMod({ name: "aonHelper", version: "0.19.7", file: "aonHelper.zip" })],
+    [
+      installedMod({
+        name: "aonHelper",
+        version: "0.19.7",
+        file: "aonHelper.zip",
+      }),
+    ],
     { "aonHelper.zip": "749a898300d45f58" },
     [
-      latestMod({ name: "aonHelper", version: "0.19.7", xxHash: ["749a898300d45f58"] }),
+      latestMod({
+        name: "aonHelper",
+        version: "0.19.7",
+        xxHash: ["749a898300d45f58"],
+      }),
     ],
   );
   assert.deepEqual(updates, []);
@@ -85,7 +103,13 @@ test("cannot compare an unpacked Mod by hash", () => {
       }),
     ],
     {},
-    [latestMod({ name: "aonHelper", version: "0.19.7", xxHash: ["749a898300d45f58"] })],
+    [
+      latestMod({
+        name: "aonHelper",
+        version: "0.19.7",
+        xxHash: ["749a898300d45f58"],
+      }),
+    ],
   );
   assert.deepEqual(updates, []);
 });
