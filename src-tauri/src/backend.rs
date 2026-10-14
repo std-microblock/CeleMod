@@ -5471,6 +5471,21 @@ fn remove_new_keyboard_input(game_path: String) -> Result<(), String> {
     fs::write(path, without_new_keyboard_input_enabled(&content)).map_err(|error| error.to_string())
 }
 
+/// A file the install has to replace was still open in another process. The raw
+/// OS error ("being used by another process") does not tell the user what to do,
+/// and MiniInstaller stops in the middle of the update: tell them that closing
+/// everything that uses the game files and re-running the install is the fix.
+fn with_file_in_use_hint(message: String) -> String {
+    const IN_USE_MARKERS: [&str; 2] = ["being used by another process", "另一个程序正在使用此文件"];
+    if !IN_USE_MARKERS.iter().any(|marker| message.contains(marker)) {
+        return message;
+    }
+    format!(
+        "{message}\n\n请确认游戏已经完全退出（任务管理器里没有 Celeste.exe），然后重新安装一次 Everest。\
+         上一次中断留下的半成品文件会被这次安装覆盖掉。"
+    )
+}
+
 #[tauri::command]
 fn download_and_install_everest(game_path: String, url: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
@@ -5482,6 +5497,21 @@ fn download_and_install_everest(game_path: String, url: String, on_event: Channe
             return;
         }
         let game_path = normalize_game_path_impl(&game_path);
+        // The install replaces the native libraries the running game has loaded,
+        // and MiniInstaller only checks Celeste.exe / Celeste.dll for that, so it
+        // dies halfway through on lib64-win-x64\fmod64.dll and leaves the game
+        // behind in a half-updated state. Refuse early, like the local package
+        // install path does.
+        if is_celeste_running(Path::new(&game_path)) {
+            let error = logged_error(
+                "请先退出 Celeste 再安装 Everest：更新会替换游戏正在使用的 dll（如 lib64-win-x64 里的音频库）。".to_string(),
+            );
+            send_event(
+                &on_event,
+                vec![serde_json::json!("Failed"), serde_json::json!(error)],
+            );
+            return;
+        }
         let result =
             everest::download_and_install_everest(&game_path, &url, &mut |message, progress| {
                 send_event(
@@ -5496,6 +5526,7 @@ fn download_and_install_everest(game_path: String, url: String, on_event: Channe
             ),
             Err(error) => {
                 let error = logged_error(format!("Failed to install Everest: {error:#}"));
+                let error = with_file_in_use_hint(error);
                 send_event(
                     &on_event,
                     vec![serde_json::json!("Failed"), serde_json::json!(error)],
