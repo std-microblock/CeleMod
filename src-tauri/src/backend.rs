@@ -3069,6 +3069,30 @@ fn download_and_install_crash_mod_fix_impl(
     result
 }
 
+/// Profile names a download should switch Mods in.  The UI may pass a name that
+/// no longer exists (its profile state has not been loaded yet, or the active
+/// profile was renamed), and an empty list makes `apply_mod_blacklist_profiles`
+/// rewrite `blacklist.txt` as a whitelist without a single enabled Mod, which
+/// disables every installed Mod.
+fn resolve_switch_profile_names(game_path: &str, current_profile_name: &str) -> Vec<String> {
+    let profiles = blacklist::get_mod_blacklist_profiles(game_path);
+    if !current_profile_name.is_empty()
+        && profiles
+            .iter()
+            .any(|profile| profile.name.eq_ignore_ascii_case(current_profile_name))
+    {
+        return vec![current_profile_name.to_string()];
+    }
+    let active = blacklist::get_current_profiles(game_path);
+    if !active.is_empty() {
+        return active;
+    }
+    profiles
+        .first()
+        .map(|profile| vec![profile.name.clone()])
+        .unwrap_or_default()
+}
+
 fn disable_installed_local_mods(
     game_path: &str,
     installed_mods: &[(String, String)],
@@ -3098,11 +3122,13 @@ fn disable_installed_local_mods(
     for profile in blacklist::get_mod_blacklist_profiles(game_path) {
         blacklist::switch_mod_profile_mods(game_path, &profile.name, &names, false)?;
     }
-    let profiles = if current_profile_name.is_empty() {
-        blacklist::get_current_profiles(game_path)
-    } else {
-        vec![current_profile_name.to_string()]
-    };
+    let profiles = resolve_switch_profile_names(game_path, current_profile_name);
+    if profiles.is_empty() {
+        // No profile owns blacklist.txt yet - the UI creates the default profile
+        // on its next reload.  Applying an empty list here would blacklist every
+        // installed Mod, including the one that was just downloaded.
+        return Ok(());
+    }
     blacklist::apply_mod_blacklist_profiles(game_path, &profiles, always_on_mods)?;
     Ok(())
 }
@@ -3138,11 +3164,13 @@ fn enable_installed_local_mods(
         .iter()
         .map(|(name, _)| (*name).clone())
         .collect::<Vec<_>>();
-    let profiles = if current_profile_name.is_empty() {
-        blacklist::get_current_profiles(game_path)
-    } else {
-        vec![current_profile_name.to_string()]
-    };
+    let profiles = resolve_switch_profile_names(game_path, current_profile_name);
+    if profiles.is_empty() {
+        // No profile owns blacklist.txt yet - the UI creates the default profile
+        // on its next reload.  Applying an empty list here would blacklist every
+        // installed Mod, including the one that was just downloaded.
+        return Ok(());
+    }
     for profile_name in &profiles {
         blacklist::switch_mod_profile_mods(game_path, profile_name, &names, true)?;
     }
@@ -3968,6 +3996,147 @@ mod local_package_tests {
                 .iter()
                 .any(|name| name == &installed.0),
             "disabled Mod must leave the active profile"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    fn install_mod(game_path: &Path, root: &Path, file: &str, name: &str) {
+        let package = root.join(file);
+        write_zip(
+            &package,
+            &[(
+                "everest.yaml",
+                format!("- Name: {name}\n  Version: 1.0.0\n").as_bytes(),
+            )],
+        );
+        install_local_mod(game_path, &package).unwrap();
+    }
+
+    /// A fresh game folder has no profiles yet, so the UI passes no profile name
+    /// and profile mode is on by default.  The download must not rewrite
+    /// blacklist.txt as an empty whitelist, which would disable every Mod.
+    #[test]
+    fn downloaded_mod_stays_enabled_without_any_profile() {
+        let root = test_dir("download-no-profile");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        install_mod(&game_path, &root, "Existing.zip", "Existing");
+        let installed = {
+            let package = root.join("New Mod.zip");
+            write_zip(
+                &package,
+                &[("everest.yaml", b"- Name: NewMod\n  Version: 1.0.0\n")],
+            );
+            install_local_mod(&game_path, &package).unwrap()
+        };
+
+        enable_installed_local_mods(
+            &game_path_string,
+            std::slice::from_ref(&installed),
+            true,
+            "",
+            &[],
+        )
+        .unwrap();
+
+        let blacklist =
+            fs::read_to_string(game_path.join("Mods").join("blacklist.txt")).unwrap_or_default();
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case(&installed.1)),
+            "a downloaded Mod must not be blacklisted when no profile exists yet"
+        );
+        assert!(
+            !blacklist
+                .lines()
+                .any(|line| line.trim().eq_ignore_ascii_case("Existing.zip")),
+            "existing Mods must not be blacklisted either"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    /// The profile exists on disk but the UI has not loaded its state yet (fresh
+    /// start, or the first load failed), so it passes an empty name.
+    #[test]
+    fn downloaded_mod_is_enabled_when_profile_state_is_not_loaded() {
+        let root = test_dir("download-profile-not-loaded");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        blacklist::new_mod_blacklist_profile(&game_path_string, "Default").unwrap();
+        blacklist::apply_mod_blacklist_profiles(&game_path_string, &["Default".into()], &[])
+            .unwrap();
+
+        install_mod(&game_path, &root, "New Mod.zip", "NewMod");
+        let installed = get_installed_mods_sync(game_path.join("Mods").to_string_lossy().into())
+            .into_iter()
+            .map(|mod_info| (mod_info.name, mod_info.file))
+            .find(|(name, _)| name == "NewMod")
+            .unwrap();
+
+        enable_installed_local_mods(
+            &game_path_string,
+            std::slice::from_ref(&installed),
+            true,
+            "",
+            &[],
+        )
+        .unwrap();
+
+        let profiles = blacklist::get_mod_blacklist_profiles(&game_path_string);
+        let default_profile = profiles.iter().find(|p| p.name == "Default").unwrap();
+        assert!(
+            default_profile
+                .enabled_mods
+                .iter()
+                .any(|name| name == &installed.0),
+            "the downloaded Mod must be enabled in the only profile"
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    /// The name the UI kept can be stale (renamed or deleted profile); the Mod
+    /// must still land in a profile that exists instead of failing silently.
+    #[test]
+    fn downloaded_mod_is_enabled_when_profile_name_is_stale() {
+        let root = test_dir("download-profile-stale-name");
+        let game_path = root.join("game");
+        fs::create_dir_all(game_path.join("Mods")).unwrap();
+        let game_path_string = game_path.to_string_lossy().into_owned();
+
+        blacklist::new_mod_blacklist_profile(&game_path_string, "Default").unwrap();
+        blacklist::apply_mod_blacklist_profiles(&game_path_string, &["Default".into()], &[])
+            .unwrap();
+
+        install_mod(&game_path, &root, "New Mod.zip", "NewMod");
+        let installed = get_installed_mods_sync(game_path.join("Mods").to_string_lossy().into())
+            .into_iter()
+            .map(|mod_info| (mod_info.name, mod_info.file))
+            .find(|(name, _)| name == "NewMod")
+            .unwrap();
+
+        enable_installed_local_mods(
+            &game_path_string,
+            std::slice::from_ref(&installed),
+            true,
+            "Removed Profile",
+            &[],
+        )
+        .unwrap();
+
+        let profiles = blacklist::get_mod_blacklist_profiles(&game_path_string);
+        assert!(
+            profiles
+                .iter()
+                .any(|profile| profile.enabled_mods.iter().any(|name| name == &installed.0)),
+            "a stale profile name must fall back to a profile that exists"
         );
 
         fs::remove_dir_all(root).unwrap();
