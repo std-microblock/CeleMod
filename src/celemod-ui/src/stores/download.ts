@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { downloadAttemptDecision } from "../downloadTasks";
 import {
   reloadBlacklistState,
   reloadInstalledMods,
@@ -24,6 +25,8 @@ export namespace Download {
     canceled?: boolean;
     paused?: boolean;
     attemptId: number;
+    /** When the task reached `finished`/`failed`, used to retire finished rows. */
+    settledAt?: number;
   }
 }
 
@@ -89,6 +92,20 @@ const replaceTasks = (
   return next;
 };
 
+/**
+ * Timestamp a task reached a terminal state, carried over as long as it stays
+ * in that state so the Downloads page can retire finished rows on their own.
+ */
+const settledAtFor = (
+  state: Download.TaskInfo["state"],
+  previous: Download.TaskInfo | undefined,
+) => {
+  if (state === "pending") return undefined;
+  if (previous?.state === state && previous.settledAt)
+    return previous.settledAt;
+  return Date.now();
+};
+
 const aggregateProgress = (
   root: Download.TaskInfo,
   byName: Map<string, Download.TaskInfo>,
@@ -106,6 +123,39 @@ const aggregateProgress = (
     ...children.map((task) => aggregateProgress(task, byName, seen)),
   ];
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+};
+
+/**
+ * Forward the outcome of an attempt that is already running to a new caller.
+ *
+ * Only the attempt that is still in the store (same `attemptId`) may settle the
+ * promise; if the task is replaced by a newer attempt, or disappears, the
+ * caller is left to that attempt's own callbacks.
+ */
+const attachToRunningAttempt = (
+  task: Download.TaskInfo,
+  callbacks: Pick<DownloadOptions, "onFinished" | "onFailed">,
+) => {
+  const key = normalizeName(task.name);
+  let settle = () => {};
+  const unsubscribe = useDownloadStore.subscribe((state) => {
+    const current = state.tasks[key];
+    if (!current || current.attemptId !== task.attemptId) return;
+    if (current.state === "finished") {
+      settle();
+      callbacks.onFinished?.(current);
+    } else if (current.state === "failed" || current.canceled) {
+      const error = current.error || "Download failed";
+      settle();
+      callbacks.onFailed?.(current, error);
+    }
+  });
+  let done = false;
+  settle = () => {
+    if (done) return;
+    done = true;
+    unsubscribe();
+  };
 };
 
 export const useDownloadStore = create<DownloadStore>((set, get) => ({
@@ -201,32 +251,41 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
           reject(new Error(message));
           return;
         }
-        const mapped = backendTasks.map((task, index) => ({
-          name: task.name,
-          requested: Boolean(task.requested),
-          dependencies: task.dependencies ?? [],
-          cancelKey: task.cancel_key,
-          source: task.url,
-          ownerId,
-          mod: { name: task.name },
-          state: (task.status === "Finished"
-            ? "finished"
-            : task.status === "Failed"
-              ? "failed"
-              : "pending") as Download.TaskInfo["state"],
-          progress:
+        const mapped = backendTasks.map((task, index) => {
+          const mappedState = (
             task.status === "Finished"
-              ? 100
-              : Number.parseFloat(task.data) || 0,
-          error: task.status === "Failed" ? task.data : undefined,
-          downloadedBytes: task.downloaded_bytes || 0,
-          totalBytes: task.total_bytes || 0,
-          speedBytesPerSec: task.speed_bytes_per_sec || 0,
-          canceled:
-            task.status === "Failed" && task.data === "Download canceled",
-          paused: get().tasks[normalizeName(task.name)]?.paused,
-          attemptId: attemptId + index,
-        }));
+              ? "finished"
+              : task.status === "Failed"
+                ? "failed"
+                : "pending"
+          ) as Download.TaskInfo["state"];
+          return {
+            name: task.name,
+            requested: Boolean(task.requested),
+            dependencies: task.dependencies ?? [],
+            cancelKey: task.cancel_key,
+            source: task.url,
+            ownerId,
+            mod: { name: task.name },
+            state: mappedState,
+            progress:
+              task.status === "Finished"
+                ? 100
+                : Number.parseFloat(task.data) || 0,
+            error: task.status === "Failed" ? task.data : undefined,
+            downloadedBytes: task.downloaded_bytes || 0,
+            totalBytes: task.total_bytes || 0,
+            speedBytesPerSec: task.speed_bytes_per_sec || 0,
+            canceled:
+              task.status === "Failed" && task.data === "Download canceled",
+            paused: get().tasks[normalizeName(task.name)]?.paused,
+            attemptId: attemptId + index,
+            settledAt: settledAtFor(
+              mappedState,
+              get().tasks[normalizeName(task.name)],
+            ),
+          };
+        });
         const byName = new Map(
           mapped.map((task) => [normalizeName(task.name), task]),
         );
@@ -332,8 +391,17 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       return failedTask;
     }
 
-    if (existingTask && !force && existingTask.state === "pending")
+    if (
+      downloadAttemptDecision(existingTask, force) === "attach" &&
+      existingTask
+    ) {
+      // An attempt for this Mod is already running: hand this caller the
+      // outcome of that attempt instead of dropping the request.  Callers that
+      // await the promise (the Mod list button, "下载缺失依赖") used to stay
+      // disabled forever because nothing ever settled their promise.
+      attachToRunningAttempt(existingTask, { onFinished, onFailed });
       return existingTask;
+    }
 
     const attemptId = nextAttemptId++;
     const initialTask: Download.TaskInfo = {
@@ -408,6 +476,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
             task.status === "Failed" && task.data === "Download canceled",
           paused: previous?.paused,
           attemptId: previous?.attemptId ?? attemptId,
+          settledAt: settledAtFor(taskState, previous),
         } satisfies Download.TaskInfo;
       });
       const byName = new Map(

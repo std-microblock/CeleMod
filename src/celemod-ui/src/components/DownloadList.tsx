@@ -1,8 +1,9 @@
 import _i18n from "src/i18n";
 import "./DownloadList.scss";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
+import { isDownloadRowVisible, nextDownloadRowExpiry } from "../downloadTasks";
 import { Download, useDownloadStore } from "../stores/download";
 
 const formatBytes = (bytes: number) => {
@@ -202,7 +203,7 @@ export const DownloadTask = ({
   const canControl =
     allowControl && displayTask.state === "pending" && !displayTask.canceled;
   const action =
-    allowRetry && task.state === "failed" && task.source
+    allowRetry && (task.state === "failed" || task.canceled) && task.source
       ? {
           icon: "replay",
           onClick: () => downloadMod(task.name, task.source!, { force: true }),
@@ -308,17 +309,37 @@ export const DownloadTask = ({
   );
 };
 
+/** Re-renders once the next finished row leaves its grace period. */
+const useFinishedRowClock = (tasks: Download.TaskInfo[]) => {
+  const [now, setNow] = useState(() => Date.now());
+  const expiry = nextDownloadRowExpiry(tasks, now);
+  useEffect(() => {
+    if (expiry === null) return;
+    const timer = setTimeout(
+      () => setNow(Date.now()),
+      Math.max(0, expiry - Date.now()) + 50,
+    );
+    return () => clearTimeout(timer);
+  }, [expiry]);
+  return now;
+};
+
 export const DownloadListPage = () => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
   const allTasks = Object.values(downloadTasks);
-  const taskMap = new Map(
-    allTasks.map((task) => [task.name.toLocaleLowerCase(), task]),
+  const now = useFinishedRowClock(allTasks);
+  /* Finished rows retire on their own once the user has seen them finish.
+     Leaving them in the list made the page disagree with the sidebar badge and
+     with itself (a 100% row next to "0 项") until the app was restarted. */
+  const visibleTasks = allTasks.filter((task) =>
+    isDownloadRowVisible(task, now),
   );
-  const roots = allTasks.filter((task) => task.requested);
-  const visibleRoots = roots.length > 0 ? roots : allTasks;
-  const visibleCount = allTasks.filter(
-    (task) => task.state !== "finished" || task.canceled,
-  ).length;
+  const taskMap = new Map(
+    visibleTasks.map((task) => [task.name.toLocaleLowerCase(), task]),
+  );
+  const roots = visibleTasks.filter((task) => task.requested);
+  const visibleRoots = roots.length > 0 ? roots : visibleTasks;
+  const visibleCount = visibleTasks.length;
 
   return (
     <div className="download-page">
@@ -345,7 +366,7 @@ export const DownloadListPage = () => {
                 const dependencies = collectDependencies(task, taskMap);
                 return dependencies.length > 0
                   ? dependencies
-                  : allTasks.filter(
+                  : visibleTasks.filter(
                       (candidate) =>
                         !candidate.requested &&
                         candidate.cancelKey === task.cancelKey,

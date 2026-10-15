@@ -678,6 +678,19 @@ mod tests {
         assert_eq!(parse_content_range("invalid"), None);
     }
 
+    #[test]
+    fn download_agent_bounds_every_network_wait() {
+        // 原来的 agent 没有任何超时：连接建好之后服务端不再发数据时，`read` 会一直
+        // 阻塞——既不报错、也不重试，分段下载里的 `join` 永远不返回，界面上的进度
+        // 就停在原地。这里锁住 PR #84 加上的超时，防止以后被悄悄改回去。
+        for url in ["https://example.com/x", "http://127.0.0.1:1/x"] {
+            let debug = format!("{:?}", super::download_agent(url));
+            assert!(debug.contains("timeout_read: Some(30s)"), "{debug}");
+            assert!(debug.contains("timeout_write: Some(30s)"), "{debug}");
+            assert!(debug.contains("timeout_connect: Some(30s)"), "{debug}");
+        }
+    }
+
     const MIB: f64 = 1024.0 * 1024.0;
 
     #[test]
