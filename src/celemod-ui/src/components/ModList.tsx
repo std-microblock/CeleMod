@@ -215,7 +215,13 @@ export const Mod = memo(
               };
 
               if (downloadTask) {
-                if (downloadTask.state === "failed" && downloadTask.source) {
+                // A failed or canceled task must be restartable from here; a
+                // cancellation keeps `state: "pending"`, so it used to fall
+                // through and make the button do nothing.
+                if (
+                  (downloadTask.state === "failed" || downloadTask.canceled) &&
+                  downloadTask.source
+                ) {
                   downloadMod(downloadTask.name, downloadTask.source, {
                     force: true,
                     autoDisableNewMods,
