@@ -91,6 +91,8 @@ const stateLabel = (task: Download.TaskInfo) => {
     return { label: _i18n.t("已完成"), icon: "i-tick", tone: "finished" };
   if (task.paused)
     return { label: _i18n.t("已暂停"), icon: "pause", tone: "paused" };
+  if (task.mirrorPreparing)
+    return { label: _i18n.t("制作镜像中"), icon: "download", tone: "preparing" };
   return { label: _i18n.t("下载中"), icon: "download", tone: "active" };
 };
 

@@ -224,6 +224,12 @@
   background: color.change(theme.$fg3, $alpha: 0.13);
 }
 
+// 制作镜像阶段：进度来自镜像服务器，用另一种颜色和普通下载区分开。
+.download-task-preparing .download-task-status-icon {
+  color: #e0b56b;
+  background: color.change(#e0b56b, $alpha: 0.13);
+}
+
 .download-task-title {
   min-width: 0;
   overflow: hidden;

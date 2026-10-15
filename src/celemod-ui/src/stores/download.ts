@@ -18,6 +18,8 @@ export namespace Download {
     state: "finished" | "failed" | "pending";
     error?: string;
     progress: number;
+    /** weg.fan 镜像：正在让镜像服务器制作文件，progress 是制作进度而非下载进度。 */
+    mirrorPreparing?: boolean;
     downloadedBytes: number;
     totalBytes: number;
     speedBytesPerSec: number;
@@ -36,6 +38,7 @@ interface BackendModTaskInfo {
   cancel_key: string;
   status: "Waiting" | "Downloading" | "Finished" | "Failed";
   data: string;
+  mirror_preparing?: boolean;
   downloaded_bytes: number;
   total_bytes: number;
   speed_bytes_per_sec: number;
@@ -219,6 +222,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
               ? 100
               : Number.parseFloat(task.data) || 0,
           error: task.status === "Failed" ? task.data : undefined,
+          mirrorPreparing: Boolean(task.mirror_preparing),
           downloadedBytes: task.downloaded_bytes || 0,
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
@@ -401,6 +405,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
               ? 100
               : Number.parseFloat(task.data) || 0,
           error: task.status === "Failed" ? task.data : undefined,
+          mirrorPreparing: Boolean(task.mirror_preparing),
           downloadedBytes: task.downloaded_bytes || 0,
           totalBytes: task.total_bytes || 0,
           speedBytesPerSec: task.speed_bytes_per_sec || 0,
