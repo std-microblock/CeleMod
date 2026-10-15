@@ -2654,25 +2654,8 @@ fn start_waiting_mod_downloads(
         handles.push(std::thread::spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let progress_sender = sender.clone();
-                let download_url = match prepare_mirror_before_download(
-                    &task_url,
-                    index,
-                    &progress_sender,
-                    &cancel_flag,
-                ) {
-                    Ok(url) => url,
-                    Err(error) if cancel_flag.load(Ordering::Relaxed) => {
-                        return Err(error.to_string());
-                    }
-                    Err(error) => {
-                        // 镜像的 /start、/status 出问题（网络、超时、文件不存在…）时
-                        // 直接回退到原来的直连下载，别让新接口坏掉就下不了东西。
-                        crate::logging::warn(format_args!(
-                            "Failed to prepare weg.fan mirror for {task_url}, falling back to a direct download: {error:#}"
-                        ));
-                        task_url.clone()
-                    }
-                };
+                let download_url =
+                    resolve_download_url(&task_url, index, &progress_sender, &cancel_flag)?;
                 download_mod_file(
                     &download_url,
                     &task_dest,
@@ -2844,6 +2827,59 @@ fn prepare_mirror_before_download(
         let _ = sender.send(DownloadWorkerMessage::Preparing { index, progress });
     })?;
     Ok(prepared.unwrap_or_else(|| url.to_string()))
+}
+
+/// 制作镜像失败时显示在下载管理里的原因。后面的原始错误来自 wegfan 模块：
+/// `/start` 请求失败、`/status` 查不到（接口不可用）、文件未收录、轮询超时等。
+fn mirror_prepare_failure(error: &anyhow::Error) -> String {
+    format!("制作镜像失败：{error:#}")
+}
+
+/// 决定这次任务用哪个 URL 下载。不是 weg.fan 镜像地址（其它镜像、直连）时原样
+/// 返回；镜像制作失败时返回失败原因，由调用方把任务置为失败——不再悄悄退回直连。
+fn resolve_download_url(
+    url: &str,
+    index: usize,
+    sender: &std::sync::mpsc::Sender<DownloadWorkerMessage>,
+    cancel_flag: &Arc<AtomicBool>,
+) -> Result<String, String> {
+    match prepare_mirror_before_download(url, index, sender, cancel_flag) {
+        Ok(url) => Ok(url),
+        // 取消依旧保持现有的取消语义（任务进入已取消，而不是失败）。
+        Err(error) if cancel_flag.load(Ordering::Relaxed) => Err(error.to_string()),
+        Err(error) => Err(mirror_prepare_failure(&error)),
+    }
+}
+
+#[cfg(test)]
+mod download_mirror_tests {
+    use super::*;
+
+    /// 其它镜像、直连地址不经过镜像制作，按原样下载。
+    #[test]
+    fn non_mirror_urls_are_downloaded_directly() {
+        let (sender, _receiver) = std::sync::mpsc::channel();
+        let cancel_flag = Arc::new(AtomicBool::new(false));
+        for url in [
+            "https://gamebanana.com/dl/844056",
+            "https://celestemodupdater.0x0a.de/banana-mirror/844056.zip",
+        ] {
+            assert_eq!(
+                resolve_download_url(url, 0, &sender, &cancel_flag),
+                Ok(url.to_string())
+            );
+        }
+    }
+
+    /// 制作镜像失败时把原因交给下载任务（界面显示「制作镜像失败：…」），
+    /// 不再回退到直连下载。
+    #[test]
+    fn mirror_failure_reports_the_reason() {
+        let error = anyhow::anyhow!("Failed to query mirror status of 123: connection refused");
+        let message = mirror_prepare_failure(&error);
+        assert!(message.starts_with("制作镜像失败："), "{message}");
+        assert!(message.contains("connection refused"), "{message}");
+    }
 }
 
 fn make_path_compatible_name(name: &str) -> String {
