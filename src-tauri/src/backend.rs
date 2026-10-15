@@ -2457,6 +2457,8 @@ struct ModTaskInfo {
     dependencies: Vec<String>,
     cancel_key: String,
     status: DownloadStatus,
+    /// `data` 里的百分比是「制作镜像」阶段的服务端进度，而不是下载进度。
+    mirror_preparing: bool,
     data: String,
     downloaded_bytes: u64,
     total_bytes: u64,
@@ -2468,6 +2470,8 @@ enum DownloadWorkerMessage {
         index: usize,
         progress: DownloadCallbackInfo,
     },
+    /// 下载前的镜像制作进度（weg.fan 镜像才有）。
+    Preparing { index: usize, progress: f32 },
     Finished {
         index: usize,
         result: Result<(), String>,
@@ -2510,6 +2514,7 @@ fn emit_download_failure(
         dependencies: Vec::new(),
         cancel_key: name.to_string(),
         status: DownloadStatus::Failed,
+        mirror_preparing: false,
         data: error,
         downloaded_bytes: 0,
         total_bytes: 0,
@@ -2593,6 +2598,7 @@ fn expand_dependency_graph(
                     dependencies: Vec::new(),
                     cancel_key: cancel_key.clone(),
                     status: DownloadStatus::Waiting,
+                    mirror_preparing: false,
                     data: "0".to_string(),
                     downloaded_bytes: 0,
                     total_bytes: 0,
@@ -2648,8 +2654,27 @@ fn start_waiting_mod_downloads(
         handles.push(std::thread::spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 let progress_sender = sender.clone();
-                download_mod_file(
+                let download_url = match prepare_mirror_before_download(
                     &task_url,
+                    index,
+                    &progress_sender,
+                    &cancel_flag,
+                ) {
+                    Ok(url) => url,
+                    Err(error) if cancel_flag.load(Ordering::Relaxed) => {
+                        return Err(error.to_string());
+                    }
+                    Err(error) => {
+                        // 镜像的 /start、/status 出问题（网络、超时、文件不存在…）时
+                        // 直接回退到原来的直连下载，别让新接口坏掉就下不了东西。
+                        crate::logging::warn(format_args!(
+                            "Failed to prepare weg.fan mirror for {task_url}, falling back to a direct download: {error:#}"
+                        ));
+                        task_url.clone()
+                    }
+                };
+                download_mod_file(
+                    &download_url,
                     &task_dest,
                     &mut |progress| {
                         let _ = progress_sender
@@ -2733,14 +2758,24 @@ fn download_mod_queue(
         };
         match message {
             DownloadWorkerMessage::Progress { index, progress } => {
+                tasks[index].mirror_preparing = false;
                 tasks[index].data = format!("{:.2}", progress.progress);
                 tasks[index].downloaded_bytes = progress.downloaded_bytes;
                 tasks[index].total_bytes = progress.total_bytes;
                 tasks[index].speed_bytes_per_sec = progress.speed_bytes_per_sec;
                 emit_download_tasks(tasks, on_event, "pending");
             }
+            DownloadWorkerMessage::Preparing { index, progress } => {
+                tasks[index].mirror_preparing = true;
+                tasks[index].data = format!("{progress:.2}");
+                tasks[index].downloaded_bytes = 0;
+                tasks[index].total_bytes = 0;
+                tasks[index].speed_bytes_per_sec = 0.0;
+                emit_download_tasks(tasks, on_event, "pending");
+            }
             DownloadWorkerMessage::Finished { index, result } => {
                 active -= 1;
+                tasks[index].mirror_preparing = false;
                 match result {
                     Ok(()) => {
                         tasks[index].status = DownloadStatus::Finished;
@@ -2789,6 +2824,26 @@ fn download_mod_queue(
     }
 
     failed || cancel_flag.load(Ordering::Relaxed)
+}
+
+/// 下载前的镜像制作（只有 weg.fan 镜像的下载地址会走到里面）：
+/// 先让镜像开始制作文件、轮询服务端进度并把进度发给下载管理，最后返回可以下载
+/// 的地址。不是镜像地址时原样返回 URL。
+fn prepare_mirror_before_download(
+    url: &str,
+    index: usize,
+    sender: &std::sync::mpsc::Sender<DownloadWorkerMessage>,
+    cancel_flag: &Arc<AtomicBool>,
+) -> anyhow::Result<String> {
+    let prepared = wegfan::prepare_mirror(url, cancel_flag, &mut |current, total| {
+        let progress = if total == 0 {
+            0.0
+        } else {
+            100.0 * current as f32 / total as f32
+        };
+        let _ = sender.send(DownloadWorkerMessage::Preparing { index, progress });
+    })?;
+    Ok(prepared.unwrap_or_else(|| url.to_string()))
 }
 
 fn make_path_compatible_name(name: &str) -> String {
@@ -3765,6 +3820,7 @@ mod local_package_tests {
                 dependencies: Vec::new(),
                 cancel_key: "A".to_string(),
                 status: DownloadStatus::Waiting,
+                mirror_preparing: false,
                 data: "0".to_string(),
                 downloaded_bytes: 0,
                 total_bytes: 0,
@@ -3778,6 +3834,7 @@ mod local_package_tests {
                 dependencies: Vec::new(),
                 cancel_key: "A".to_string(),
                 status: DownloadStatus::Waiting,
+                mirror_preparing: false,
                 data: "0".to_string(),
                 downloaded_bytes: 0,
                 total_bytes: 0,
@@ -5900,6 +5957,7 @@ fn download_mod_with_roots(
                 dependencies: Vec::new(),
                 cancel_key: name.clone(),
                 status: DownloadStatus::Waiting,
+                mirror_preparing: false,
                 data: String::new(),
                 downloaded_bytes: 0,
                 total_bytes: 0,
