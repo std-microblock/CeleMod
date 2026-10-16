@@ -418,7 +418,12 @@ export const getDependencyHealth = (
   if (!nodes[name]?.enabled) return { status: "healthy", messages: [] };
   const messages: string[] = [];
   let status: ManageDependencyHealth["status"] = "healthy";
-  const visiting = new Set<string>();
+  // A Mod that several Mods depend on is reachable through every one of those
+  // paths, and walking them all grows with the number of paths, so a shared
+  // helper layer makes the Mod list hang.  A Mod reports the same problems no
+  // matter which path reached it, so each one is inspected once; the same set
+  // still stops dependency cycles.
+  const visited = new Set<string>();
   const ranks = { healthy: 0, version: 1, disabled: 2, missing: 3 };
 
   const merge = (next: ManageDependencyHealth["status"], message: string) => {
@@ -427,10 +432,10 @@ export const getDependencyHealth = (
   };
 
   const visit = (nodeName: string) => {
-    if (visiting.has(nodeName)) return;
+    if (visited.has(nodeName)) return;
     const node = nodes[nodeName];
     if (!node) return;
-    visiting.add(nodeName);
+    visited.add(nodeName);
     for (const dependency of node.dependencies) {
       if (
         EXCLUDED_DEPENDENCIES.has(dependency.name) ||
@@ -455,7 +460,6 @@ export const getDependencyHealth = (
       }
       visit(installed.name);
     }
-    visiting.delete(nodeName);
   };
   visit(name);
   return { status, messages };
@@ -595,6 +599,9 @@ export const selectVisibleRootNames = ({
   displayNames?: Record<string, ManageDisplayNames>;
 }) => {
   const query = filters.query.trim().toLocaleLowerCase();
+  // "All" is the default state of the filter, and the dependency walk it does
+  // not need is the expensive part of every Mod-list render.
+  const needsHealth = filters.health !== "all";
   const matches = (node: ManageNode) => {
     if (
       !filters.showHiddenTypes &&
@@ -611,13 +618,15 @@ export const selectVisibleRootNames = ({
     if (filters.enabled === "disabled" && node.enabled) return false;
     if (filters.updateOnly && !updateNames.has(node.name)) return false;
     if (filters.duplicateOnly && node.duplicateFiles.length < 2) return false;
-    const health = getDependencyHealth(node.name, nodes, includeOptional);
-    if (filters.health === "healthy" && health.status !== "healthy")
-      return false;
-    if (filters.health === "issues" && health.status === "healthy")
-      return false;
-    if (filters.health === "missing" && health.status !== "missing")
-      return false;
+    if (needsHealth) {
+      const health = getDependencyHealth(node.name, nodes, includeOptional);
+      if (filters.health === "healthy" && health.status !== "healthy")
+        return false;
+      if (filters.health === "issues" && health.status === "healthy")
+        return false;
+      if (filters.health === "missing" && health.status !== "missing")
+        return false;
+    }
     if (query) {
       const text = [
         node.name,
