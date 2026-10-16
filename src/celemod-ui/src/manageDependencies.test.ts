@@ -5,6 +5,7 @@ import {
   collectDuplicateFixTargets,
   profileDisabledFilesAfterSwitch,
   collectSwitchNames,
+  getDependencyHealth,
   normalizeManageDependencies,
   selectVisibleRootNames,
   type ManageNode,
@@ -357,5 +358,86 @@ test("disabling a remaining file does not discard its exclusion", () => {
       false,
     ),
     ["Remaining.zip"],
+  );
+});
+
+/**
+ * A shared helper layer makes the same Mod reachable through many dependency
+ * paths.  Walking all of them grows with the number of paths, so the counts
+ * below are read through a proxy: a Mod list that walks each Mod once stays
+ * linear, one that walks every path does not finish.
+ */
+const pathHeavyMods = (libs: number, fanOut: number) => {
+  const nodes: Record<string, ManageNode> = {};
+  for (let index = 0; index < libs; index += 1) {
+    const dependencies: ManageNode["dependencies"] = [];
+    for (let step = 1; step <= fanOut; step += 1) {
+      if (index + step >= libs) break;
+      dependencies.push({
+        name: `Lib.${index + step}`,
+        version: "1.0.0",
+        optional: false,
+      });
+    }
+    nodes[`Lib.${index}`] = node(`Lib.${index}`, { dependencies });
+  }
+  for (let index = 0; index < 20; index += 1) {
+    nodes[`Mod.${index}`] = node(`Mod.${index}`, {
+      dependencies: [
+        { name: "Lib.0", version: "1.0.0", optional: false },
+        { name: `Lib.${index % libs}`, version: "1.0.0", optional: false },
+      ],
+    });
+  }
+  return nodes;
+};
+
+const countingNodes = (nodes: Record<string, ManageNode>) => {
+  const state = { reads: 0 };
+  const counted = new Proxy(nodes, {
+    get(target, property, receiver) {
+      if (typeof property === "string") state.reads += 1;
+      return Reflect.get(target, property, receiver);
+    },
+  });
+  return { counted, state };
+};
+
+test("inspects each dependency once when many paths reach it", () => {
+  const { counted, state } = countingNodes(pathHeavyMods(40, 3));
+
+  assert.deepEqual(getDependencyHealth("Lib.0", counted, false), {
+    status: "healthy",
+    messages: [],
+  });
+  assert.ok(
+    state.reads < 500,
+    `expected a linear walk, read Mods ${state.reads} times`,
+  );
+});
+
+test("does not walk dependencies when the health filter is off", () => {
+  const { counted, state } = countingNodes(pathHeavyMods(40, 3));
+
+  const visible = selectVisibleRootNames({
+    nodes: counted,
+    filters: {
+      query: "",
+      enabled: "all",
+      health: "all",
+      types: [],
+      updateOnly: false,
+      duplicateOnly: false,
+      showHiddenTypes: false,
+    },
+    rootOnly: false,
+    includeOptional: false,
+    hiddenTypes: [],
+    updateNames: new Set(),
+  });
+  assert.equal(visible.length, 60);
+  assert.ok(
+    state.reads < 2000,
+    `expected one read per Mod, read Mods ${state.reads} times`,
   );
 });
