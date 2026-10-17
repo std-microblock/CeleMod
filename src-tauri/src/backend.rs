@@ -5486,29 +5486,23 @@ fn with_file_in_use_hint(message: String) -> String {
     )
 }
 
-/// MiniInstaller sometimes dies inside the .NET runtime's own native code
-/// instead of reporting an install error: an AccessViolationException straight
-/// out of the relinker (`String.StartsWith` -> the Globalization P/Invoke). That
-/// crash comes from a native component that has nothing to do with the game
-/// (anti-virus / GPU driver overlays injecting into every process, or a damaged
-/// runtime next to the game), and MiniInstaller runs MonoMod single-threaded, so
-/// the install itself was not racing. The raw stack makes people think their
-/// game or CeleMod is broken, so point at what actually helps and at the manual
-/// install as the fallback.
+/// MiniInstaller died in native code (again, after the automatic retry in
+/// `everest::install_everest_archive_with_steps`). The stack belongs to the
+/// runtime, not to the game: `MonoModder.FindType` compares dependency names
+/// with a culture-sensitive `String.StartsWith`, .NET routes that through ICU,
+/// and dotnet/runtime#132702 is the same crash with the runtime team's verdict
+/// that this path is the earliest *victim* of heap corruption written elsewhere.
+/// The raw stack makes people think their game or CeleMod is broken, so point at
+/// what actually helps and at the manual install as the fallback.
 fn with_installer_crash_hint(message: String) -> String {
-    const CRASH_MARKERS: [&str; 3] = [
-        "System.AccessViolationException",
-        "Attempted to read or write protected memory",
-        "尝试读取或写入受保护的内存",
-    ];
-    if !CRASH_MARKERS.iter().any(|marker| message.contains(marker)) {
+    if !everest::is_installer_native_crash(&message) {
         return message;
     }
     format!(
-        "{message}\n\n这不是游戏文件坏了：安装程序在跑的时候被系统里的东西打断了（常见是杀毒软件/安全卫士的实时防护，\
-         或者显卡驱动带的游戏内覆盖层）。先临时关掉它们再装一次；还是不行就手动装：\
-         去 everestapi.github.io 下载 Everest 的 Main.zip，解压到游戏目录（和 Celeste.exe 放在一起），\
-         再双击运行里面的 MiniInstaller-win64.exe。"
+        "{message}\n\n这不是游戏文件坏了：安装程序跑的时候被系统里的东西打断了（CeleMod 已经自动重装过一遍，还是崩）。\
+         这类崩溃常常是偶发的，再点一次安装往往就过了；连着几次都崩，就临时关掉杀毒软件/安全卫士的实时防护、\
+         显卡驱动的游戏内覆盖层再装；还是不行就手动装：去 everestapi.github.io 下载 Everest 的 Main.zip，\
+         解压到游戏目录（和 Celeste.exe 放在一起），再双击运行里面的 MiniInstaller-win64.exe。"
     )
 }
 
