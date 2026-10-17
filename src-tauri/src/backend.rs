@@ -5486,6 +5486,32 @@ fn with_file_in_use_hint(message: String) -> String {
     )
 }
 
+/// MiniInstaller sometimes dies inside the .NET runtime's own native code
+/// instead of reporting an install error: an AccessViolationException straight
+/// out of the relinker (`String.StartsWith` -> the Globalization P/Invoke). That
+/// crash comes from a native component that has nothing to do with the game
+/// (anti-virus / GPU driver overlays injecting into every process, or a damaged
+/// runtime next to the game), and MiniInstaller runs MonoMod single-threaded, so
+/// the install itself was not racing. The raw stack makes people think their
+/// game or CeleMod is broken, so point at what actually helps and at the manual
+/// install as the fallback.
+fn with_installer_crash_hint(message: String) -> String {
+    const CRASH_MARKERS: [&str; 3] = [
+        "System.AccessViolationException",
+        "Attempted to read or write protected memory",
+        "尝试读取或写入受保护的内存",
+    ];
+    if !CRASH_MARKERS.iter().any(|marker| message.contains(marker)) {
+        return message;
+    }
+    format!(
+        "{message}\n\n这不是游戏文件坏了：安装程序在跑的时候被系统里的东西打断了（常见是杀毒软件/安全卫士的实时防护，\
+         或者显卡驱动带的游戏内覆盖层）。先临时关掉它们再装一次；还是不行就手动装：\
+         去 everestapi.github.io 下载 Everest 的 Main.zip，解压到游戏目录（和 Celeste.exe 放在一起），\
+         再双击运行里面的 MiniInstaller-win64.exe。"
+    )
+}
+
 #[tauri::command]
 fn download_and_install_everest(game_path: String, url: String, on_event: Channel<IpcEvent>) {
     std::thread::spawn(move || {
@@ -5526,7 +5552,7 @@ fn download_and_install_everest(game_path: String, url: String, on_event: Channe
             ),
             Err(error) => {
                 let error = logged_error(format!("Failed to install Everest: {error:#}"));
-                let error = with_file_in_use_hint(error);
+                let error = with_installer_crash_hint(with_file_in_use_hint(error));
                 send_event(
                     &on_event,
                     vec![serde_json::json!("Failed"), serde_json::json!(error)],
@@ -5720,6 +5746,7 @@ fn install_local_packages(
                     let error = logged_error(format!(
                         "Failed to install local package {file_name}: {error:#}"
                     ));
+                    let error = with_installer_crash_hint(error);
                     LocalPackageInstallResult {
                         file: file_name,
                         package_type,
@@ -6339,6 +6366,44 @@ mod keyboard_input_tests {
             without_new_keyboard_input_enabled("EVEREST_NEW_KEYBOARD_INPUT=1\n"),
             ""
         );
+    }
+}
+
+#[cfg(test)]
+mod everest_install_hint_tests {
+    use super::with_installer_crash_hint;
+
+    #[test]
+    fn appends_a_hint_to_an_installer_native_crash() {
+        let message = "Failed to install Everest: Command failed with error: Fatal error. \
+                       System.AccessViolationException: Attempted to read or write protected \
+                       memory. at MonoMod.MonoModder.FindType";
+        let hinted = with_installer_crash_hint(message.to_string());
+        assert!(
+            hinted.starts_with(message),
+            "the install error must stay first"
+        );
+        assert!(hinted.contains("everestapi.github.io"));
+        assert!(hinted.contains("MiniInstaller-win64.exe"));
+    }
+
+    #[test]
+    fn recognizes_the_localized_crash_message() {
+        let hinted = with_installer_crash_hint(
+            "System.AccessViolationException: 尝试读取或写入受保护的内存。".to_string(),
+        );
+        assert!(hinted.contains("杀毒软件"));
+    }
+
+    #[test]
+    fn leaves_other_install_failures_alone() {
+        for message in [
+            "Failed to install Everest: Failed to replace C:\\Celeste\\Celeste.dll. Close Celeste",
+            "Failed to install Everest: The zip is not an Everest install package for this platform",
+            "Failed to install local package mod.zip: unsupported zip",
+        ] {
+            assert_eq!(with_installer_crash_hint(message.to_string()), message);
+        }
     }
 }
 
