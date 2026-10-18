@@ -21,7 +21,7 @@ import {
 } from "../states";
 import "./Home.scss";
 import { useGlobalContext } from "src/App";
-import { detectDesktopPlatform } from "../tauri/window";
+import { detectDesktopPlatform, isMobileLayout } from "../tauri/window";
 import { SteamAccount } from "../components/SteamAccount";
 
 export const Home = () => {
@@ -367,33 +367,35 @@ export const Home = () => {
 
       {detectDesktopPlatform() === "android" && <SteamAccount />}
 
-      <section className="home-section home-shortcuts-section">
-        <div className="home-section-heading">
-          <Icon name="grid" />
-          <h2>{chinese ? "常用功能" : "Quick access"}</h2>
-        </div>
-        <div className="home-shortcuts">
-          {shortcuts.map((shortcut) => (
-            <button
-              type="button"
-              key={shortcut.page}
-              className={`home-shortcut tone-${shortcut.tone}`}
-              onClick={() => globalCtx.pageController.setPage(shortcut.page)}
-            >
-              <span className="shortcut-icon">
-                <Icon name={shortcut.icon} />
-              </span>
-              <span className="shortcut-copy">
-                <strong title={shortcut.title}>{shortcut.title}</strong>
-                <small title={shortcut.description}>
-                  {shortcut.description}
-                </small>
-              </span>
-              <Icon name="i-right" />
-            </button>
-          ))}
-        </div>
-      </section>
+      {isMobileLayout() && (
+        <section className="home-section home-shortcuts-section">
+          <div className="home-section-heading">
+            <Icon name="grid" />
+            <h2>{chinese ? "常用功能" : "Quick access"}</h2>
+          </div>
+          <div className="home-shortcuts">
+            {shortcuts.map((shortcut) => (
+              <button
+                type="button"
+                key={shortcut.page}
+                className={`home-shortcut tone-${shortcut.tone}`}
+                onClick={() => globalCtx.pageController.setPage(shortcut.page)}
+              >
+                <span className="shortcut-icon">
+                  <Icon name={shortcut.icon} />
+                </span>
+                <span className="shortcut-copy">
+                  <strong title={shortcut.title}>{shortcut.title}</strong>
+                  <small title={shortcut.description}>
+                    {shortcut.description}
+                  </small>
+                </span>
+                <Icon name="i-right" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {profileEnabled && (
         <section className="home-section home-profiles-section">
