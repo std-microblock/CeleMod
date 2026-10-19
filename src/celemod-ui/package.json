@@ -17,6 +17,7 @@
     "test:crash-trace": "node --import tsx --test src/components/crashTrace.test.ts",
     "test:deep-link": "node --import tsx --test src/deepLink.test.ts",
     "test:mod-updates": "node --import tsx --test src/modUpdates.test.ts",
+    "test:always-on": "node --import tsx --test src/alwaysOnSwitch.test.ts",
     "test:update-notes": "node --import tsx --test src/components/UpdateNotes.test.tsx"
   },
   "dependencies": {
