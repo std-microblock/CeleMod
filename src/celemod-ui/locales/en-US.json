@@ -644,5 +644,10 @@
   "跳过下载，离线继续": "Skip download and continue offline",
   "模组目录离线模式": "Mod catalog offline",
   "仍可启动游戏和管理本地模组": "You can still play and manage installed mods.",
-  "重新连接": "Reconnect"
+  "重新连接": "Reconnect",
+  "该 Mod 已设为始终开启": "This Mod is set to always on",
+  "始终开启的 Mod 不会被开关或「禁用全部」关掉。要继续禁用，请同时取消始终开启：": "Always-on Mods ignore the switch and \"Disable All\". Clear always-on to disable them:",
+  "取消始终开启并禁用": "Clear always-on and disable",
+  "取消始终开启": "Clear always on",
+  "设为始终开启": "Set always on"
 }
