@@ -1185,6 +1185,40 @@ mod tests {
     }
 
     #[test]
+    fn direct_blacklist_disable_covers_every_duplicate_file() {
+        let game_path = test_game_path("direct-duplicate-disable");
+        write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");
+        write_directory_mod(&game_path, "Duplicate-Old", "Duplicate.Mod", "0.9.0");
+
+        // blacklist.txt works per file, so the manage page passes every
+        // installed file of the Mod name: writing only the file it shows would
+        // leave the same-name duplicate loading and the Mod would look enabled
+        // again after the next reload.
+        switch_direct_blacklist(
+            &game_path,
+            &["Duplicate".to_string(), "Duplicate-Old".to_string()],
+            false,
+        )
+        .unwrap();
+        let direct = get_direct_blacklist_profile(&game_path).unwrap();
+        assert!(
+            !direct
+                .enabled_mods
+                .contains(&"Duplicate.Mod".to_string())
+        );
+
+        // Enabling brings the Mod back through the file the page shows.
+        switch_direct_blacklist(&game_path, &["Duplicate".to_string()], true).unwrap();
+        let direct = get_direct_blacklist_profile(&game_path).unwrap();
+        assert!(
+            direct
+                .enabled_mods
+                .contains(&"Duplicate.Mod".to_string())
+        );
+        fs::remove_dir_all(game_path).unwrap();
+    }
+
+    #[test]
     fn profile_toggle_reenables_the_only_remaining_duplicate_file() {
         let game_path = test_game_path("toggle-remaining-duplicate");
         write_directory_mod(&game_path, "Duplicate", "Duplicate.Mod", "1.0.0");

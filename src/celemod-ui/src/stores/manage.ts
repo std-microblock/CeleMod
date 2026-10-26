@@ -149,6 +149,76 @@ export const profileDisabledFilesAfterSwitch = (
   return disabledFiles.filter((file) => !restoredFiles.has(file.toLowerCase()));
 };
 
+/**
+ * Always-on Mods are matched by file, the way the manage tree marks them, so a
+ * name that was kept while its file was replaced still counts.
+ */
+export const isAlwaysOnPackage = (
+  name: string,
+  nodes: Record<string, ManageNode>,
+  alwaysOnMods: readonly string[],
+): boolean => {
+  const file = nodes[name]?.file;
+  if (!file) return false;
+  return alwaysOnMods.some(
+    (alwaysOnName) => nodes[alwaysOnName]?.file === file,
+  );
+};
+
+/**
+ * Splits the names a switch wants to touch into the ones that can be switched
+ * and the ones that keep their state because they are marked always-on.
+ * Always-on Mods ignore the state button and "disable all" on purpose, so the
+ * caller has to tell the user about the blocked names - otherwise the button
+ * looks like it does nothing.
+ */
+export const splitAlwaysOnNames = ({
+  names,
+  nodes,
+  alwaysOnMods,
+}: {
+  names: readonly string[];
+  nodes: Record<string, ManageNode>;
+  alwaysOnMods: readonly string[];
+}): { switchable: string[]; blocked: string[] } => {
+  const switchable: string[] = [];
+  const blocked: string[] = [];
+  for (const name of names) {
+    if (isAlwaysOnPackage(name, nodes, alwaysOnMods)) blocked.push(name);
+    else switchable.push(name);
+  }
+  return { switchable, blocked };
+};
+
+/**
+ * Files `blacklist.txt` has to change for a switch.  Disabling covers every
+ * installed file of a Mod name: a same-name duplicate that is left out would
+ * keep loading, so the Mod would look enabled again after the next reload.
+ * Enabling only has to lift the file the manage tree shows.
+ */
+export const switchBlacklistFiles = ({
+  names,
+  nodes,
+  enabled,
+}: {
+  names: readonly string[];
+  nodes: Record<string, ManageNode>;
+  enabled: boolean;
+}): string[] => {
+  const files: string[] = [];
+  for (const name of names) {
+    const node = nodes[name];
+    if (!node) continue;
+    if (enabled) {
+      files.push(node.file);
+      continue;
+    }
+    const duplicates = node.duplicateFiles.map((file) => file.file);
+    files.push(...(duplicates.length > 0 ? duplicates : [node.file]));
+  }
+  return files;
+};
+
 export const normalizeManageDependencies = (
   dependencies: readonly ManageDependency[],
 ) => {

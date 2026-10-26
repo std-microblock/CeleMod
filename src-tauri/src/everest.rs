@@ -468,6 +468,40 @@ pub fn is_everest_ultra(game_path: &Path) -> bool {
     })
 }
 
+/// The install has to survive a MiniInstaller process that dies in native code
+/// (see [`is_installer_native_crash`]). On Windows that crash keeps landing in
+/// the ICU path .NET uses for culture-sensitive string comparison:
+/// `String.StartsWith` -> `CompareInfo.IsPrefix` -> `GlobalizationNative_StartsWith`.
+/// MonoMod hits it in `MonoModder.FindType` (`CrawlDependencies` checks whether a
+/// dependency name starts with `"System.Private"`), and dotnet/runtime#132702 is
+/// the same stack: a Chinese (non-`en*`) system locale is what sends these ASCII
+/// prefixes through ICU at all, and the runtime team's verdict there was that the
+/// path is the earliest *victim* of heap corruption written elsewhere.
+///
+/// Asking the runtime for NLS instead of ICU for the installer process only
+/// changes how those ASCII prefixes are compared (identical results), so it is a
+/// safe default for a child process we own.
+#[cfg(target_os = "windows")]
+const INSTALLER_GLOBALIZATION_ENV: [(&str, &str); 1] =
+    [("DOTNET_SYSTEM_GLOBALIZATION_USENLS", "1")];
+#[cfg(not(target_os = "windows"))]
+const INSTALLER_GLOBALIZATION_ENV: [(&str, &str); 0] = [];
+
+/// MiniInstaller sometimes fails with a native fault instead of an install
+/// error: the .NET runtime prints `Fatal error. System.AccessViolationException`
+/// to stderr and fails the process fast. Those runs are *intermittent* (the same
+/// machine and the same steps succeed on a retry), and they leave the game
+/// directory half-updated, so the useful reaction is to run the whole install
+/// again once instead of telling the user their game is broken.
+pub fn is_installer_native_crash(message: &str) -> bool {
+    const CRASH_MARKERS: [&str; 3] = [
+        "System.AccessViolationException",
+        "Attempted to read or write protected memory",
+        "尝试读取或写入受保护的内存",
+    ];
+    CRASH_MARKERS.iter().any(|marker| message.contains(marker))
+}
+
 fn run_command(
     installer_path: PathBuf,
     step_label: &str,
@@ -480,6 +514,7 @@ fn run_command(
         let mut cmd = Command::new(&installer_path);
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
+        cmd.envs(INSTALLER_GLOBALIZATION_ENV);
         #[cfg(target_os = "windows")]
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         #[cfg(target_os = "windows")]
@@ -592,19 +627,12 @@ pub fn is_everest_install_archive(path: &Path) -> anyhow::Result<bool> {
     Ok(has_installer)
 }
 
-fn install_everest_archive_with_steps(
+fn extract_everest_archive(
     game_path: &Path,
     archive_path: &Path,
     extract_step: &str,
-    installer_step: &str,
     progress_callback: &mut dyn FnMut(String, f32),
 ) -> anyhow::Result<()> {
-    #[cfg(target_os = "android")]
-    crate::android::can_install()?;
-    if !is_everest_install_archive(archive_path)? {
-        bail!("The zip is not an Everest install package for this platform");
-    }
-
     progress_callback(extract_step.to_string(), 0.0);
 
     let mut archive = zip::ZipArchive::new(std::fs::File::open(archive_path)?)?;
@@ -652,12 +680,50 @@ fn install_everest_archive_with_steps(
         }
     }
 
+    Ok(())
+}
+
+fn install_everest_archive_with_steps(
+    game_path: &Path,
+    archive_path: &Path,
+    extract_step: &str,
+    installer_step: &str,
+    progress_callback: &mut dyn FnMut(String, f32),
+) -> anyhow::Result<()> {
+    #[cfg(target_os = "android")]
+    crate::android::can_install()?;
+    if !is_everest_install_archive(archive_path)? {
+        bail!("The zip is not an Everest install package for this platform");
+    }
+
+    extract_everest_archive(game_path, archive_path, extract_step, progress_callback)?;
+
+    let installer_path = game_path.join(installer_name()?);
     progress_callback(installer_step.to_string(), 0.0);
-    run_command(
-        game_path.join(installer_name()?),
-        installer_step,
-        progress_callback,
-    )
+    let error = match run_command(installer_path.clone(), installer_step, progress_callback) {
+        Ok(()) => return Ok(()),
+        Err(error) => error,
+    };
+
+    // A native crash in MiniInstaller is intermittent: the same machine installs
+    // fine on the next attempt, and the failing run left the game directory
+    // half-updated. Re-extract and run the installer once more before giving up,
+    // which is exactly what the user would otherwise do by hand.
+    if !is_installer_native_crash(&format!("{error:#}")) {
+        return Err(error);
+    }
+
+    progress_callback(
+        format!("{installer_step}: 安装器崩溃，正在重新解压并重试一次"),
+        0.0,
+    );
+    extract_everest_archive(game_path, archive_path, extract_step, progress_callback)?;
+    progress_callback(installer_step.to_string(), 0.0);
+    run_command(installer_path, installer_step, progress_callback).map_err(|second| {
+        second.context(format!(
+            "安装器连续两次在原生代码里崩溃（第一次：{error:#}）"
+        ))
+    })
 }
 
 pub fn install_everest_archive(
@@ -702,6 +768,112 @@ pub fn download_and_install_everest(
         "[3/3] Run MiniInstaller",
         progress_callback,
     )
+}
+
+#[cfg(test)]
+mod installer_retry_tests {
+    use super::is_installer_native_crash;
+    use std::fs;
+    use std::io::Write;
+    use std::path::Path;
+
+    fn write_everest_archive(path: &Path, installer_name: &str, script: &str) {
+        let file = fs::File::create(path).unwrap();
+        let mut writer = zip::ZipWriter::new(file);
+        for (name, contents) in [
+            (format!("main/{installer_name}"), script.as_bytes()),
+            ("main/Celeste.Mod.mm.dll".to_string(), b"dll".as_slice()),
+        ] {
+            writer
+                .start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            writer.write_all(contents).unwrap();
+        }
+        writer.finish().unwrap();
+    }
+
+    #[test]
+    fn recognizes_the_runtime_native_crash() {
+        assert!(is_installer_native_crash(
+            "Failed to install Everest: Command failed with error: Fatal error. \
+             System.AccessViolationException: Attempted to read or write protected memory."
+        ));
+        assert!(is_installer_native_crash(
+            "System.AccessViolationException: 尝试读取或写入受保护的内存。"
+        ));
+        assert!(!is_installer_native_crash(
+            "Failed to replace C:\\Celeste\\Celeste.dll. Close Celeste and any program using this file"
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn retries_the_whole_install_once_after_a_native_crash() {
+        use super::install_everest_archive_with_steps;
+
+        let root = std::env::temp_dir().join(format!("celemod-retry-{}", std::process::id()));
+        let game = root.join("game");
+        fs::create_dir_all(&game).unwrap();
+        let archive = root.join("everest.zip");
+        write_everest_archive(
+            &archive,
+            super::installer_name().unwrap(),
+            "#!/bin/sh\nn=$(cat attempts 2>/dev/null || echo 0)\nn=$((n+1))\necho $n > attempts\n\
+             if [ \"$n\" -lt 2 ]; then\n\
+             echo 'Fatal error. System.AccessViolationException: Attempted to read or write protected memory.' >&2\n\
+             exit 134\nfi\n",
+        );
+
+        let result = install_everest_archive_with_steps(
+            &game,
+            &archive,
+            "extract",
+            "install",
+            &mut |_, _| {},
+        );
+        assert!(
+            result.is_ok(),
+            "the second attempt must be used: {result:?}"
+        );
+        assert_eq!(
+            fs::read_to_string(game.join("attempts")).unwrap().trim(),
+            "2"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn reports_an_installer_that_keeps_crashing_instead_of_looping() {
+        use super::install_everest_archive_with_steps;
+
+        let root = std::env::temp_dir().join(format!("celemod-retry-fail-{}", std::process::id()));
+        let game = root.join("game");
+        fs::create_dir_all(&game).unwrap();
+        let archive = root.join("everest.zip");
+        write_everest_archive(
+            &archive,
+            super::installer_name().unwrap(),
+            "#!/bin/sh\nn=$(cat attempts 2>/dev/null || echo 0)\nn=$((n+1))\necho $n > attempts\n\
+             echo 'Fatal error. System.AccessViolationException: Attempted to read or write protected memory.' >&2\n\
+             exit 134\n",
+        );
+
+        let error = install_everest_archive_with_steps(
+            &game,
+            &archive,
+            "extract",
+            "install",
+            &mut |_, _| {},
+        )
+        .unwrap_err();
+        assert!(format!("{error:#}").contains("连续两次"));
+        assert_eq!(
+            fs::read_to_string(game.join("attempts")).unwrap().trim(),
+            "2"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[cfg(test)]
