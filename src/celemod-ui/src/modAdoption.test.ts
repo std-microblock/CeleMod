@@ -8,6 +8,7 @@ const settings = {
     { name: "Copied", file: "Copied.zip" },
   ],
   profileEnabledNames: ["Enabled"],
+  allProfileEnabledNames: ["Enabled"],
   blacklistEnabledNames: ["Enabled", "Copied"],
   knownNames: ["Enabled"],
   alwaysOnNames: [],
@@ -18,9 +19,37 @@ test("adopts a Mod that was copied into the Mods folder", () => {
   assert.deepEqual(selectAdoptableModNames(settings), ["Copied"]);
 });
 
-test("keeps Mods CeleMod already saw out of the adoption", () => {
+test("adopts a known Mod that was enabled outside CeleMod", () => {
+  // The game's "Toggle Mods" menu only edits blacklist.txt, so a Mod CeleMod
+  // already knows can still be enabled while no profile enables it.  Applying
+  // the profiles must not turn it off again.
   assert.deepEqual(
-    selectAdoptableModNames({ ...settings, knownNames: ["Enabled", "Copied"] }),
+    selectAdoptableModNames({
+      ...settings,
+      knownNames: ["Enabled", "Copied"],
+    }),
+    ["Copied"],
+  );
+});
+
+test("adopts a known Mod enabled outside CeleMod whatever the download default is", () => {
+  assert.deepEqual(
+    selectAdoptableModNames({
+      ...settings,
+      knownNames: ["Enabled", "Copied"],
+      enableNewMods: false,
+    }),
+    ["Copied"],
+  );
+});
+
+test("keeps a known Mod another profile enables out of the adoption", () => {
+  assert.deepEqual(
+    selectAdoptableModNames({
+      ...settings,
+      knownNames: ["Enabled", "Copied"],
+      allProfileEnabledNames: ["Enabled", "Copied"],
+    }),
     [],
   );
 });

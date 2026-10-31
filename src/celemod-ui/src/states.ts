@@ -532,6 +532,7 @@ export const adoptUntrackedMods = async (
     profileEnabledNames: selectedProfiles.flatMap(
       (profile) => profile.enabled_mods,
     ),
+    allProfileEnabledNames: profiles.flatMap((profile) => profile.enabled_mods),
     blacklistEnabledNames: direct.enabled_mods,
     knownNames: state.knownMods[gamePath] ?? [],
     alwaysOnNames: state.alwaysOnMods,
