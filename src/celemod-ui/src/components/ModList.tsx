@@ -27,6 +27,7 @@ import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
+import { pickDownloadFiles } from "../downloadFiles";
 // @ts-ignore
 import celemodIcon from "../resources/Celemod.png";
 
@@ -348,8 +349,14 @@ export const Mod = memo(
                 down(mod.name, downloadInfo);
               } else {
                 if (downloadInfo.length === 1) {
+                  const [file] = downloadInfo;
                   ctx.hide();
-                  down(downloadInfo[0].name, downloadInfo[0].id);
+                  // Files only the mirror hosts have no GameBanana file id:
+                  // hand their URL to the downloader instead of id "-1".
+                  down(
+                    file.name,
+                    parseInt(file.id) === -1 ? file.url : file.id,
+                  );
                 } else if (downloadInfo.length === 0) {
                   ctx.setError(_i18n.t("文件列表为空"));
                 } else {
@@ -696,61 +703,21 @@ export const ModList = (props: {
       const mod = {
         name: mod2.name,
         downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
-        downloadUrl: () => {
-          const dedup = new Set();
-          if (!mod2.gameBananaId || mod2.gameBananaId < 0) {
-            const file = mod2.files[0];
-            if (!file?.url) return [];
-            return [
-              {
-                id: file.gameBananaId > 0 ? file.gameBananaId.toString() : "-1",
-                name: file.mods[0]?.name ?? mod2.name,
-                size: formatSize(file.size),
-                url: file.url,
-                isPrimary: true,
-                isInstalled:
-                  file.mods.length > 0 &&
-                  file.mods.every((fileMod) =>
-                    installedModVersions
-                      .get(fileMod.name.toLocaleLowerCase())
-                      ?.has(fileMod.version),
-                  ),
-              },
-            ];
-          }
-          const files = mod2.files.filter((file) => {
-            if (file.mods.length === 0) return false;
-            if (dedup.has(file.mods[0].id)) return false;
-            dedup.add(file.mods[0].id);
-            return true;
-          });
-          const normalizeName = (value: string) =>
-            value.toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
-          const submissionName = normalizeName(mod2.name);
-          const primaryIndex = Math.max(
-            0,
-            files.findIndex((file) =>
-              file.mods.some(
-                (fileMod) => normalizeName(fileMod.name) === submissionName,
-              ),
-            ),
-          );
-
-          return Promise.resolve(
-            files.map((file, index) => ({
-              id: file.gameBananaId.toString(),
-              name: file.mods[0].name,
-              size: formatSize(file.size),
-              url: file.url,
-              isPrimary: index === primaryIndex,
-              isInstalled: file.mods.every((fileMod) =>
+        downloadUrl: () =>
+          pickDownloadFiles(mod2).map((file) => ({
+            id: file.id,
+            name: file.name,
+            size: formatSize(file.size),
+            url: file.url,
+            isPrimary: file.isPrimary,
+            isInstalled:
+              file.mods.length > 0 &&
+              file.mods.every((fileMod) =>
                 installedModVersions
                   .get(fileMod.name.toLocaleLowerCase())
                   ?.has(fileMod.version),
               ),
-            })),
-          );
-        },
+          })),
         previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
         author: mod2.submitter,
         isInstalled:
