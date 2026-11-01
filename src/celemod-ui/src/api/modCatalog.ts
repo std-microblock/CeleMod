@@ -1,6 +1,7 @@
 import type { Content, File as SubmissionFile } from "./wegfan";
 import { callRemote, sleep } from "../utils";
 import { waitForCatalogDownload } from "../catalogDownload";
+import { parseCatalogResponse } from "./catalogResponse";
 
 export interface CatalogSubmission {
   id: string;
@@ -42,12 +43,6 @@ export interface CatalogMod {
   version: string;
   xxHash: string[];
   submissionFile: CatalogSubmissionFile;
-}
-
-interface CatalogResponse {
-  data: CatalogMod[];
-  code: number;
-  message: string;
 }
 
 export interface LocalCatalogFilters {
@@ -98,8 +93,7 @@ export const isCatalogDownloading = async (): Promise<boolean> => {
 
 const requestModCatalog = (requestId: number, forceRefresh: boolean) =>
   callRemote<string>("get_mod_catalog", forceRefresh).then((raw) => {
-    const parsed = JSON.parse(raw) as CatalogResponse;
-    const nextCatalog = Array.isArray(parsed.data) ? parsed.data : [];
+    const nextCatalog = parseCatalogResponse<CatalogMod>(raw);
     if (requestId === catalogRequestId) catalog = nextCatalog;
     return nextCatalog;
   });
