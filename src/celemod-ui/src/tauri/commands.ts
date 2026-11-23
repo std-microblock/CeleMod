@@ -101,7 +101,7 @@ const parameterNames: Record<string, string[]> = {
     "edition",
     "onEvent",
   ],
-  start_loenn: ["installRoot"],
+  start_loenn: ["installRoot", "gamePath"],
   install_local_packages: [
     "gamePath",
     "packagePaths",

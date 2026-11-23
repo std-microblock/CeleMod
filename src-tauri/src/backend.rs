@@ -3801,6 +3801,167 @@ mod local_package_tests {
         fs::remove_dir_all(root).unwrap();
     }
 
+    /// Creates a directory the editor accepts as a Celeste install.
+    fn write_fake_celeste_dir(path: &Path) {
+        fs::create_dir_all(path.join("Content").join("Graphics").join("Atlases")).unwrap();
+        fs::write(path.join("Celeste.exe"), b"executable").unwrap();
+        fs::write(
+            path.join("Content")
+                .join("Graphics")
+                .join("Atlases")
+                .join("Gameplay.meta"),
+            b"meta",
+        )
+        .unwrap();
+    }
+
+    fn escaped_for_lua(path: &Path) -> String {
+        path.to_string_lossy().replace('\\', "\\\\")
+    }
+
+    #[test]
+    fn prefills_the_loenn_game_directory_in_a_fresh_settings_file() {
+        let root = test_dir("loenn-prefill-fresh");
+        let game = root.join("Celeste");
+        write_fake_celeste_dir(&game);
+        let settings = root.join("Loenn").join("loenn2-settings.conf");
+
+        assert!(prefill_loenn_game_directory(&settings, game.to_string_lossy().as_ref()).unwrap());
+
+        let written = fs::read_to_string(&settings).unwrap();
+        assert!(written.contains(&format!(
+            "celesteGameDirectory = \"{}\"",
+            escaped_for_lua(&game)
+        )));
+        assert_eq!(
+            find_lua_top_level_string(&written, "celesteGameDirectory")
+                .unwrap()
+                .value
+                .as_deref(),
+            Some(game.to_string_lossy().as_ref())
+        );
+        assert!(
+            !PathBuf::from(format!("{}.saving", settings.display())).exists(),
+            "the staged settings file must be swapped in"
+        );
+
+        // Already configured: a later launch must leave the file untouched.
+        assert!(!prefill_loenn_game_directory(&settings, game.to_string_lossy().as_ref()).unwrap());
+        assert_eq!(fs::read_to_string(&settings).unwrap(), written);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn loenn_prefill_keeps_the_rest_of_the_settings_file() {
+        let root = test_dir("loenn-prefill-existing");
+        let game = root.join("Celeste");
+        write_fake_celeste_dir(&game);
+        let settings = root.join("settings.conf");
+        let original = concat!(
+            "{\n",
+            "    backups = {\n",
+            "        enabled = true\n",
+            "    },\n",
+            "    celesteGameDirectory = \"D:\\\\Old\\\\Celeste\",\n",
+            "    editor = {\n",
+            "        celesteGameDirectory = \"nested-value\",\n",
+            "        sortRoomsOnSave = true\n",
+            "    }\n",
+            "}\n"
+        );
+        fs::write(&settings, original).unwrap();
+
+        assert!(prefill_loenn_game_directory(&settings, game.to_string_lossy().as_ref()).unwrap());
+        let written = fs::read_to_string(&settings).unwrap();
+
+        // Only the stale top-level entry is replaced; everything else stays byte for byte.
+        assert!(!written.contains("D:\\\\Old\\\\Celeste"));
+        assert!(written.contains(&format!(
+            "celesteGameDirectory = \"{}\"",
+            escaped_for_lua(&game)
+        )));
+        assert!(written.contains("celesteGameDirectory = \"nested-value\""));
+        assert!(written.contains("sortRoomsOnSave = true"));
+        assert!(written.contains("backups = {\n        enabled = true\n    },"));
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn loenn_prefill_keeps_a_game_directory_the_user_already_set() {
+        let root = test_dir("loenn-prefill-kind");
+        let user_game = root.join("Celeste");
+        write_fake_celeste_dir(&user_game);
+        let listed_game = root.join("ListedCeleste");
+        write_fake_celeste_dir(&listed_game);
+        let settings = root.join("loenn2-settings.conf");
+        let original = format!(
+            "{{\n    celesteGameDirectory = \"{}\"\n}}\n",
+            escaped_for_lua(&user_game)
+        );
+        fs::write(&settings, &original).unwrap();
+
+        assert!(
+            !prefill_loenn_game_directory(&settings, listed_game.to_string_lossy().as_ref())
+                .unwrap()
+        );
+        assert_eq!(fs::read_to_string(&settings).unwrap(), original);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn selects_the_loenn_settings_file_the_installed_edition_reads() {
+        let root = test_dir("loenn-settings-file");
+        let storage = root.join("Loenn");
+        fs::create_dir_all(&storage).unwrap();
+
+        assert_eq!(
+            loenn_settings_file(&storage, None),
+            storage.join("settings.conf")
+        );
+        assert_eq!(
+            loenn_settings_file(&storage, Some("ultra")),
+            storage.join("loenn2-settings.conf")
+        );
+
+        // Ultra migrates the shared file while its own file is missing.
+        fs::write(storage.join("settings.conf"), "{\n}\n").unwrap();
+        assert_eq!(
+            loenn_settings_file(&storage, Some("ultra")),
+            storage.join("settings.conf")
+        );
+
+        fs::write(storage.join("loenn2-settings.conf"), "{\n}\n").unwrap();
+        assert_eq!(
+            loenn_settings_file(&storage, Some("ultra")),
+            storage.join("loenn2-settings.conf")
+        );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn resolves_the_loenn_game_directory_like_the_editor_does() {
+        let root = test_dir("loenn-cleanup-path");
+        let game = root.join("Celeste");
+        write_fake_celeste_dir(&game);
+        fs::create_dir_all(game.join("orig")).unwrap();
+
+        // A file inside the install resolves to the install directory.
+        let executable = game.join("Celeste.exe");
+        assert_eq!(
+            loenn_game_directory(executable.to_string_lossy().as_ref()),
+            game
+        );
+        // Everest's unmodified copy resolves to the real game directory above it.
+        let orig = game.join("orig");
+        assert_eq!(loenn_game_directory(orig.to_string_lossy().as_ref()), game);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn rejects_unrecognized_zip_archives() {
         let root = test_dir("drop-unknown");
@@ -4537,6 +4698,314 @@ fn detect_loenn_executable(dir: &Path) -> Option<PathBuf> {
     detect_loenn_executable_for_platform(dir, std::env::consts::OS)
 }
 
+const LOENN_SETTINGS_FILE: &str = "settings.conf";
+const LOENN_ULTRA_SETTINGS_FILE: &str = "loenn2-settings.conf";
+
+/// Directory holding Loenn's own settings, mirrors `file_locations.getStorageDir()`.
+fn loenn_storage_dir() -> Option<PathBuf> {
+    match std::env::consts::OS {
+        "windows" => dirs::data_local_dir().map(|dir| dir.join("Loenn")),
+        "macos" => dirs::data_dir().map(|dir| dir.join("L\u{00f6}nn")),
+        "linux" => match std::env::var_os("XDG_CONFIG_HOME").filter(|value| !value.is_empty()) {
+            Some(config_dir) => Some(PathBuf::from(config_dir).join("L\u{00f6}nn")),
+            None => dirs::home_dir().map(|home| home.join(".config").join("L\u{00f6}nn")),
+        },
+        _ => None,
+    }
+}
+
+/// Loenn Ultra keeps its settings in a fork-specific file and copies the shared
+/// `settings.conf` over when that file is still missing, so an Ultra install has to be
+/// prefilled in the shared file in that one case to survive the migration.
+fn loenn_settings_file(storage: &Path, edition: Option<&str>) -> PathBuf {
+    let shared = storage.join(LOENN_SETTINGS_FILE);
+    let fork = storage.join(LOENN_ULTRA_SETTINGS_FILE);
+    if edition == Some("ultra") && !fork.is_file() && shared.is_file() {
+        // The Ultra fork copies the shared file over on first start, so that copy is what
+        // carries the prefilled directory (and keeps the user's existing settings).
+        return shared;
+    }
+    if edition == Some("ultra") {
+        return fork;
+    }
+    shared
+}
+
+/// Edition recorded by CeleMod for the install rooted at `root`.
+fn installed_loenn_edition(root: &Path) -> Option<String> {
+    let legacy = root.join("current");
+    for install_dir in [root, legacy.as_path()] {
+        if let Ok(metadata) = read_loenn_metadata_at(install_dir) {
+            return normalize_loenn_edition(metadata.edition.as_deref());
+        }
+    }
+    None
+}
+
+/// Mirrors Loenn's `startup.verifyCelesteDir`: what the editor accepts as a game folder
+/// when deciding whether its first-start prompt can be skipped.
+fn is_loenn_celeste_dir(path: &Path) -> bool {
+    if !path.is_dir() {
+        return false;
+    }
+    let has_game = path.join("Celeste.exe").is_file() || path.join("Celeste.dll").is_file();
+    has_game
+        && path
+            .join("Content")
+            .join("Graphics")
+            .join("Atlases")
+            .join("Gameplay.meta")
+            .is_file()
+}
+
+/// Mirrors Loenn's `startup.cleanupPath`, which the editor applies before storing the
+/// directory: the configured path has to be the game root, not a file or Everest's `orig`.
+fn loenn_game_directory(game_path: &str) -> PathBuf {
+    let path = normalize_game_path_buf(Path::new(game_path));
+    let path = if path.is_file() {
+        path.parent().map(Path::to_path_buf).unwrap_or(path)
+    } else {
+        path
+    };
+    match path.parent() {
+        Some(parent) if parent.join("orig").is_dir() => parent.to_path_buf(),
+        _ => path,
+    }
+}
+
+fn lua_escaped_string(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\\' => escaped.push_str("\\\\"),
+            '"' => escaped.push_str("\\\""),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            other => escaped.push(other),
+        }
+    }
+    escaped
+}
+
+fn lua_unescaped_string(value: &str) -> String {
+    let mut unescaped = String::with_capacity(value.len());
+    let mut characters = value.chars();
+    while let Some(character) = characters.next() {
+        if character != '\\' {
+            unescaped.push(character);
+            continue;
+        }
+        match characters.next() {
+            Some('n') => unescaped.push('\n'),
+            Some('r') => unescaped.push('\r'),
+            Some('t') => unescaped.push('\t'),
+            Some(other) => unescaped.push(other),
+            None => unescaped.push('\\'),
+        }
+    }
+    unescaped
+}
+
+struct LuaAssignment {
+    span: std::ops::Range<usize>,
+    value: Option<String>,
+}
+
+/// Skips a quoted Lua string starting at `start`, returning the position right after the
+/// closing quote together with the raw (still escaped) body.
+fn skip_lua_string_literal(content: &str, start: usize, quote: u8) -> (usize, &str) {
+    let bytes = content.as_bytes();
+    let body_start = start + 1;
+    let mut cursor = body_start;
+    while cursor < bytes.len() {
+        match bytes[cursor] {
+            // Both bytes of an escape pair belong to the string body; only ASCII quotes can
+            // end it, so stepping over a multi-byte character cannot misfire.
+            b'\\' => cursor = (cursor + 2).min(bytes.len()),
+            byte if byte == quote => return (cursor + 1, &content[body_start..cursor]),
+            _ => cursor += 1,
+        }
+    }
+    (bytes.len(), &content[body_start..])
+}
+
+/// Finds one top-level `key = "value"` entry of a Loenn settings file, which is a serialized
+/// Lua table constructor, and reports its source span so it can be replaced in place.
+fn find_lua_top_level_string(content: &str, key: &str) -> Option<LuaAssignment> {
+    let bytes = content.as_bytes();
+    let mut depth = 0i32;
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            b'-' if bytes.get(index + 1) == Some(&b'-') => {
+                while index < bytes.len() && bytes[index] != b'\n' {
+                    index += 1;
+                }
+            }
+            quote @ (b'"' | b'\'') => {
+                index = skip_lua_string_literal(content, index, quote).0;
+            }
+            b'{' => {
+                depth += 1;
+                index += 1;
+            }
+            b'}' => {
+                depth -= 1;
+                index += 1;
+            }
+            byte if depth == 1 && (byte.is_ascii_alphabetic() || byte == b'_') => {
+                let identifier_start = index;
+                while index < bytes.len()
+                    && (bytes[index].is_ascii_alphanumeric() || bytes[index] == b'_')
+                {
+                    index += 1;
+                }
+                if &content[identifier_start..index] != key {
+                    continue;
+                }
+
+                let mut cursor = index;
+                while bytes
+                    .get(cursor)
+                    .is_some_and(|byte| byte.is_ascii_whitespace())
+                {
+                    cursor += 1;
+                }
+                if bytes.get(cursor) != Some(&b'=') {
+                    continue;
+                }
+                cursor += 1;
+                while bytes
+                    .get(cursor)
+                    .is_some_and(|byte| byte.is_ascii_whitespace())
+                {
+                    cursor += 1;
+                }
+
+                let value_start = cursor;
+                match bytes.get(cursor).copied() {
+                    Some(quote @ (b'"' | b'\'')) => {
+                        let (end, raw) = skip_lua_string_literal(content, cursor, quote);
+                        return Some(LuaAssignment {
+                            span: identifier_start..end,
+                            value: Some(lua_unescaped_string(raw)),
+                        });
+                    }
+                    Some(_) => {
+                        while cursor < bytes.len() && !matches!(bytes[cursor], b',' | b'\n' | b'}')
+                        {
+                            cursor += 1;
+                        }
+                        let value = content[value_start..cursor].trim();
+                        return Some(LuaAssignment {
+                            span: identifier_start..cursor,
+                            value: (!value.is_empty() && value != "nil").then(|| value.to_string()),
+                        });
+                    }
+                    None => return None,
+                }
+            }
+            _ => index += 1,
+        }
+    }
+
+    None
+}
+
+/// Rewrites `celesteGameDirectory` inside an existing settings file, keeping every other
+/// entry byte for byte.
+fn upsert_loenn_game_directory(content: &str, game_directory: &str) -> String {
+    let assignment = format!(
+        "celesteGameDirectory = \"{}\"",
+        lua_escaped_string(game_directory)
+    );
+
+    if let Some(existing) = find_lua_top_level_string(content, "celesteGameDirectory") {
+        let mut updated = String::with_capacity(content.len() + assignment.len());
+        updated.push_str(&content[..existing.span.start]);
+        updated.push_str(&assignment);
+        updated.push_str(&content[existing.span.end..]);
+        return updated;
+    }
+
+    match content.find('{') {
+        Some(position) => {
+            let mut updated = String::with_capacity(content.len() + assignment.len() + 8);
+            updated.push_str(&content[..=position]);
+            updated.push_str("\n    ");
+            updated.push_str(&assignment);
+            updated.push(',');
+            updated.push_str(&content[position + 1..]);
+            updated
+        }
+        None => format!("{{\n    {assignment}\n}}\n"),
+    }
+}
+
+/// Writes the settings file the same way Loenn does: stage the whole file first, then swap
+/// it in, so a crash cannot leave a half written config behind.
+fn write_loenn_settings(path: &Path, content: &str) -> anyhow::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let staging = PathBuf::from(format!("{}.saving", path.display()));
+    fs::write(&staging, content)
+        .with_context(|| format!("Failed to write {}", staging.display()))?;
+    if path.is_file() {
+        fs::remove_file(path).with_context(|| format!("Failed to replace {}", path.display()))?;
+    }
+    fs::rename(&staging, path).with_context(|| format!("Failed to move {}", staging.display()))?;
+    Ok(())
+}
+
+/// Prefills `celesteGameDirectory` so Loenn does not stop at its first-start prompt.
+/// Reports whether the settings file was rewritten.
+fn prefill_loenn_game_directory(settings_path: &Path, game_path: &str) -> anyhow::Result<bool> {
+    let game_directory = loenn_game_directory(game_path);
+    if !is_loenn_celeste_dir(&game_directory) {
+        return Ok(false);
+    }
+
+    let content = match fs::read_to_string(settings_path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("Failed to read {}", settings_path.display()));
+        }
+    };
+
+    // Never override a directory the user picked and the editor accepts.
+    let configured_valid = find_lua_top_level_string(&content, "celesteGameDirectory")
+        .and_then(|existing| existing.value)
+        .is_some_and(|value| is_loenn_celeste_dir(Path::new(&value)));
+    if configured_valid {
+        return Ok(false);
+    }
+
+    let game_directory = game_directory.to_string_lossy();
+    let updated = upsert_loenn_game_directory(&content, &game_directory);
+    if updated == content {
+        return Ok(false);
+    }
+    write_loenn_settings(settings_path, &updated)?;
+    Ok(true)
+}
+
+fn ensure_loenn_game_directory(root: &Path, game_path: &str) -> anyhow::Result<Option<PathBuf>> {
+    let Some(storage) = loenn_storage_dir() else {
+        return Ok(None);
+    };
+    let edition = installed_loenn_edition(root);
+    let settings_path = loenn_settings_file(&storage, edition.as_deref());
+    if prefill_loenn_game_directory(&settings_path, game_path)? {
+        Ok(Some(settings_path))
+    } else {
+        Ok(None)
+    }
+}
+
 fn get_loenn_state_impl(install_root: &str) -> LoennState {
     let Ok(root) = loenn_root_dir(install_root) else {
         return LoennState {
@@ -4898,11 +5367,32 @@ fn download_and_install_loenn(
 }
 
 #[tauri::command]
-fn start_loenn(install_root: String) -> Result<(), String> {
+fn start_loenn(install_root: String, game_path: Option<String>) -> Result<(), String> {
     let root = loenn_root_dir(&install_root).map_err(|error| format!("{error:#}"))?;
     let executable = managed_loenn_executable(&root)
         .or_else(|| detect_loenn_executable(&root))
         .ok_or_else(|| format!("No Lönn executable found in {}", root.display()))?;
+
+    // Lönn stops at a first-start prompt until its Celeste directory is set, so fill it in
+    // from the install CeleMod already manages. Never let this block the launch.
+    if let Some(game_path) = game_path
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        && !is_test_mode()
+    {
+        match ensure_loenn_game_directory(&root, game_path) {
+            Ok(Some(settings_path)) => crate::logging::info(format_args!(
+                "Prefilled the Lönn game directory in {}",
+                settings_path.display()
+            )),
+            Ok(None) => {}
+            Err(error) => crate::logging::warn(format_args!(
+                "Failed to prefill the Lönn game directory: {error:#}"
+            )),
+        }
+    }
+
     let working_dir = executable.parent().unwrap_or(&root);
     std::process::Command::new(&executable)
         .current_dir(working_dir)

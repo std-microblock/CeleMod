@@ -13,7 +13,7 @@ import {
 import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
 import { ProgressIndicator } from "../components/Progress";
-import { useCurrentLang } from "../states";
+import { useCurrentLang, useGamePath } from "../states";
 import { callRemote, displayDate } from "../utils";
 import "./Loenn.scss";
 
@@ -101,6 +101,7 @@ const shouldOfferExpand = (text: string) =>
 
 export const Loenn = () => {
   const { currentLang } = useCurrentLang();
+  const [gamePath] = useGamePath();
   const { data: updateInfo, error: configError } = useUpdateInfo();
 
   const officialConfig: LoennConfig | undefined = updateInfo?.loenn;
@@ -256,7 +257,9 @@ export const Loenn = () => {
 
   const launch = () => {
     setLaunchError(null);
-    callRemote("start_loenn", installRoot).catch((error) =>
+    // Lönn asks for the Celeste directory on first start; hand it the install CeleMod
+    // already manages so the editor opens straight into the map.
+    callRemote("start_loenn", installRoot, gamePath).catch((error) =>
       setLaunchError(String(error)),
     );
   };
