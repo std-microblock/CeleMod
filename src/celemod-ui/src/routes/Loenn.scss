@@ -1,229 +1,1154 @@
 @use "../styles/theme" as theme;
 
 .loenn {
-  width: min(920px, 100%);
-  height: 100%;
-  padding: 42px 48px;
-  overflow: auto;
+  --loenn-divider: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
+  --loenn-divider-subtle: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 7%,
+    transparent
+  );
+  --loenn-row-hover: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 3.2%,
+    transparent
+  );
+  --loenn-accent: var(--color-primary, #{theme.$primary});
+  --loenn-success: #62cf8f;
+  --loenn-danger: #f07e7e;
+
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 28px 36px 56px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 
   &.loenn-loading,
   &.loenn-unavailable {
-    display: flex;
-    width: 100%;
+    min-height: 100%;
     align-items: center;
     justify-content: center;
-    opacity: 0.65;
   }
 
-  .loenn-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 28px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    letter-spacing: normal;
+  }
 
-    h1 {
-      margin: 0 0 7px;
-      font-size: 32px;
-      font-weight: 720;
+  .loenn-empty-notice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    padding: 24px 16px;
+    text-align: center;
+
+    > .icon {
+      font-size: 20px;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+    }
+
+    strong {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-fg, #{theme.$fg});
     }
 
     p {
-      max-width: 650px;
       margin: 0;
-      color: rgba(255, 255, 255, 0.57);
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+      word-break: break-word;
     }
   }
 
-  .header-actions {
+  /* Quiet button primitives */
+  .loenn-ghost-btn {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      color 140ms ease,
+      background-color 140ms ease;
+
+    &:hover:not(:disabled) {
+      color: var(--color-fg, #{theme.$fg});
+      background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 6%, transparent);
+    }
+
+    &:active:not(:disabled) {
+      background: color-mix(
+        in srgb,
+        var(--color-fg, #{theme.$fg}) 10%,
+        transparent
+      );
+    }
+  }
+
+  .loenn-inline-link {
+    min-height: 0;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: var(--radius-sm, 5px);
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    gap: 5px;
+    transition:
+      color 140ms ease,
+      background-color 140ms ease;
+
+    &:hover:not(:disabled) {
+      color: var(--color-fg, #{theme.$fg});
+      background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 6%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+  }
+
+  .loenn-icon-btn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12.5px;
+    transition:
+      color 140ms ease,
+      background-color 140ms ease;
+
+    &:hover:not(:disabled) {
+      color: var(--color-fg, #{theme.$fg});
+      background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 7%, transparent);
+    }
+  }
+
+  /* Subtle inline badges */
+  .loenn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 21px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .loenn-badge-ultra {
+    color: color-mix(in srgb, var(--loenn-accent) 48%, var(--color-fg, #{theme.$fg}));
+    background: color-mix(in srgb, var(--loenn-accent) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--loenn-accent) 30%, transparent);
+  }
+
+  .loenn-badge-neutral {
+    color: var(--color-fg-muted, #{theme.$fg1});
+    background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 6%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
+  }
+
+  .loenn-badge-latest {
+    color: color-mix(in srgb, var(--loenn-accent) 50%, var(--color-fg, #{theme.$fg}));
+    background: color-mix(in srgb, var(--loenn-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--loenn-accent) 26%, transparent);
+  }
+
+  .loenn-badge-installed {
+    color: var(--loenn-success);
+    background: color-mix(in srgb, var(--loenn-success) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--loenn-success) 28%, transparent);
+
+    .icon {
+      font-size: 10px;
+    }
+  }
+
+  /* Section 1: Header */
+  .loenn-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+  }
+
+  .loenn-title-group {
+    min-width: 0;
+
+    h1 {
+      margin: 0;
+      color: var(--color-fg, #{theme.$fg});
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+  }
+
+  .loenn-subtitle {
+    margin: 5px 0 0;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .loenn-header-links {
     display: flex;
     flex: 0 0 auto;
-    gap: 6px;
-
-    button {
-      padding: 6px 9px;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      white-space: nowrap;
-      opacity: 0.62;
-
-      &:hover {
-        opacity: 1;
-      }
-    }
+    align-items: center;
+    gap: 4px;
   }
 
+  /* Section 2: Installed Status Bar (flat row with hairline divider) */
   .loenn-local {
+    padding: 4px 0 22px;
+    border-bottom: 1px solid var(--loenn-divider);
+  }
+
+  .loenn-status-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    padding: 24px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
 
-    .local-version {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
+  .loenn-local-info {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .loenn-local-label {
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .loenn-local-headline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .loenn-local-version {
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+
+    &.is-empty {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-fg-muted, #{theme.$fg1});
     }
+  }
 
-    .local-details {
-      min-width: 0;
-    }
+  .loenn-path-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    min-width: 0;
+    margin-top: 2px;
+  }
 
-    .local-path {
-      display: block;
-      max-width: 520px;
-      margin-top: 6px;
-      overflow: hidden;
-      color: rgba(255, 255, 255, 0.38);
-      font-size: 10px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  .loenn-path-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
 
-    .local-actions {
-      display: flex;
-      flex: 0 0 auto;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .label {
-      color: rgba(255, 255, 255, 0.48);
+    .icon {
       font-size: 12px;
+      opacity: 0.72;
+    }
+  }
+
+  .loenn-path-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 460px;
+  }
+
+  .loenn-path-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+  }
+
+  .loenn-local-cta {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .loenn-launch-btn {
+    min-height: 38px;
+    padding: 0 18px;
+    border-radius: var(--radius-md, 9px);
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .loenn-inline-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 9px 12px;
+    border-left: 2px solid var(--loenn-danger);
+    border-radius: 0 var(--radius-sm, 6px) var(--radius-sm, 6px) 0;
+    background: color-mix(in srgb, var(--loenn-danger) 9%, transparent);
+    color: var(--loenn-danger);
+    font-size: 12.5px;
+    line-height: 1.5;
+
+    > .icon {
+      flex: 0 0 auto;
+      font-size: 13px;
+    }
+
+    > span {
+      flex: 1 1 auto;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .loenn-icon-btn {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+      min-height: 24px;
+      color: inherit;
+    }
+  }
+
+  /* Section 3: Edition Tabs (flat left-aligned tabs matching Everest.tsx) */
+  .loenn-edition-tabs {
+    margin-top: 20px;
+    justify-content: flex-start;
+    gap: 8px;
+
+    > button {
+      min-width: 0;
+      min-height: 34px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md, 8px);
+      background: transparent;
+      box-shadow: none;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+      font-size: 13px;
+      font-weight: 600;
+      gap: 7px;
+      transition:
+        color 140ms ease,
+        background-color 140ms ease,
+        border-color 140ms ease;
+
+      &:hover:not(:disabled):not(.active) {
+        color: var(--color-fg, #{theme.$fg});
+        background: color-mix(
+          in srgb,
+          var(--color-fg, #{theme.$fg}) 5%,
+          transparent
+        );
+        border-color: transparent;
+      }
+
+      &.active {
+        border-color: color-mix(in srgb, var(--loenn-accent) 46%, transparent);
+        color: var(--color-fg, #{theme.$fg});
+        background: color-mix(in srgb, var(--loenn-accent) 16%, transparent);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+    }
+  }
+
+  .loenn-rec-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 19px;
+    padding: 0 6px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--loenn-accent) 52%, var(--color-fg, #{theme.$fg}));
+    background: color-mix(in srgb, var(--loenn-accent) 16%, transparent);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Section 4: Edition Description (flat editorial block) */
+  .loenn-edition-intro {
+    padding: 18px 0 20px;
+    border-bottom: 1px solid var(--loenn-divider);
+
+    .loenn-kicker {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    &.is-ultra .loenn-kicker {
+      color: color-mix(
+        in srgb,
+        var(--loenn-accent) 58%,
+        var(--color-fg, #{theme.$fg})
+      );
     }
 
     strong {
-      font-size: 21px;
+      display: block;
+      color: var(--color-fg, #{theme.$fg});
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
     }
 
-    .installed {
-      color: #79cf9b;
-      font-size: 11px;
+    p {
+      max-width: 760px;
+      margin: 7px 0 0;
+      color: var(--color-fg-muted, #{theme.$fg1});
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre-line;
     }
   }
 
-  .loenn-install {
-    padding-top: 27px;
+  /* Section 5: Version List OR Installation Progress (flat flow) */
+  .loenn-versions {
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
   }
 
-  .install-heading {
+  .loenn-versions-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--loenn-divider-subtle);
+  }
+
+  .loenn-versions-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
     h2 {
       margin: 0;
-      font-size: 18px;
+      color: var(--color-fg-muted, #{theme.$fg1});
+      font-size: 13px;
       font-weight: 650;
-    }
-
-    label {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      color: rgba(255, 255, 255, 0.52);
-      font-size: 12px;
-    }
-
-    select {
-      min-width: 160px;
     }
   }
 
-  .release-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 18px;
-    margin-top: 18px;
-    color: rgba(255, 255, 255, 0.48);
+  .loenn-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 7%, transparent);
+    color: var(--color-fg-subtle, #{theme.$fg2});
     font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+  }
+
+  .loenn-platform-tag {
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .loenn-flat-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 24px 2px;
+    color: var(--color-fg-muted, #{theme.$fg1});
+
+    > .icon {
+      flex: 0 0 auto;
+      margin-top: 2px;
+      font-size: 16px;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+    }
+  }
+
+  .loenn-flat-state-copy {
+    min-width: 0;
+
+    strong {
+      display: block;
+      color: var(--color-fg, #{theme.$fg});
+      font-size: 14px;
+      font-weight: 600;
+    }
 
     p {
-      width: 100%;
-      margin: 8px 0 0;
-      color: rgba(255, 255, 255, 0.62);
-      font-size: 13px;
+      margin: 4px 0 0;
+      color: var(--color-fg-subtle, #{theme.$fg2});
+      font-size: 12.5px;
       line-height: 1.55;
     }
   }
 
-  .package-note {
-    margin-top: 20px;
-    font-size: 12px;
-    opacity: 0.55;
+  /* Flat divider version list */
+  .loenn-version-list {
+    display: flex;
+    flex-direction: column;
+  }
 
-    &.error {
-      color: #ef8a8a;
-      opacity: 1;
+  .loenn-version-row {
+    position: relative;
+    padding: 15px 12px;
+    border-bottom: 1px solid var(--loenn-divider-subtle);
+    border-radius: var(--radius-sm, 6px);
+    transition: background-color 120ms ease;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    &:hover {
+      background: var(--loenn-row-hover);
+    }
+
+    &.is-installed {
+      padding-left: 16px;
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset: 12px auto 12px 0;
+        width: 3px;
+        border-radius: 3px;
+        background: var(--loenn-success);
+      }
     }
   }
 
-  .install-actions {
+  .loenn-version-main {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 28px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 18px;
   }
 
-  .loenn-progress {
+  .loenn-version-identity {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .loenn-version-tag {
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loenn-version-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 0 0 auto;
+  }
+
+  .loenn-version-meta {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 28px;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .loenn-row-note {
+    color: var(--color-fg-disabled, #{theme.$fg3});
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .loenn-row-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .loenn-row-btn {
+    min-width: 76px;
+    min-height: 31px;
+    padding: 0 12px;
+    border-radius: var(--radius-md, 8px);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .loenn-version-desc-wrap {
+    margin-top: 7px;
+  }
+
+  .loenn-version-desc {
+    margin: 0;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-line;
+    word-break: break-word;
+
+    &.is-clamped {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+  }
+
+  .loenn-desc-toggle {
+    margin-top: 4px;
+    padding-left: 0;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+  }
+
+  /* Flat installation progress / result block */
+  .loenn-install-section {
+    gap: 20px;
+  }
+
+  .loenn-install-target {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--loenn-divider-subtle);
+  }
+
+  .loenn-install-target-ver {
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 15px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loenn-install-target-size {
+    margin-left: auto;
+    color: var(--color-fg-subtle, #{theme.$fg2});
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loenn-progress-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loenn-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .loenn-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-fg-disabled, #{theme.$fg3});
+    font-size: 12.5px;
+    font-weight: 500;
+
+    &.is-current {
+      color: var(--color-fg, #{theme.$fg});
+      font-weight: 600;
+
+      .loenn-step-index {
+        border-color: var(--loenn-accent);
+        background: color-mix(in srgb, var(--loenn-accent) 18%, transparent);
+        color: var(--color-fg, #{theme.$fg});
+      }
+    }
+
+    &.is-done {
+      color: var(--color-fg-muted, #{theme.$fg1});
+
+      .loenn-step-index {
+        border-color: color-mix(in srgb, var(--loenn-success) 55%, transparent);
+        background: color-mix(in srgb, var(--loenn-success) 16%, transparent);
+        color: var(--loenn-success);
+      }
+    }
+  }
+
+  .loenn-step-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border: 1px solid
+      color-mix(in srgb, var(--color-fg, #{theme.$fg}) 18%, transparent);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+
+    .icon {
+      font-size: 10px;
+    }
+  }
+
+  .loenn-progress-track {
+    width: 100%;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 10%,
+      transparent
+    );
+  }
+
+  .loenn-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--loenn-accent);
+    transition: width 180ms ease-out;
+  }
+
+  .loenn-progress-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .loenn-progress-label {
+    color: var(--color-fg-muted, #{theme.$fg1});
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .loenn-progress-pct {
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 13px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loenn-result-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loenn-result-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
 
     strong {
+      display: block;
+      color: var(--color-fg, #{theme.$fg});
+      font-size: 15.5px;
+      font-weight: 650;
+    }
+
+    p {
+      margin: 4px 0 0;
+      color: var(--color-fg-subtle, #{theme.$fg2});
       font-size: 13px;
+      line-height: 1.5;
     }
 
-    span {
-      font-size: 11px;
-      opacity: 0.5;
+    &.is-success .loenn-result-icon {
+      color: var(--loenn-success);
+      background: color-mix(in srgb, var(--loenn-success) 13%, transparent);
+      border-color: color-mix(in srgb, var(--loenn-success) 28%, transparent);
+    }
+
+    &.is-failed .loenn-result-icon {
+      color: var(--loenn-danger);
+      background: color-mix(in srgb, var(--loenn-danger) 13%, transparent);
+      border-color: color-mix(in srgb, var(--loenn-danger) 28%, transparent);
     }
   }
 
-  .install-result {
-    display: flex;
-    flex-wrap: wrap;
+  .loenn-result-icon {
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md, 9px);
+    font-size: 15px;
+  }
+
+  .loenn-error-log {
+    width: 100%;
+    min-height: 84px;
+    max-height: 180px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--loenn-danger) 26%, transparent);
+    border-radius: var(--radius-md, 8px);
+    background: color-mix(
+      in srgb,
+      var(--color-surface, #{theme.$bg}) 65%,
+      transparent
+    );
+    color: var(--color-fg-muted, #{theme.$fg1});
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    resize: vertical;
+    box-sizing: border-box;
+    user-select: text;
+  }
+
+  .loenn-result-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 28px;
 
-    > .icon {
-      font-size: 18px;
+    button {
+      min-height: 34px;
+      padding: 0 16px;
+      border-radius: var(--radius-md, 8px);
+      font-size: 13px;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Vanilla primary CTA: crisp filled accent with high-contrast ink */
+html:not([data-theme="fluent"]):not([data-theme="material-you"]) .loenn {
+  button.primary {
+    border: 1px solid transparent;
+    color: #140f20;
+    background: var(--color-primary, #{theme.$primary});
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+
+    &:hover:not(:disabled) {
+      background: color-mix(
+        in srgb,
+        var(--color-primary, #{theme.$primary}) 88%,
+        #ffffff
+      );
     }
 
-    &.success > .icon {
-      color: #79cf9b;
-    }
-
-    &.failed > .icon {
-      color: #ef8a8a;
-    }
-
-    textarea {
-      width: 100%;
-      height: 64px;
-      padding: 9px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 5px;
-      background: rgba(0, 0, 0, 0.12);
-      color: theme.$fg;
-      resize: none;
-      box-sizing: border-box;
+    &:active:not(:disabled) {
+      background: color-mix(
+        in srgb,
+        var(--color-primary, #{theme.$primary}) 88%,
+        #000000
+      );
     }
   }
 
-  .inline-error {
-    padding: 9px 0;
-    color: #ef8a8a;
-    font-size: 11px;
-    word-break: break-word;
+  .loenn-row-btn:not(.primary) {
+    border: 1px solid
+      color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
+    background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 5%, transparent);
+    box-shadow: none;
+
+    &:hover:not(:disabled) {
+      background: color-mix(
+        in srgb,
+        var(--color-fg, #{theme.$fg}) 10%,
+        transparent
+      );
+    }
+  }
+}
+
+/* Fluent Design harmony */
+html[data-theme="fluent"] .loenn {
+  --loenn-divider: var(--fluent-stroke-divider);
+  --loenn-divider-subtle: var(--fluent-stroke-divider);
+  --loenn-row-hover: var(--fluent-fill-control-hover);
+  --loenn-accent: var(--fluent-accent);
+
+  .loenn-install-section[role="status"] {
+    border: 0;
+    background: transparent;
+  }
+
+  .loenn-edition-tabs.centered-tab-buttons {
+    padding: 0;
+    gap: 6px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+
+    > button {
+      min-height: 32px !important;
+      padding: 0 13px !important;
+      border: 1px solid transparent !important;
+      border-radius: 6px !important;
+      color: var(--fluent-text-secondary) !important;
+      background: transparent !important;
+      box-shadow: none !important;
+
+      &:hover:not(:disabled):not(.active) {
+        color: var(--fluent-text-primary) !important;
+        background: var(--fluent-fill-control-hover) !important;
+      }
+
+      &.active {
+        color: var(--fluent-text-primary) !important;
+        border-color: var(--fluent-stroke-control) !important;
+        background: var(--fluent-fill-control-selected) !important;
+        box-shadow: none !important;
+      }
+    }
+  }
+
+  .loenn-ghost-btn,
+  .loenn-inline-link,
+  .loenn-icon-btn {
+    min-height: 0 !important;
+    border: 0 !important;
+    border-radius: 4px !important;
+    color: var(--fluent-text-secondary) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    &:hover:not(:disabled) {
+      color: var(--fluent-text-primary) !important;
+      background: var(--fluent-fill-control-hover) !important;
+    }
+  }
+
+  .loenn-ghost-btn {
+    min-height: 30px !important;
+  }
+
+  .loenn-icon-btn {
+    width: 30px;
+    height: 30px;
+    min-height: 30px !important;
+  }
+
+  .loenn-row-btn {
+    min-height: 30px !important;
+  }
+}
+
+/* Material You harmony */
+html[data-theme="material-you"] .loenn {
+  --loenn-divider: var(--md-outline-variant);
+  --loenn-divider-subtle: color-mix(
+    in srgb,
+    var(--md-outline-variant) 55%,
+    transparent
+  );
+  --loenn-row-hover: color-mix(in srgb, var(--md-on-surface) 4.5%, transparent);
+  --loenn-accent: var(--md-primary);
+
+  .loenn-edition-tabs.centered-tab-buttons {
+    padding: 0;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+
+    > button {
+      min-height: 34px !important;
+      padding: 0 16px !important;
+      border: 0 !important;
+      border-radius: 999px !important;
+      color: var(--md-on-surface-variant) !important;
+      background: transparent !important;
+      box-shadow: none !important;
+
+      &:hover:not(:disabled):not(.active) {
+        color: var(--md-on-surface) !important;
+        background: color-mix(
+          in srgb,
+          var(--md-on-surface) 8%,
+          transparent
+        ) !important;
+      }
+
+      &.active {
+        color: var(--md-on-secondary-container) !important;
+        background: var(--md-secondary-container) !important;
+      }
+    }
+  }
+
+  .loenn-ghost-btn,
+  .loenn-inline-link,
+  .loenn-icon-btn {
+    min-height: 0 !important;
+    border: 0 !important;
+    color: var(--md-on-surface-variant) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    &:hover:not(:disabled) {
+      color: var(--md-on-surface) !important;
+      background: var(--md-state-hover) !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .loenn-ghost-btn {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+  }
+
+  .loenn-inline-link {
+    padding: 3px 8px !important;
+    border-radius: 8px !important;
+    font-weight: 500;
+  }
+
+  .loenn-icon-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  .loenn-row-btn {
+    min-height: 34px !important;
+    padding: 0 16px !important;
+    font-size: 13px;
+  }
+
+  .loenn-launch-btn {
+    min-height: 40px !important;
+    padding: 0 20px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .loenn {
+    padding: 20px 18px 44px;
+
+    .loenn-status-main {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+    }
+
+    .loenn-local-cta {
+      justify-content: flex-start;
+    }
+
+    .loenn-path-text {
+      max-width: 100%;
+    }
+
+    .loenn-version-row {
+      padding: 14px 8px;
+
+      &.is-installed {
+        padding-left: 14px;
+      }
+    }
+
+    .loenn-version-main {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .loenn-version-controls {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .loenn-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loenn {
+    .loenn-progress-fill,
+    .loenn-version-row,
+    .loenn-edition-tabs > button,
+    .loenn-ghost-btn,
+    .loenn-inline-link,
+    .loenn-icon-btn {
+      transition: none;
+    }
   }
 }
