@@ -1,619 +1,891 @@
-@use "sass:color";
 @use "../styles/theme" as theme;
 
-.downloadListBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1050;
-  background: rgba(0, 0, 0, 0.12);
-}
+$tone-finished: #4cc38a;
+$tone-paused: #e7b34e;
+$tone-failed: #f07b85;
 
+// Single scroll container for the page so wheel input is never trapped
+// and the scrollbar stays flush with the window edge.
 .download-page {
-  width: min(980px, 100%);
+  width: 100%;
   height: 100%;
-  margin: 0 auto;
-  padding: 20px 24px 48px;
-  overflow: auto;
+  overflow-y: auto;
   box-sizing: border-box;
-  color: theme.$fg1;
+  color: var(--color-fg-muted, #{theme.$fg1});
 }
 
+.download-page-inner {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 28px 32px 56px;
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// Page Header & Live Telemetry
+// ============================================================================
 .download-page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
-  padding: 4px 2px 18px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
+  padding-bottom: 18px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
 }
 
 .download-page-heading {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-
-  .download-page-icon {
-    display: grid;
-    width: 44px;
-    height: 44px;
-    place-items: center;
-    border-radius: 13px;
-    color: theme.$primary;
-    background: color.change(theme.$primary, $alpha: 0.15);
-    font-size: 19px;
-  }
+  min-width: 0;
 
   h1 {
     margin: 0;
-    color: theme.$fg;
-    font-size: 26px;
-    line-height: 1.1;
-  }
-
-  p {
-    margin: 6px 0 0;
-    color: theme.$fg3;
-    font-size: 12px;
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 }
 
-// Keep this list in normal flow: .download-page is the only scroll container.
-// A nested overflow:auto + overscroll-behavior:contain would trap wheel input.
-.download-page-list {
-  min-height: 180px;
-  padding: 0;
-}
-
-.download-page-list .download-task {
-  margin-bottom: 12px;
-  padding: 17px 18px 15px;
-  border-radius: 16px;
-}
-
-.downloadList {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
+.download-page-subtitle {
   display: flex;
-  width: min(430px, calc(100vw - 32px));
-  max-height: min(620px, calc(100vh - 40px));
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.12);
-  border-radius: 18px;
-  color: theme.$fg1;
-  background: color.mix(theme.$bg1, #16151b, 78%);
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.48),
-    0 3px 12px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(18px);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 6px 0 0;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
 }
 
-.download-list-header {
+.download-subtitle-sep {
+  opacity: 0.55;
+}
+
+.download-subtitle-speed {
+  color: var(--color-fg-muted, #{theme.$fg1});
+  font-weight: 500;
+}
+
+.download-page-controls {
   display: flex;
-  min-height: 72px;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  background: linear-gradient(
-    135deg,
-    color.change(theme.$primary, $alpha: 0.13),
-    transparent 62%
+  gap: 8px;
+}
+
+.download-clear-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-fg-subtle, #{theme.$fg2});
+  background: transparent;
+  box-shadow: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease;
+
+  .icon {
+    font-size: 11px;
+    opacity: 0.85;
+  }
+
+  &:hover {
+    color: var(--color-fg, #{theme.$fg});
+    border-color: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 18%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 6%,
+      transparent
+    );
+    box-shadow: none;
+  }
+
+  &:active {
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 10%,
+      transparent
+    );
+  }
+}
+
+// ============================================================================
+// Filter Bar
+// ============================================================================
+.download-filter-bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 8%, transparent);
+  border-radius: 11px;
+  background: color-mix(
+    in srgb,
+    var(--color-surface-elevated, #{theme.$bg1}) 68%,
+    transparent
   );
 }
 
-.download-list-heading {
-  display: flex;
+.download-filter-pill {
+  display: inline-flex;
   align-items: center;
-  min-width: 0;
-  gap: 12px;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  background: transparent;
+  box-shadow: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
 
-  > .icon {
-    display: grid;
-    width: 34px;
-    height: 34px;
-    place-items: center;
-    border-radius: 10px;
-    color: theme.$primary;
-    background: color.change(theme.$primary, $alpha: 0.14);
-    font-size: 15px;
+  &:hover {
+    color: var(--color-fg, #{theme.$fg});
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 6%,
+      transparent
+    );
+    box-shadow: none;
   }
 
-  h2 {
-    margin: 0 0 3px;
-    color: theme.$fg;
-    font-size: 15px;
-    font-weight: 700;
-  }
+  &.is-active {
+    color: var(--color-fg, #{theme.$fg});
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 12%,
+      transparent
+    );
+    font-weight: 600;
 
-  span {
-    color: theme.$fg3;
-    font-size: 10px;
+    .download-filter-count {
+      color: var(--color-fg, #{theme.$fg});
+      background: color-mix(
+        in srgb,
+        var(--color-fg, #{theme.$fg}) 10%,
+        transparent
+      );
+    }
   }
 }
 
-.download-list-close,
-.download-task-action {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 9px;
-  color: theme.$fg3;
+.download-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  background: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 6%,
+    transparent
+  );
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+// ============================================================================
+// Task Surface Container (normal flow — never a nested scroll container)
+// ============================================================================
+.download-page-list {
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
+  border-radius: 14px;
+  background: color-mix(
+    in srgb,
+    var(--color-surface-elevated, #{theme.$bg1}) 72%,
+    transparent
+  );
+}
+
+.download-filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+
+  p {
+    margin: 0;
+    color: var(--color-fg-disabled, #{theme.$fg3});
+    font-size: 13px;
+  }
+}
+
+.download-filter-reset {
+  min-height: 30px;
+  padding: 0 14px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 12%, transparent);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-fg-muted, #{theme.$fg1});
   background: transparent;
   box-shadow: none;
-  font-size: 11px;
-  transition: 140ms ease;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: normal;
 
   &:hover {
-    color: theme.$fg;
-    background: color.change(theme.$fg, $alpha: 0.1);
+    color: var(--color-fg, #{theme.$fg});
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 7%,
+      transparent
+    );
     box-shadow: none;
   }
 }
 
+// ============================================================================
+// Task Row
+// ============================================================================
 .download-task {
-  margin-bottom: 8px;
-  padding: 14px 14px 12px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  border-radius: 14px;
-  background: color.change(theme.$bg1, $alpha: 0.72);
+  padding: 16px 20px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 8%, transparent);
+  background: transparent;
+  transition: background-color 140ms ease;
+
+  &:first-child {
+    border-top-left-radius: 13px;
+    border-top-right-radius: 13px;
+  }
 
   &:last-child {
-    margin-bottom: 0;
+    border-bottom: 0;
+    border-bottom-left-radius: 13px;
+    border-bottom-right-radius: 13px;
+  }
+
+  &:hover {
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 2.5%,
+      transparent
+    );
   }
 }
 
 .download-task-topline {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.download-task-identity,
+.download-task-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
 }
 
 .download-task-toggle {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) auto 13px;
-  min-width: 0;
-  min-height: 28px;
-  align-items: center;
+  min-height: 30px;
   padding: 0;
   border: 0;
-  color: theme.$fg2;
+  border-radius: 8px;
+  color: inherit;
   background: transparent;
   box-shadow: none;
+  letter-spacing: normal;
   text-align: left;
-  gap: 8px;
 
   &:hover {
-    color: theme.$fg;
     background: transparent;
     box-shadow: none;
   }
 
-  > .icon {
-    justify-self: end;
-    color: theme.$fg3;
-    font-size: 9px;
+  &:active {
+    background: transparent;
   }
 }
 
 .download-task-status-icon {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
   place-items: center;
-  border-radius: 7px;
-  color: theme.$primary;
-  background: color.change(theme.$primary, $alpha: 0.13);
-  font-size: 10px;
+  border-radius: 9px;
+  color: var(--color-primary, #{theme.$primary});
+  background: color-mix(
+    in srgb,
+    var(--color-primary, #{theme.$primary}) 15%,
+    transparent
+  );
+  font-size: 13px;
+}
+
+.download-task-finished .download-task-status-icon {
+  color: $tone-finished;
+  background: color-mix(in srgb, #{$tone-finished} 15%, transparent);
+}
+
+.download-task-paused .download-task-status-icon,
+.download-task-preparing .download-task-status-icon {
+  color: $tone-paused;
+  background: color-mix(in srgb, #{$tone-paused} 16%, transparent);
 }
 
 .download-task-failed .download-task-status-icon {
-  color: #f08b93;
-  background: color.change(#f08b93, $alpha: 0.13);
+  color: $tone-failed;
+  background: color-mix(in srgb, #{$tone-failed} 16%, transparent);
 }
 
-.download-task-canceled .download-task-status-icon,
-.download-task-paused .download-task-status-icon {
-  color: theme.$fg3;
-  background: color.change(theme.$fg3, $alpha: 0.13);
+.download-task-canceled .download-task-status-icon {
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  background: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 9%,
+    transparent
+  );
 }
 
-// 制作镜像阶段：进度来自镜像服务器，用另一种颜色和普通下载区分开。
-.download-task-preparing .download-task-status-icon {
-  color: #e0b56b;
-  background: color.change(#e0b56b, $alpha: 0.13);
+.download-task-heading-group {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .download-task-title {
   min-width: 0;
   overflow: hidden;
-  color: theme.$fg;
-  font-size: 12px;
-  font-weight: 650;
+  color: var(--color-fg, #{theme.$fg});
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .download-task-status-text {
-  color: theme.$fg3;
-  font-size: 10px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--color-primary, #{theme.$primary});
+  background: color-mix(
+    in srgb,
+    var(--color-primary, #{theme.$primary}) 13%,
+    transparent
+  );
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.download-task-finished .download-task-status-text {
+  color: $tone-finished;
+  background: color-mix(in srgb, #{$tone-finished} 13%, transparent);
+}
+
+.download-task-paused .download-task-status-text,
+.download-task-preparing .download-task-status-text {
+  color: $tone-paused;
+  background: color-mix(in srgb, #{$tone-paused} 14%, transparent);
+}
+
+.download-task-failed .download-task-status-text {
+  color: $tone-failed;
+  background: color-mix(in srgb, #{$tone-failed} 14%, transparent);
+}
+
+.download-task-canceled .download-task-status-text {
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  background: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 8%,
+    transparent
+  );
+}
+
+.download-task-dep-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--color-fg-subtle, #{theme.$fg2});
+  background: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 7%,
+    transparent
+  );
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .download-task-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+}
+
+.download-task-action {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+  letter-spacing: normal;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+
+  &:hover {
+    color: var(--color-fg, #{theme.$fg});
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 9%,
+      transparent
+    );
+    box-shadow: none;
+  }
+
+  &:active {
+    background: color-mix(
+      in srgb,
+      var(--color-fg, #{theme.$fg}) 14%,
+      transparent
+    );
+  }
 }
 
 .download-task-cancel:hover {
-  color: #f08b93;
-  background: color.change(#f08b93, $alpha: 0.13);
+  color: $tone-failed;
+  background: color-mix(in srgb, #{$tone-failed} 14%, transparent);
+}
+
+.download-task-expand {
+  font-size: 11px;
+}
+
+// ============================================================================
+// Progress Track & Telemetry
+// ============================================================================
+.download-task-body {
+  margin: 10px 0 0 42px;
 }
 
 .download-task-progress,
 .download-dependency-progress {
   height: 5px;
   overflow: hidden;
-  border-radius: 99px;
-  background: color.change(theme.$fg, $alpha: 0.12);
+  border-radius: 999px;
+  background: color-mix(
+    in srgb,
+    var(--color-fg, #{theme.$fg}) 10%,
+    transparent
+  );
 
   > span {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(
-      90deg,
-      theme.$primary,
-      color.adjust(theme.$primary, $lightness: 15%)
-    );
+    background: var(--color-primary, #{theme.$primary});
     transition: width 180ms ease-out;
   }
 }
 
-.download-task-progress {
-  margin: 11px 0 8px 30px;
+.download-task-finished .download-task-progress > span,
+.download-detail-row-finished .download-dependency-progress > span {
+  background: $tone-finished;
+}
+
+.download-task-paused .download-task-progress > span,
+.download-task-preparing .download-task-progress > span,
+.download-detail-row-paused .download-dependency-progress > span,
+.download-detail-row-preparing .download-dependency-progress > span {
+  background: $tone-paused;
 }
 
 .download-task-failed .download-task-progress > span,
 .download-detail-row-failed .download-dependency-progress > span {
-  background: #e56d78;
+  background: $tone-failed;
 }
 
 .download-task-canceled .download-task-progress > span,
-.download-task-paused .download-task-progress > span {
-  background: theme.$fg3;
+.download-detail-row-canceled .download-dependency-progress > span {
+  background: var(--color-fg-disabled, #{theme.$fg3});
 }
 
 .download-task-summary {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  font-size: 12px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.download-task-summary-left {
+  display: inline-flex;
   min-width: 0;
   align-items: center;
-  margin-left: 30px;
-  overflow: hidden;
-  color: theme.$fg3;
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  gap: 9px;
+  gap: 10px;
 
   strong {
-    color: theme.$fg2;
-    font-size: 11px;
-    font-weight: 700;
-  }
-
-  > span:last-child {
-    margin-left: auto;
+    color: var(--color-fg-muted, #{theme.$fg1});
+    font-weight: 600;
   }
 }
 
+.download-task-bytes {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-task-speed {
+  flex: 0 0 auto;
+  color: var(--color-primary, #{theme.$primary});
+  font-weight: 500;
+}
+
+// ============================================================================
+// Error Callout
+// ============================================================================
 .download-task-error-details {
-  margin-top: 9px;
-  padding-top: 9px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  color: #f08b93;
-  font-size: 10px;
+  margin: 12px 0 0 42px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #{$tone-failed} 24%, transparent);
+  border-radius: 8px;
+  color: $tone-failed;
+  background: color-mix(in srgb, #{$tone-failed} 10%, transparent);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: text;
+  white-space: pre-wrap;
+}
+
+// ============================================================================
+// Dependency Breakdown Tree
+// ============================================================================
+.download-dependency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0 42px;
+  padding: 2px 0 2px 14px;
+  border-left: 2px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
+}
+
+.download-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.download-dependency-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.download-dependency-status-icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--color-primary, #{theme.$primary});
+  font-size: 11px;
+}
+
+.download-detail-row-finished .download-dependency-status-icon {
+  color: $tone-finished;
+}
+
+.download-detail-row-paused .download-dependency-status-icon,
+.download-detail-row-preparing .download-dependency-status-icon {
+  color: $tone-paused;
+}
+
+.download-detail-row-failed .download-dependency-status-icon {
+  color: $tone-failed;
+}
+
+.download-detail-row-canceled .download-dependency-status-icon {
+  color: var(--color-fg-disabled, #{theme.$fg3});
+}
+
+.download-dependency-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--color-fg-muted, #{theme.$fg1});
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-dependency-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-fg-disabled, #{theme.$fg3});
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.download-dependency-speed {
+  color: var(--color-primary, #{theme.$primary});
+  font-weight: 500;
+}
+
+.download-dependency-percent {
+  flex: 0 0 auto;
+  min-width: 34px;
+  color: var(--color-fg-subtle, #{theme.$fg2});
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.download-dependency-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+
+  button {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    color: var(--color-fg-disabled, #{theme.$fg3});
+    background: transparent;
+    box-shadow: none;
+    font-size: 11px;
+    letter-spacing: normal;
+    transition:
+      color 140ms ease,
+      background-color 140ms ease;
+
+    &:hover {
+      color: var(--color-fg, #{theme.$fg});
+      background: color-mix(
+        in srgb,
+        var(--color-fg, #{theme.$fg}) 10%,
+        transparent
+      );
+      box-shadow: none;
+    }
+
+    &.download-dependency-cancel:hover {
+      color: $tone-failed;
+      background: color-mix(in srgb, #{$tone-failed} 14%, transparent);
+    }
+  }
+}
+
+.download-dependency-progress {
+  height: 3px;
+  margin-left: 24px;
+}
+
+.download-dependency-error {
+  margin-left: 24px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, #{$tone-failed} 22%, transparent);
+  border-radius: 7px;
+  color: $tone-failed;
+  background: color-mix(in srgb, #{$tone-failed} 9%, transparent);
+  font-size: 11.5px;
   line-height: 1.45;
   overflow-wrap: anywhere;
   user-select: text;
   white-space: pre-wrap;
 }
 
-.download-dependency-list {
-  margin: 13px 0 0 30px;
-  padding-top: 10px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
-}
-
-.download-dependency-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 7px;
-  color: theme.$fg3;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-
-  span {
-    min-width: 18px;
-    padding: 2px 5px;
-    border-radius: 99px;
-    color: theme.$fg2;
-    background: color.change(theme.$fg, $alpha: 0.1);
-    text-align: center;
-    letter-spacing: 0;
-  }
-}
-
-.download-detail-row {
-  margin-top: 7px;
-  padding: 8px 9px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
-  border-radius: 9px;
-  background: color.change(theme.$bg, $alpha: 0.24);
-}
-
-.download-dependency-main {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto auto;
-  align-items: center;
-  color: theme.$fg2;
-  font-size: 10px;
-  gap: 7px;
-
-  > .icon {
-    color: theme.$primary;
-    font-size: 9px;
-  }
-
-  > span {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  strong {
-    color: theme.$fg3;
-    font-size: 9px;
-    font-weight: 600;
-  }
-}
-
-.download-dependency-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-
-  button {
-    display: grid;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    place-items: center;
-    border: 0;
-    border-radius: 6px;
-    color: theme.$fg3;
-    background: transparent;
-    box-shadow: none;
-    font-size: 8px;
-
-    &:hover {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.1);
-      box-shadow: none;
-    }
-  }
-}
-
-.download-detail-row-failed .download-dependency-main > .icon {
-  color: #e56d78;
-}
-
-.download-dependency-progress {
-  height: 3px;
-  margin: 7px 0 0 23px;
-}
-
-.download-dependency-error {
-  margin: 6px 0 0 23px;
-  color: #f08b93;
-  font-size: 9px;
-  line-height: 1.35;
-  overflow-wrap: anywhere;
-}
-
-.download-detail-summary {
-  display: flex;
-  justify-content: space-between;
-  margin: 5px 0 0 23px;
-  color: theme.$fg3;
-  font-size: 9px;
-  font-variant-numeric: tabular-nums;
-}
-
+// ============================================================================
+// Empty State
+// ============================================================================
 .download-list-empty {
   display: flex;
-  min-height: 280px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: theme.$fg3;
-  font-size: 14px;
-  gap: 10px;
+  min-height: 360px;
+  padding: 40px 24px;
+  text-align: center;
+
+  h2 {
+    margin: 16px 0 0;
+    color: var(--color-fg, #{theme.$fg});
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    max-width: 360px;
+    margin: 8px 0 0;
+    color: var(--color-fg-disabled, #{theme.$fg3});
+    font-size: 13px;
+    line-height: 1.55;
+  }
+}
+
+.download-empty-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
+  border-radius: 14px;
+  color: var(--color-fg-subtle, #{theme.$fg2});
+  background: color-mix(
+    in srgb,
+    var(--color-surface-elevated, #{theme.$bg1}) 85%,
+    transparent
+  );
+  font-size: 20px;
+}
+
+.download-empty-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-top: 20px;
+  padding: 0 16px;
+  border: 1px solid
+    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 14%, transparent);
+  border-radius: var(--radius-md, 9px);
+  color: var(--color-fg, #{theme.$fg});
+  background: var(--color-surface-elevated, #{theme.$bg1});
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
 
   .icon {
-    color: theme.$fg3;
-    font-size: 16px;
-  }
-}
-
-@media (max-width: 700px) {
-  .download-page {
-    padding: 16px 14px 32px;
-  }
-
-  .download-page-heading h1 {
-    font-size: 22px;
-  }
-}
-
-// Downloads follow the flat, divider-based layout used by the other routes
-// instead of presenting each task as a floating card.
-.download-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 8px 16px 40px;
-}
-
-.download-page-header {
-  justify-content: flex-start;
-  margin-bottom: 0;
-  padding: 7px 6px 10px;
-}
-
-.download-page-heading {
-  gap: 9px;
-
-  .download-page-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    color: var(--color-primary, #{theme.$primary});
     font-size: 12px;
   }
 
-  h1 {
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-  p {
-    margin-top: 3px;
-    font-size: 9px;
-  }
-}
-
-.download-page-list {
-  min-height: 160px;
-  padding: 0;
-}
-
-.download-page-list .download-task {
-  margin: 0;
-  padding: 11px 8px 10px;
-  border: 0;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.07);
-  border-radius: 0;
-  background: transparent;
-
   &:hover {
-    background: color.change(theme.$fg, $alpha: 0.025);
+    border-color: color-mix(
+      in srgb,
+      var(--color-primary, #{theme.$primary}) 45%,
+      transparent
+    );
+    background: var(--color-surface-hover, #{theme.$bg2});
+    box-shadow: none;
+  }
+
+  &:active {
+    background: var(--color-surface-active, #{theme.$bg3});
   }
 }
 
-.download-page-list .download-dependency-list {
-  margin-top: 9px;
-  padding-top: 8px;
-}
-
-.download-page-list .download-detail-row {
-  margin-top: 5px;
-  padding: 5px 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.download-page-list .download-task-error-details {
-  margin-left: 30px;
-}
-
+// ============================================================================
+// Responsive Breakpoints
+// ============================================================================
 @media (max-width: 700px) {
-  .download-page {
-    padding: 8px 10px 28px;
+  .download-page-inner {
+    padding: 20px 16px 40px;
+  }
+
+  .download-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .download-task {
+    padding: 14px 14px;
+  }
+
+  .download-dependency-meta {
+    display: none;
   }
 }
 
-// Keep the full-page task list information-dense instead of card-like.
-.download-page {
-  padding: 4px 12px 24px;
-}
-
-.download-page-header {
-  padding: 4px 4px 7px;
-}
-
-.download-page-heading {
-  gap: 7px;
-
-  .download-page-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    font-size: 11px;
+@media (max-width: 520px) {
+  .download-task-body,
+  .download-task-error-details,
+  .download-dependency-list {
+    margin-left: 0;
   }
 
-  h1 {
-    font-size: 14px;
-  }
-
-  p {
-    margin-top: 1px;
-    font-size: 9px;
+  .download-task-dep-badge {
+    display: none;
   }
 }
 
-.download-page-list .download-task {
-  padding: 8px 6px 7px;
-}
-
-.download-task-toggle {
-  min-height: 24px;
-  gap: 6px;
-}
-
-.download-task-status-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-}
-
-.download-task-progress {
-  height: 4px;
-  margin: 7px 0 6px 26px;
-}
-
-.download-task-summary {
-  margin-left: 26px;
-  gap: 7px;
-}
-
-.download-page-list .download-dependency-list {
-  margin: 7px 0 0 26px;
-  padding-top: 6px;
-}
-
-.download-dependency-heading {
-  margin-bottom: 4px;
-}
-
-.download-page-list .download-detail-row {
-  margin-top: 3px;
-  padding: 3px 0;
-}
-
-.download-dependency-progress {
-  height: 3px;
-  margin-top: 4px;
-}
-
-.download-detail-summary {
-  margin-top: 3px;
+@media (prefers-reduced-motion: reduce) {
+  .download-task-progress > span,
+  .download-dependency-progress > span {
+    transition: none;
+  }
 }
