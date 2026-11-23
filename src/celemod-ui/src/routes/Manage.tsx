@@ -1618,7 +1618,7 @@ export const Manage = () => {
             <div className="content">
               <p>
                 {_i18n.t(
-                  "始终开启的 Mod 不会被开关或「禁用全部」关掉。要继续禁用，请同时取消始终开启：",
+                  "始终开启的 Mod 不会被状态开关关掉。要继续禁用，请同时取消始终开启：",
                 )}
               </p>
               <p>{names.join(", ")}</p>
@@ -1653,24 +1653,27 @@ export const Manage = () => {
   const switchNodes = useCallback(
     (input: string | string[], enabled: boolean, recursive = true) => {
       const names = Array.isArray(input) ? input : [input];
-      if (!enabled) {
-        const { blocked } = splitAlwaysOnNames({ names, nodes, alwaysOnMods });
-        if (blocked.length > 0) {
-          promptAlwaysOnDisable(blocked);
-          return;
-        }
-      }
-      batchSwitch(
-        collectSwitchNames({
-          names,
-          enabled,
-          nodes,
-          includeDependencies: recursive && autoToggleDependencies,
-          includeOptional: autoToggleOptionalDependencies,
-          autoDisableTypes: orphanActionTypes,
-        }),
+      const collected = collectSwitchNames({
+        names,
         enabled,
-      );
+        nodes,
+        includeDependencies: recursive && autoToggleDependencies,
+        includeOptional: autoToggleOptionalDependencies,
+        autoDisableTypes: orphanActionTypes,
+      });
+      if (!enabled) {
+        // An always-on Mod in the set must not swallow the whole click: the
+        // rest still switches, and the blocked names get their own prompt.
+        const { switchable, blocked } = splitAlwaysOnNames({
+          names: collected,
+          nodes,
+          alwaysOnMods,
+        });
+        if (switchable.length > 0) batchSwitch(switchable, enabled);
+        if (blocked.length > 0) promptAlwaysOnDisable(blocked);
+        return;
+      }
+      batchSwitch(collected, enabled);
     },
     [
       orphanActionTypes,
