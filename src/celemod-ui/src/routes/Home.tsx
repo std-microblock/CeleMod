@@ -189,6 +189,20 @@ export const Home = () => {
   const mask = useBlockingMask();
   const launchPending = useRef(false);
   const [launchError, setLaunchError] = useState("");
+  const pickGamePath = async () => {
+    setLaunchError("");
+    if (isAndroid) {
+      mask.setMaskText(chinese ? "正在导入游戏目录…" : "Importing game folder…");
+      mask.setMaskEnabled(true);
+    }
+    try {
+      await selectGamePath(setGamePath);
+    } catch (error) {
+      setLaunchError(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (isAndroid) mask.setMaskEnabled(false);
+    }
+  };
   const [updateRefreshToken, setUpdateRefreshToken] = useState(0);
   const [updateCheckState, setUpdateCheckState] = useState<
     "idle" | "checking" | "success" | "error"
@@ -382,7 +396,7 @@ export const Home = () => {
                 const value = event.target.value;
                 if (value === "__other__") {
                   event.target.value = gamePath;
-                  selectGamePath(setGamePath);
+                  void pickGamePath();
                 } else {
                   setGamePath(value);
                 }
@@ -427,19 +441,31 @@ export const Home = () => {
                       : "Celeste installation not found"}
                   </strong>
                   <p>
-                    {_i18n.t(
-                      "未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或",
-                    )}
+                    {isAndroid
+                      ? chinese
+                        ? "未找到游戏！你可以在下方登录 Steam 下载，或从本地文件导入 Celeste 游戏目录。"
+                        : "Celeste not found. Sign in to Steam below or import a local Celeste game folder."
+                      : _i18n.t(
+                          "未找到游戏！请先安装 Steam 商店或 Epic 商店版的 Celeste，或",
+                        )}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 className="primary home-missing-cta"
-                onClick={() => selectGamePath(setGamePath)}
+                onClick={() => void pickGamePath()}
               >
                 <Icon name="folder" />
-                <span>{chinese ? "手动选择游戏路径" : "Select game path"}</span>
+                <span>
+                  {isAndroid
+                    ? chinese
+                      ? "从文件选择游戏目录"
+                      : "Import game folder"
+                    : chinese
+                      ? "手动选择游戏路径"
+                      : "Select game path"}
+                </span>
               </button>
             </div>
           )}

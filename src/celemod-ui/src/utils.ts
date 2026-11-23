@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { callRemote } from "./tauri/commands";
+import { detectDesktopPlatform } from "./tauri/window";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -135,10 +137,18 @@ export const compareVersion = (a: string, b: string) => {
 export const selectGamePath = async (
   successCallback: (path: string) => void,
 ) => {
-  const selected = await open({
-    multiple: false,
-    directory: true,
-  });
+  let selected: string | string[] | null;
+  if (detectDesktopPlatform() === "android") {
+    const picked = await invoke<{ path?: string } | null>(
+      "android_pick_game_dir",
+    );
+    selected = picked?.path ?? null;
+  } else {
+    selected = await open({
+      multiple: false,
+      directory: true,
+    });
+  }
   if (typeof selected === "string") {
     const path = await callRemote<string>("normalize_game_path", selected);
     if (!(await callRemote<boolean>("verify_celeste_install", path))) {

@@ -77,6 +77,13 @@ pub fn pick_package() -> anyhow::Result<serde_json::Value> {
         .run_mobile_plugin("pickPackage", ())?)
 }
 
+pub fn pick_game_dir() -> anyhow::Result<serde_json::Value> {
+    Ok(RUNTIME
+        .get()
+        .ok_or_else(|| anyhow::anyhow!("Android runtime is not initialized"))?
+        .run_mobile_plugin("pickGameDir", ())?)
+}
+
 pub fn steam(request: serde_json::Value) -> anyhow::Result<serde_json::Value> {
     Ok(RUNTIME
         .get()
@@ -125,7 +132,7 @@ pub fn game_dirs() -> Vec<PathBuf> {
         .filter(|p| {
             !p.file_name().is_some_and(|name| {
                 let name = name.to_string_lossy();
-                name.starts_with("Steam-") && name.contains(".download-")
+                name.starts_with('.') || (name.starts_with("Steam-") && name.contains(".download-"))
             })
         })
         .filter(|p| p.join("Celeste.exe").is_file() || p.join("Celeste.dll").is_file())

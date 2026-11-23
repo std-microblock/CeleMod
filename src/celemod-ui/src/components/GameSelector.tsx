@@ -39,9 +39,13 @@ export const GameSelector = (props: GameSelectorProps) => {
                 {p}
               </option>
             ))}
-            {!isAndroid && (
-              <option value="__other__">{_i18n.t("选择其他路径")}</option>
-            )}
+            <option value="__other__">
+              {isAndroid
+                ? chinese
+                  ? "从文件导入其他游戏目录"
+                  : "Import another game folder"
+                : _i18n.t("选择其他路径")}
+            </option>
           </select>
         </div>
 

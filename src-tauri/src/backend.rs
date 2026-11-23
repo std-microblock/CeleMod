@@ -5711,6 +5711,17 @@ async fn android_pick_package() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
+async fn android_pick_game_dir() -> Result<serde_json::Value, String> {
+    #[cfg(target_os = "android")]
+    return tauri::async_runtime::spawn_blocking(crate::android::pick_game_dir)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| format!("{e:#}"));
+    #[cfg(not(target_os = "android"))]
+    Err("Android only".into())
+}
+
+#[tauri::command]
 fn get_loenn_state(install_root: String) -> LoennState {
     get_loenn_state_impl(&install_root)
 }
@@ -7751,6 +7762,7 @@ pub fn run() {
             android_read_log,
             android_steam,
             android_pick_package,
+            android_pick_game_dir,
             get_loenn_state,
             download_and_install_loenn,
             start_loenn,

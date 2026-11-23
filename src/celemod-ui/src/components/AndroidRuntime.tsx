@@ -10,6 +10,7 @@ import { showLocalPackageInstaller } from "./DropInstaller";
 import { Icon } from "./Icon";
 import { SteamAccount } from "./SteamAccount";
 import { AndroidLogs } from "./AndroidLogs";
+import { selectGamePath } from "../utils";
 
 type RuntimeSettings = {
   gameRoot: string;
@@ -19,7 +20,7 @@ type RuntimeSettings = {
 };
 
 export function AndroidRuntime() {
-  const [gamePath] = useGamePath();
+  const [gamePath, setGamePath] = useGamePath();
   const [autoDisable] = useAutoDisableNewMods();
   const ctx = useGlobalContext();
   const [settings, setSettings] = useState<RuntimeSettings>();
@@ -40,6 +41,17 @@ export function AndroidRuntime() {
           [key]: value,
         }),
       );
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function importGameDirectory() {
+    setSaving(true);
+    setError("");
+    try {
+      await selectGamePath(setGamePath);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -84,10 +96,16 @@ export function AndroidRuntime() {
             <div className="setting-description">
               <strong>{settings?.runtime ?? "正在读取运行时…"}</strong>
               <small>
-                应用不含游戏资源。将自己的游戏放入下方目录的子文件夹，然后返回主页选择。
+                应用不含游戏资源。可直接从本地文件导入 Celeste 游戏目录，或将游戏放入下方目录的子文件夹后返回主页选择。
               </small>
               <code>{settings?.gameRoot}</code>
             </div>
+            <button
+              disabled={saving}
+              onClick={() => void importGameDirectory()}
+            >
+              导入游戏目录
+            </button>
             <button
               disabled={!gamePath || saving}
               onClick={() => void importPackage()}

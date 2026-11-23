@@ -2,7 +2,9 @@ package com.celemod.runtime
 
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.*
+import android.provider.DocumentsContract
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +21,7 @@ import java.util.concurrent.Executors
 class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private var installing = false
+    @Volatile private var importingGame = false
     init { SteamBridge.initialize(activity.applicationContext) }
     override fun load(webView: WebView) {
         super.load(webView)
@@ -71,9 +74,13 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     private fun checkedPath(raw: String): File {
         val path = File(raw).canonicalFile
         require(path.toPath().startsWith(root().canonicalFile.toPath())) { "Game must be in ${root()}" }
-        require(path.relativeTo(root().canonicalFile).invariantSeparatorsPath.split('/').none {
+        val segments = path.relativeTo(root().canonicalFile).invariantSeparatorsPath.split('/')
+        require(segments.none {
             it.startsWith("Steam-") && it.contains(".download-")
         }) { "Steam 下载暂存目录不能启动或安装 Everest，请完成下载后选择正式游戏目录。" }
+        require(segments.none {
+            it.startsWith(GameImport.STAGING_PREFIX)
+        }) { "游戏目录仍在导入中，请等待导入完成。" }
         return path
     }
 
@@ -146,6 +153,125 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                 }
                 invoke.resolve(JSObject().apply { put("path", target.absolutePath) })
             } catch (e: Exception) { output?.delete(); invoke.reject(e.message) }
+        }
+    }
+
+    @Command fun pickGameDir(invoke: Invoke) {
+        if (importingGame) {
+            invoke.reject("正在导入游戏目录，请等待当前导入完成")
+            return
+        }
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivityForResult(invoke, intent, "gameDirSelected")
+    }
+
+    private fun queryTreeChildren(treeUri: Uri, docId: String): List<GameImport.TreeEntry> {
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId)
+        val columns = arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+        )
+        val entries = mutableListOf<GameImport.TreeEntry>()
+        activity.contentResolver.query(childrenUri, columns, null, null, null)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getString(0) ?: continue
+                val name = cursor.getString(1) ?: continue
+                val mime = cursor.getString(2)
+                entries += GameImport.TreeEntry(
+                    id = id,
+                    name = name,
+                    isDirectory = mime == DocumentsContract.Document.MIME_TYPE_DIR,
+                )
+            }
+        }
+        return entries
+    }
+
+    private fun queryTreeDocumentName(treeUri: Uri, docId: String): String? {
+        val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
+        return activity.contentResolver.query(
+            docUri,
+            arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+    }
+
+    @ActivityCallback fun gameDirSelected(invoke: Invoke, result: ActivityResult) {
+        val treeUri = result.data?.data
+        if (result.resultCode != Activity.RESULT_OK || treeUri == null) {
+            invoke.resolve()
+            return
+        }
+        if (importingGame) {
+            invoke.reject("正在导入游戏目录，请等待当前导入完成")
+            return
+        }
+        importingGame = true
+        worker.execute {
+            var staging: File? = null
+            try {
+                val rootDocId = DocumentsContract.getTreeDocumentId(treeUri)
+                val rootName = queryTreeDocumentName(treeUri, rootDocId) ?: rootDocId
+                val (sourceDocId, targetName) = GameImport.resolveSourceRoot(rootDocId, rootName) {
+                    queryTreeChildren(treeUri, it)
+                } ?: throw IllegalArgumentException(
+                    "所选目录不是有效的 Celeste 游戏目录（需要包含 Content 文件夹以及 Celeste.exe 或 Celeste.dll）。",
+                )
+                val gamesRoot = root()
+                val stagingDir = File(gamesRoot, "${GameImport.STAGING_PREFIX}${java.util.UUID.randomUUID()}")
+                check(stagingDir.mkdirs()) { "无法创建游戏导入临时目录" }
+                staging = stagingDir
+                val stagingRootPath = stagingDir.canonicalFile.toPath()
+                val buffer = ByteArray(128 * 1024)
+                var totalBytes = 0L
+                var totalFiles = 0
+
+                fun copyTree(docId: String, targetDir: File, depth: Int) {
+                    require(depth <= GameImport.MAX_DEPTH) { "目录层级过深，无法导入" }
+                    for (entry in queryTreeChildren(treeUri, docId)) {
+                        require(GameImport.isSafeSegment(entry.name)) { "目录包含无效文件名：${entry.name}" }
+                        val child = File(targetDir, entry.name)
+                        require(child.canonicalFile.toPath().startsWith(stagingRootPath)) {
+                            "目录包含不安全路径：${entry.name}"
+                        }
+                        if (entry.isDirectory) {
+                            if (!child.isDirectory) check(child.mkdirs()) { "无法创建目录：${entry.name}" }
+                            copyTree(entry.id, child, depth + 1)
+                        } else {
+                            totalFiles++
+                            require(totalFiles <= GameImport.MAX_FILES) { "所选目录文件数量过多" }
+                            val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, entry.id)
+                            activity.contentResolver.openInputStream(fileUri)?.use { input ->
+                                child.outputStream().use { out ->
+                                    while (true) {
+                                        val count = input.read(buffer)
+                                        if (count < 0) break
+                                        totalBytes += count
+                                        require(totalBytes <= GameImport.MAX_TOTAL_BYTES) { "所选游戏目录超过大小限制" }
+                                        out.write(buffer, 0, count)
+                                    }
+                                }
+                            } ?: throw java.io.IOException("无法读取文件：${entry.name}")
+                        }
+                    }
+                }
+
+                copyTree(sourceDocId, stagingDir, 0)
+                val destination = GameImport.uniqueTargetDirectory(gamesRoot, targetName)
+                check(stagingDir.renameTo(destination)) { "无法完成游戏目录导入" }
+                staging = null
+                invoke.resolve(JSObject().apply { put("path", destination.absolutePath) })
+            } catch (e: Exception) {
+                staging?.deleteRecursively()
+                invoke.reject(e.message ?: "导入游戏目录失败")
+            } finally {
+                importingGame = false
+            }
         }
     }
 
