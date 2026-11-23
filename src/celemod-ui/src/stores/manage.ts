@@ -88,7 +88,7 @@ const compareVersion = (left: string, right: string) => {
 
 /// Picks the file that represents a Mod name in the tree.  An enabled file
 /// wins over a disabled one, so the row keeps showing what the game loads.
-const preferManageFile = (
+export const preferManageFile = (
   candidate: Pick<ManageModFile, "enabled" | "version" | "modifiedAt">,
   current:
     | Pick<ManageModFile, "enabled" | "version" | "modifiedAt">
@@ -99,6 +99,54 @@ const preferManageFile = (
   const versionOrder = compareVersion(candidate.version, current.version);
   if (versionOrder !== 0) return versionOrder > 0;
   return candidate.modifiedAt > current.modifiedAt;
+};
+
+/**
+ * Selects the same representative installed file per Mod name that Manage's
+ * tree uses, so Home and Manage always report identical Mod update counts.
+ */
+export const selectRepresentativeInstalledMods = ({
+  installedMods,
+  enabledNames,
+  disabledFiles,
+}: {
+  installedMods: readonly BackendModInfo[];
+  enabledNames: ReadonlySet<string> | null;
+  disabledFiles: readonly string[];
+}) => {
+  const disabledPackages = new Set(
+    disabledFiles.map((file) => file.toLocaleLowerCase()),
+  );
+  const byName = new Map<
+    string,
+    {
+      name: string;
+      version: string;
+      file: string;
+      isDirectory: boolean;
+      enabled: boolean;
+      modifiedAt: number;
+    }
+  >();
+
+  for (const mod of installedMods) {
+    const enabledByName = enabledNames ? enabledNames.has(mod.name) : true;
+    const candidate = {
+      name: mod.name,
+      version: mod.version,
+      file: mod.file,
+      isDirectory: mod.is_directory,
+      enabled:
+        enabledByName && !disabledPackages.has(mod.file.toLocaleLowerCase()),
+      modifiedAt: mod.modified_at,
+    };
+    const current = byName.get(mod.name);
+    if (preferManageFile(candidate, current)) {
+      byName.set(mod.name, candidate);
+    }
+  }
+
+  return [...byName.values()];
 };
 
 export interface DuplicateFixTarget {
