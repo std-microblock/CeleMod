@@ -364,7 +364,8 @@ const main = async () => {
     }
     loenn = {
       enabled: true,
-      only_zh_cn: false,
+      // Loenn Ultra 只对简体中文界面展示；非中文用户回落到官方 Lönn。
+      only_zh_cn: true,
       default_tab: "ultra",
       name: "Loenn Ultra",
       description:
