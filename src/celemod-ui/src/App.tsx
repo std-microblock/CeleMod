@@ -39,7 +39,7 @@ import { featureVisible, useUpdateInfo } from "./api/updateInfo";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import celemodLogo from "./resources/Celemod.png";
 import { MobileNavigation } from "./components/MobileNavigation";
-import { Collapse, useAnimatedPresence } from "./components/Motion";
+import { StartupSplash } from "./components/StartupSplash";
 
 const pages = {
   Search: memo(Search),
@@ -98,8 +98,7 @@ export default function App() {
     featureVisible(updateInfo?.loenn_ultra, currentLang);
 
   const modManage = createModManageContext();
-  const { mounted: splashMounted, closing: splashClosing } =
-    useAnimatedPresence(modManage.splashVisible, 260);
+  const [splashHandoffActive, setSplashHandoffActive] = useState(false);
   const everest = createEverestContext();
   const blacklist = createBlacklistContext();
   const theme = createThemeContext();
@@ -235,43 +234,16 @@ export default function App() {
   );
 
   return (
-    <div className="app-frame">
+    <div
+      className={`app-frame${splashHandoffActive ? " is-splash-handoff" : ""}`}
+    >
       <WindowTitlebar />
-      {splashMounted && (
-        <div
-          className={`startup-splash${splashClosing ? " is-closing" : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="startup-splash-brand">
-            <img
-              className="startup-splash-logo"
-              src={celemodLogo}
-              alt="CeleMod"
-            />
-            <span className="startup-splash-title">CeleMod</span>
-          </div>
-          <Collapse
-            open={modManage.loadingSlow}
-            appear
-            className="startup-splash-status-collapse"
-          >
-            <div className="startup-splash-status">
-              <div className="startup-splash-status-line">
-                <span className="startup-splash-spinner" aria-hidden="true" />
-                <span>{_i18n.t("正在加载 Mod 列表，请稍等")}</span>
-              </div>
-              <button
-                type="button"
-                className="startup-splash-skip"
-                onClick={() => void modManage.skipCatalog().catch(console.error)}
-              >
-                {_i18n.t("跳过下载，离线继续")}
-              </button>
-            </div>
-          </Collapse>
-        </div>
-      )}
+      <StartupSplash
+        visible={modManage.splashVisible}
+        loadingSlow={modManage.loadingSlow}
+        onSkipCatalog={() => void modManage.skipCatalog().catch(console.error)}
+        onHandoffTargetHiddenChange={setSplashHandoffActive}
+      />
       {modManage.offline && (
         <div className="catalog-offline" role="status">
           <span>{_i18n.t("模组目录离线模式")}</span>

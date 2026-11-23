@@ -39,9 +39,9 @@
 .home-page .home-brand .home-brand-mark {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -50,8 +50,9 @@
   overflow: visible;
 
   img {
-    width: 40px;
-    height: 40px;
+    display: block;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     image-rendering: pixelated;
     filter: none;

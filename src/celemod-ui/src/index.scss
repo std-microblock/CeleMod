@@ -747,6 +747,10 @@ select option {
   margin-top: 16px;
 }
 
+.app-frame.is-splash-handoff .home-brand-mark {
+  visibility: hidden;
+}
+
 .startup-splash {
   position: fixed;
   inset: var(--window-titlebar-height) 0 0;
@@ -757,40 +761,123 @@ select option {
   justify-content: center;
   padding: 24px;
   color: var(--color-fg, #{$fg});
-  background: var(--color-canvas, #{$bg});
+  background: transparent;
   user-select: none;
 
   &.is-closing {
     pointer-events: none;
-    animation: startup-splash-exit 240ms
-      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
   }
 }
 
-html[window-blurbehind] .startup-splash {
+.startup-splash-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--color-canvas, #{$bg});
+  will-change: opacity;
+}
+
+html[window-blurbehind] .startup-splash-backdrop {
   background: rgba(10, 10, 12, 0.78);
   backdrop-filter: blur(18px);
 }
 
 .startup-splash-brand {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
 }
 
-.startup-splash-logo {
-  width: 56px;
-  height: 56px;
+.startup-splash-logo-anchor {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+}
+
+.startup-splash-logo-mover {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  perspective: 560px;
+  perspective-origin: 50% 50%;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.startup-splash-strawberry {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  --splash-depth: 1;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.startup-splash-face,
+.startup-splash-slice {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
 }
 
-.startup-splash-title {
-  color: var(--color-fg, #{$fg});
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.startup-splash-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  &.is-front {
+    transform: translateZ(calc(4px * var(--splash-depth, 1)));
+  }
+
+  &.is-back {
+    opacity: var(--splash-depth, 1);
+    transform: translateZ(calc(-4px * var(--splash-depth, 1))) rotateY(180deg);
+  }
+}
+
+.startup-splash-slice {
+  opacity: var(--splash-depth, 1);
+  filter: brightness(0.42) saturate(1.15);
+  transform: translateZ(calc(var(--slice-z, 0px) * var(--splash-depth, 1)));
+}
+
+.startup-splash-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  width: 56px;
+  height: 11px;
+  margin-left: -28px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0) 72%
+  );
+  opacity: 0.34;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.startup-splash-chrome {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  will-change: transform, opacity;
 }
 
 .startup-splash-status-collapse {
@@ -803,7 +890,7 @@ html[window-blurbehind] .startup-splash {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  padding-top: 22px;
+  padding-top: 28px;
 }
 
 .startup-splash-status-line {
@@ -842,18 +929,17 @@ html[window-blurbehind] .startup-splash {
   }
 }
 
-@keyframes startup-splash-exit {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.015);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .startup-splash-face.is-back,
+  .startup-splash-slice,
+  .startup-splash-shadow {
+    display: none;
+  }
+
+  .startup-splash-face.is-front {
+    transform: none;
+  }
+
   .sidebar .navBtn,
   .sidebar .title,
   a,
@@ -864,7 +950,6 @@ html[window-blurbehind] .startup-splash {
     transition: none;
   }
 
-  .startup-splash.is-closing,
   .sidebar .nav-badge,
   .catalog-offline,
   .popup-container[data-state="open"]

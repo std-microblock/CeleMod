@@ -681,6 +681,9 @@ html[data-theme="material-you"] .theme-option-check {
 /* Menus/dialogs and FAB-like floating actions */
 html[data-theme="material-you"] .startup-splash {
   color: var(--md-on-surface);
+  background: transparent;
+}
+html[data-theme="material-you"] .startup-splash-backdrop {
   background: var(--md-surface);
   background-image:
     radial-gradient(

@@ -270,7 +270,12 @@ export const Home = () => {
       <header className="home-header">
         <div className="home-brand">
           <div className="home-brand-mark" aria-hidden="true">
-            <img src={strawberry} alt="" />
+            <img
+              src={strawberry}
+              alt=""
+              data-splash-target="strawberry"
+              draggable={false}
+            />
           </div>
           <div className="home-brand-copy">
             <h1 className="home-brand-title">CeleMod</h1>
