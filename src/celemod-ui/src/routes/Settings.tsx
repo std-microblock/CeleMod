@@ -17,6 +17,7 @@ import { callRemote } from "../utils";
 import "./Settings.scss";
 import { AndroidRuntime } from "../components/AndroidRuntime";
 import { detectDesktopPlatform } from "../tauri/window";
+import { formatDisplayPath } from "../pathDisplay";
 
 interface CacheStatus {
   source: string;
@@ -523,8 +524,13 @@ export const Settings = () => {
               </div>
             </div>
             <div className="cache-actions">
-              <span title={cacheStatus?.path}>
-                {cacheStatus?.path || _i18n.t("缓存尚未建立")}
+              <span
+                className="cache-path"
+                title={cacheStatus?.path || undefined}
+              >
+                {cacheStatus?.path
+                  ? formatDisplayPath(cacheStatus.path)
+                  : _i18n.t("缓存尚未建立")}
               </span>
               <button
                 type="button"

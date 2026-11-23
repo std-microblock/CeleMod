@@ -368,6 +368,29 @@
     }
   }
 
+  .cache-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 15px 14px;
+
+    .cache-path {
+      min-width: 0;
+      overflow: hidden;
+      color: theme.$fg3;
+      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      font-size: 10px;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    button {
+      flex: 0 0 auto;
+    }
+  }
+
   .settings-error {
     padding: 0 15px 12px;
     color: #ff8a94;
