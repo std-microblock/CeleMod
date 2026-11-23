@@ -278,6 +278,7 @@ const downloadPlannedMods = async (
       onDownloadEvent,
       false,
       useAppStore.getState().useMultiThread,
+      useAppStore.getState().mirror,
     ).catch(reject);
   });
 };

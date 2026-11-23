@@ -2334,11 +2334,117 @@ struct GraphMod {
     #[serde(rename = "URL", default)]
     url: String,
     #[serde(rename = "MirrorName", default)]
-    _mirror_name: String,
+    mirror_name: String,
     #[serde(default)]
     dependencies: Vec<GraphDependency>,
     #[serde(rename = "OptionalDependencies", default)]
     _optional_dependencies: Vec<GraphDependency>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DownloadMirror {
+    Wegfan,
+    ZeroX0ade,
+    GameBanana,
+}
+
+impl DownloadMirror {
+    fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "wegfan" => Some(Self::Wegfan),
+            "0x0ade" => Some(Self::ZeroX0ade),
+            "gamebanana" => Some(Self::GameBanana),
+            _ => None,
+        }
+    }
+
+    fn infer_from_urls<'a>(urls: impl IntoIterator<Item = &'a str>) -> Option<Self> {
+        urls.into_iter().find_map(|url| {
+            if is_wegfan_download_url(url) {
+                Some(Self::Wegfan)
+            } else if url.starts_with("https://celestemodupdater.0x0a.de/banana-mirror/") {
+                Some(Self::ZeroX0ade)
+            } else if extract_gamebanana_file_id(url).is_some() {
+                Some(Self::GameBanana)
+            } else {
+                None
+            }
+        })
+    }
+}
+
+fn is_wegfan_download_url(url: &str) -> bool {
+    url.starts_with(wegfan::MIRROR_GAME_BANANA_FILES_API)
+        || url.starts_with(wegfan::MIRROR_FILES_API)
+}
+
+fn extract_gamebanana_file_id(url: &str) -> Option<i64> {
+    let base = url.split(['?', '#']).next()?;
+    for prefix in [
+        "https://gamebanana.com/mmdl/",
+        "https://gamebanana.com/dl/",
+        "http://gamebanana.com/mmdl/",
+        "http://gamebanana.com/dl/",
+    ] {
+        if let Some(rest) = base.strip_prefix(prefix) {
+            let id = rest.trim_end_matches('/');
+            if !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()) {
+                return id.parse::<i64>().ok().filter(|&value| value > 0);
+            }
+        }
+    }
+    None
+}
+
+fn graph_dependency_gamebanana_file_id(item: &GraphMod) -> Option<i64> {
+    extract_gamebanana_file_id(&item.url).or_else(|| {
+        let id = item.mirror_name.trim();
+        (!id.is_empty() && id.bytes().all(|byte| byte.is_ascii_digit()))
+            .then(|| id.parse::<i64>().ok())
+            .flatten()
+            .filter(|&value| value > 0)
+    })
+}
+
+fn resolve_dependency_download_url(
+    graph_dependency: Option<&GraphMod>,
+    catalog: Option<&everest::ModInfoCached>,
+    mirror: Option<DownloadMirror>,
+) -> Option<String> {
+    let graph_url = graph_dependency.and_then(|item| (!item.url.is_empty()).then_some(item.url.as_str()));
+    let catalog_url =
+        catalog.and_then(|item| (!item.download_url.is_empty()).then_some(item.download_url.as_str()));
+    let graph_gb_id = graph_dependency.and_then(graph_dependency_gamebanana_file_id);
+    let catalog_gb_id = catalog.and_then(|item| (item.game_banana_file_id > 0).then_some(item.game_banana_file_id));
+    let gb_id = graph_gb_id.or(catalog_gb_id);
+
+    match mirror {
+        Some(DownloadMirror::Wegfan) => {
+            if let Some(url) = catalog_url
+                && is_wegfan_download_url(url)
+                && (graph_gb_id.is_none() || graph_gb_id == catalog_gb_id)
+            {
+                return Some(url.to_string());
+            }
+            if let Some(id) = gb_id {
+                return Some(format!("{}/{id}", wegfan::MIRROR_GAME_BANANA_FILES_API));
+            }
+            graph_url.or(catalog_url).map(str::to_string)
+        }
+        Some(DownloadMirror::ZeroX0ade) => {
+            if let Some(id) = gb_id {
+                return Some(format!(
+                    "https://celestemodupdater.0x0a.de/banana-mirror/{id}.zip"
+                ));
+            }
+            graph_url.or(catalog_url).map(str::to_string)
+        }
+        Some(DownloadMirror::GameBanana) => graph_url
+            .map(str::to_string)
+            .or_else(|| gb_id.map(|id| format!("https://gamebanana.com/dl/{id}")))
+            .or_else(|| catalog_url.map(str::to_string)),
+        None => graph_url.or(catalog_url).map(str::to_string),
+    }
 }
 
 struct ModDependencyGraphCache {
@@ -2529,7 +2635,10 @@ fn expand_dependency_graph(
     mod_data: &HashMap<String, everest::ModInfoCached>,
     graph: &HashMap<String, GraphMod>,
     mods_dir: &str,
+    mirror: Option<DownloadMirror>,
 ) -> anyhow::Result<()> {
+    let resolved_mirror =
+        mirror.or_else(|| DownloadMirror::infer_from_urls(tasks.iter().map(|task| task.url.as_str())));
     let cancel_key = tasks
         .first()
         .map(|task| task.cancel_key.clone())
@@ -2576,12 +2685,14 @@ fn expand_dependency_graph(
                         .map(|(_, value)| value)
                 });
                 let graph_dependency = graph.get(&dependency_key);
-                let url = graph_dependency
-                    .and_then(|item| (!item.url.is_empty()).then_some(item.url.clone()))
-                    .or_else(|| catalog.map(|item| item.download_url.clone()))
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("Missing dependency {name}: {}", dependency.name)
-                    })?;
+                let url = resolve_dependency_download_url(
+                    graph_dependency,
+                    catalog,
+                    resolved_mirror,
+                )
+                .ok_or_else(|| {
+                    anyhow::anyhow!("Missing dependency {name}: {}", dependency.name)
+                })?;
                 let index = tasks.len();
                 queued.insert(dependency_key, index);
                 tasks.push(ModTaskInfo {
@@ -2686,6 +2797,7 @@ fn download_mod_queue(
     mods_dir: &str,
     on_event: &Channel<IpcEvent>,
     multi_thread: bool,
+    mirror: Option<DownloadMirror>,
     cancel_flag: &Arc<AtomicBool>,
     pause_flag: &Arc<AtomicBool>,
 ) -> bool {
@@ -2700,7 +2812,8 @@ fn download_mod_queue(
             return true;
         }
     };
-    if let Err(error) = expand_dependency_graph(tasks, installed, mod_data, &graph, mods_dir) {
+    if let Err(error) = expand_dependency_graph(tasks, installed, mod_data, &graph, mods_dir, mirror)
+    {
         if let Some(task) = tasks.first_mut() {
             task.status = DownloadStatus::Failed;
             task.data = format!("{error:#}");
@@ -4108,7 +4221,7 @@ mod local_package_tests {
                 "a".to_string(),
                 GraphMod {
                     url: "https://example.invalid/a.zip".to_string(),
-                    _mirror_name: String::new(),
+                    mirror_name: String::new(),
                     dependencies: vec![GraphDependency {
                         name: "Shared".to_string(),
                         version: "1.0.0".to_string(),
@@ -4120,7 +4233,7 @@ mod local_package_tests {
                 "b".to_string(),
                 GraphMod {
                     url: "https://example.invalid/b.zip".to_string(),
-                    _mirror_name: String::new(),
+                    mirror_name: String::new(),
                     dependencies: vec![GraphDependency {
                         name: "shared".to_string(),
                         version: "1.0.0".to_string(),
@@ -4132,7 +4245,7 @@ mod local_package_tests {
                 "shared".to_string(),
                 GraphMod {
                     url: "https://example.invalid/shared.zip".to_string(),
-                    _mirror_name: String::new(),
+                    mirror_name: String::new(),
                     dependencies: Vec::new(),
                     _optional_dependencies: Vec::new(),
                 },
@@ -4174,12 +4287,126 @@ mod local_package_tests {
             &HashMap::new(),
             &graph,
             root.to_string_lossy().as_ref(),
+            None,
         )
         .unwrap();
         assert_eq!(tasks.len(), 3);
         assert_eq!(tasks[0].dependencies, vec!["Shared"]);
         assert_eq!(tasks[1].dependencies, vec!["Shared"]);
         assert!(!tasks[2].requested);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn dependency_graph_uses_selected_mirror_instead_of_direct_gamebanana() {
+        let root = test_dir("dependency-graph-mirror");
+        let graph = parse_mod_dependency_graph(
+            concat!(
+                "StrawberryJam2021:\n",
+                "  URL: https://gamebanana.com/mmdl/1823799\n",
+                "  MirrorName: '1823799'\n",
+                "  Dependencies:\n",
+                "  - Name: StrawberryJam2021Assets\n",
+                "    Version: 1.0.1\n",
+                "  - Name: StrawberryJam2021AudioA\n",
+                "    Version: 1.0.4\n",
+                "  OptionalDependencies: []\n",
+                "StrawberryJam2021Assets:\n",
+                "  URL: https://gamebanana.com/mmdl/941090\n",
+                "  MirrorName: '941090'\n",
+                "  Dependencies: []\n",
+                "  OptionalDependencies: []\n",
+                "StrawberryJam2021AudioA:\n",
+                "  URL: https://gamebanana.com/mmdl/1060720\n",
+                "  MirrorName: '1060720'\n",
+                "  Dependencies: []\n",
+                "  OptionalDependencies: []\n",
+            ),
+        )
+        .unwrap();
+        let mod_data = HashMap::from([(
+            "StrawberryJam2021Assets".to_string(),
+            everest::ModInfoCached {
+                name: "StrawberryJam2021Assets".to_string(),
+                version: "1.0.1".to_string(),
+                game_banana_id: 424541,
+                game_banana_file_id: 941090,
+                download_url: "https://celeste.weg.fan/api/v2/download/files/111111".to_string(),
+                xx_hash: Vec::new(),
+            },
+        )]);
+
+        let make_root = |url: &str| {
+            vec![ModTaskInfo {
+                name: "StrawberryJam2021".to_string(),
+                url: url.to_string(),
+                dest: root.join("StrawberryJam2021.zip").to_string_lossy().to_string(),
+                requested: true,
+                dependencies: Vec::new(),
+                cancel_key: "StrawberryJam2021".to_string(),
+                status: DownloadStatus::Waiting,
+                mirror_preparing: false,
+                data: "0".to_string(),
+                downloaded_bytes: 0,
+                total_bytes: 0,
+                speed_bytes_per_sec: 0.0,
+            }]
+        };
+
+        // weg.fan mirror: matching catalog entry uses direct files/{id}; uncached falls back to gamebanana-files/{gb_id}.
+        let mut wegfan_tasks = make_root("https://celeste.weg.fan/api/v2/download/gamebanana-files/1823799");
+        expand_dependency_graph(
+            &mut wegfan_tasks,
+            &[],
+            &mod_data,
+            &graph,
+            root.to_string_lossy().as_ref(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            wegfan_tasks[1].url,
+            "https://celeste.weg.fan/api/v2/download/files/111111"
+        );
+        assert_eq!(
+            wegfan_tasks[2].url,
+            "https://celeste.weg.fan/api/v2/download/gamebanana-files/1060720"
+        );
+
+        // 0x0a.de mirror rewrites GameBanana dependency URLs to banana-mirror.
+        let mut jade_tasks = make_root("https://celestemodupdater.0x0a.de/banana-mirror/1823799.zip");
+        expand_dependency_graph(
+            &mut jade_tasks,
+            &[],
+            &mod_data,
+            &graph,
+            root.to_string_lossy().as_ref(),
+            Some(DownloadMirror::ZeroX0ade),
+        )
+        .unwrap();
+        assert_eq!(
+            jade_tasks[1].url,
+            "https://celestemodupdater.0x0a.de/banana-mirror/941090.zip"
+        );
+        assert_eq!(
+            jade_tasks[2].url,
+            "https://celestemodupdater.0x0a.de/banana-mirror/1060720.zip"
+        );
+
+        // Direct GameBanana keeps the graph's mmdl URL.
+        let mut gb_tasks = make_root("https://gamebanana.com/dl/1823799");
+        expand_dependency_graph(
+            &mut gb_tasks,
+            &[],
+            &mod_data,
+            &graph,
+            root.to_string_lossy().as_ref(),
+            Some(DownloadMirror::GameBanana),
+        )
+        .unwrap();
+        assert_eq!(gb_tasks[1].url, "https://gamebanana.com/mmdl/941090");
+        assert_eq!(gb_tasks[2].url, "https://gamebanana.com/mmdl/1060720");
+
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -6717,6 +6944,7 @@ fn download_mod_batch(
     on_event: Channel<IpcEvent>,
     use_cn_proxy: bool,
     multi_thread: bool,
+    mirror: Option<String>,
 ) {
     let roots = match serde_json::from_str::<Vec<(String, String)>>(&roots) {
         Ok(roots) if !roots.is_empty() => roots,
@@ -6751,6 +6979,7 @@ fn download_mod_batch(
         on_event,
         use_cn_proxy,
         multi_thread,
+        mirror,
     );
 }
 
@@ -6765,8 +6994,13 @@ fn download_mod_with_roots(
     on_event: Channel<IpcEvent>,
     use_cn_proxy: bool,
     multi_thread: bool,
+    mirror: Option<String>,
 ) {
     let _ = use_cn_proxy;
+    let resolved_mirror = mirror
+        .as_deref()
+        .and_then(DownloadMirror::parse)
+        .or_else(|| DownloadMirror::infer_from_urls(roots.iter().map(|(_, url)| url.as_str())));
     std::thread::spawn(move || {
         let (name, url) = roots.first().cloned().unwrap_or_default();
         let always_on_mods: Vec<String> = match serde_json::from_str(&always_on_mods) {
@@ -6870,6 +7104,7 @@ fn download_mod_with_roots(
             &mods_dir,
             &on_event,
             multi_thread,
+            resolved_mirror,
             &cancel_flag,
             &pause_flag,
         );

@@ -14,6 +14,7 @@ const parameterNames: Record<string, string[]> = {
     "onEvent",
     "useCnProxy",
     "multiThread",
+    "mirror",
   ],
   cancel_mod_download: ["name"],
   set_mod_download_paused: ["name", "paused"],

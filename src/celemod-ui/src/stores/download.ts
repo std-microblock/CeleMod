@@ -353,6 +353,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
         onDownloadEvent,
         false,
         appState.useMultiThread,
+        appState.mirror,
       ).catch((error) => {
         onFailed?.(initial, String(error));
         reject(error);
@@ -541,6 +542,7 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       onDownloadEvent,
       false,
       appState.useMultiThread,
+      appState.mirror,
     ).catch((error) => {
       const current = get().tasks[key];
       if (!current || current.attemptId !== attemptId) return;
