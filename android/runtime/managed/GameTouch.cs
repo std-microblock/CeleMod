@@ -204,7 +204,7 @@ internal static partial class GameTouch
             FinishSignature(mode); return;
         }
         var menus = (R(uiScene, "Entities") as IEnumerable)?.Cast<object>()
-            .Where(e => Is(e, "TextMenu") && B(e, "Focused") && B(e, "Visible") && B(e, "Active")).ToList() ?? new();
+            .Where(e => Is(e, "TextMenu") && B(e, "Focused") && B(e, "Visible") && B(e, "Active") && !B(e, "remapping")).ToList() ?? new();
         if (Is(current, "Mod.UI.OuiMapSearch") && B(current, "Focused")) BuildSearch(current!);
         else if (menus.Count > 0) {
             // Lowest depth renders last; two simultaneous focused mod menus are ambiguous.

@@ -90,7 +90,12 @@ try {
                 $file = "$repo/android/runtime/vendor/org/libsdl/app/SDLControllerManager.java"
                 # CeleMod maps its touch stick to keyboard directions; do not register
                 # RAL's unused virtual gamepad ahead of a user's real controller.
-                (Get-Content $file -Raw).Replace('if (!virtualJoystickAdded) {', 'if (!virtualJoystickAdded && com.app.ralaunch.core.common.SettingsAccess.getInstance().isVirtualControllerEnabled()) {') | Set-Content $file
+                # Also exclude alphabetic keyboards that merely advertise SOURCE_DPAD so
+                # SDL does not steal physical arrow keys as joystick pad events.
+                (Get-Content $file -Raw).
+                    Replace('if (!virtualJoystickAdded) {', 'if (!virtualJoystickAdded && com.app.ralaunch.core.common.SettingsAccess.getInstance().isVirtualControllerEnabled()) {').
+                    Replace('((sources & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD)', '(((sources & InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD) && device.getKeyboardType() != InputDevice.KEYBOARD_TYPE_ALPHABETIC)') |
+                    Set-Content $file
             }
         }
     }

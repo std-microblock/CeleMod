@@ -53,7 +53,9 @@ static class DirectTouchTests {
         Check(GameTouch.Inspect(level) == null, "ambiguous simultaneous mod menus fall back");
         level.Entities.RemoveAt(1); first.Focused = true;
         Check(GameTouch.Inspect(level) == null, "expanded custom submenus fall back instead of guessing children");
-        first.Focused = false; menu.Active = false;
+        first.Focused = false; menu.remapping = true;
+        Check(GameTouch.Inspect(level) == null, "remapping key config menu yields to virtual keys");
+        menu.remapping = false; menu.Active = false;
         Check(GameTouch.Inspect(level) == null, "inactive menu is never interactive");
         Check(GameTouch.Inspect(new Level()) == null && GameTouch.Inspect(new object()) == null, "gameplay and unknown scenes keep controls");
         Check(GameTouch.Inspect(new Overworld { Current = new OuiTitleScreen() })?.kind == "continue", "initial title can receive touches without Focused");
@@ -158,6 +160,7 @@ namespace Celeste {
     readonly record struct V(float X, float Y);
     class TestOui : Monocle.Entity { public bool Focused = true; }
     partial class TextMenu {
+        public bool remapping;
         public V Position = new(960, 540), Justify = new(.5f, .5f);
         public float Width = 400, Height = 200, ItemSpacing = 10, Alpha = 1, RightColumnWidth = 150;
         public List<Item> Items = new();

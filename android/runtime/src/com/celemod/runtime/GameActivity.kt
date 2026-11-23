@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.*
 import android.util.Log
+import android.view.InputDevice
 import android.view.WindowManager
 import android.view.KeyEvent
 import android.view.View
@@ -64,6 +65,7 @@ class GameActivity : SDLActivity() {
             gameReady = true
             overlay.visibility = View.VISIBLE
             overlay.requestApplyInsets()
+            mSurface?.requestFocus()
         }, FrameLayout.LayoutParams(-1, -1))
         // AndroidX bridges both legacy back and Android 13+ predictive-back gestures.
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -113,6 +115,7 @@ class GameActivity : SDLActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         vibration?.setActive(hasFocus && resumed && !returning)
         if (!hasFocus) controls?.releaseAll()
+        else if (!SDLActivity.isScreenKeyboardShown()) mSurface?.requestFocus()
         super.onWindowFocusChanged(hasFocus)
     }
     override fun onUnhandledMessage(command: Int, param: Any?): Boolean {
@@ -126,6 +129,28 @@ class GameActivity : SDLActivity() {
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) onBackPressedDispatcher.onBackPressed()
             return true
+        }
+        val device = InputDevice.getDevice(event.deviceId)
+        if (KeyboardDpad.shouldForwardAsKeyboardKey(
+                keyCode = event.keyCode,
+                deviceId = event.deviceId,
+                eventSource = event.source,
+                deviceSources = device?.sources ?: 0,
+                keyboardType = device?.keyboardType ?: InputDevice.KEYBOARD_TYPE_NONE,
+                isVirtualDevice = device?.isVirtual ?: false,
+                screenKeyboardShown = SDLActivity.isScreenKeyboardShown(),
+            )
+        ) {
+            when (event.action) {
+                KeyEvent.ACTION_DOWN -> {
+                    SDLActivity.onNativeKeyDown(event.keyCode)
+                    return true
+                }
+                KeyEvent.ACTION_UP -> {
+                    SDLActivity.onNativeKeyUp(event.keyCode)
+                    return true
+                }
+            }
         }
         return super.dispatchKeyEvent(event)
     }

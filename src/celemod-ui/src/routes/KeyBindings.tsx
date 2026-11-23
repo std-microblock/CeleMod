@@ -190,6 +190,35 @@ const keyboardCodeToXna = (code: string) => {
   return map[code];
 };
 
+const keyboardKeyToXna = (key: string) => {
+  if (/^[a-zA-Z]$/.test(key)) return key.toUpperCase();
+  if (/^\d$/.test(key)) return `D${key}`;
+  if (/^F(?:[1-9]|1\d|2[0-4])$/.test(key)) return key;
+  const map: Record<string, string> = {
+    ArrowLeft: "Left",
+    ArrowRight: "Right",
+    ArrowUp: "Up",
+    ArrowDown: "Down",
+    Left: "Left",
+    Right: "Right",
+    Up: "Up",
+    Down: "Down",
+    " ": "Space",
+    Enter: "Enter",
+    Tab: "Tab",
+    Backspace: "Back",
+    Escape: "Escape",
+    CapsLock: "CapsLock",
+    Insert: "Insert",
+    Delete: "Delete",
+    Home: "Home",
+    End: "End",
+    PageUp: "PageUp",
+    PageDown: "PageDown",
+  };
+  return map[key];
+};
+
 const mouseButtonName = (button: number) =>
   ({ 0: "Left", 1: "Middle", 2: "Right", 3: "XButton1", 4: "XButton2" })[
     button
@@ -544,7 +573,7 @@ const DesktopKeyBindings = () => {
 
       useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
-          if (event.code === "Escape") {
+          if (event.code === "Escape" || event.key === "Escape") {
             event.preventDefault();
             popup.hide();
             return;
@@ -552,7 +581,8 @@ const DesktopKeyBindings = () => {
           if (device !== "keyboard") return;
           event.preventDefault();
           event.stopPropagation();
-          const value = keyboardCodeToXna(event.code);
+          const value =
+            keyboardCodeToXna(event.code) ?? keyboardKeyToXna(event.key);
           if (!value) return;
           if (entry.format === "legacyChord")
             updateCaptured([...capturedRef.current, value]);
