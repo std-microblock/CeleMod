@@ -1,27 +1,29 @@
 import "./overlayScrollbar.scss";
 
 /**
- * Floating scrollbar thumb.
+ * Floating scrollbar thumb, driven entirely by pointer and scroll activity.
  *
- * Chromium cannot render an overlay scrollbar from CSS: `::-webkit-scrollbar`
- * always reserves layout space and the overlay values (`overflow: overlay`,
- * `scrollbar-width: overlay`) are gone. So native scrollbars are hidden in
- * `i2.css` and this module draws one shared thumb in `position: fixed`, which
- * costs no layout space and only appears while the pointer is inside a
- * scrollable area (or while it scrolls on touch input).
+ * Chromium cannot render an overlay scrollbar from CSS: a styled
+ * `::-webkit-scrollbar` always reserves layout width and the overlay values
+ * (`overflow: overlay`, `scrollbar-width: overlay`) no longer exist. So the
+ * native scrollbars are hidden in `i2.css` and this module paints a single
+ * `position: fixed` thumb, which consumes no layout space:
+ *
+ * - inside a scrollable area the pointer reveals the thumb,
+ * - wheels/touch keep it visible while the area scrolls,
+ * - it fades out after `IDLE_HIDE_DELAY` ms without any movement, and as soon
+ *   as the pointer leaves the area.
  */
 
 const THUMB_WIDTH = 4;
 const THUMB_INSET = 3;
 const MIN_THUMB_HEIGHT = 28;
-const HIDE_DELAY = 260;
-
-const touchScrolling = navigator.maxTouchPoints > 0;
+/** How long the thumb lingers after the last pointer move or scroll. */
+const IDLE_HIDE_DELAY = 1200;
 
 let thumb: HTMLDivElement | null = null;
-let current: HTMLElement | null = null;
+let active: HTMLElement | null = null;
 let hovered: HTMLElement | null = null;
-let dragging = false;
 let hideTimer = 0;
 let frame = 0;
 let initialized = false;
@@ -35,7 +37,7 @@ function isVerticalScroller(element: Element | null): element is HTMLElement {
 }
 
 function findScroller(target: EventTarget | null): HTMLElement | null {
-  let element = target instanceof Element ? target : null;
+  let element: Element | null = target instanceof Element ? target : null;
   while (element) {
     if (isVerticalScroller(element)) return element;
     element = element.parentElement;
@@ -43,158 +45,113 @@ function findScroller(target: EventTarget | null): HTMLElement | null {
   return null;
 }
 
-function place(element: HTMLElement) {
+/** Positions the thumb over `element`; returns false if there is nothing to scroll. */
+function place(element: HTMLElement): boolean {
   if (!thumb) return false;
-  const rect = element.getBoundingClientRect();
-  const track = element.clientHeight;
-  const total = element.scrollHeight;
-  const maxScroll = total - track;
+  const rect: DOMRect = element.getBoundingClientRect();
+  const track: number = element.clientHeight;
+  const total: number = element.scrollHeight;
+  const maxScroll: number = total - track;
   if (track <= 0 || maxScroll <= 1) return false;
-  const height = Math.min(
+  const height: number = Math.min(
     track,
     Math.max(MIN_THUMB_HEIGHT, (track * track) / total),
   );
-  const progress = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
-  const top = rect.top + element.clientTop + (track - height) * progress;
-  const borderRight =
+  const progress: number = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
+  const top: number =
+    rect.top + element.clientTop + (track - height) * progress;
+  const borderRight: number =
     element.offsetWidth - element.clientWidth - element.clientLeft;
-  const left = rect.right - borderRight - THUMB_INSET - THUMB_WIDTH;
+  const left: number = rect.right - borderRight - THUMB_INSET - THUMB_WIDTH;
   thumb.style.top = `${Math.round(top)}px`;
   thumb.style.left = `${Math.round(left)}px`;
   thumb.style.height = `${Math.round(height)}px`;
   return true;
 }
 
-function frameLoop() {
+function frameLoop(): void {
   frame = 0;
-  if (dragging) {
-    frame = requestAnimationFrame(frameLoop);
-    return;
-  }
-  if (!current || !thumb || !thumb.classList.contains("is-visible")) return;
-  if (!current.isConnected || !place(current)) {
+  if (!active || !thumb || !thumb.classList.contains("is-visible")) return;
+  if (!active.isConnected || !place(active)) {
     hide();
     return;
   }
   frame = requestAnimationFrame(frameLoop);
 }
 
-function ensureLoop() {
-  if (!frame) frame = requestAnimationFrame(frameLoop);
-}
-
-function stopLoop() {
+function stopLoop(): void {
   if (frame) cancelAnimationFrame(frame);
   frame = 0;
 }
 
-function show(element: HTMLElement) {
-  if (!thumb || dragging) return;
-  current = element;
+function show(element: HTMLElement): void {
+  if (!thumb) return;
   if (!place(element)) {
     hide();
     return;
   }
+  active = element;
   thumb.classList.add("is-visible");
-  window.clearTimeout(hideTimer);
-  hideTimer = 0;
-  ensureLoop();
+  if (!frame) frame = requestAnimationFrame(frameLoop);
+  scheduleHide();
 }
 
-function hide() {
-  if (dragging) return;
+function hide(): void {
   window.clearTimeout(hideTimer);
   hideTimer = 0;
   stopLoop();
   thumb?.classList.remove("is-visible");
-  current = null;
+  active = null;
 }
 
-function scheduleHide(delay = HIDE_DELAY) {
-  if (dragging) return;
+function scheduleHide(delay: number = IDLE_HIDE_DELAY): void {
   window.clearTimeout(hideTimer);
   hideTimer = window.setTimeout(() => {
     hideTimer = 0;
-    if (current && current === hovered) return;
     hide();
   }, delay);
 }
 
-function handlePointerMove(event: PointerEvent) {
-  if (dragging) return;
-  // Keep the thumb alive while the pointer is on the thumb itself.
-  if (event.target === thumb) return;
+function handlePointerMove(event: PointerEvent): void {
   const scroller = findScroller(event.target);
   hovered = scroller;
-  if (scroller) {
-    show(scroller);
-    return;
-  }
-  if (current) scheduleHide();
+  if (scroller) show(scroller);
+  else hide();
 }
 
-function handlePointerOut(event: PointerEvent) {
-  if (dragging || event.relatedTarget) return;
+function handlePointerOut(event: PointerEvent): void {
+  if (event.relatedTarget) return;
   hovered = null;
-  if (current) scheduleHide(180);
+  hide();
 }
 
-function handleScroll(event: Event) {
-  const target = event.target;
+function handleScroll(event: Event): void {
+  const target: EventTarget | null = event.target;
   if (!(target instanceof HTMLElement)) return;
-  if (target === current) {
-    if (!dragging && !place(target)) hide();
+  if (target === active) {
+    if (!place(target)) hide();
+    else scheduleHide();
     return;
   }
-  // Touch input has no hover phase; reveal the thumb while it scrolls.
-  if (!touchScrolling || !isVerticalScroller(target)) return;
+  // Wheel and touch scrolling keep the pointer still, so the scroll itself has
+  // to reveal the thumb of the area the pointer is over.
+  if (target !== hovered) return;
+  if (!isVerticalScroller(target)) return;
   show(target);
-  scheduleHide();
 }
 
-function handleThumbPointerDown(event: PointerEvent) {
-  const element = current;
-  if (!thumb || !element || event.button !== 0) return;
-  event.preventDefault();
-  dragging = true;
-  window.clearTimeout(hideTimer);
-  hideTimer = 0;
-  thumb.classList.add("is-dragging");
-  const startY = event.clientY;
-  const startScroll = element.scrollTop;
-  const track = element.clientHeight;
-  const thumbHeight = thumb.getBoundingClientRect().height;
-  const ratio =
-    (element.scrollHeight - track) / Math.max(1, track - thumbHeight);
-  const move = (moveEvent: PointerEvent) => {
-    element.scrollTop = startScroll + (moveEvent.clientY - startY) * ratio;
-  };
-  const end = () => {
-    dragging = false;
-    thumb?.classList.remove("is-dragging");
-    window.removeEventListener("pointermove", move);
-    window.removeEventListener("pointerup", end);
-    window.removeEventListener("pointercancel", end);
-    scheduleHide(120);
-  };
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", end);
-  window.addEventListener("pointercancel", end);
-}
-
-export function initializeOverlayScrollbars() {
+export function initializeOverlayScrollbars(): void {
   if (initialized) return;
   initialized = true;
-  const mount = () => {
+  const mount = (): void => {
     // A stale thumb can survive a hot module reload.
     document
       .querySelectorAll(".overlay-scrollbar-thumb")
-      .forEach((node) => node.remove());
+      .forEach((node: Element) => node.remove());
     thumb = document.createElement("div");
     thumb.className = "overlay-scrollbar-thumb";
     thumb.setAttribute("aria-hidden", "true");
     document.body.appendChild(thumb);
-    thumb.addEventListener("pointerdown", handleThumbPointerDown);
     document.addEventListener("pointermove", handlePointerMove, {
       passive: true,
     });
