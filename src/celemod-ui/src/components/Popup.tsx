@@ -1,5 +1,6 @@
 import { type ComponentType, createContext, createElement } from "react";
 import { createRoot } from "react-dom/client";
+import { prefersReducedMotion } from "./Motion";
 
 export const PopupContext = createContext<{ hide(): void }>({ hide() {} });
 
@@ -19,27 +20,60 @@ export const createPopup = (
   document.body.appendChild(container);
   const root = createRoot(container);
 
+  let closed = false;
+  let raf1 = 0;
+  let raf2 = 0;
+
+  const openNow = () => {
+    if (closed) return;
+    container.dataset.state = "open";
+    container.style.opacity = "1";
+  };
+
   const controls = {
     show() {
-      container.style.opacity = "1";
+      if (closed) return;
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      raf1 = 0;
+      raf2 = 0;
+      if (prefersReducedMotion()) {
+        openNow();
+        return;
+      }
+      raf1 = requestAnimationFrame(() => {
+        raf1 = 0;
+        raf2 = requestAnimationFrame(() => {
+          raf2 = 0;
+          openNow();
+        });
+      });
     },
     hide() {
+      if (closed) return;
+      closed = true;
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      raf1 = 0;
+      raf2 = 0;
+      container.dataset.state = "closing";
       container.style.opacity = "0";
-      setTimeout(() => {
+      container.style.pointerEvents = "none";
+      window.setTimeout(() => {
         root.unmount();
         container.remove();
-      }, 120);
+      }, prefersReducedMotion() ? 0 : 210);
     },
   };
 
   container.addEventListener("click", (event) => {
     if (cancelable && event.target === container) controls.hide();
   });
-  requestAnimationFrame(controls.show);
   root.render(
     <PopupContext.Provider value={controls}>
       {createElement(Content)}
     </PopupContext.Provider>,
   );
+  controls.show();
   return controls;
 };

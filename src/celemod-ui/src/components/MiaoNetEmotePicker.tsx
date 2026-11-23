@@ -319,7 +319,7 @@ export const MiaoNetEmotePicker = ({
       </header>
 
       {selectedGroup ? (
-        <div className="miaonet-atlas-range-toolbar">
+        <div key="range" className="miaonet-atlas-range-toolbar ui-fade-enter">
           <label>
             <span>{_i18n.t("起始帧")}</span>
             <select
@@ -361,7 +361,10 @@ export const MiaoNetEmotePicker = ({
           </span>
         </div>
       ) : (
-        <div className="miaonet-atlas-picker-toolbar">
+        <div
+          key="picker"
+          className="miaonet-atlas-picker-toolbar ui-fade-enter"
+        >
           <div className="miaonet-atlas-category-tabs">
             {categoryOptions.map((option) => (
               <button
@@ -402,22 +405,29 @@ export const MiaoNetEmotePicker = ({
 
       <div className="miaonet-atlas-grid-scroll" ref={scrollRef}>
         {catalogLoading && (
-          <div className="miaonet-atlas-empty">
+          <div className="miaonet-atlas-empty ui-fade-enter">
             <ProgressIndicator infinite />
             {_i18n.t("正在读取 Celeste 图集…")}
           </div>
         )}
         {!catalogLoading && catalogError && (
-          <div className="miaonet-atlas-empty error">{catalogError}</div>
+          <div className="miaonet-atlas-empty error ui-fade-enter">
+            {catalogError}
+          </div>
         )}
         {!catalogLoading && !catalogError && tiles.length === 0 && (
-          <div className="miaonet-atlas-empty">
+          <div className="miaonet-atlas-empty ui-fade-enter">
             {_i18n.t("没有符合条件的贴图")}
           </div>
         )}
         {!catalogLoading && !catalogError && tiles.length > 0 && (
           <div
-            className="miaonet-atlas-virtual-grid"
+            key={
+              selectedGroup
+                ? `group:${selectedGroup.category}:${selectedGroup.name}`
+                : `cat:${category}`
+            }
+            className="miaonet-atlas-virtual-grid ui-fade-enter"
             style={{ height: rowVirtualizer.getTotalSize() }}
           >
             {virtualRows.map((virtualRow) => {
@@ -493,7 +503,7 @@ export const MiaoNetEmotePicker = ({
       </div>
 
       {selectedGroup && (
-        <footer className="miaonet-atlas-range-footer">
+        <footer className="miaonet-atlas-range-footer ui-fade-enter">
           <button type="button" onClick={() => setSelectedGroup(null)}>
             {_i18n.t("取消")}
           </button>

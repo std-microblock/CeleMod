@@ -14,6 +14,7 @@
   background: linear-gradient(155deg, theme.$bg2, theme.$bg1 62%);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
   transition:
+    background-color 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease;
   $mask-start-height: 150px;
@@ -32,7 +33,14 @@
       margin: 0;
       object-fit: cover;
       object-position: center;
-      transition: filter 280ms ease;
+      opacity: 0;
+      transition:
+        opacity 220ms ease,
+        filter 280ms ease;
+
+      &.is-loaded {
+        opacity: 1;
+      }
     }
   }
 
@@ -78,6 +86,12 @@
       object-fit: cover;
       object-position: center;
       filter: blur(42px) brightness(0.46) saturate(1.35);
+      opacity: 0;
+      transition: opacity 220ms ease;
+
+      &.is-loaded {
+        opacity: 1;
+      }
     }
   }
 
@@ -234,11 +248,20 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
       backdrop-filter: blur(10px);
       letter-spacing: 0;
+      transition:
+        background-color var(--motion-fast, 140ms) ease,
+        border-color var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease,
+        transform 120ms ease;
     }
 
     button:hover {
       border-color: color.change(theme.$primary, $alpha: 0.62);
       background: color.change(theme.$primary, $alpha: 0.8);
+    }
+
+    button:active {
+      transform: scale(0.94);
     }
 
     .download-progress {
@@ -253,6 +276,8 @@
         color.adjust(theme.$primary, $lightness: 12%) var(--download-progress),
         rgba(255, 255, 255, 0.16) 0
       );
+      transition: --download-progress 220ms
+        var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 
       &::after {
         position: absolute;
@@ -412,6 +437,23 @@
   background: color.change(theme.$bg1, $alpha: 0.9);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+
+  &.is-closing {
+    animation: mod-list-loading-out 130ms
+      var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
+    pointer-events: none;
+  }
+}
+
+@keyframes mod-list-loading-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.84);
+  }
 }
 
 .sr-only {
@@ -443,9 +485,17 @@
     font-size: 20px;
     opacity: 0.6;
     cursor: pointer;
+    transition:
+      opacity 150ms ease,
+      transform 120ms ease;
 
     &:hover {
       opacity: 1;
+      transform: scale(1.06);
+    }
+
+    &:active {
+      transform: scale(0.94);
     }
   }
   .openExternal {
@@ -486,6 +536,18 @@
       margin-right: 10px;
       max-height: 160px;
       border: 1px solid theme.$bg3;
+      transition:
+        border-color 150ms ease,
+        transform 180ms var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+
+      &:hover {
+        border-color: color.change(theme.$primary, $alpha: 0.62);
+        transform: scale(1.015);
+      }
+
+      &:active {
+        transform: scale(0.99);
+      }
     }
   }
 
@@ -660,10 +722,18 @@ html[data-theme="fluent"] .mod-detail-popup .content {
     background: transparent;
     box-shadow: none;
     cursor: pointer;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      transform 120ms ease;
 
     &:hover {
       color: theme.$fg;
       background: color.change(theme.$fg, $alpha: 0.08);
+    }
+
+    &:active {
+      transform: scale(0.94);
     }
   }
 
@@ -846,5 +916,25 @@ html[data-theme="fluent"] .mod-detail-popup .content {
         display: none;
       }
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mod,
+  .mod .mod-media img,
+  .mod .mod-info-backdrop img,
+  .mod .operations button,
+  .mod .operations .download-progress,
+  .mod-detail-popup .openExternal,
+  .mod-detail-popup .closeBtn,
+  .mod-detail-popup .images img,
+  .download-file-popup .download-file-close,
+  .download-file-popup .file,
+  .download-file-popup .file .file-action {
+    transition: none;
+  }
+
+  .mod-list-loading.is-closing {
+    animation: none;
   }
 }

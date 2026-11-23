@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "./styles/theme" as *;
+@use "./styles/motion";
 @use "./styles/themes/fluent";
 @use "./styles/themes/material-you";
 
@@ -268,7 +269,10 @@ textarea,
   text-transform: none;
   transition:
     background-color 180ms ease,
-    border-color 180ms ease;
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color var(--motion-fast, 140ms) ease,
+    transform 100ms ease;
 }
 
 .sidebar .nav-badge {
@@ -290,6 +294,8 @@ textarea,
   line-height: 1;
   box-sizing: border-box;
   z-index: 3;
+  animation: ui-pop-in 180ms
+    var(--motion-ease-spring, cubic-bezier(0.34, 1.32, 0.64, 1)) both;
 }
 
 .sidebar .navBtn.selected {
@@ -323,6 +329,15 @@ textarea,
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: opacity 160ms ease;
+}
+
+.sidebar :where(.navBtn:hover) .title {
+  opacity: 0.85;
+}
+
+.sidebar :where(.navBtn.selected) .title {
+  opacity: 0.95;
 }
 
 .downloadListBtn {
@@ -371,26 +386,29 @@ textarea,
   height: 100%;
   min-width: 0;
   min-height: 0;
-  will-change: opacity;
 }
 
 .page-entering {
   z-index: 2;
-  animation: page-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+  animation: page-enter 220ms
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
 
 .page-leaving {
   z-index: 1;
   pointer-events: none;
-  animation: page-leave 90ms ease-out both;
+  animation: page-leave 110ms ease-out both;
 }
 
 @keyframes page-enter {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -456,6 +474,7 @@ a {
   margin: 0 4px;
   color: color.adjust($primary, $lightness: 10%);
   text-decoration: none;
+  transition: color var(--motion-fast, 140ms) ease;
 }
 
 a:hover {
@@ -475,6 +494,15 @@ input[type="checkbox"] {
   background: var(--color-surface-elevated, #{$bg1});
   opacity: 0.7;
   vertical-align: middle;
+  transition:
+    background-color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease,
+    transform 100ms ease;
+}
+
+input[type="checkbox"]:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 input[type="checkbox"]:checked {
@@ -514,6 +542,10 @@ select {
   box-sizing: border-box;
   color: var(--color-fg, #{$fg});
   background: var(--color-surface-elevated, #{$bg1});
+  transition:
+    background-color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease;
 }
 
 select:hover {
@@ -593,6 +625,10 @@ select option {
     font-weight: 600;
     letter-spacing: 0;
     gap: 7px;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
 
     &:hover {
       color: var(--color-fg, #{$fg});
@@ -625,7 +661,28 @@ select option {
   /* Opacity-only motion on purpose: a leftover `transform: scale()` on this
      element is not reset when the popup is shown, so every popup renders
      zoomed and window-filling popups lose their own close/action buttons. */
-  transition: opacity 0.2s;
+  transition: opacity 200ms
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.popup-container[data-state="open"]
+  > .popup-content:not(.crash-assistant-popup),
+.popup-container[data-state="open"] > .update-prompt,
+.popup-container[data-state="open"] > .miaonet-atlas-picker,
+.popup-container[data-state="open"] .download-file-dialog,
+.popup-container[data-state="open"] .image-view img {
+  animation: ui-dialog-in 210ms
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+.popup-container[data-state="closing"]
+  > .popup-content:not(.crash-assistant-popup),
+.popup-container[data-state="closing"] > .update-prompt,
+.popup-container[data-state="closing"] > .miaonet-atlas-picker,
+.popup-container[data-state="closing"] .download-file-dialog,
+.popup-container[data-state="closing"] .image-view img {
+  animation: ui-dialog-out 160ms
+    var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
 }
 
 .popup-content {
@@ -682,6 +739,8 @@ select option {
   gap: 6px 12px;
   padding: 8px 12px;
   font-size: 12px;
+  animation: ui-fade-in var(--motion-normal, 210ms)
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
   small {
     opacity: 0.75;
   }
@@ -691,4 +750,38 @@ select option {
 }
 .loading-popup > button {
   margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .navBtn,
+  .sidebar .title,
+  a,
+  input[type="checkbox"],
+  select,
+  .centered-tab-buttons > button,
+  .popup-container {
+    transition: none;
+  }
+
+  input[type="checkbox"]:active:not(:disabled) {
+    transform: none;
+  }
+
+  .sidebar .nav-badge,
+  .catalog-offline,
+  .popup-container[data-state="open"]
+    > .popup-content:not(.crash-assistant-popup),
+  .popup-container[data-state="open"] > .update-prompt,
+  .popup-container[data-state="open"] > .miaonet-atlas-picker,
+  .popup-container[data-state="open"] .download-file-dialog,
+  .popup-container[data-state="open"] .image-view img,
+  .popup-container[data-state="closing"]
+    > .popup-content:not(.crash-assistant-popup),
+  .popup-container[data-state="closing"] > .update-prompt,
+  .popup-container[data-state="closing"] > .miaonet-atlas-picker,
+  .popup-container[data-state="closing"] .download-file-dialog,
+  .popup-container[data-state="closing"] .image-view img {
+    animation: none;
+    transition: none;
+  }
 }

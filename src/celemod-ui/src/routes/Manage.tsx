@@ -38,6 +38,7 @@ import {
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Icon } from "../components/Icon";
 import { Button } from "../components/Button";
+import { Collapse, useAnimatedPresence } from "../components/Motion";
 import { enforceEverest } from "../components/EnforceEverestPage";
 import { useDownloadStore } from "../stores/download";
 import { createPopup, PopupContext } from "../components/Popup";
@@ -633,7 +634,7 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
             </div>
           </div>
           {cloud?.screenshots?.length ? (
-            <div className="detail-images">
+            <div className="detail-images ui-fade-enter">
               {cloud.screenshots.map((image) => (
                 <img key={image.id} src={`${image.url}?h=180`} alt="" />
               ))}
@@ -644,9 +645,12 @@ const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
               <ProgressIndicator infinite size={28} />
             </div>
           ) : cloud ? (
-            <div className="detail-description" ref={descriptionRef} />
+            <div
+              className="detail-description ui-fade-enter"
+              ref={descriptionRef}
+            />
           ) : (
-            <div className="detail-description detail-local-only">
+            <div className="detail-description detail-local-only ui-fade-enter">
               {_i18n.t(
                 "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。",
               )}
@@ -835,6 +839,26 @@ const ManageTreeNode = ({
   const [editingComment, setEditingComment] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const instanceId = JSON.stringify([...path, name]);
+  const menuOpen =
+    Boolean(node) &&
+    !excludedDependencyNames.has(name) &&
+    openMenuName === instanceId;
+  const { mounted: menuMounted, closing: menuClosing } = useAnimatedPresence(
+    menuOpen,
+    120,
+  );
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node))
+        setOpenMenuName(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [menuOpen, setOpenMenuName]);
+
   if (!node || excludedDependencyNames.has(name)) return null;
   const visibleDependencies = normalizeManageDependencies(
     node.dependencies,
@@ -855,8 +879,6 @@ const ManageTreeNode = ({
     (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
   );
   const hasUpdate = actions.updateNames.has(name);
-  const instanceId = JSON.stringify([...path, name]);
-  const menuOpen = openMenuName === instanceId;
   const displayNames = resolveManageDisplayNames(
     name,
     actions.comments[name],
@@ -873,37 +895,25 @@ const ManageTreeNode = ({
     setEditingComment(false);
   };
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node))
-        setOpenMenuName(null);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [menuOpen, setOpenMenuName]);
-
   return (
     <div className="manage-tree-node">
       <div
         className={`manage-tree-row ${node.enabled ? "enabled" : "disabled"} ${
-          menuOpen ? "menu-open" : ""
+          menuOpen ? "menu-open" : menuClosing ? "menu-closing" : ""
         }`}
         style={{ "--tree-depth": depth } as React.CSSProperties}
       >
         <span className="tree-connector" />
         <button
-          className={`tree-expander ${hasDependencies ? "" : "leaf"}`}
+          className={`tree-expander ${
+            hasDependencies ? (expanded ? "expanded" : "") : "leaf"
+          }`}
           onClick={() => hasDependencies && setExpanded(name, !expanded)}
           title={
             hasDependencies ? _i18n.t(expanded ? "收起依赖" : "展开依赖") : ""
           }
         >
-          <Icon
-            name={
-              hasDependencies ? (expanded ? "i-down" : "i-right") : "i-asterisk"
-            }
-          />
+          <Icon name={hasDependencies ? "i-right" : "i-asterisk"} />
         </button>
         <div
           className={`tree-row-main ${
@@ -931,7 +941,7 @@ const ManageTreeNode = ({
             {editingComment ? (
               <input
                 autoFocus
-                className="tree-comment-input"
+                className="tree-comment-input ui-fade-enter"
                 value={commentDraft}
                 onChange={(event) => setCommentDraft(event.target.value)}
                 onBlur={() => finishEditingComment(true)}
@@ -1036,7 +1046,9 @@ const ManageTreeNode = ({
           </div>
         </div>
         <div
-          className={`tree-row-actions ${menuOpen ? "menu-open" : ""}`}
+          className={`tree-row-actions ${
+            menuOpen ? "menu-open" : menuClosing ? "menu-closing" : ""
+          }`}
           ref={menuRef}
         >
           <button
@@ -1046,8 +1058,12 @@ const ManageTreeNode = ({
           >
             <Icon name="opts-h" />
           </button>
-          {menuOpen && (
-            <div className="mod-row-menu">
+          {menuMounted && (
+            <div
+              className={`mod-row-menu ${
+                menuClosing ? "ui-popover-exit" : "ui-popover-enter"
+              }`}
+            >
               <button
                 onClick={() => {
                   setOpenMenuName(null);
@@ -1164,6 +1180,12 @@ export const Manage = () => {
   const setFilterOpen = useManageStore((state) => state.setFilterOpen);
   const actionMenuOpen = useManageStore((state) => state.actionMenuOpen);
   const setActionMenuOpen = useManageStore((state) => state.setActionMenuOpen);
+  const { mounted: filterMounted, closing: filterClosing } =
+    useAnimatedPresence(filterOpen, 120);
+  const { mounted: actionMenuMounted, closing: actionMenuClosing } =
+    useAnimatedPresence(actionMenuOpen, 120);
+  const { mounted: profileImportMounted, closing: profileImportClosing } =
+    useAnimatedPresence(profileImportOpen, 120);
   const setQuery = useManageStore((state) => state.setQuery);
   const setEnabledFilter = useManageStore((state) => state.setEnabledFilter);
   const setHealthFilter = useManageStore((state) => state.setHealthFilter);
@@ -2453,7 +2475,7 @@ export const Manage = () => {
                 placeholder={_i18n.t("搜索名称、备注、作者或文件…")}
               />
               {filters.query && (
-                <button onClick={() => setQuery("")}>
+                <button className="ui-fade-enter" onClick={() => setQuery("")}>
                   <Icon name="i-cross" />
                 </button>
               )}
@@ -2465,11 +2487,17 @@ export const Manage = () => {
               >
                 <Icon name="filter" />
                 {activeFilterCount > 0 && (
-                  <span className="toolbar-count">{activeFilterCount}</span>
+                  <span className="toolbar-count ui-pop-enter">
+                    {activeFilterCount}
+                  </span>
                 )}
               </Button>
-              {filterOpen && (
-                <div className="manage-filter-popup">
+              {filterMounted && (
+                <div
+                  className={`manage-filter-popup ${
+                    filterClosing ? "ui-popover-exit" : "ui-popover-enter"
+                  }`}
+                >
                   <div className="popup-heading">
                     <strong>{_i18n.t("筛选已下载 Mod")}</strong>
                     <button onClick={resetManageFilters}>
@@ -2572,8 +2600,12 @@ export const Manage = () => {
               >
                 {_i18n.t("操作")} <Icon name="i-down" />
               </Button>
-              {actionMenuOpen && (
-                <div className="manage-action-menu">
+              {actionMenuMounted && (
+                <div
+                  className={`manage-action-menu ${
+                    actionMenuClosing ? "ui-popover-exit" : "ui-popover-enter"
+                  }`}
+                >
                   <button onClick={() => callRemote("open_url", modPath)}>
                     <Icon name="file" />
                     {_i18n.t("打开 Mods 文件夹")}
@@ -2617,10 +2649,15 @@ export const Manage = () => {
               )}
             </div>
           </header>
-          {((showUpdate && totalUpdateCount > 0) ||
-            missingDependencies.length > 0 ||
-            everestTooOld ||
-            everestInstalling) && (
+          <Collapse
+            open={
+              (showUpdate && totalUpdateCount > 0) ||
+              missingDependencies.length > 0 ||
+              everestTooOld ||
+              everestInstalling
+            }
+            appear
+          >
             <div className="manage-notice-bar">
               {showUpdate && updates.length > 0 && (
                 <button
@@ -2699,24 +2736,29 @@ export const Manage = () => {
                 </button>
               )}
             </div>
-          )}
+          </Collapse>
 
-          {hasSearchQuery &&
-            (hiddenKeywordMatchCount > 0 || filtersSuspended) && (
-              <div className="manage-filter-hint">
-                <span>
-                  {_i18n.t("部分搜索结果被筛选条件隐藏")}
-                  {hiddenKeywordMatchCount > 0
-                    ? ` (${hiddenKeywordMatchCount})`
-                    : ""}
-                </span>
-                <button onClick={() => setFiltersSuspended((value) => !value)}>
-                  {filtersSuspended
-                    ? _i18n.t("恢复筛选条件")
-                    : _i18n.t("暂时关闭筛选条件")}
-                </button>
-              </div>
-            )}
+          <Collapse
+            open={
+              hasSearchQuery &&
+              (hiddenKeywordMatchCount > 0 || filtersSuspended)
+            }
+            appear
+          >
+            <div className="manage-filter-hint">
+              <span>
+                {_i18n.t("部分搜索结果被筛选条件隐藏")}
+                {hiddenKeywordMatchCount > 0
+                  ? ` (${hiddenKeywordMatchCount})`
+                  : ""}
+              </span>
+              <button onClick={() => setFiltersSuspended((value) => !value)}>
+                {filtersSuspended
+                  ? _i18n.t("恢复筛选条件")
+                  : _i18n.t("暂时关闭筛选条件")}
+              </button>
+            </div>
+          </Collapse>
 
           <div className="manage-tree-scroll">
             {visibleRoots.length > 0 ? (
@@ -2724,7 +2766,7 @@ export const Manage = () => {
                 <ManageTreeNode key={name} name={name} />
               ))
             ) : (
-              <div className="manage-empty">
+              <div className="manage-empty ui-fade-enter">
                 <Icon name="search" />
                 <strong>{_i18n.t("没有符合筛选条件的 Mod")}</strong>
                 <button onClick={resetManageFilters}>
@@ -2764,8 +2806,14 @@ export const Manage = () => {
                     >
                       <Icon name="import" />
                     </button>
-                    {profileImportOpen && (
-                      <div className="profile-import-menu">
+                    {profileImportMounted && (
+                      <div
+                        className={`profile-import-menu ${
+                          profileImportClosing
+                            ? "ui-popover-exit"
+                            : "ui-popover-enter"
+                        }`}
+                      >
                         <button
                           onClick={() => {
                             createPopup(() => (

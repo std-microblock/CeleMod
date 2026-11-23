@@ -1,6 +1,5 @@
 import _i18n from "src/i18n";
 import {
-  Fragment,
   useContext,
   useEffect,
   useMemo,
@@ -319,6 +318,15 @@ export const Everest = () => {
     });
   };
 
+  const catalogContentKey =
+    activeTab === "ultra-stable" && ultra
+      ? "ultra-stable"
+      : everestData
+        ? `official-${activeTab}`
+        : everestError
+          ? "error"
+          : "loading";
+
   return (
     <div className="everest">
       <header className="everest-header">
@@ -355,7 +363,7 @@ export const Everest = () => {
       </header>
 
       {installingUrl === null ? (
-        <div className="everest-catalog">
+        <div key="catalog" className="everest-catalog ui-fade-enter">
           <div className="channel-tabs centered-tab-buttons">
             <button
               className={activeTab === "stable" ? "active" : ""}
@@ -391,48 +399,53 @@ export const Everest = () => {
             </button>
           </div>
 
-          {activeTab === "ultra-stable" && ultra ? (
-            <Fragment>
-              <div className="edition-description ultra-description">
-                <div>
-                  <span className="ultra-kicker">EVEREST · ACCELERATED</span>
-                  <strong>
-                    {ultra.name || "EverestUltra"}
-                    {_i18n.t("· 加速启动版")}
-                  </strong>
-                  <p>{ultra.description}</p>
+          <div
+            key={catalogContentKey}
+            className="everest-tab-panel ui-panel-enter"
+          >
+            {activeTab === "ultra-stable" && ultra ? (
+              <>
+                <div className="edition-description ultra-description">
+                  <div>
+                    <span className="ultra-kicker">EVEREST · ACCELERATED</span>
+                    <strong>
+                      {ultra.name || "EverestUltra"}
+                      {_i18n.t("· 加速启动版")}
+                    </strong>
+                    <p>{ultra.description}</p>
+                  </div>
                 </div>
-              </div>
-              <UltraChannel
-                versions={ultra.versions || []}
+                <UltraChannel
+                  versions={ultra.versions || []}
+                  installedVersion={currentEverestVersion}
+                  installedEdition={currentEverestIsUltra}
+                  onInstall={installEverest}
+                />
+              </>
+            ) : everestData ? (
+              <OfficialChannel
+                branch={activeTab}
                 installedVersion={currentEverestVersion}
-                installedEdition={currentEverestIsUltra}
+                installedEdition={!currentEverestIsUltra}
+                versions={everestData}
                 onInstall={installEverest}
               />
-            </Fragment>
-          ) : everestData ? (
-            <OfficialChannel
-              branch={activeTab}
-              installedVersion={currentEverestVersion}
-              installedEdition={!currentEverestIsUltra}
-              versions={everestData}
-              onInstall={installEverest}
-            />
-          ) : everestError ? (
-            <div className="load-error">
-              {_i18n.t("加载失败")}: {everestError}
-            </div>
-          ) : (
-            <div className="catalog-loading">
-              <ProgressIndicator infinite />
-            </div>
-          )}
+            ) : everestError ? (
+              <div className="load-error">
+                {_i18n.t("加载失败")}: {everestError}
+              </div>
+            ) : (
+              <div className="catalog-loading">
+                <ProgressIndicator infinite />
+              </div>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="installing">
+        <div key="installing" className="installing ui-fade-enter">
           {installState === "Failed" ? (
-            <Fragment>
-              <div className="wrapperin">
+            <div key="failed" className="installing-state ui-panel-enter">
+              <div className="wrapperin ui-pop-enter">
                 <Icon name="i-cross" />
               </div>
               <div className="tip">{_i18n.t("安装失败")}</div>
@@ -445,10 +458,10 @@ export const Everest = () => {
                   {_i18n.t("取消")}
                 </Button>
               </div>
-            </Fragment>
+            </div>
           ) : installState === "Success" ? (
-            <Fragment>
-              <div className="wrapperin">
+            <div key="success" className="installing-state ui-panel-enter">
+              <div className="wrapperin ui-pop-enter">
                 <Icon name="i-tick" />
               </div>
               <div className="tip">{_i18n.t("安装成功")}</div>
@@ -458,9 +471,9 @@ export const Everest = () => {
                   {_i18n.t("确认")}
                 </Button>
               </div>
-            </Fragment>
+            </div>
           ) : (
-            <Fragment>
+            <div key="progress" className="installing-state ui-panel-enter">
               <div className="wrapperin">
                 <ProgressIndicator
                   {...(installProgress !== null
@@ -475,7 +488,7 @@ export const Everest = () => {
               ) : getInstallDetail(installState) ? (
                 <div className="state">{getInstallDetail(installState)}</div>
               ) : null}
-            </Fragment>
+            </div>
           )}
         </div>
       )}

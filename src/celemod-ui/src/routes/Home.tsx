@@ -26,6 +26,7 @@ import { useGlobalContext } from "src/App";
 import { detectDesktopPlatform } from "../tauri/window";
 import { SteamAccount } from "../components/SteamAccount";
 import { HomeUpdatesCard } from "../components/HomeUpdatesCard";
+import { Collapse } from "../components/Motion";
 
 interface ShortcutItem {
   page: string;
@@ -321,7 +322,10 @@ export const Home = () => {
         </div>
       </header>
 
-      {gamePath && newKeyboardInputEnabled === true ? (
+      <Collapse
+        open={Boolean(gamePath && newKeyboardInputEnabled === true)}
+        appear
+      >
         <aside className="home-keyboard-input-banner" role="alert">
           <span className="home-banner-icon" aria-hidden="true">
             <Icon name="warn" />
@@ -357,7 +361,7 @@ export const Home = () => {
             </button>
           </div>
         </aside>
-      ) : null}
+      </Collapse>
 
       <section className="home-launch-card" aria-label={_i18n.t("选择游戏路径")}>
         <div className="home-launch-body">
@@ -436,7 +440,7 @@ export const Home = () => {
             </div>
           )}
 
-          {launchError ? (
+          <Collapse open={Boolean(launchError)} appear>
             <div className="home-launch-error" role="alert">
               <div className="home-launch-error-head">
                 <Icon name="fail" />
@@ -453,7 +457,7 @@ export const Home = () => {
                 </p>
               ) : null}
             </div>
-          ) : null}
+          </Collapse>
         </div>
 
         {gamePath ? (
@@ -576,8 +580,9 @@ export const Home = () => {
                     <span
                       className={`profile-active-indicator ${selected ? "is-active" : ""}`}
                       aria-label={selected ? _i18n.t("已启用") : undefined}
+                      aria-hidden={!selected || undefined}
                     >
-                      {selected ? <Icon name="i-tick" /> : null}
+                      <Icon name="i-tick" />
                     </span>
                   </div>
                   <div className="profile-meta">
@@ -621,7 +626,7 @@ export const Home = () => {
               </span>
             </button>
 
-            {activeModsExpanded ? (
+            <Collapse open={activeModsExpanded} unmountOnExit>
               <div className="home-active-mod-list" role="status">
                 {activeMods.length > 0 ? (
                   activeMods.map((name) => <span key={name}>{name}</span>)
@@ -631,7 +636,7 @@ export const Home = () => {
                   </p>
                 )}
               </div>
-            ) : null}
+            </Collapse>
           </div>
         </section>
       ) : null}

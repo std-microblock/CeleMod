@@ -75,6 +75,7 @@
     color: rgba(255, 255, 255, 0.46);
     font-size: 12px;
     cursor: pointer;
+    transition: color var(--motion-fast, 140ms) ease;
 
     &:hover {
       color: rgba(255, 255, 255, 0.78);
@@ -93,9 +94,24 @@
     flex-direction: column;
   }
 
+  .everest-tab-panel {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
   .channel-tabs {
     margin-bottom: 18px;
     justify-content: flex-start;
+
+    > button {
+      transition:
+        color var(--motion-fast, 140ms) ease,
+        background-color var(--motion-fast, 140ms) ease,
+        border-color var(--motion-fast, 140ms) ease;
+    }
+
     > button:not(.active) {
       border-color: transparent;
       background: transparent;
@@ -115,6 +131,7 @@
 
   .edition-description {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: space-between;
     gap: 18px;
@@ -190,6 +207,15 @@
     min-width: 0;
     padding: 11px 5px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease;
+
+    &:hover {
+      background: color.change(theme.$fg, $alpha: 0.035);
+      border-bottom-color: rgba(255, 255, 255, 0.16);
+    }
 
     &:last-child {
       border-bottom: 0;
@@ -197,6 +223,10 @@
 
     &.installed {
       border-bottom-color: rgba(167, 127, 219, 0.24);
+
+      &:hover {
+        border-bottom-color: rgba(167, 127, 219, 0.38);
+      }
 
       .version-main strong {
         color: color.mix(theme.$primary, theme.$fg, 62%);
@@ -266,6 +296,14 @@
     align-items: center;
     justify-content: center;
 
+    .installing-state {
+      display: flex;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
     .wrapperin {
       padding-bottom: 14px;
       font-size: 82px;
@@ -309,6 +347,16 @@
         resize: none;
         text-align: left;
       }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .everest {
+    .manual-everest-version,
+    .channel-tabs > button,
+    .version-item {
+      transition: none;
     }
   }
 }

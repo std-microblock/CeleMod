@@ -86,7 +86,8 @@
     gap: 18px;
     box-sizing: border-box;
 
-    & + & {
+    & + &,
+    .ui-collapse + & {
       border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
     }
 
@@ -109,8 +110,20 @@
     }
   }
 
+  .ui-collapse .setting-toggle-row {
+    border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  }
+
   .setting-toggle-row {
     cursor: pointer;
+    transition:
+      opacity 150ms ease,
+      background-color 140ms ease;
+
+    &:hover:not(.disabled) {
+      background: color.change(theme.$fg, $alpha: 0.025);
+    }
+
     input {
     }
     &.disabled {
@@ -188,6 +201,14 @@
     background: theme.$bg2;
     color: theme.$fg;
     outline: none;
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      box-shadow var(--motion-fast, 140ms) ease;
+
+    &:focus-visible {
+      border-color: color.change(theme.$primary, $alpha: 0.55);
+    }
   }
 
   select {
@@ -216,6 +237,9 @@
       color: theme.$fg3;
       font-size: 10px;
       letter-spacing: 0;
+      transition:
+        background-color var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease;
 
       &.selected {
         background: theme.$bg3;
@@ -240,6 +264,13 @@
       background: color.change(theme.$bg, $alpha: 0.65);
       font-size: 10px;
       cursor: pointer;
+      transition:
+        background-color var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease;
+
+      &:hover {
+        background: color.change(theme.$bg, $alpha: 0.85);
+      }
 
       span {
         overflow: hidden;
@@ -283,6 +314,10 @@
       color: theme.$fg3;
       font-size: 9px;
       letter-spacing: 0;
+      transition:
+        border-color var(--motion-fast, 140ms) ease,
+        background-color var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease;
 
       &.selected {
         border-color: color.change(#e35d6a, $alpha: 0.4);
@@ -355,5 +390,18 @@
   .settings-page .font-scale-control {
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-page {
+    .setting-toggle-row,
+    select,
+    input[type="number"],
+    .segmented-setting button,
+    .download-type-grid label,
+    .type-chip-grid button {
+      transition: none;
+    }
   }
 }

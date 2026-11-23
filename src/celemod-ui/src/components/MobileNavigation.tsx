@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import i18n from "../i18n";
 import { Icon } from "./Icon";
+import { prefersReducedMotion } from "./Motion";
 
 type Destination = { name: string; icon: string; title: string };
 
@@ -20,6 +21,8 @@ export function MobileNavigation({
   activeDownloadCount: number;
 }) {
   const sheet = useRef<HTMLDialogElement>(null);
+  const closeTimer = useRef<number>();
+  const [closing, setClosing] = useState(false);
   const more = currentLang === "zh-CN" ? "更多" : "More";
   const primary: Destination[] = [
     { name: "Home", icon: "home", title: i18n.t("主页") },
@@ -45,14 +48,57 @@ export function MobileNavigation({
     ...(showLoenn ? [{ name: "Loenn", icon: "edit", title: "Loenn" }] : []),
     { name: "Settings", icon: "settings", title: i18n.t("设置") },
   ];
+
+  const finishClose = useCallback(() => {
+    if (closeTimer.current !== undefined) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = undefined;
+    }
+    setClosing(false);
+    if (sheet.current?.open) {
+      sheet.current.close();
+    }
+  }, []);
+
+  const closeSheet = useCallback(() => {
+    if (!sheet.current?.open || closeTimer.current !== undefined) return;
+    if (prefersReducedMotion()) {
+      finishClose();
+      return;
+    }
+    setClosing(true);
+    closeTimer.current = window.setTimeout(finishClose, 220);
+  }, [finishClose]);
+
+  const openSheet = useCallback(() => {
+    if (closeTimer.current !== undefined) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = undefined;
+    }
+    setClosing(false);
+    if (!sheet.current?.open) {
+      sheet.current?.showModal();
+    }
+  }, []);
+
   useEffect(() => {
-    sheet.current?.close();
-  }, [page]);
+    closeSheet();
+  }, [closeSheet, page]);
+
   useEffect(() => {
     const compact = matchMedia("(max-width: 760px)");
-    const close = () => sheet.current?.close();
-    compact.addEventListener("change", close);
-    return () => compact.removeEventListener("change", close);
+    const onChange = () => closeSheet();
+    compact.addEventListener("change", onChange);
+    return () => compact.removeEventListener("change", onChange);
+  }, [closeSheet]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current !== undefined) {
+        window.clearTimeout(closeTimer.current);
+        closeTimer.current = undefined;
+      }
+    };
   }, []);
 
   const destination = ({ name, icon, title }: Destination) => (
@@ -62,7 +108,7 @@ export function MobileNavigation({
       className={`mobile-nav-button${name === page ? " selected" : ""}`}
       aria-current={name === page ? "page" : undefined}
       onClick={() => {
-        sheet.current?.close();
+        closeSheet();
         setPage(name);
       }}
     >
@@ -91,7 +137,7 @@ export function MobileNavigation({
           }`}
           aria-haspopup="dialog"
           aria-controls="mobile-more"
-          onClick={() => sheet.current?.showModal()}
+          onClick={openSheet}
         >
           <span className="mobile-nav-icon">
             <Icon name="opts-h" />
@@ -104,8 +150,38 @@ export function MobileNavigation({
         id="mobile-more"
         className="mobile-more-sheet"
         aria-labelledby="mobile-more-title"
+        data-closing={closing ? "true" : undefined}
+        onAnimationEnd={(event) => {
+          if (
+            event.target === event.currentTarget &&
+            event.animationName === "mobile-sheet-exit"
+          ) {
+            finishClose();
+          }
+        }}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeSheet();
+        }}
+        onClose={() => {
+          if (closeTimer.current !== undefined) {
+            window.clearTimeout(closeTimer.current);
+            closeTimer.current = undefined;
+          }
+          setClosing(false);
+        }}
         onClick={(event) => {
-          if (event.target === event.currentTarget) sheet.current?.close();
+          if (event.target === event.currentTarget) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            if (
+              event.clientX < rect.left ||
+              event.clientX > rect.right ||
+              event.clientY < rect.top ||
+              event.clientY > rect.bottom
+            ) {
+              closeSheet();
+            }
+          }
         }}
       >
         <header>
@@ -113,7 +189,7 @@ export function MobileNavigation({
           <button
             type="button"
             aria-label={i18n.t("关闭")}
-            onClick={() => sheet.current?.close()}
+            onClick={closeSheet}
           >
             <Icon name="i-cross" />
           </button>

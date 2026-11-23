@@ -38,6 +38,10 @@
   border: 1px solid color.change(theme.$primary, $alpha: 0.48);
   background: color.change(theme.$primary, $alpha: 0.22);
   gap: 7px;
+  transition:
+    background-color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease;
 
   &:hover {
     background: color.change(theme.$primary, $alpha: 0.42);
@@ -147,10 +151,21 @@
   background: rgba(15, 15, 18, 0.75);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
   letter-spacing: 0;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease,
+    transform var(--motion-fast, 140ms)
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 
   &:hover:not(:disabled) {
     border-color: color.change(theme.$primary, $alpha: 0.62);
     background: color.change(theme.$primary, $alpha: 0.8);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
   &:disabled {
@@ -171,6 +186,8 @@
     color.adjust(theme.$primary, $lightness: 12%) var(--download-progress),
     rgba(255, 255, 255, 0.16) 0
   );
+  transition: --download-progress 220ms
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 
   &::after {
     position: absolute;
@@ -209,6 +226,15 @@
     color.change(theme.$bg1, $alpha: 0.88)
   );
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    box-shadow var(--motion-normal, 210ms)
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+
+  &:hover {
+    border-color: color.change(theme.$fg, $alpha: 0.15);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  }
 }
 
 .recommended-map-card {
@@ -291,5 +317,19 @@
     p {
       font-size: 11px;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .download-recommended-button,
+  .helper-mod-row,
+  .recommended-download-button,
+  .recommended-download-progress,
+  .recommended-map-row {
+    transition: none;
+  }
+
+  .recommended-download-button:active:not(:disabled) {
+    transform: none;
   }
 }

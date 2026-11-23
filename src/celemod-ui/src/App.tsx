@@ -102,6 +102,7 @@ export default function App() {
   const theme = createThemeContext();
   const bus = useMemo(() => new EventTarget(), []);
   const [visiblePage, setVisiblePage] = useState(page);
+  const [enteringPage, setEnteringPage] = useState<string | null>(null);
   const [leavingPage, setLeavingPage] = useState<string | null>(null);
   const visiblePageRef = useRef(page);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
@@ -181,6 +182,7 @@ export default function App() {
     if (!enablePageTransitions) {
       visiblePageRef.current = page;
       setVisiblePage(page);
+      setEnteringPage(null);
       setLeavingPage(null);
       return;
     }
@@ -190,9 +192,14 @@ export default function App() {
     visiblePageRef.current = page;
     setLeavingPage(previousPage);
     setVisiblePage(page);
+    setEnteringPage(page);
 
-    const timer = window.setTimeout(() => setLeavingPage(null), 240);
-    return () => window.clearTimeout(timer);
+    const leaveTimer = window.setTimeout(() => setLeavingPage(null), 140);
+    const enterTimer = window.setTimeout(() => setEnteringPage(null), 240);
+    return () => {
+      window.clearTimeout(leaveTimer);
+      window.clearTimeout(enterTimer);
+    };
   }, [enablePageTransitions, page]);
 
   const SidebarButton = ({
@@ -317,7 +324,7 @@ export default function App() {
           {Object.entries(pages).map(([name, Page]) => (
             <section
               className={`page page-${name}${
-                enablePageTransitions && name === visiblePage
+                enablePageTransitions && name === enteringPage
                   ? " page-entering"
                   : ""
               }${

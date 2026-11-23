@@ -20,6 +20,7 @@ import {
   queryLocalCatalog,
 } from "../api/modCatalog";
 import { enforceEverest } from "../components/EnforceEverestPage";
+import { useAnimatedPresence } from "../components/Motion";
 
 const categoryIdMap: Record<string, number> = {
   Assets: 15655,
@@ -57,7 +58,7 @@ const SearchSkeleton = ({ viewMode }: { viewMode: "grid" | "list" }) => {
 
   return (
     <div
-      className={`search-skeleton view-${viewMode}`}
+      className={`search-skeleton view-${viewMode} ui-fade-enter`}
       role="status"
       aria-label={_i18n.t("加载中")}
     >
@@ -94,6 +95,7 @@ export const Search = () => {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const filterPopup = useAnimatedPresence(filterOpen, 120);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedPath] = useGamePath();
   const cacheTtlHours = useAppStore((state) => state.modCacheTtlHours);
@@ -303,15 +305,17 @@ export const Search = () => {
             {(mode === "local"
               ? localFilterCount
               : Number(Boolean(cloudType))) > 0 && (
-              <span className="filter-count">
+              <span className="filter-count ui-pop-enter">
                 {mode === "local" ? localFilterCount : 1}
               </span>
             )}
           </Button>
 
-          {filterOpen && (
+          {filterPopup.mounted && (
             <div
-              className="filter-popup"
+              className={`filter-popup${
+                filterPopup.closing ? " ui-popover-exit" : ""
+              }`}
               role="dialog"
               aria-label={_i18n.t("筛选")}
             >
@@ -337,8 +341,9 @@ export const Search = () => {
                 </div>
               </div>
 
-              {mode === "cloud" ? (
-                <div className="filter-grid cloud-filter-grid">
+              <div key={mode} className="ui-fade-enter">
+                {mode === "cloud" ? (
+                  <div className="filter-grid cloud-filter-grid">
                   <label>
                     <span>{_i18n.t("类型")}</span>
                     <select
@@ -571,6 +576,7 @@ export const Search = () => {
                   </div>
                 </>
               )}
+              </div>
               <div className="filter-popup-footer">
                 <button
                   type="button"
@@ -597,7 +603,7 @@ export const Search = () => {
           viewMode={mode === "local" ? "list" : viewMode}
         />
       ) : loadFailed ? (
-        <div className="empty search-empty-state">
+        <div key="failed" className="empty search-empty-state ui-fade-enter">
           <Icon name="fail" />
           <span>{_i18n.t("加载失败，请重试")}</span>
           <Button onClick={() => setRefreshKey((value) => value + 1)}>
@@ -607,7 +613,7 @@ export const Search = () => {
       ) : loading ? (
         <SearchSkeleton viewMode={mode === "local" ? "list" : viewMode} />
       ) : (
-        <div className="empty search-empty-state">
+        <div key="empty" className="empty search-empty-state ui-fade-enter">
           <Icon name="search" />
           <span>{_i18n.t("无内容")}</span>
         </div>

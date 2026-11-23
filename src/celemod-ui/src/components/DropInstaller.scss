@@ -7,18 +7,24 @@
   right: 15px;
   bottom: 10px;
   z-index: 1000;
-  display: none;
+  display: flex;
   opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   border: 2px dashed $primary;
   border-radius: 12px;
   background: rgba($bg, 0.92);
   align-items: center;
   justify-content: center;
   text-align: center;
+  transition:
+    opacity 180ms var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    visibility 180ms ease;
 
   &.visible {
-    display: flex;
     opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 }
 
@@ -27,6 +33,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transform: scale(0.95) translateY(6px);
+  transition: transform 200ms
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+
+  .drop-install-overlay.visible & {
+    transform: scale(1) translateY(0);
+  }
 
   > .icon {
     font-size: 48px;
@@ -43,6 +56,17 @@
   .drop-install-description {
     color: $fg1;
     margin-top: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-install-overlay,
+  .drop-install-card {
+    transition: none;
+  }
+
+  .drop-install-card {
+    transform: none;
   }
 }
 

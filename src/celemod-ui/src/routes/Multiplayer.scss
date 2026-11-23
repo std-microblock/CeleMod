@@ -151,6 +151,11 @@
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+  transition:
+    background var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease;
 
   &:hover {
     background: color.change(theme.$primary, $alpha: 0.27);
@@ -208,6 +213,10 @@
   font-size: 9px;
   letter-spacing: 0;
   text-transform: none;
+  transition:
+    color var(--motion-fast, 140ms) ease,
+    background var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease;
 
   &:hover {
     color: theme.$fg;
@@ -226,6 +235,7 @@
 }
 
 .multiplayer-auth-error {
+  display: block;
   max-width: 520px;
   padding-left: 9px;
   border-left: 2px solid #b95e64;
@@ -317,6 +327,9 @@
       color: theme.$fg3;
       background: color.change(theme.$fg, $alpha: 0.045);
       font-size: 8px;
+      transition:
+        background var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease;
 
       &.dirty {
         color: #e6c889;
@@ -345,6 +358,11 @@
   box-sizing: border-box;
   cursor: pointer;
   gap: 12px;
+  transition: background var(--motion-fast, 140ms) ease;
+
+  &:hover {
+    background: color.change(theme.$fg, $alpha: 0.03);
+  }
 
   > span {
     display: flex;
@@ -395,6 +413,7 @@
   border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
   box-sizing: border-box;
   gap: 16px;
+  transition: opacity 160ms ease;
 
   &.disabled {
     opacity: 0.42;
@@ -603,6 +622,9 @@
     letter-spacing: 0;
     text-transform: none;
     gap: 5px;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease;
 
     &:last-child {
       border-right: 0;
@@ -649,6 +671,11 @@
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease;
 
     &:hover:not(:disabled) {
       color: theme.$fg;
@@ -660,6 +687,10 @@
       opacity: 0.38;
     }
   }
+}
+
+.multiplayer-settings-message-collapse {
+  flex: 0 0 auto;
 }
 
 .multiplayer-settings-message {
@@ -697,6 +728,14 @@
   background: color.change(theme.$bg1, $alpha: 0.98);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
   gap: 7px;
+  animation: ui-slide-up-in var(--motion-normal, 210ms)
+    var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+
+  &.is-closing {
+    animation: ui-slide-up-out 160ms
+      var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
+    pointer-events: none;
+  }
 
   button {
     display: inline-flex;
@@ -714,6 +753,11 @@
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease;
 
     &.primary {
       border-color: color.change(theme.$primary, $alpha: 0.6);
@@ -851,9 +895,32 @@ html[data-platform="android"] {
   .multiplayer-emote-footer {
     flex-wrap: wrap;
   }
-  .multiplayer-page > .multiplayer-settings-message {
+  .multiplayer-page > .multiplayer-settings-message,
+  .multiplayer-page > .multiplayer-settings-message-collapse {
     flex: 0 0 auto;
+  }
+  .multiplayer-page .multiplayer-settings-message {
     font-size: 12px;
     overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplayer-download-progress span,
+  .multiplayer-install,
+  .multiplayer-authorize,
+  .multiplayer-logout,
+  .multiplayer-settings-card > header > span,
+  .multiplayer-toggle-row,
+  .multiplayer-opacity-setting,
+  .multiplayer-emote-actions button,
+  .multiplayer-emote-footer button,
+  .multiplayer-settings-footer button {
+    transition: none;
+  }
+
+  .multiplayer-settings-footer,
+  .multiplayer-settings-footer.is-closing {
+    animation: none;
   }
 }

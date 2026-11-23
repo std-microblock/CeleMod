@@ -24,6 +24,9 @@ export const ProgressIndicator = ({
   const refCanvas = useRef<HTMLCanvasElement>(null);
   const refData = useRef<[number, number]>([0, 0]);
   const refFrame = useRef(0);
+  const propsRef = useRef({ infinite, value, max });
+  propsRef.current = { infinite, value, max };
+
   useEffect(() => {
     const canvas = refCanvas.current;
     if (!canvas) return;
@@ -38,9 +41,16 @@ export const ProgressIndicator = ({
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.lineCap = "round";
 
+    let rafId = 0;
     let cancelAnimation = false;
     const paint = () => {
       if (cancelAnimation) return;
+
+      const {
+        infinite: currentInfinite,
+        value: currentValue,
+        max: currentMax,
+      } = propsRef.current;
 
       const frame = refFrame.current;
       ctx.strokeStyle = "white";
@@ -52,13 +62,13 @@ export const ProgressIndicator = ({
         targetSize = 0;
       const [refStart, refSize] = refData.current;
 
-      if (infinite)
+      if (currentInfinite)
         targetSize = Math.sin(frame / 4) * Math.PI * 0.5 + Math.PI * 0.5;
-      else targetSize = (Number(value) / Number(max)) * Math.PI * 2;
+      else targetSize = (Number(currentValue) / Number(currentMax)) * Math.PI * 2;
 
       if (
-        infinite ||
-        (!infinite && Math.abs(refStart - (Math.PI / 2) * 3) > 0.2)
+        currentInfinite ||
+        (!currentInfinite && Math.abs(refStart - (Math.PI / 2) * 3) > 0.2)
       ) {
         targetStart = (((frame * 1.5) % 10) / 10) * Math.PI * 2;
       } else {
@@ -79,14 +89,15 @@ export const ProgressIndicator = ({
       );
       ctx.stroke();
 
-      if (!cancelAnimation) requestAnimationFrame(paint);
+      if (!cancelAnimation) rafId = requestAnimationFrame(paint);
     };
 
     paint();
     return () => {
       cancelAnimation = true;
+      cancelAnimationFrame(rafId);
     };
-  }, [value, max, infinite, size, lineWidth]);
+  }, [size, lineWidth]);
 
   return (
     <canvas

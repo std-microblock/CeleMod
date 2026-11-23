@@ -25,6 +25,10 @@
   min-width: 0;
   min-height: 0;
   border-right: 1px solid color.change(theme.$fg, $alpha: 0.08);
+
+  > .ui-collapse {
+    flex: 0 0 auto;
+  }
 }
 
 .manage-toolbar {
@@ -80,6 +84,9 @@
     color: theme.$fg;
     outline: none;
     font-size: calc(13px * var(--manage-font-scale, 1));
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease;
     &:focus {
       border-color: color.change(theme.$primary, $alpha: 0.6);
     }
@@ -103,6 +110,16 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      transform 100ms ease;
+    &:hover {
+      color: theme.$fg;
+    }
+    &:active {
+      transform: scale(0.92);
+    }
   }
 }
 
@@ -123,10 +140,18 @@
   background: color.change(theme.$bg1, $alpha: 0.82) !important;
   box-shadow: none !important;
   letter-spacing: 0 !important;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    transform 100ms ease;
   &.active,
   &:hover {
     border-color: color.change(theme.$primary, $alpha: 0.45) !important;
     background: theme.$bg2 !important;
+  }
+  &:active {
+    transform: scale(0.97);
   }
 }
 
@@ -140,6 +165,13 @@
   gap: 6px;
   padding: 0 11px !important;
   font-size: calc(12.5px * var(--manage-font-scale, 1)) !important;
+  .icon {
+    transition: transform 160ms
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  &.active .icon {
+    transform: rotate(180deg);
+  }
 }
 .toolbar-count {
   position: absolute;
@@ -165,6 +197,7 @@
   top: calc(100% + 8px);
   right: 0;
   z-index: 80;
+  transform-origin: right top;
   border: 1px solid color.change(theme.$fg, $alpha: 0.1);
   border-radius: 8px;
   background: color.change(theme.$bg1, $alpha: 0.96);
@@ -277,6 +310,9 @@
     font-size: calc(12.5px * var(--manage-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
     &:hover {
       background: theme.$bg2;
     }
@@ -306,6 +342,19 @@
     color: color.adjust(theme.$primary, $lightness: 22%);
     font-size: calc(12px * var(--manage-font-scale, 1));
     letter-spacing: 0;
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease,
+      transform 100ms ease;
+    &:hover:not(:disabled) {
+      border-color: color.change(theme.$primary, $alpha: 0.45);
+      background: color.change(theme.$primary, $alpha: 0.18);
+    }
+    &:active:not(:disabled) {
+      transform: scale(0.98);
+    }
   }
 }
 
@@ -340,6 +389,18 @@
     color: #ffd893;
     font-size: calc(12px * var(--manage-font-scale, 1));
     letter-spacing: 0;
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      transform 100ms ease;
+    &:hover {
+      border-color: color.change(#ffc66d, $alpha: 0.45);
+      background: color.change(#ffc66d, $alpha: 0.16);
+    }
+    &:active {
+      transform: scale(0.98);
+    }
   }
 }
 
@@ -366,6 +427,15 @@
   &:hover {
     background: color.change(theme.$bg2, $alpha: 0.36);
   }
+  > .tree-row-main {
+    transition: opacity 160ms ease;
+  }
+  > .tree-expander {
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      opacity 160ms ease;
+  }
   &.disabled {
     > .tree-expander,
     > .tree-row-main {
@@ -374,6 +444,9 @@
   }
   &.menu-open {
     z-index: 70;
+  }
+  &.menu-closing {
+    z-index: 65;
   }
   &.missing {
     grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
@@ -430,6 +503,17 @@
   background: transparent;
   box-shadow: none;
   color: theme.$fg3;
+  transition:
+    background-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    opacity 160ms ease;
+  .icon {
+    transition: transform 160ms
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+  &.expanded .icon {
+    transform: rotate(90deg);
+  }
   &.leaf {
     background: transparent;
     opacity: 0.35;
@@ -493,13 +577,29 @@
   font-size: calc(11px * var(--manage-font-scale, 1));
   letter-spacing: 0;
   white-space: nowrap;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+  &:hover {
+    border-color: color.change(theme.$fg, $alpha: 0.2);
+    background: color.change(theme.$fg, $alpha: 0.04);
+  }
   &.enabled {
     border-color: color.change(#4caf50, $alpha: 0.28);
     color: #8cdb91;
+    &:hover {
+      border-color: color.change(#4caf50, $alpha: 0.48);
+      background: color.change(#4caf50, $alpha: 0.08);
+    }
   }
   &.always {
     border-color: color.change(#2196f3, $alpha: 0.32);
     color: #8ac9ff;
+    &:hover {
+      border-color: color.change(#2196f3, $alpha: 0.52);
+      background: color.change(#2196f3, $alpha: 0.08);
+    }
   }
 }
 
@@ -571,9 +671,19 @@
   color: #ffaaa8;
   font-size: calc(11.5px * var(--manage-font-scale, 1));
   letter-spacing: 0;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease,
+    transform 100ms ease;
 
   &:hover:not(:disabled) {
+    border-color: color.change(#ef5350, $alpha: 0.5);
     background: color.change(#ef5350, $alpha: 0.18);
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.97);
   }
   &:disabled {
     cursor: wait;
@@ -694,6 +804,10 @@
     z-index: 60;
     opacity: 1;
   }
+  &.menu-closing {
+    z-index: 55;
+    opacity: 1;
+  }
   > button {
     display: grid;
     width: 24px;
@@ -706,6 +820,9 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
     &:hover {
       background: theme.$bg3;
       color: theme.$fg;
@@ -723,6 +840,7 @@
   top: 26px;
   right: 3px;
   z-index: 60;
+  transform-origin: right top;
   width: 210px;
   padding: 4px;
   border: 1px solid color.change(theme.$fg, $alpha: 0.1);
@@ -744,6 +862,9 @@
     font-size: calc(12.5px * var(--manage-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
     &:hover {
       background: theme.$bg2;
     }
@@ -810,6 +931,15 @@
   border: 1px solid transparent;
   border-radius: 10px;
   color: theme.$fg3;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease;
+
+  &:hover:not(.selected) {
+    background: color.change(theme.$bg2, $alpha: 0.45);
+    color: theme.$fg2;
+  }
 
   &.selected {
     border-color: color.change(theme.$primary, $alpha: 0.35);
@@ -860,9 +990,16 @@
   background: transparent !important;
   box-shadow: none !important;
   color: theme.$fg3;
+  transition:
+    color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    transform 100ms ease;
 
   &:hover {
     color: theme.$fg;
+  }
+  &:active {
+    transform: scale(0.94);
   }
 }
 
@@ -1191,6 +1328,9 @@
     box-shadow: none;
     color: theme.$fg3;
     font-size: 12.5px;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
 
     &.selected {
       background: color.change(theme.$primary, $alpha: 0.18);
@@ -1295,6 +1435,7 @@
   z-index: 3;
   top: calc(100% + 4px);
   right: 0;
+  transform-origin: right top;
   display: grid;
   min-width: 176px;
   padding: 4px;
@@ -1313,6 +1454,9 @@
     color: theme.$fg2;
     font-size: calc(12px * var(--manage-font-scale, 1));
     text-align: left;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
 
     &:hover {
       background: theme.$bg2;
@@ -1349,6 +1493,12 @@
     color: theme.$fg;
     outline: none;
     font-size: calc(12.5px * var(--manage-font-scale, 1));
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease;
+    &:focus {
+      border-color: color.change(theme.$primary, $alpha: 0.6);
+    }
   }
   button {
     display: grid;
@@ -1381,6 +1531,17 @@
     background: theme.$bg2;
     box-shadow: none;
     color: theme.$fg3;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      transform 100ms ease;
+    &:hover {
+      background: theme.$bg3;
+      color: theme.$fg;
+    }
+    &:active {
+      transform: scale(0.94);
+    }
   }
   .detail-heading {
     display: flex;
@@ -1404,6 +1565,14 @@
       min-height: 0;
       padding: 0;
       place-items: center;
+      transition:
+        background-color var(--motion-fast, 140ms) ease,
+        border-color var(--motion-fast, 140ms) ease,
+        color var(--motion-fast, 140ms) ease,
+        transform 100ms ease;
+      &:active {
+        transform: scale(0.94);
+      }
     }
   }
   .detail-kicker {
@@ -1442,6 +1611,7 @@
     display: flex;
     gap: 8px;
     margin-bottom: 16px;
+    padding: 3px 2px;
     overflow-x: auto;
     scrollbar-width: none;
     &::-webkit-scrollbar {
@@ -1450,6 +1620,14 @@
     img {
       height: 150px;
       border-radius: 9px;
+      transition:
+        transform var(--motion-normal, 210ms)
+          var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        filter var(--motion-fast, 140ms) ease;
+      &:hover {
+        transform: translateY(-2px) scale(1.02);
+        filter: brightness(1.05);
+      }
     }
   }
   .detail-loading {
@@ -1973,5 +2151,57 @@
   }
   .manage-detail-popup .detail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manage-search input,
+  .manage-search button,
+  .toolbar-icon-button,
+  .toolbar-action-button,
+  .toolbar-action-button .icon,
+  .manage-action-menu button,
+  .manage-notice-bar button,
+  .manage-filter-hint button,
+  .manage-tree-row,
+  .manage-tree-row > .tree-row-main,
+  .manage-tree-row > .tree-expander,
+  .tree-expander,
+  .tree-expander .icon,
+  .state-switch,
+  .missing-download-button,
+  .tree-row-actions,
+  .tree-row-actions > button,
+  .mod-row-menu button,
+  .profile-row,
+  .profile-export,
+  .profile-rename,
+  .profile-delete,
+  .profile-import,
+  .profile-folder,
+  .profile-export-tabs button,
+  .profile-import-menu button,
+  .profile-create input,
+  .manage-detail-popup .detail-close,
+  .manage-detail-popup .detail-heading > button,
+  .manage-detail-popup .detail-images img {
+    transition: none;
+  }
+
+  .manage-search button:active,
+  .toolbar-icon-button:active,
+  .toolbar-action-button:active,
+  .manage-notice-bar button:active,
+  .manage-filter-hint button:active,
+  .missing-download-button:active,
+  .profile-export:active,
+  .profile-rename:active,
+  .profile-delete:active,
+  .profile-import:active,
+  .profile-folder:active,
+  .manage-detail-popup .detail-close:active,
+  .manage-detail-popup .detail-heading > button:active,
+  .manage-detail-popup .detail-images img:hover {
+    transform: none;
   }
 }

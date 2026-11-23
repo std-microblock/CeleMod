@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import _i18n from "../i18n";
 import { Icon } from "./Icon";
+import { Collapse } from "./Motion";
 import { checkUpdate } from "./SelfUpdate";
 import {
   featureVisible,
@@ -403,8 +404,6 @@ export const HomeUpdatesCard = ({
   const hasAnyVisibleRow =
     hasCelemodUpdate || showEverestRow || showModsRow || showLoennRow;
 
-  if (!hasAnyVisibleRow) return null;
-
   const hasAutoUpdatable =
     (hasEverestUpdate && everestTarget && !everestInstalling) ||
     (modUpdates.length > 0 && !modBatchProgress) ||
@@ -439,148 +438,150 @@ export const HomeUpdatesCard = ({
   })();
 
   return (
-    <section className="home-updates-card" aria-label={_i18n.t("发现可用更新")}>
-      <div className="home-updates-header">
-        <div className="home-updates-title-group">
-          <span className="home-updates-icon" aria-hidden="true">
-            <Icon name="download" />
-          </span>
-          <div>
-            <h2>{_i18n.t("发现可用更新")}</h2>
-            <p>
-              {chinese
-                ? `共 ${Math.max(actionableCount, 1)} 项可更新内容`
-                : `${Math.max(actionableCount, 1)} updates available`}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="primary home-updates-all-btn"
-          disabled={!hasAutoUpdatable && !hasCelemodUpdate}
-          onClick={updateAll}
-        >
-          <Icon name="download" />
-          <span>
-            {anyBusy && !hasAutoUpdatable
-              ? _i18n.t("更新中…")
-              : _i18n.t("一键更新全部")}
-          </span>
-        </button>
-      </div>
-
-      <div className="home-updates-list">
-        {hasCelemodUpdate ? (
-          <div className="home-update-row">
-            <div className="home-update-info">
-              <strong>CeleMod</strong>
-              <span>
-                v{appVersion} → v{celemodLatestVersion}
-              </span>
-            </div>
-            <div className="home-update-actions">
-              <button
-                type="button"
-                className="home-update-row-btn"
-                onClick={() => void checkUpdate(true).catch(console.error)}
-              >
-                {_i18n.t("查看更新")}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {showEverestRow ? (
-          <div className="home-update-row">
-            <div className="home-update-info">
-              <strong>
-                {currentEverestIsUltra ? "Everest Ultra" : "Everest"}
-              </strong>
-              <span>
-                {everestInstalling
-                  ? _i18n.t("Everest 更新中…")
-                  : everestTarget
-                    ? `v${everestInstalledBuild} → ${everestTarget.version}`
-                    : ""}
-              </span>
-            </div>
-            <div className="home-update-actions">
-              <button
-                type="button"
-                className="home-update-row-btn"
-                onClick={() =>
-                  everestInstalling
-                    ? globalCtx.pageController.setPage("Everest")
-                    : startEverestUpdate()
-                }
-              >
-                {everestInstalling
-                  ? _i18n.t("查看进度")
-                  : _i18n.t("更新")}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {showModsRow ? (
-          <div className="home-update-row">
-            <div className="home-update-info">
-              <strong>
+    <Collapse open={hasAnyVisibleRow} appear>
+      <section className="home-updates-card" aria-label={_i18n.t("发现可用更新")}>
+        <div className="home-updates-header">
+          <div className="home-updates-title-group">
+            <span className="home-updates-icon" aria-hidden="true">
+              <Icon name="download" />
+            </span>
+            <div>
+              <h2>{_i18n.t("发现可用更新")}</h2>
+              <p>
                 {chinese
-                  ? `模组（${modBatchProgress ? modBatchProgress.total : modUpdates.length} 个）`
-                  : `Mods (${modBatchProgress ? modBatchProgress.total : modUpdates.length})`}
-              </strong>
-              <span title={modUpdates.map((item) => item.name).join(", ")}>
-                {modBatchProgress
-                  ? `${_i18n.t("更新中…")} (${modBatchProgress.completed}/${modBatchProgress.total})`
-                  : modPreviewNames}
-              </span>
-            </div>
-            <div className="home-update-actions">
-              <button
-                type="button"
-                className="home-update-row-link"
-                onClick={() => globalCtx.pageController.setPage("Manage")}
-              >
-                {_i18n.t("管理")}
-              </button>
-              <button
-                type="button"
-                className="home-update-row-btn"
-                disabled={modBatchProgress !== null}
-                onClick={startModUpdates}
-              >
-                {modBatchProgress ? _i18n.t("更新中…") : _i18n.t("更新")}
-              </button>
+                  ? `共 ${Math.max(actionableCount, 1)} 项可更新内容`
+                  : `${Math.max(actionableCount, 1)} updates available`}
+              </p>
             </div>
           </div>
-        ) : null}
+          <button
+            type="button"
+            className="primary home-updates-all-btn"
+            disabled={!hasAutoUpdatable && !hasCelemodUpdate}
+            onClick={updateAll}
+          >
+            <Icon name="download" />
+            <span>
+              {anyBusy && !hasAutoUpdatable
+                ? _i18n.t("更新中…")
+                : _i18n.t("一键更新全部")}
+            </span>
+          </button>
+        </div>
 
-        {showLoennRow ? (
-          <div className="home-update-row">
-            <div className="home-update-info">
-              <strong>{loennUpdate?.name || "Lönn"}</strong>
-              <span>
-                {loennInstalling
-                  ? `${_i18n.t("更新中…")} ${Math.round(loennProgress)}%`
-                  : loennUpdate
-                    ? `v${loennUpdate.currentVersion} → v${loennUpdate.version.version}`
-                    : ""}
-              </span>
+        <div className="home-updates-list">
+          <Collapse open={hasCelemodUpdate}>
+            <div className="home-update-row">
+              <div className="home-update-info">
+                <strong>CeleMod</strong>
+                <span>
+                  v{appVersion} → v{celemodLatestVersion}
+                </span>
+              </div>
+              <div className="home-update-actions">
+                <button
+                  type="button"
+                  className="home-update-row-btn"
+                  onClick={() => void checkUpdate(true).catch(console.error)}
+                >
+                  {_i18n.t("查看更新")}
+                </button>
+              </div>
             </div>
-            <div className="home-update-actions">
-              <button
-                type="button"
-                className="home-update-row-btn"
-                disabled={loennInstalling}
-                onClick={startLoennUpdate}
-              >
-                {loennInstalling ? _i18n.t("更新中…") : _i18n.t("更新")}
-              </button>
+          </Collapse>
+
+          <Collapse open={showEverestRow}>
+            <div className="home-update-row">
+              <div className="home-update-info">
+                <strong>
+                  {currentEverestIsUltra ? "Everest Ultra" : "Everest"}
+                </strong>
+                <span>
+                  {everestInstalling
+                    ? _i18n.t("Everest 更新中…")
+                    : everestTarget
+                      ? `v${everestInstalledBuild} → ${everestTarget.version}`
+                      : ""}
+                </span>
+              </div>
+              <div className="home-update-actions">
+                <button
+                  type="button"
+                  className="home-update-row-btn"
+                  onClick={() =>
+                    everestInstalling
+                      ? globalCtx.pageController.setPage("Everest")
+                      : startEverestUpdate()
+                  }
+                >
+                  {everestInstalling
+                    ? _i18n.t("查看进度")
+                    : _i18n.t("更新")}
+                </button>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
+          </Collapse>
+
+          <Collapse open={showModsRow}>
+            <div className="home-update-row">
+              <div className="home-update-info">
+                <strong>
+                  {chinese
+                    ? `模组（${modBatchProgress ? modBatchProgress.total : modUpdates.length} 个）`
+                    : `Mods (${modBatchProgress ? modBatchProgress.total : modUpdates.length})`}
+                </strong>
+                <span title={modUpdates.map((item) => item.name).join(", ")}>
+                  {modBatchProgress
+                    ? `${_i18n.t("更新中…")} (${modBatchProgress.completed}/${modBatchProgress.total})`
+                    : modPreviewNames}
+                </span>
+              </div>
+              <div className="home-update-actions">
+                <button
+                  type="button"
+                  className="home-update-row-link"
+                  onClick={() => globalCtx.pageController.setPage("Manage")}
+                >
+                  {_i18n.t("管理")}
+                </button>
+                <button
+                  type="button"
+                  className="home-update-row-btn"
+                  disabled={modBatchProgress !== null}
+                  onClick={startModUpdates}
+                >
+                  {modBatchProgress ? _i18n.t("更新中…") : _i18n.t("更新")}
+                </button>
+              </div>
+            </div>
+          </Collapse>
+
+          <Collapse open={showLoennRow}>
+            <div className="home-update-row">
+              <div className="home-update-info">
+                <strong>{loennUpdate?.name || "Lönn"}</strong>
+                <span>
+                  {loennInstalling
+                    ? `${_i18n.t("更新中…")} ${Math.round(loennProgress)}%`
+                    : loennUpdate
+                      ? `v${loennUpdate.currentVersion} → v${loennUpdate.version.version}`
+                      : ""}
+                </span>
+              </div>
+              <div className="home-update-actions">
+                <button
+                  type="button"
+                  className="home-update-row-btn"
+                  disabled={loennInstalling}
+                  onClick={startLoennUpdate}
+                >
+                  {loennInstalling ? _i18n.t("更新中…") : _i18n.t("更新")}
+                </button>
+              </div>
+            </div>
+          </Collapse>
+        </div>
+      </section>
+    </Collapse>
   );
 };

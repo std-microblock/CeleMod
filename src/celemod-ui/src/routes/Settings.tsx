@@ -1,6 +1,7 @@
 import _i18n, { useI18N } from "src/i18n";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "../components/Icon";
+import { Collapse } from "../components/Motion";
 import { ThemePicker } from "../components/ThemePicker";
 import { useEnableAcrylic } from "../context/theme";
 import {
@@ -140,7 +141,7 @@ const FontScaleSwitch = ({
           </button>
         </div>
         {showCustom && (
-          <label className="font-scale-custom">
+          <label className="font-scale-custom ui-fade-enter">
             <input
               type="number"
               min="50"
@@ -360,7 +361,7 @@ export const Settings = () => {
                   </button>
                 </div>
               </div>
-              {(downloadAdvanced || downloadMode === "advanced") && (
+              <Collapse open={downloadAdvanced || downloadMode === "advanced"}>
                 <div className="download-type-grid">
                   {MOD_TYPE_OPTIONS.map((type) => (
                     <label key={type}>
@@ -377,7 +378,7 @@ export const Settings = () => {
                     </label>
                   ))}
                 </div>
-              )}
+              </Collapse>
             </div>
           </div>
         </section>
@@ -394,28 +395,30 @@ export const Settings = () => {
               checked={autoToggleDependencies}
               onChange={setAutoToggleDependencies}
             />
-            {autoToggleDependencies && (
+            <Collapse open={autoToggleDependencies}>
               <SettingToggle
                 title={_i18n.t("切换 Mod 时同步可选依赖")}
                 description={_i18n.t("仅在同步必要依赖开启时生效")}
                 checked={autoToggleOptionalDependencies}
                 onChange={setAutoToggleOptionalDependencies}
               />
-            )}
+            </Collapse>
             <SettingToggle
               title={_i18n.t("删除时如果没有引用则自动勾选一起删除")}
               description={_i18n.t("在删除确认页中默认勾选所选类型的孤立依赖")}
               checked={deleteOrphansByDefault}
               onChange={setDeleteOrphansByDefault}
             />
-            {(autoToggleDependencies || deleteOrphansByDefault) && (
+            <Collapse
+              open={autoToggleDependencies || deleteOrphansByDefault}
+            >
               <TypeSelectionSetting
                 title="孤立依赖自动处理类型"
                 description="所选类型会在禁用时自动禁用，并在删除时默认勾选一起删除；始终开启的 Mod 不会默认勾选删除"
                 selectedTypes={orphanActionTypes}
                 onChange={setOrphanActionTypes}
               />
-            )}
+            </Collapse>
             <SettingToggle
               title={_i18n.t("在树中检查可选依赖")}
               description={_i18n.t("显示可选依赖的缺失、版本和循环关系")}
@@ -543,7 +546,9 @@ export const Settings = () => {
                 {cacheBusy ? _i18n.t("刷新中…") : _i18n.t("立即刷新")}
               </button>
             </div>
-            {cacheError && <div className="settings-error">{cacheError}</div>}
+            <Collapse open={Boolean(cacheError)} appear>
+              <div className="settings-error">{cacheError}</div>
+            </Collapse>
           </div>
         </section>
 

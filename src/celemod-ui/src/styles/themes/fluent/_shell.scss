@@ -145,7 +145,7 @@ html[data-theme="fluent"] .sidebar .navBtn.selected {
   box-shadow: none !important;
 }
 
-html[data-theme="fluent"] .sidebar .navBtn.selected::after {
+html[data-theme="fluent"] .sidebar .navBtn::after {
   content: "";
   position: absolute;
   top: 7px;
@@ -155,6 +155,16 @@ html[data-theme="fluent"] .sidebar .navBtn.selected::after {
   border-radius: 0 2px 2px 0;
   background: var(--fluent-accent);
   box-shadow: 0 0 10px rgba(96, 205, 255, 0.42);
+  transform: scaleY(0);
+  opacity: 0;
+  transition:
+    transform var(--fluent-duration-normal) var(--fluent-ease-decelerate),
+    opacity var(--fluent-duration-fast) ease;
+}
+
+html[data-theme="fluent"] .sidebar .navBtn.selected::after {
+  transform: scaleY(1);
+  opacity: 1;
 }
 
 html[data-theme="fluent"] .sidebar .navBtn .icon {
@@ -205,10 +215,35 @@ html[data-theme="fluent"] .page {
   box-sizing: border-box;
 }
 
+@keyframes fluent-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 html[data-theme="fluent"] .page-entering {
+  animation: fluent-page-enter var(--fluent-duration-slow)
+    var(--fluent-ease-decelerate) both;
 }
 
 html[data-theme="fluent"] .page-leaving {
+  animation: page-leave var(--fluent-duration-fast) ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="fluent"] .sidebar .navBtn::after {
+    transition: none;
+  }
+
+  html[data-theme="fluent"] .page-entering,
+  html[data-theme="fluent"] .page-leaving {
+    animation: none;
+  }
 }
 
 html[data-theme="fluent"][data-fluent-keyboard="true"] :focus-visible {

@@ -62,6 +62,9 @@
       color: theme.$fg3;
       background: transparent;
       box-shadow: none;
+      transition:
+        color var(--motion-fast, 140ms) ease,
+        background var(--motion-fast, 140ms) ease;
 
       &:hover {
         color: theme.$fg;
@@ -111,6 +114,10 @@
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease;
 
     &:hover,
     &.active {
@@ -136,6 +143,14 @@
   color: theme.$fg3;
   background: color.change(theme.$fg, $alpha: 0.025);
   gap: 7px;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    background var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease;
+
+  &:focus-within {
+    border-color: color.change(theme.$primary, $alpha: 0.55);
+  }
 
   svg {
     flex: 0 0 auto;
@@ -250,6 +265,11 @@
   letter-spacing: 0;
   text-align: left;
   text-transform: none;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    background var(--motion-fast, 140ms) ease,
+    box-shadow var(--motion-fast, 140ms) ease;
 
   > span:last-of-type {
     z-index: 1;
@@ -367,11 +387,25 @@
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease;
+
+    &:hover:not(:disabled) {
+      color: theme.$fg;
+      background: color.change(theme.$fg, $alpha: 0.075);
+    }
 
     &.primary {
       border-color: color.change(theme.$primary, $alpha: 0.6);
       color: #fff;
       background: color.change(theme.$primary, $alpha: 0.24);
+
+      &:hover:not(:disabled) {
+        background: color.change(theme.$primary, $alpha: 0.34);
+      }
     }
   }
 }
@@ -402,5 +436,15 @@
       width: 100%;
       margin-left: 0;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .miaonet-atlas-picker > header button,
+  .miaonet-atlas-category-tabs button,
+  .miaonet-atlas-search,
+  .miaonet-atlas-square,
+  .miaonet-atlas-range-footer button {
+    transition: none;
   }
 }

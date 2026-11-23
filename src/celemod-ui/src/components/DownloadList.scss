@@ -211,6 +211,9 @@ $tone-failed: #f07b85;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   box-sizing: border-box;
+  transition:
+    color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease;
 }
 
 // ============================================================================
@@ -255,6 +258,10 @@ $tone-failed: #f07b85;
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: normal;
+  transition:
+    color var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease;
 
   &:hover {
     color: var(--color-fg, #{theme.$fg});
@@ -348,6 +355,9 @@ $tone-failed: #f07b85;
     transparent
   );
   font-size: 13px;
+  transition:
+    color var(--motion-normal, 210ms) ease,
+    background-color var(--motion-normal, 210ms) ease;
 }
 
 .download-task-finished .download-task-status-icon {
@@ -410,6 +420,9 @@ $tone-failed: #f07b85;
   font-weight: 500;
   line-height: 1.4;
   white-space: nowrap;
+  transition:
+    color var(--motion-normal, 210ms) ease,
+    background-color var(--motion-normal, 210ms) ease;
 }
 
 .download-task-finished .download-task-status-text {
@@ -507,6 +520,15 @@ $tone-failed: #f07b85;
 
 .download-task-expand {
   font-size: 11px;
+
+  .icon {
+    transition: transform 180ms
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  &.is-expanded .icon {
+    transform: rotate(90deg);
+  }
 }
 
 // ============================================================================
@@ -532,7 +554,9 @@ $tone-failed: #f07b85;
     height: 100%;
     border-radius: inherit;
     background: var(--color-primary, #{theme.$primary});
-    transition: width 180ms ease-out;
+    transition:
+      width 180ms ease-out,
+      background-color 200ms ease;
   }
 }
 
@@ -647,6 +671,7 @@ $tone-failed: #f07b85;
   place-items: center;
   color: var(--color-primary, #{theme.$primary});
   font-size: 11px;
+  transition: color var(--motion-normal, 210ms) ease;
 }
 
 .download-detail-row-finished .download-dependency-status-icon {
@@ -884,6 +909,12 @@ $tone-failed: #f07b85;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .download-task-expand .icon,
+  .download-task-status-icon,
+  .download-task-status-text,
+  .download-dependency-status-icon,
+  .download-filter-count,
+  .download-filter-reset,
   .download-task-progress > span,
   .download-dependency-progress > span {
     transition: none;

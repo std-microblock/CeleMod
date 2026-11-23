@@ -208,6 +208,9 @@
     .download {
       display: inline-block;
       cursor: pointer;
+      transition:
+        opacity 140ms ease,
+        color 140ms ease;
 
       &:hover {
         opacity: 0.8;
@@ -263,5 +266,11 @@
     .downloadFailed {
       text-align: left;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .update-prompt .updateOptions .download {
+    transition: none;
   }
 }

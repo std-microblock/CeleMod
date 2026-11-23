@@ -20,25 +20,26 @@ export const ThemePicker = ({
     role="radiogroup"
     aria-label="Theme"
   >
-    {THEME_REGISTRY.map((theme) => (
-      <button
-        key={theme.id}
-        type="button"
-        role="radio"
-        aria-checked={value === theme.id}
-        className={`theme-option${value === theme.id ? " selected" : ""}`}
-        onClick={() => onChange(theme.id as ThemeId)}
-      >
-        <img src={theme.preview} alt="" loading="lazy" />
-        <span className="theme-option-copy">
-          <strong>{theme.name}</strong>
-        </span>
-        {value === theme.id && (
-          <span className="theme-option-check" aria-hidden="true">
+    {THEME_REGISTRY.map((theme) => {
+      const selected = value === theme.id;
+      return (
+        <button
+          key={theme.id}
+          type="button"
+          role="radio"
+          aria-checked={selected}
+          className={`theme-option${selected ? " selected" : ""}`}
+          onClick={() => onChange(theme.id as ThemeId)}
+        >
+          <img src={theme.preview} alt="" loading="lazy" />
+          <span className="theme-option-copy">
+            <strong>{theme.name}</strong>
+          </span>
+          <span className="theme-option-check" aria-hidden={!selected}>
             <Icon name="i-tick" />
           </span>
-        )}
-      </button>
-    ))}
+        </button>
+      );
+    })}
   </div>
 );

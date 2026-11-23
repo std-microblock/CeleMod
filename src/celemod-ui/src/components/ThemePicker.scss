@@ -18,10 +18,17 @@
   cursor: pointer;
   transition:
     border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    transform var(--motion-fast, 140ms)
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 }
 .theme-option:hover {
   box-shadow: var(--elevation, 0 8px 24px #0004);
+  transform: translateY(-1px);
+}
+.theme-option:active {
+  transform: translateY(0) scale(0.99);
 }
 .theme-option.selected {
   border-color: var(--primary, #a77fdb);
@@ -55,6 +62,16 @@
   color: #111;
   font-size: 13px;
   font-weight: 700;
+  opacity: 0;
+  transform: scale(0.55);
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 200ms var(--motion-ease-spring, cubic-bezier(0.34, 1.32, 0.64, 1));
+}
+.theme-option.selected .theme-option-check {
+  opacity: 1;
+  transform: scale(1);
 }
 .theme-option-check .icon {
   width: 12px;
@@ -70,4 +87,16 @@
 }
 .theme-picker.compact .theme-option-copy strong {
   font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-option,
+  .theme-option-check {
+    transition: none;
+  }
+
+  .theme-option:hover,
+  .theme-option:active {
+    transform: none;
+  }
 }

@@ -3,6 +3,7 @@ import "./DownloadList.scss";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
+import { Collapse } from "./Motion";
 import { Download, useDownloadStore } from "../stores/download";
 import { useGamePath } from "../states";
 import { useGlobalContext } from "../App";
@@ -199,11 +200,11 @@ const DownloadDetailRow = ({
         <span style={{ width: `${progress}%` }} />
       </div>
       {children}
-      {task.error ? (
+      <Collapse open={Boolean(task.error)} appear>
         <div className="download-dependency-error" role="alert">
           {task.error}
         </div>
-      ) : null}
+      </Collapse>
     </div>
   );
 };
@@ -341,13 +342,13 @@ export const DownloadTask = ({
           {hasDependencies ? (
             <button
               type="button"
-              className="download-task-action download-task-expand"
+              className={`download-task-action download-task-expand${expanded ? " is-expanded" : ""}`}
               aria-expanded={expanded}
               title={expanded ? _i18n.t("收起依赖") : _i18n.t("展开依赖")}
               aria-label={expanded ? _i18n.t("收起依赖") : _i18n.t("展开依赖")}
               onClick={toggleExpanded}
             >
-              <Icon name={expanded ? "i-down" : "i-right"} />
+              <Icon name="i-right" />
             </button>
           ) : null}
         </div>
@@ -372,13 +373,16 @@ export const DownloadTask = ({
         </div>
       </div>
 
-      {collapsedError && (!hasDependencies || !expanded) ? (
+      <Collapse
+        open={Boolean(collapsedError && (!hasDependencies || !expanded))}
+        appear
+      >
         <div className="download-task-error-details" role="alert">
           {collapsedError}
         </div>
-      ) : null}
+      </Collapse>
 
-      {hasDependencies && expanded ? (
+      <Collapse open={hasDependencies && expanded} unmountOnExit>
         <div className="download-dependency-list">
           <DownloadDetailRow
             task={task}
@@ -393,7 +397,7 @@ export const DownloadTask = ({
             />
           ))}
         </div>
-      ) : null}
+      </Collapse>
     </article>
   );
 };
@@ -566,26 +570,31 @@ export const DownloadListPage = () => {
             </div>
 
             <div className="download-page-list">
-              {filteredItems.length > 0 ? (
-                filteredItems.map(({ task, dependencyTasks }) => (
-                  <DownloadTask
-                    key={task.name}
-                    task={task}
-                    dependencyTasks={dependencyTasks}
-                  />
-                ))
-              ) : (
-                <div className="download-filter-empty">
-                  <p>{_i18n.t("当前筛选下没有下载任务")}</p>
-                  <button
-                    type="button"
-                    className="download-filter-reset"
-                    onClick={() => setFilter("all")}
-                  >
-                    {_i18n.t("查看全部")}
-                  </button>
-                </div>
-              )}
+              <div
+                key={`${filter}-${filteredItems.length > 0 ? "items" : "empty"}`}
+                className="ui-fade-enter"
+              >
+                {filteredItems.length > 0 ? (
+                  filteredItems.map(({ task, dependencyTasks }) => (
+                    <DownloadTask
+                      key={task.name}
+                      task={task}
+                      dependencyTasks={dependencyTasks}
+                    />
+                  ))
+                ) : (
+                  <div className="download-filter-empty">
+                    <p>{_i18n.t("当前筛选下没有下载任务")}</p>
+                    <button
+                      type="button"
+                      className="download-filter-reset"
+                      onClick={() => setFilter("all")}
+                    >
+                      {_i18n.t("查看全部")}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (

@@ -25,6 +25,7 @@ import { useAppStore, useAutoDisableNewMods } from "../states";
 import { useDownloadStore } from "../stores/download";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
+import { useAnimatedPresence } from "./Motion";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
 import { pickDownloadFiles } from "../downloadFiles";
@@ -68,24 +69,49 @@ const getCategoryLabel = (category: string) => {
 };
 
 const BackgroundEle = memo(
-  ({ preview, name }: { preview: string; name: string }) => (
-    <Fragment>
-      <div className="mod-media">
-        <img
-          src={preview + "?w=560"}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
-        />
-        <div className="mod-media-shade" />
-        <span className="sr-only">{name}</span>
-      </div>
-      <div className="mod-info-backdrop" aria-hidden="true">
-        <img src={preview + "?w=560"} alt="" loading="lazy" decoding="async" />
-      </div>
-    </Fragment>
-  ),
+  ({ preview, name }: { preview: string; name: string }) => {
+    const src = preview + "?w=560";
+    const imgRef = useRef<HTMLImageElement>(null);
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+      const img = imgRef.current;
+      if (img?.complete && img.naturalWidth > 0) {
+        setLoaded(true);
+      } else {
+        setLoaded(false);
+      }
+    }, [preview]);
+
+    return (
+      <Fragment>
+        <div className="mod-media">
+          <img
+            ref={imgRef}
+            className={loaded ? "is-loaded" : undefined}
+            src={src}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setLoaded(true)}
+          />
+          <div className="mod-media-shade" />
+          <span className="sr-only">{name}</span>
+        </div>
+        <div className="mod-info-backdrop" aria-hidden="true">
+          <img
+            className={loaded ? "is-loaded" : undefined}
+            src={src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </Fragment>
+    );
+  },
 );
 
 const CARD_HEIGHT = 242;
@@ -178,7 +204,7 @@ export const Mod = memo(
 
         <div className="mod-badges">
           {props.isInstalled && (
-            <span className="mod-installed-badge">
+            <span className="mod-installed-badge ui-pop-enter">
               <Icon name="i-tick" />
               {_i18n.t("已安装")}
             </span>
@@ -248,6 +274,7 @@ export const Mod = memo(
                 if (downloads === null && error === null)
                   return (
                     <div
+                      className="ui-fade-enter"
                       style={{
                         width: "min-content",
                       }}
@@ -265,7 +292,7 @@ export const Mod = memo(
                   >
                     {downloads && (
                       <div
-                        className="download-file-dialog"
+                        className="download-file-dialog ui-panel-enter"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <div className="download-file-header">
@@ -336,7 +363,9 @@ export const Mod = memo(
                     )}
 
                     {error && (
-                      <span className="download-file-error">{error}</span>
+                      <span className="download-file-error ui-panel-enter">
+                        {error}
+                      </span>
                     )}
                   </div>
                 );
@@ -451,6 +480,7 @@ export const Mod = memo(
                     if (!data)
                       return (
                         <div
+                          className="ui-fade-enter"
                           style={{
                             width: "min-content",
                           }}
@@ -460,7 +490,7 @@ export const Mod = memo(
                       );
 
                     return (
-                      <div className="mod-detail-popup">
+                      <div className="mod-detail-popup ui-fade-enter">
                         <div className="closeBtn" onClick={() => ctx.hide()}>
                           <Icon name="i-cross" />
                         </div>
@@ -522,7 +552,7 @@ export const Mod = memo(
                                 srcSet=""
                                 onClick={() =>
                                   createPopup(() => (
-                                    <div className="image-view">
+                                    <div className="image-view ui-fade-enter">
                                       <img src={v} alt="" srcSet="" />
                                     </div>
                                   ))
@@ -644,6 +674,16 @@ export const ModList = (props: {
   }, []);
 
   const viewMode = props.viewMode ?? "grid";
+  const hasSwitchedViewRef = useRef(false);
+  const prevViewModeRef = useRef(viewMode);
+  if (prevViewModeRef.current !== viewMode) {
+    prevViewModeRef.current = viewMode;
+    hasSwitchedViewRef.current = true;
+  }
+  const loadingSpinner = useAnimatedPresence(
+    Boolean(props.loading || installedMods === null),
+    140,
+  );
   const gridRightPadding = Math.max(0, GRID_PADDING - scrollbarWidth);
   const columnCount = useMemo(() => {
     if (viewMode === "list") return 1;
@@ -757,10 +797,13 @@ export const ModList = (props: {
   );
 
   return (
-    <div className={`mod-list-shell view-${viewMode}`}>
+    <div className={`mod-list-shell view-${viewMode} ui-fade-enter`}>
       <div className="mod-list" ref={refList}>
         <div
-          className="mod-virtual-canvas"
+          key={viewMode}
+          className={`mod-virtual-canvas${
+            hasSwitchedViewRef.current ? " ui-fade-enter" : ""
+          }`}
           style={{ height: rowVirtualizer.getTotalSize() + GRID_PADDING * 2 }}
         >
           {installedMods !== null &&
@@ -801,8 +844,13 @@ export const ModList = (props: {
         </div>
       </div>
 
-      {(props.loading || installedMods === null) && (
-        <div className="mod-list-loading" aria-label={_i18n.t("加载中")}>
+      {loadingSpinner.mounted && (
+        <div
+          className={`mod-list-loading ${
+            loadingSpinner.closing ? "is-closing" : "ui-pop-enter"
+          }`}
+          aria-label={_i18n.t("加载中")}
+        >
           <ProgressIndicator infinite size={26} lineWidth={3} />
         </div>
       )}

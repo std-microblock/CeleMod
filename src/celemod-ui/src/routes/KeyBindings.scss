@@ -50,6 +50,10 @@
     font-size: calc(9px * var(--keybindings-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
+    transition:
+      background var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease;
 
     span {
       overflow: hidden;
@@ -153,6 +157,9 @@
     color: theme.$fg;
     outline: none;
     font-size: calc(10px * var(--keybindings-font-scale, 1));
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease;
     &:focus {
       border-color: color.change(theme.$primary, $alpha: 0.58);
     }
@@ -170,6 +177,12 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background var(--motion-fast, 140ms) ease;
+    &:hover {
+      color: theme.$fg;
+    }
   }
 }
 
@@ -190,6 +203,10 @@
   color: theme.$fg3;
   font-size: calc(9px * var(--keybindings-font-scale, 1));
   letter-spacing: 0;
+  transition:
+    background var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease;
   span {
     min-width: 15px;
     color: #ffc66d;
@@ -241,6 +258,10 @@
   }
 }
 
+.keybindings-banner-collapse {
+  flex: 0 0 auto;
+}
+
 .keybindings-warning,
 .keybindings-error {
   display: flex;
@@ -279,6 +300,10 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
+    transition: color var(--motion-fast, 140ms) ease;
+    &:hover {
+      color: theme.$fg;
+    }
   }
 }
 
@@ -298,7 +323,9 @@
   gap: 15px;
   border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.05);
   box-sizing: border-box;
-  transition: background 100ms ease;
+  transition:
+    background 100ms ease,
+    opacity 160ms ease;
 
   &:hover {
     background: color.change(theme.$bg2, $alpha: 0.28);
@@ -416,6 +443,11 @@
   font-size: calc(8px * var(--keybindings-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0;
+  transition:
+    background var(--motion-fast, 140ms) ease,
+    border-color var(--motion-fast, 140ms) ease,
+    color var(--motion-fast, 140ms) ease,
+    opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
     border-color: color.change(theme.$primary, $alpha: 0.38);
@@ -428,6 +460,9 @@
     place-items: center;
     border-radius: 3px;
     color: theme.$fg3;
+    transition:
+      background var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
   }
   > span:hover {
     background: color.change(#ef5350, $alpha: 0.15);
@@ -490,6 +525,9 @@
   gap: 14px;
   border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
   box-sizing: border-box;
+  transition:
+    background 100ms ease,
+    opacity 160ms ease;
 
   &:hover {
     background: color.change(theme.$bg2, $alpha: 0.28);
@@ -536,6 +574,11 @@
     color: color.adjust(theme.$primary, $lightness: 21%);
     font-size: calc(8px * var(--keybindings-font-scale, 1));
     letter-spacing: 0;
+    transition:
+      background var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease;
     &:hover:not(:disabled) {
       background: color.change(theme.$primary, $alpha: 0.14);
     }
@@ -633,5 +676,23 @@
   }
   .binding-source {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keybindings-sources > button,
+  .keybindings-search input,
+  .keybindings-search button,
+  .conflict-toggle,
+  .disabled-toggle,
+  .input-mode-switch button,
+  .keybindings-error button,
+  .binding-row,
+  .binding-chip,
+  .binding-chip > span,
+  .binding-add,
+  .conflict-action-row,
+  .conflict-actions button {
+    transition: none;
   }
 }

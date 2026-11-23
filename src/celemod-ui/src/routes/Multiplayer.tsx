@@ -25,6 +25,7 @@ import {
   MiaoNetEmotePicker,
   type MiaoNetAtlasPreview,
 } from "../components/MiaoNetEmotePicker";
+import { Collapse, useAnimatedPresence } from "../components/Motion";
 import { createPopup, PopupContext } from "../components/Popup";
 import { useAutoDisableNewMods, useGamePath } from "../states";
 import { useDownloadStore } from "../stores/download";
@@ -89,11 +90,13 @@ const miaoNetDownloadUrl =
 
 const MultiplayerFrame = ({
   step,
+  viewKey,
   settings = false,
   children,
   footer,
 }: {
   step: string;
+  viewKey: string;
   settings?: boolean;
   children: ReactNode;
   footer?: ReactNode;
@@ -109,10 +112,11 @@ const MultiplayerFrame = ({
       <span>{step}</span>
     </header>
     <div
+      key={viewKey}
       className={
         settings
-          ? "multiplayer-page-body multiplayer-settings-body"
-          : "multiplayer-page-body multiplayer-centered"
+          ? "multiplayer-page-body multiplayer-settings-body ui-panel-enter"
+          : "multiplayer-page-body multiplayer-centered ui-panel-enter"
       }
     >
       {children}
@@ -612,15 +616,27 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
       JSON.stringify(toMiaoNetSettingsUpdate(savedMiaoNetSettings)),
   );
 
+  const footerOpen = Boolean(
+    localState?.authenticated &&
+      miaoNetSettings &&
+      (settingsDirty || settingsSaving),
+  );
+  const settingsFooterPresence = useAnimatedPresence(footerOpen, 160);
+
   if (noEverest) return noEverest;
 
   if (!localState) {
     return (
-      <MultiplayerFrame step={_i18n.t("正在检查本地状态")}>
+      <MultiplayerFrame
+        step={_i18n.t("正在检查本地状态")}
+        viewKey={localStateError ? "local-error" : "local-loading"}
+      >
         {localStateError ? (
           <>
             <FaCircleExclamation />
-            <span className="multiplayer-auth-error">{localStateError}</span>
+            <Collapse open={Boolean(localStateError)} appear>
+              <span className="multiplayer-auth-error">{localStateError}</span>
+            </Collapse>
             <button type="button" onClick={refreshLocalState}>
               {_i18n.t("重试")}
             </button>
@@ -639,7 +655,10 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
     const downloading = downloadTask?.state === "pending";
     const failed = downloadTask?.state === "failed";
     return (
-      <MultiplayerFrame step={_i18n.t("步骤 1 / 2 · 安装 MiaoNet+")}>
+      <MultiplayerFrame
+        step={_i18n.t("步骤 1 / 2 · 安装 MiaoNet+")}
+        viewKey="install"
+      >
         <div className={`multiplayer-state-icon ${failed ? "error" : ""}`}>
           {failed ? <FaCircleExclamation /> : <FaCloudArrowDown />}
         </div>
@@ -682,7 +701,11 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
   if (localState.authenticated) {
     if (settingsLoading && !miaoNetSettings) {
       return (
-        <MultiplayerFrame step={_i18n.t("联机设置")} settings>
+        <MultiplayerFrame
+          step={_i18n.t("联机设置")}
+          viewKey="settings-loading"
+          settings
+        >
           <div className="multiplayer-settings-loading">
             <ProgressIndicator infinite />
             <strong>{_i18n.t("正在读取 MiaoNet 设置…")}</strong>
@@ -693,7 +716,11 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
 
     if (!miaoNetSettings) {
       return (
-        <MultiplayerFrame step={_i18n.t("联机设置")} settings>
+        <MultiplayerFrame
+          step={_i18n.t("联机设置")}
+          viewKey="settings-error"
+          settings
+        >
           <div className="multiplayer-settings-loading error">
             <FaCircleExclamation />
             <strong>{_i18n.t("无法读取 MiaoNet 设置")}</strong>
@@ -805,42 +832,53 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
     return (
       <MultiplayerFrame
         step={_i18n.t("联机设置")}
+        viewKey="dashboard"
         settings
         footer={
           <>
-            {(settingsError || settingsNotice) && (
+            <Collapse
+              open={Boolean(settingsError || settingsNotice)}
+              appear
+              className="multiplayer-settings-message-collapse"
+            >
               <div
                 role={settingsError ? "alert" : "status"}
                 className={`multiplayer-settings-message${settingsError ? " error" : " success"}`}
               >
                 {settingsError || settingsNotice}
               </div>
+            </Collapse>
+            {settingsFooterPresence.mounted && (
+              <footer
+                className={`multiplayer-settings-footer${
+                  settingsFooterPresence.closing ? " is-closing" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  disabled={!settingsDirty || settingsSaving}
+                  onClick={() => {
+                    if (!savedMiaoNetSettings) return;
+                    setMiaoNetSettings(
+                      cloneMiaoNetSettings(savedMiaoNetSettings),
+                    );
+                    setSettingsError("");
+                    setSettingsNotice("");
+                  }}
+                >
+                  {_i18n.t("放弃更改")}
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={!settingsDirty || settingsSaving}
+                  onClick={saveMiaoNetSettings}
+                >
+                  <FaFloppyDisk />
+                  {settingsSaving ? _i18n.t("正在保存…") : _i18n.t("保存设置")}
+                </button>
+              </footer>
             )}
-            <footer className="multiplayer-settings-footer">
-              <button
-                type="button"
-                disabled={!settingsDirty || settingsSaving}
-                onClick={() => {
-                  if (!savedMiaoNetSettings) return;
-                  setMiaoNetSettings(
-                    cloneMiaoNetSettings(savedMiaoNetSettings),
-                  );
-                  setSettingsError("");
-                  setSettingsNotice("");
-                }}
-              >
-                {_i18n.t("放弃更改")}
-              </button>
-              <button
-                type="button"
-                className="primary"
-                disabled={!settingsDirty || settingsSaving}
-                onClick={saveMiaoNetSettings}
-              >
-                <FaFloppyDisk />
-                {settingsSaving ? _i18n.t("正在保存…") : _i18n.t("保存设置")}
-              </button>
-            </footer>
           </>
         }
       >
@@ -866,11 +904,11 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
             </button>
           </section>
 
-          {logoutError && (
+          <Collapse open={Boolean(logoutError)} appear>
             <div className="multiplayer-settings-message error">
               {logoutError}
             </div>
-          )}
+          </Collapse>
 
           <section className="multiplayer-settings-card">
             <header>
@@ -999,6 +1037,7 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
                       </span>
                       {editingTextIndex === index ? (
                         <textarea
+                          className="ui-fade-enter"
                           autoFocus
                           value={editingText}
                           placeholder={_i18n.t("输入表情文本")}
@@ -1107,7 +1146,10 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
   }
 
   return (
-    <MultiplayerFrame step={_i18n.t("步骤 2 / 2 · 登录并授权")}>
+    <MultiplayerFrame
+      step={_i18n.t("步骤 2 / 2 · 登录并授权")}
+      viewKey="auth"
+    >
       <div className="multiplayer-state-icon">
         <FaLock />
       </div>
@@ -1139,15 +1181,15 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
                   : _i18n.t("打开系统浏览器授权")}
       </button>
       {authorizationState !== "idle" && authorizationState !== "failed" && (
-        <span className="multiplayer-waiting">
+        <span className="multiplayer-waiting ui-fade-enter">
           {authorizationState === "waiting_browser"
             ? _i18n.t("请在系统浏览器中完成注册、登录和授权。")
             : _i18n.t("授权已收到，请稍候…")}
         </span>
       )}
-      {authorizationError && (
+      <Collapse open={Boolean(authorizationError)} appear>
         <span className="multiplayer-auth-error">{authorizationError}</span>
-      )}
+      </Collapse>
     </MultiplayerFrame>
   );
 };

@@ -17,6 +17,7 @@ import {
   type VirtualControllerBinding,
 } from "../components/VirtualController";
 import { createPopup, PopupContext } from "../components/Popup";
+import { Collapse } from "../components/Motion";
 import { useCurrentLang, useGamePath } from "../states";
 import { callRemote } from "../utils";
 import "./KeyBindings.scss";
@@ -877,15 +878,23 @@ const DesktopKeyBindings = () => {
           </div>
         </header>
 
-        {catalog.gameRunning && (
+        <Collapse
+          open={catalog.gameRunning}
+          appear
+          className="keybindings-banner-collapse"
+        >
           <div className="keybindings-warning">
             <Icon name="warn" />
             {_i18n.t(
               "Celeste 正在运行，目前只能查看按键。退出游戏后即可编辑。",
             )}
           </div>
-        )}
-        {error && (
+        </Collapse>
+        <Collapse
+          open={Boolean(error)}
+          appear
+          className="keybindings-banner-collapse"
+        >
           <div className="keybindings-error">
             <Icon name="fail" />
             <span>{error}</span>
@@ -893,7 +902,7 @@ const DesktopKeyBindings = () => {
               <Icon name="i-cross" />
             </button>
           </div>
-        )}
+        </Collapse>
 
         <div className="keybindings-scroll">
           {!loading && !conflictOnly && (
@@ -917,109 +926,123 @@ const DesktopKeyBindings = () => {
               mobileOverviewOpen ? " mobile-overview-open" : ""
             }`}
           >
-            {!loading && inputMode === "keyboard" && !conflictOnly && (
-              <VirtualKeyboard
-                bindings={virtualKeyboardBindings}
-                selectedKey={selectedKeyboardKey}
-                onSelectKey={setSelectedKeyboardKey}
-                formatKey={keyName}
-              />
-            )}
-            {!loading && inputMode === "controller" && !conflictOnly && (
-              <VirtualController
-                bindings={virtualControllerBindings}
-                selectedButton={selectedControllerButton}
-                onSelectButton={setSelectedControllerButton}
-                formatButton={keyName}
-              />
+            {!loading && !conflictOnly && (
+              <div key={inputMode} className="ui-fade-enter">
+                {inputMode === "keyboard" ? (
+                  <VirtualKeyboard
+                    bindings={virtualKeyboardBindings}
+                    selectedKey={selectedKeyboardKey}
+                    onSelectKey={setSelectedKeyboardKey}
+                    formatKey={keyName}
+                  />
+                ) : (
+                  <VirtualController
+                    bindings={virtualControllerBindings}
+                    selectedButton={selectedControllerButton}
+                    onSelectButton={setSelectedControllerButton}
+                    formatButton={keyName}
+                  />
+                )}
+              </div>
             )}
           </div>
-          {loading ? (
-            <div className="keybindings-empty">
-              {_i18n.t("正在读取按键配置…")}
-            </div>
-          ) : conflictOnly ? (
-            selectedConflictGroup ? (
-              <section className="conflict-detail">
-                <div className="conflict-detail-heading">
-                  <div>
-                    <span>{deviceTitle(selectedConflictGroup.device)}</span>
-                    <strong>
-                      {selectedConflictGroup.group.map(keyName).join(" + ")}
-                    </strong>
-                  </div>
-                  <small>{_i18n.t("此按键同时被以下功能使用")}</small>
-                </div>
-                {selectedConflictGroup.occurrences.map((occurrence) => (
-                  <div
-                    className={`conflict-action-row ${
-                      occurrence.entry.enabled ? "" : "disabled"
-                    }`}
-                    key={`${occurrence.entryKey}-${occurrence.groupIndex}`}
-                  >
+          <div
+            key={`${inputMode}:${
+              conflictOnly
+                ? `conflict:${selectedConflictGroup?.signature ?? "none"}`
+                : `source:${source}`
+            }`}
+            className="keybindings-list ui-fade-enter"
+          >
+            {loading ? (
+              <div className="keybindings-empty">
+                {_i18n.t("正在读取按键配置…")}
+              </div>
+            ) : conflictOnly ? (
+              selectedConflictGroup ? (
+                <section className="conflict-detail">
+                  <div className="conflict-detail-heading">
                     <div>
-                      <strong>{displayLabel(occurrence.entry)}</strong>
-                      <span>{occurrence.entry.source}</span>
-                      {occurrence.entry.description && (
-                        <p>{occurrence.entry.description}</p>
-                      )}
+                      <span>{deviceTitle(selectedConflictGroup.device)}</span>
+                      <strong>
+                        {selectedConflictGroup.group.map(keyName).join(" + ")}
+                      </strong>
                     </div>
-                    <div className="conflict-actions">
-                      <button
-                        disabled={
-                          catalog.gameRunning || saving === occurrence.entryKey
-                        }
-                        onClick={() =>
-                          beginCapture(
-                            occurrence.entry,
-                            occurrence.device,
-                            occurrence.groupIndex,
-                          )
-                        }
-                      >
-                        <Icon
-                          name={
-                            occurrence.device === "controller"
-                              ? "gamepad"
-                              : "keyboard"
-                          }
-                        />
-                        {_i18n.t("重新录制")}
-                      </button>
-                      <button
-                        className="clear-binding"
-                        disabled={
-                          catalog.gameRunning || saving === occurrence.entryKey
-                        }
-                        onClick={() =>
-                          removeBinding(
-                            occurrence.entry,
-                            occurrence.device,
-                            occurrence.groupIndex,
-                          )
-                        }
-                      >
-                        <Icon name="i-cross" />
-                        {_i18n.t("清除绑定")}
-                      </button>
-                    </div>
+                    <small>{_i18n.t("此按键同时被以下功能使用")}</small>
                   </div>
-                ))}
-              </section>
+                  {selectedConflictGroup.occurrences.map((occurrence) => (
+                    <div
+                      className={`conflict-action-row ${
+                        occurrence.entry.enabled ? "" : "disabled"
+                      }`}
+                      key={`${occurrence.entryKey}-${occurrence.groupIndex}`}
+                    >
+                      <div>
+                        <strong>{displayLabel(occurrence.entry)}</strong>
+                        <span>{occurrence.entry.source}</span>
+                        {occurrence.entry.description && (
+                          <p>{occurrence.entry.description}</p>
+                        )}
+                      </div>
+                      <div className="conflict-actions">
+                        <button
+                          disabled={
+                            catalog.gameRunning ||
+                            saving === occurrence.entryKey
+                          }
+                          onClick={() =>
+                            beginCapture(
+                              occurrence.entry,
+                              occurrence.device,
+                              occurrence.groupIndex,
+                            )
+                          }
+                        >
+                          <Icon
+                            name={
+                              occurrence.device === "controller"
+                                ? "gamepad"
+                                : "keyboard"
+                            }
+                          />
+                          {_i18n.t("重新录制")}
+                        </button>
+                        <button
+                          className="clear-binding"
+                          disabled={
+                            catalog.gameRunning ||
+                            saving === occurrence.entryKey
+                          }
+                          onClick={() =>
+                            removeBinding(
+                              occurrence.entry,
+                              occurrence.device,
+                              occurrence.groupIndex,
+                            )
+                          }
+                        >
+                          <Icon name="i-cross" />
+                          {_i18n.t("清除绑定")}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              ) : (
+                <div className="keybindings-empty">
+                  <Icon name="i-tick" />
+                  <strong>{_i18n.t("没有发现相同按键冲突")}</strong>
+                </div>
+              )
+            ) : filteredEntries.length > 0 ? (
+              filteredEntries.map((entry) => renderRow(entry, source !== "*"))
             ) : (
               <div className="keybindings-empty">
-                <Icon name="i-tick" />
-                <strong>{_i18n.t("没有发现相同按键冲突")}</strong>
+                <Icon name="search" />
+                <strong>{_i18n.t("没有符合条件的按键")}</strong>
               </div>
-            )
-          ) : filteredEntries.length > 0 ? (
-            filteredEntries.map((entry) => renderRow(entry, source !== "*"))
-          ) : (
-            <div className="keybindings-empty">
-              <Icon name="search" />
-              <strong>{_i18n.t("没有符合条件的按键")}</strong>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
     </div>

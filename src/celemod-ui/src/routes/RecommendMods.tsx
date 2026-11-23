@@ -416,7 +416,7 @@ export const RecommendMods = () => {
         </div>
         {tab === "helpers" && (
           <Button
-            className="download-recommended-button"
+            className="download-recommended-button ui-fade-enter"
             onClick={() => {
               visibleFunctionalMods
                 .filter((mod) => !isInstalled(mod.download_url))
@@ -458,7 +458,11 @@ export const RecommendMods = () => {
 
       <div className="recommend-tab-content">
         {tab === "helpers" && (
-          <div className="helper-mod-list" role="tabpanel">
+          <div
+            key={tab}
+            className="helper-mod-list ui-panel-enter"
+            role="tabpanel"
+          >
             {visibleFunctionalMods.map((mod) => (
               <HelperModRow
                 key={mod.name}
@@ -475,7 +479,11 @@ export const RecommendMods = () => {
         )}
 
         {tab === "maps" && (
-          <div className="recommended-map-list" role="tabpanel">
+          <div
+            key={tab}
+            className="recommended-map-list ui-panel-enter"
+            role="tabpanel"
+          >
             {mapMods.map((map) => (
               <article className="recommended-map-row" key={map.installName}>
                 <div className="recommended-map-card">
@@ -510,7 +518,11 @@ export const RecommendMods = () => {
         )}
 
         {tab === "skins" && (
-          <div className="recommended-skin-grid" role="tabpanel">
+          <div
+            key={tab}
+            className="recommended-skin-grid ui-panel-enter"
+            role="tabpanel"
+          >
             {skinMods.map((mod) => (
               <Mod
                 key={mod.name}

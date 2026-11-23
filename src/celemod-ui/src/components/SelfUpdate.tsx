@@ -64,7 +64,7 @@ export const checkUpdate = async (forceRefresh = false) => {
                       {_i18n.t("将无法继续使用")}
                     </div>
                   )}
-                  <div className="updateOptions">
+                  <div key="options" className="updateOptions ui-fade-enter">
                     <div>
                       <span style={{ opacity: 0.6, display: "inline-block" }}>
                         {_i18n.t("手动更新 ·")}
@@ -116,12 +116,12 @@ export const checkUpdate = async (forceRefresh = false) => {
                   </div>
                 </>
               ) : failReason ? (
-                <div className="downloadFailed">
+                <div key="failed" className="downloadFailed ui-fade-enter">
                   <div>{_i18n.t("更新失败")}</div>
                   <span>{failReason}</span>
                 </div>
               ) : (
-                <div className="downloadProgress">
+                <div key="progress" className="downloadProgress ui-fade-enter">
                   <ProgressIndicator
                     {...(updateProgress === -1
                       ? {

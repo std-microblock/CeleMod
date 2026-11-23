@@ -91,6 +91,11 @@ html[data-mobile-layout] {
     text-transform: none;
     text-align: center;
     overflow-wrap: anywhere;
+    transition:
+      background-color 180ms
+        var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+      color 180ms ease,
+      transform 160ms var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
     .mobile-nav-icon {
       display: grid;
       position: relative;
@@ -99,6 +104,11 @@ html[data-mobile-layout] {
       place-items: center;
       border-radius: 20px;
       font-size: 19px;
+      transition:
+        background-color 180ms
+          var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+        color 180ms ease,
+        transform 160ms var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
     }
     &.selected {
       color: var(--color-primary);
@@ -120,6 +130,8 @@ html[data-mobile-layout] {
     background: #d84f6f;
     color: white;
     font-size: 10px;
+    animation: ui-pop-in 180ms
+      var(--motion-ease-spring, cubic-bezier(0.34, 1.32, 0.64, 1)) both;
   }
   .mobile-more-sheet {
     inset: auto 0 0;
@@ -135,6 +147,22 @@ html[data-mobile-layout] {
     color: var(--color-fg);
     &::backdrop {
       background: #0009;
+    }
+    &[open] {
+      animation: mobile-sheet-enter 220ms
+        var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+    }
+    &[open]::backdrop {
+      animation: mobile-backdrop-enter 200ms ease both;
+    }
+    &[data-closing="true"] {
+      animation: mobile-sheet-exit 170ms
+        var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
+      pointer-events: none;
+    }
+    &[data-closing="true"]::backdrop {
+      animation: mobile-backdrop-exit 170ms
+        var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
     }
     header {
       display: flex;
@@ -899,5 +927,60 @@ html[data-mobile-layout] {
     border-radius: 14px !important;
     background: var(--color-surface-elevated) !important;
     box-shadow: none !important;
+  }
+}
+
+@keyframes mobile-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-sheet-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+@keyframes mobile-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-mobile-layout] .mobile-nav-button,
+  html[data-mobile-layout] .mobile-nav-button .mobile-nav-icon {
+    transition: none;
+  }
+
+  html[data-mobile-layout] .mobile-nav-badge,
+  html[data-mobile-layout] .mobile-more-sheet[open],
+  html[data-mobile-layout] .mobile-more-sheet[open]::backdrop,
+  html[data-mobile-layout] .mobile-more-sheet[data-closing="true"],
+  html[data-mobile-layout] .mobile-more-sheet[data-closing="true"]::backdrop {
+    animation: none;
   }
 }

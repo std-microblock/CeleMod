@@ -190,7 +190,12 @@ html[data-theme="material-you"] .sidebar .navBtn::before {
   inset: 4px 11px 31px;
   border-radius: var(--md-shape-full);
   background: transparent;
-  transition: background-color 180ms var(--md-motion-standard);
+  transform: scaleX(0.45);
+  opacity: 0;
+  transition:
+    transform 220ms var(--md-motion-emphasized),
+    background-color 180ms var(--md-motion-standard),
+    opacity 160ms ease;
 }
 html[data-theme="material-you"] .sidebar .navBtn .icon {
   position: relative;
@@ -217,6 +222,8 @@ html[data-theme="material-you"] .sidebar .navBtn.selected {
 }
 html[data-theme="material-you"] .sidebar .navBtn.selected::before {
   background: var(--md-secondary-container);
+  transform: scaleX(1);
+  opacity: 1;
 }
 html[data-theme="material-you"] .sidebar .navBtn.selected,
 html[data-theme="material-you"] .sidebar .navBtn.selected:hover,
@@ -242,6 +249,8 @@ html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover {
 }
 html[data-theme="material-you"] .sidebar .navBtn:not(.selected):hover::before {
   background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+  transform: scaleX(1);
+  opacity: 1;
 }
 html[data-theme="material-you"] .sidebar .navBtn:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--md-primary) 55%, transparent);
@@ -620,6 +629,10 @@ html[data-theme="material-you"] input[type="checkbox"] {
   border-radius: var(--md-shape-xs) !important;
   background: transparent !important;
   opacity: 1;
+  transition:
+    background-color 150ms var(--md-motion-standard),
+    border-color 150ms var(--md-motion-standard),
+    transform 100ms ease;
 }
 html[data-theme="material-you"] input[type="checkbox"]:checked {
   border-color: var(--md-primary) !important;

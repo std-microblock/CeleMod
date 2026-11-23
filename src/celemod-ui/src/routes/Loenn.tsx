@@ -12,6 +12,7 @@ import {
 } from "../api/updateInfo";
 import { Button } from "../components/Button";
 import { Icon } from "../components/Icon";
+import { Collapse } from "../components/Motion";
 import { ProgressIndicator } from "../components/Progress";
 import { useCurrentLang, useGamePath } from "../states";
 import { callRemote, displayDate } from "../utils";
@@ -488,7 +489,7 @@ export const Loenn = () => {
           </div>
         </div>
 
-        {launchError ? (
+        <Collapse open={Boolean(launchError)} appear>
           <div className="loenn-inline-error" role="alert">
             <Icon name="warn" />
             <span>{launchError}</span>
@@ -501,7 +502,7 @@ export const Loenn = () => {
               <Icon name="i-cross" />
             </button>
           </div>
-        ) : null}
+        </Collapse>
       </section>
 
       {showUltra && showOfficial ? (
@@ -541,7 +542,8 @@ export const Loenn = () => {
       ) : null}
 
       <section
-        className={`loenn-edition-intro${
+        key={activeEdition}
+        className={`loenn-edition-intro ui-panel-enter${
           activeEdition === "ultra" ? " is-ultra" : ""
         }`}
       >
@@ -556,7 +558,8 @@ export const Loenn = () => {
 
       {installState !== null ? (
         <section
-          className={`loenn-versions loenn-install-section is-${
+          key="loenn-install"
+          className={`loenn-versions loenn-install-section ui-panel-enter is-${
             installing ? "active" : installState
           }`}
           role="status"
@@ -587,7 +590,7 @@ export const Loenn = () => {
           ) : null}
 
           {installing ? (
-            <div className="loenn-progress-body">
+            <div key="progress" className="loenn-progress-body ui-panel-enter">
               <ol className="loenn-steps">
                 {installSteps.map((step, idx) => {
                   const statusClass =
@@ -600,7 +603,9 @@ export const Loenn = () => {
                     <li key={step.key} className={`loenn-step ${statusClass}`}>
                       <span className="loenn-step-index" aria-hidden="true">
                         {idx < currentStepIdx ? (
-                          <Icon name="i-tick" />
+                          <span className="loenn-step-check ui-pop-enter">
+                            <Icon name="i-tick" />
+                          </span>
                         ) : (
                           idx + 1
                         )}
@@ -633,9 +638,12 @@ export const Loenn = () => {
               </div>
             </div>
           ) : installState === "success" ? (
-            <div className="loenn-result-body">
+            <div key="success" className="loenn-result-body ui-panel-enter">
               <div className="loenn-result-heading is-success">
-                <span className="loenn-result-icon" aria-hidden="true">
+                <span
+                  className="loenn-result-icon ui-pop-enter"
+                  aria-hidden="true"
+                >
                   <Icon name="i-tick" />
                 </span>
                 <div>
@@ -656,9 +664,16 @@ export const Loenn = () => {
               </div>
             </div>
           ) : (
-            <div className="loenn-result-body" role="alert">
+            <div
+              key="failed"
+              className="loenn-result-body ui-panel-enter"
+              role="alert"
+            >
               <div className="loenn-result-heading is-failed">
-                <span className="loenn-result-icon" aria-hidden="true">
+                <span
+                  className="loenn-result-icon ui-pop-enter"
+                  aria-hidden="true"
+                >
                   <Icon name="fail" />
                 </span>
                 <div>
@@ -695,7 +710,10 @@ export const Loenn = () => {
           )}
         </section>
       ) : (
-        <section className="loenn-versions">
+        <section
+          key={`versions-${activeEdition}`}
+          className="loenn-versions ui-panel-enter"
+        >
           <div className="loenn-versions-head">
             <div className="loenn-versions-title">
               <h2>{_i18n.t("可用版本")}</h2>
@@ -742,6 +760,10 @@ export const Loenn = () => {
                 const desc = item.description?.trim() || "";
                 const canExpand = desc ? shouldOfferExpand(desc) : false;
                 const isExpanded = Boolean(expandedDescriptions[rowKey]);
+                const hasToggledDesc = Object.prototype.hasOwnProperty.call(
+                  expandedDescriptions,
+                  rowKey,
+                );
                 const dateText = formatReleaseDate(item.date);
                 const sizeText = formatSize(pkg?.size);
 
@@ -821,9 +843,10 @@ export const Loenn = () => {
                     {desc ? (
                       <div className="loenn-version-desc-wrap">
                         <p
+                          key={isExpanded ? "expanded" : "clamped"}
                           className={`loenn-version-desc${
                             canExpand && !isExpanded ? " is-clamped" : ""
-                          }`}
+                          }${hasToggledDesc ? " is-desc-transitioning" : ""}`}
                         >
                           {desc}
                         </p>

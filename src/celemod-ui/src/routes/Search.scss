@@ -80,9 +80,17 @@
     background: color.change(theme.$primary, $alpha: 0.72);
     box-shadow: none;
     letter-spacing: 0;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      transform 120ms ease;
 
     &:hover {
       background: color.change(theme.$primary, $alpha: 0.9);
+    }
+
+    &:active {
+      transform: scale(0.96);
     }
   }
 
@@ -107,11 +115,21 @@
     background: color.change(theme.$bg1, $alpha: 0.9);
     box-shadow: none;
     letter-spacing: 0;
+    transition:
+      border-color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease,
+      box-shadow var(--motion-fast, 140ms) ease,
+      transform 120ms ease;
 
     &:hover,
     &.active {
       border-color: color.change(theme.$primary, $alpha: 0.48);
       background: theme.$bg2;
+    }
+
+    &:active {
+      transform: scale(0.96);
     }
 
     &.active {
@@ -153,8 +171,15 @@
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(18px);
     transform-origin: right top;
-    animation: filter-popup-in 130ms ease-out;
+    animation: filter-popup-in var(--motion-fast, 140ms)
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
     overflow-y: auto;
+
+    &.ui-popover-exit {
+      animation: ui-popover-out 110ms
+        var(--motion-ease-in, cubic-bezier(0.4, 0, 1, 1)) both;
+      pointer-events: none;
+    }
 
     .filter-popup-header {
       display: flex;
@@ -198,6 +223,18 @@
         color: theme.$fg3;
         font-size: 11px;
         letter-spacing: 0;
+        transition:
+          background-color var(--motion-fast, 140ms) ease,
+          color var(--motion-fast, 140ms) ease,
+          transform 120ms ease;
+
+        &:hover:not(.selected) {
+          color: theme.$fg2;
+        }
+
+        &:active {
+          transform: scale(0.97);
+        }
 
         &.selected {
           background: theme.$bg3;
@@ -254,6 +291,10 @@
       font-size: 12px;
       outline: none;
       box-sizing: border-box;
+      transition:
+        border-color var(--motion-fast, 140ms) ease,
+        background-color var(--motion-fast, 140ms) ease,
+        box-shadow var(--motion-fast, 140ms) ease;
 
       &:focus {
         border-color: color.change(theme.$primary, $alpha: 0.65);
@@ -290,6 +331,20 @@
         color: theme.$fg;
         font-size: 10px;
         letter-spacing: 0;
+        transition:
+          border-color var(--motion-fast, 140ms) ease,
+          background-color var(--motion-fast, 140ms) ease,
+          color var(--motion-fast, 140ms) ease,
+          transform 120ms ease;
+
+        &:hover {
+          border-color: color.change(theme.$fg, $alpha: 0.18);
+          background: theme.$bg3;
+        }
+
+        &:active {
+          transform: scale(0.97);
+        }
       }
     }
   }
@@ -298,9 +353,11 @@
 @keyframes filter-popup-in {
   from {
     opacity: 0;
+    transform: translateY(-5px) scale(0.97);
   }
   to {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -494,6 +551,24 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .filter {
+    .searchinput,
+    .search-submit,
+    .filter-toggle,
+    .view-toggle,
+    .filter-popup .source-switch button,
+    .filter-popup select,
+    .filter-popup input,
+    .filter-popup .filter-popup-footer button {
+      transition: none;
+    }
+
+    .filter-popup,
+    .filter-popup.ui-popover-exit {
+      animation: none;
+    }
+  }
+
   .skeleton-preview::after,
   .skeleton-block::after {
     animation: none;

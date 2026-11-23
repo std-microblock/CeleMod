@@ -59,6 +59,82 @@ html[data-theme="fluent"] .modal-backdrop {
   backdrop-filter: blur(3px);
 }
 
+html[data-theme="fluent"] .popup-container {
+  transition: opacity var(--fluent-duration-normal)
+    var(--fluent-ease-decelerate);
+}
+
+html[data-theme="fluent"]
+  .popup-container[data-state="open"]
+  > .popup-content:not(.crash-assistant-popup),
+html[data-theme="fluent"] .popup-container[data-state="open"] > .update-prompt,
+html[data-theme="fluent"]
+  .popup-container[data-state="open"]
+  > .miaonet-atlas-picker,
+html[data-theme="fluent"]
+  .popup-container[data-state="open"]
+  .download-file-dialog,
+html[data-theme="fluent"] .popup-container[data-state="open"] .image-view img {
+  animation: ui-dialog-in var(--fluent-duration-normal)
+    var(--fluent-ease-decelerate) both;
+}
+
+html[data-theme="fluent"]
+  .popup-container[data-state="closing"]
+  > .popup-content:not(.crash-assistant-popup),
+html[data-theme="fluent"]
+  .popup-container[data-state="closing"]
+  > .update-prompt,
+html[data-theme="fluent"]
+  .popup-container[data-state="closing"]
+  > .miaonet-atlas-picker,
+html[data-theme="fluent"]
+  .popup-container[data-state="closing"]
+  .download-file-dialog,
+html[data-theme="fluent"]
+  .popup-container[data-state="closing"]
+  .image-view
+  img {
+  animation: ui-dialog-out var(--fluent-duration-fast)
+    var(--fluent-ease-accelerate) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="fluent"] .popup-container {
+    transition: none;
+  }
+
+  html[data-theme="fluent"]
+    .popup-container[data-state="open"]
+    > .popup-content:not(.crash-assistant-popup),
+  html[data-theme="fluent"] .popup-container[data-state="open"] > .update-prompt,
+  html[data-theme="fluent"]
+    .popup-container[data-state="open"]
+    > .miaonet-atlas-picker,
+  html[data-theme="fluent"]
+    .popup-container[data-state="open"]
+    .download-file-dialog,
+  html[data-theme="fluent"] .popup-container[data-state="open"] .image-view img,
+  html[data-theme="fluent"]
+    .popup-container[data-state="closing"]
+    > .popup-content:not(.crash-assistant-popup),
+  html[data-theme="fluent"]
+    .popup-container[data-state="closing"]
+    > .update-prompt,
+  html[data-theme="fluent"]
+    .popup-container[data-state="closing"]
+    > .miaonet-atlas-picker,
+  html[data-theme="fluent"]
+    .popup-container[data-state="closing"]
+    .download-file-dialog,
+  html[data-theme="fluent"]
+    .popup-container[data-state="closing"]
+    .image-view
+    img {
+    animation: none;
+  }
+}
+
 html[data-theme="fluent"] .popup-content,
 html[data-theme="fluent"] .dialog,
 html[data-theme="fluent"] [role="dialog"] {
