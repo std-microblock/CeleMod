@@ -3630,6 +3630,7 @@ mod local_package_tests {
             serde_json::to_vec(&LoennInstallMetadata {
                 version: "test-version".to_string(),
                 executable: "Loenn.exe".to_string(),
+                edition: None,
             })
             .unwrap(),
         )
@@ -3638,6 +3639,7 @@ mod local_package_tests {
         let state = get_loenn_state_impl(&root_string);
         assert!(state.installed);
         assert_eq!(state.version.as_deref(), Some("test-version"));
+        assert_eq!(state.edition, None);
         assert_eq!(state.path.as_deref(), Some(root.to_string_lossy().as_ref()));
         assert!(loenn_root_dir("relative/path").is_err());
 
@@ -3656,6 +3658,7 @@ mod local_package_tests {
             serde_json::to_vec(&LoennInstallMetadata {
                 version: "legacy-version".to_string(),
                 executable: "Loenn.exe".to_string(),
+                edition: None,
             })
             .unwrap(),
         )
@@ -3664,6 +3667,7 @@ mod local_package_tests {
         let state = get_loenn_state_impl(&root_string);
         assert!(state.installed);
         assert_eq!(state.version.as_deref(), Some("legacy-version"));
+        assert_eq!(state.edition, None);
         assert_eq!(
             state.path.as_deref(),
             Some(legacy.to_string_lossy().as_ref())
@@ -3672,6 +3676,94 @@ mod local_package_tests {
             managed_loenn_executable(&root).unwrap(),
             legacy.join("Loenn.exe")
         );
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn loenn_metadata_supports_edition_and_legacy_json() {
+        let root = test_dir("loenn-edition-metadata");
+        let root_string = root.to_string_lossy().into_owned();
+        fs::write(root.join("L\u{00f6}nn.exe"), b"executable").unwrap();
+
+        // Round-trip with edition = Some("ultra")
+        fs::write(
+            root.join("celemod-loenn.json"),
+            serde_json::to_vec(&LoennInstallMetadata {
+                version: "1.1.13".to_string(),
+                executable: "L\u{00f6}nn.exe".to_string(),
+                edition: normalize_loenn_edition(Some(" ultra ")),
+            })
+            .unwrap(),
+        )
+        .unwrap();
+
+        let state = get_loenn_state_impl(&root_string);
+        assert!(state.installed);
+        assert_eq!(state.version.as_deref(), Some("1.1.13"));
+        assert_eq!(state.edition.as_deref(), Some("ultra"));
+
+        // Backward compatibility with legacy metadata JSON lacking `"edition"`
+        fs::write(
+            root.join("celemod-loenn.json"),
+            r#"{"version":"1.0.13","executable":"L\u00f6nn.exe"}"#,
+        )
+        .unwrap();
+
+        let legacy_state = get_loenn_state_impl(&root_string);
+        assert!(legacy_state.installed);
+        assert_eq!(legacy_state.version.as_deref(), Some("1.0.13"));
+        assert_eq!(legacy_state.edition, None);
+        assert_eq!(normalize_loenn_edition(Some("   ")), None);
+        assert_eq!(normalize_loenn_edition(None), None);
+
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn detects_loenn_ultra_shell_executables_and_infers_edition() {
+        let root = test_dir("loenn-ultra-detect");
+
+        // Linux: prefers Lönn.sh over .AppImage and infers "ultra"
+        let linux_dir = root.join("linux");
+        fs::create_dir_all(&linux_dir).unwrap();
+        fs::write(linux_dir.join("Loenn-v1.0.13-linux.AppImage"), b"appimage").unwrap();
+        let detected_appimage = detect_loenn_executable_for_platform(&linux_dir, "linux").unwrap();
+        assert_eq!(detected_appimage, linux_dir.join("Loenn-v1.0.13-linux.AppImage"));
+        assert_eq!(infer_loenn_edition_from_executable(&detected_appimage), None);
+
+        fs::write(linux_dir.join("L\u{00f6}nn.sh"), b"#!/bin/sh").unwrap();
+        let detected_linux_sh = detect_loenn_executable_for_platform(&linux_dir, "linux").unwrap();
+        assert_eq!(detected_linux_sh, linux_dir.join("L\u{00f6}nn.sh"));
+        assert_eq!(
+            infer_loenn_edition_from_executable(&detected_linux_sh).as_deref(),
+            Some("ultra")
+        );
+
+        // macOS: prefers Lönn.app/Contents/MacOS/Lönn.sh over love and infers "ultra"
+        let macos_dir = root.join("macos");
+        let macos_bin = macos_dir.join("L\u{00f6}nn.app").join("Contents").join("MacOS");
+        fs::create_dir_all(&macos_bin).unwrap();
+        fs::write(macos_bin.join("love"), b"love").unwrap();
+        let detected_love = detect_loenn_executable_for_platform(&macos_dir, "macos").unwrap();
+        assert_eq!(detected_love, macos_bin.join("love"));
+        assert_eq!(infer_loenn_edition_from_executable(&detected_love), None);
+
+        fs::write(macos_bin.join("L\u{00f6}nn.sh"), b"#!/bin/sh").unwrap();
+        let detected_macos_sh = detect_loenn_executable_for_platform(&macos_dir, "macos").unwrap();
+        assert_eq!(detected_macos_sh, macos_bin.join("L\u{00f6}nn.sh"));
+        assert_eq!(
+            infer_loenn_edition_from_executable(&detected_macos_sh).as_deref(),
+            Some("ultra")
+        );
+
+        // Windows: Lönn.exe does not infer ultra
+        let win_dir = root.join("windows");
+        fs::create_dir_all(&win_dir).unwrap();
+        fs::write(win_dir.join("L\u{00f6}nn.exe"), b"exe").unwrap();
+        let detected_win = detect_loenn_executable_for_platform(&win_dir, "windows").unwrap();
+        assert_eq!(detected_win, win_dir.join("L\u{00f6}nn.exe"));
+        assert_eq!(infer_loenn_edition_from_executable(&detected_win), None);
 
         fs::remove_dir_all(root).unwrap();
     }
@@ -3703,6 +3795,7 @@ mod local_package_tests {
         let state = get_loenn_state_impl(&root_string);
         assert!(state.installed);
         assert_eq!(state.version, None);
+        assert_eq!(state.edition, None);
         assert_eq!(state.path.as_deref(), Some(root.to_string_lossy().as_ref()));
 
         fs::remove_dir_all(root).unwrap();
@@ -4292,6 +4385,8 @@ fn restart_game_with_loader_impl(game_path: String, legacy_loader: bool) -> anyh
 struct LoennInstallMetadata {
     version: String,
     executable: String,
+    #[serde(default)]
+    edition: Option<String>,
 }
 
 struct LoennPackage<'a> {
@@ -4301,6 +4396,7 @@ struct LoennPackage<'a> {
     file_name: &'a str,
     executable: &'a str,
     sha256: &'a str,
+    edition: Option<&'a str>,
 }
 
 #[derive(Serialize)]
@@ -4308,7 +4404,23 @@ struct LoennPackage<'a> {
 struct LoennState {
     installed: bool,
     version: Option<String>,
+    edition: Option<String>,
     path: Option<String>,
+}
+
+fn normalize_loenn_edition(edition: Option<&str>) -> Option<String> {
+    edition
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+}
+
+fn infer_loenn_edition_from_executable(executable: &Path) -> Option<String> {
+    let is_sh = executable
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(".sh"));
+    is_sh.then(|| "ultra".to_string())
 }
 
 fn default_loenn_root_dir() -> anyhow::Result<PathBuf> {
@@ -4375,41 +4487,54 @@ fn managed_loenn_executable(root: &Path) -> Option<PathBuf> {
     None
 }
 
-/// Best-effort detection of an existing Lönn install CeleMod did not create (no
-/// `celemod-loenn.json`), so the user can adopt a folder they already have.
-fn detect_loenn_executable(dir: &Path) -> Option<PathBuf> {
-    #[cfg(target_os = "windows")]
-    {
-        for name in ["L\u{00f6}nn.exe", "Lonn.exe"] {
-            let candidate = dir.join(name);
-            if candidate.is_file() {
-                return Some(candidate);
-            }
-        }
-    }
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let is_appimage = path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| name.ends_with(".AppImage"));
-                if path.is_file() && is_appimage {
-                    return Some(path);
+fn detect_loenn_executable_for_platform(dir: &Path, target_os: &str) -> Option<PathBuf> {
+    match target_os {
+        "windows" => {
+            for name in ["L\u{00f6}nn.exe", "Lonn.exe"] {
+                let candidate = dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
                 }
             }
         }
-    }
-    #[cfg(target_os = "macos")]
-    {
-        let candidate = dir.join("L\u{00f6}nn.app").join("Contents/MacOS/love");
-        if candidate.is_file() {
-            return Some(candidate);
+        "linux" => {
+            for name in ["L\u{00f6}nn.sh", "Lonn.sh"] {
+                let candidate = dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let is_appimage = path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.ends_with(".AppImage"));
+                    if path.is_file() && is_appimage {
+                        return Some(path);
+                    }
+                }
+            }
         }
+        "macos" => {
+            let macos_dir = dir.join("L\u{00f6}nn.app").join("Contents").join("MacOS");
+            for name in ["L\u{00f6}nn.sh", "love"] {
+                let candidate = macos_dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+        }
+        _ => {}
     }
     None
+}
+
+/// Best-effort detection of an existing Lönn install CeleMod did not create (no
+/// `celemod-loenn.json`), so the user can adopt a folder they already have.
+fn detect_loenn_executable(dir: &Path) -> Option<PathBuf> {
+    detect_loenn_executable_for_platform(dir, std::env::consts::OS)
 }
 
 fn get_loenn_state_impl(install_root: &str) -> LoennState {
@@ -4417,6 +4542,7 @@ fn get_loenn_state_impl(install_root: &str) -> LoennState {
         return LoennState {
             installed: false,
             version: None,
+            edition: None,
             path: None,
         };
     };
@@ -4430,16 +4556,18 @@ fn get_loenn_state_impl(install_root: &str) -> LoennState {
             return LoennState {
                 installed: executable.as_ref().is_some_and(|path| path.is_file()),
                 version: Some(metadata.version),
+                edition: metadata.edition,
                 path: Some(install_dir.to_string_lossy().into_owned()),
             };
         }
     }
 
     // Adopt an existing install: recognizable executable, no CeleMod metadata.
-    if detect_loenn_executable(&root).is_some() {
+    if let Some(executable) = detect_loenn_executable(&root) {
         return LoennState {
             installed: true,
             version: None,
+            edition: infer_loenn_edition_from_executable(&executable),
             path: Some(root.to_string_lossy().into_owned()),
         };
     }
@@ -4447,6 +4575,7 @@ fn get_loenn_state_impl(install_root: &str) -> LoennState {
     LoennState {
         installed: false,
         version: None,
+        edition: None,
         path: Some(root.to_string_lossy().into_owned()),
     }
 }
@@ -4492,9 +4621,21 @@ fn extract_loenn_zip(
             if let Some(parent) = output_path.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            let mut output = std::fs::File::create(&output_path)?;
-            std::io::copy(&mut entry, &mut output)?;
-            output.flush()?;
+            {
+                let mut output = std::fs::File::create(&output_path)?;
+                std::io::copy(&mut entry, &mut output)?;
+                output.flush()?;
+            }
+            #[cfg(unix)]
+            if let Some(mode) = entry.unix_mode()
+                && mode & 0o111 != 0
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(
+                    &output_path,
+                    std::fs::Permissions::from_mode((mode & 0o777) | 0o755),
+                )?;
+            }
         }
         on_progress(((index + 1) as f32 / count as f32) * 100.0);
     }
@@ -4571,14 +4712,41 @@ fn install_loenn(
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        let mut permissions = std::fs::metadata(&staged_executable)?.permissions();
-        permissions.set_mode(permissions.mode() | 0o755);
-        std::fs::set_permissions(&staged_executable, permissions)?;
+        let ensure_executable = |path: &Path| -> anyhow::Result<()> {
+            let mut permissions = std::fs::metadata(path)?.permissions();
+            permissions.set_mode(permissions.mode() | 0o755);
+            std::fs::set_permissions(path, permissions)?;
+            Ok(())
+        };
+        ensure_executable(&staged_executable)?;
+        let macos_dir = staging_dir
+            .join("L\u{00f6}nn.app")
+            .join("Contents")
+            .join("MacOS");
+        if macos_dir.is_dir() {
+            let love = macos_dir.join("love");
+            if love.is_file() {
+                ensure_executable(&love)?;
+            }
+            if let Ok(entries) = std::fs::read_dir(&macos_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let is_sh = path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(|name| name.ends_with(".sh"));
+                    if path.is_file() && is_sh {
+                        ensure_executable(&path)?;
+                    }
+                }
+            }
+        }
     }
 
     let metadata = LoennInstallMetadata {
         version: package.version.to_string(),
         executable: package.executable.to_string(),
+        edition: normalize_loenn_edition(package.edition),
     };
     std::fs::write(
         staging_dir.join(LOENN_METADATA_FILE),
@@ -4684,6 +4852,7 @@ fn download_and_install_loenn(
     file_name: String,
     executable: String,
     sha256: String,
+    edition: Option<String>,
     on_event: Channel<IpcEvent>,
 ) {
     std::thread::spawn(move || {
@@ -4703,6 +4872,7 @@ fn download_and_install_loenn(
                 file_name: &file_name,
                 executable: &executable,
                 sha256: &sha256,
+                edition: edition.as_deref(),
             },
             &mut |state, progress| {
                 send_event(
