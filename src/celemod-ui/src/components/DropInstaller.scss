@@ -1,19 +1,17 @@
-@use "../styles/theme" as *;
-
 .drop-install-overlay {
   position: fixed;
   left: 10px;
-  top: 38px;
-  right: 15px;
+  top: var(--window-titlebar-height, 45px);
+  right: 10px;
   bottom: 10px;
   z-index: 1000;
   display: flex;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  border: 2px dashed $primary;
-  border-radius: 12px;
-  background: rgba($bg, 0.92);
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--color-canvas) 92%, transparent);
   align-items: center;
   justify-content: center;
   text-align: center;
@@ -33,6 +31,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 24px 32px;
+  border-radius: var(--radius-lg, 12px);
   transform: scale(0.95) translateY(6px);
   transition: transform 200ms
     var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
@@ -43,18 +43,19 @@
 
   > .icon {
     font-size: 48px;
-    fill: $primary;
+    color: var(--color-primary);
+    fill: var(--color-primary);
     margin-bottom: 14px;
   }
 
   .drop-install-title {
     font-size: 22px;
     font-weight: 600;
-    color: $fg;
+    color: var(--color-fg);
   }
 
   .drop-install-description {
-    color: $fg1;
+    color: var(--color-fg-muted);
     margin-top: 7px;
   }
 }
@@ -97,15 +98,15 @@
   }
 
   .progress-title {
-    color: $fg;
+    color: var(--color-fg);
     font-size: 16px;
     font-weight: 500;
   }
 
   .progress-count {
-    color: $fg1;
+    color: var(--color-fg-muted);
     font-size: 11px;
-    opacity: 0.65;
+    opacity: 0.72;
   }
 
   .progress-file,
@@ -119,7 +120,7 @@
   }
 
   .progress-file {
-    color: $fg;
+    color: var(--color-fg);
     margin-top: 12px;
     font-size: 13px;
     font-weight: 700;
@@ -130,16 +131,16 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-    color: $fg1;
+    color: var(--color-fg-muted);
     font-size: 12px;
     margin-top: 8px;
   }
 
   .progress-step {
     flex: 0 0 auto;
-    color: $fg2;
+    color: var(--color-fg-subtle);
     font-variant-numeric: tabular-nums;
-    opacity: 0.7;
+    opacity: 0.78;
 
     &::after {
       margin-left: 7px;
@@ -155,7 +156,7 @@
 
   .progress-percent {
     flex: 0 0 auto;
-    color: $fg2;
+    color: var(--color-fg-subtle);
     font-variant-numeric: tabular-nums;
   }
 }
@@ -164,17 +165,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $fg;
+  color: var(--color-fg);
   font-size: 16px;
   margin-bottom: 14px;
 
   .icon {
-    fill: #65c477;
+    color: var(--color-success);
+    fill: var(--color-success);
     margin-right: 8px;
   }
 
   &.failed .icon {
-    fill: #e86b6b;
+    color: var(--color-danger);
+    fill: var(--color-danger);
   }
 }
 
@@ -185,8 +188,9 @@
 }
 
 .local-install-result {
-  background: $bg2;
-  border-radius: 6px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm, 6px);
   padding: 9px 10px;
   margin-bottom: 7px;
 
@@ -199,12 +203,14 @@
     width: 20px;
 
     .icon {
-      fill: #65c477;
+      color: var(--color-success);
+      fill: var(--color-success);
     }
   }
 
   &.failed .result-status .icon {
-    fill: #e86b6b;
+    color: var(--color-danger);
+    fill: var(--color-danger);
   }
 
   .result-file {
@@ -213,12 +219,12 @@
     overflow-x: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: $fg;
+    color: var(--color-fg);
   }
 
   .result-type {
-    color: $primary;
-    background: $bg3;
+    color: var(--color-primary-text);
+    background: var(--color-primary-soft);
     border-radius: 4px;
     padding: 2px 6px;
     font-size: 10px;
@@ -226,7 +232,7 @@
   }
 
   .result-error {
-    color: #e88a8a;
+    color: var(--color-danger);
     font-size: 11px;
     margin: 6px 0 0 20px;
     word-break: break-word;
@@ -234,6 +240,6 @@
 }
 
 .fatal-error {
-  color: #e88a8a;
+  color: var(--color-danger);
   word-break: break-word;
 }

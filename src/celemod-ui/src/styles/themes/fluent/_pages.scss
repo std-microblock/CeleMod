@@ -1,1184 +1,240 @@
+/* Settings */
 html[data-theme="fluent"] .settings-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
+  width: min(1040px, 100%);
+  margin: 0 auto;
   padding: 20px 28px 56px;
   box-sizing: border-box;
-}
 
-html[data-theme="fluent"] .settings-header {
-  align-items: center;
-  margin-bottom: 24px;
-}
+  .settings-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
 
-html[data-theme="fluent"] .settings-header h1 {
-  font-size: 28px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
+  .settings-card {
+    border: 1px solid var(--fluent-stroke-control);
+    border-radius: var(--fluent-radius-card);
+    background: var(--fluent-acrylic-base);
+    box-shadow: var(--fluent-shadow-card);
+    backdrop-filter: blur(22px) saturate(135%);
+  }
 
-html[data-theme="fluent"] .settings-header p {
-  color: var(--fluent-text-tertiary);
-  font-size: 12px;
-}
-
-html[data-theme="fluent"] .settings-columns {
-  gap: 20px;
-}
-
-html[data-theme="fluent"] .settings-section-title {
-  margin: 0 0 9px 2px;
-  color: var(--fluent-text-tertiary);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-html[data-theme="fluent"] .settings-card {
-  overflow: hidden;
-  border: 1px solid var(--fluent-stroke-control) !important;
-  border-radius: var(--fluent-radius-card) !important;
-  background: var(--fluent-acrylic-base) !important;
-  box-shadow: var(--fluent-shadow-card) !important;
-  backdrop-filter: blur(24px) saturate(135%);
-}
-
-html[data-theme="fluent"] .settings-card .settings-card,
-html[data-theme="fluent"] .settings-card [class*="card"] {
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .settings-card .theme-setting {
-  background: transparent;
-}
-
-html[data-theme="fluent"] .settings-card > *,
-html[data-theme="fluent"] .settings-card .theme-setting,
-html[data-theme="fluent"] .settings-card .setting-toggle-row,
-html[data-theme="fluent"] .settings-card .setting-select-row,
-html[data-theme="fluent"] .settings-card .font-scale-row {
-  border-color: var(--fluent-stroke-divider) !important;
-}
-
-html[data-theme="fluent"] .setting-toggle-row,
-html[data-theme="fluent"] .setting-select-row,
-html[data-theme="fluent"] .font-scale-row,
-html[data-theme="fluent"] .download-default-head {
-  min-height: 60px;
-  padding: 10px 16px;
-  transition: background var(--fluent-duration-fast);
-}
-
-html[data-theme="fluent"] .setting-toggle-row:hover,
-html[data-theme="fluent"] .setting-select-row:hover,
-html[data-theme="fluent"] .font-scale-row:hover,
-html[data-theme="fluent"] .download-default-head:hover {
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .settings-card strong {
-  color: var(--fluent-text-primary);
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .settings-card small {
-  color: var(--fluent-text-tertiary) !important;
-}
-
-html[data-theme="fluent"] .theme-setting {
-  padding: 16px;
-}
-
-html[data-theme="fluent"] .theme-picker {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  align-items: stretch;
+  .setting-toggle-row:hover,
+  .setting-select-row:hover,
+  .font-scale-row:hover,
+  .download-default-head:hover {
+    background: var(--fluent-fill-subtle);
+  }
 }
 
 html[data-theme="fluent"] .theme-option {
-  min-width: 0;
-  border: 1px solid var(--fluent-stroke-control) !important;
-  border-radius: 6px !important;
-  background: var(--fluent-fill-subtle) !important;
-  transition:
-    border-color var(--fluent-duration-fast),
-    background var(--fluent-duration-fast) !important;
-}
-
-html[data-theme="fluent"] .theme-option:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .theme-option.selected {
-  border-color: var(--fluent-accent) !important;
-  background: rgba(96, 205, 255, 0.09) !important;
-  box-shadow: inset 0 0 0 1px var(--fluent-accent) !important;
-}
-
-html[data-theme="fluent"] .theme-option.selected::after {
-  content: "Selected";
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  padding: 3px 7px;
-  border: 1px solid rgba(8, 38, 48, 0.24);
-  border-radius: 3px;
-  color: var(--fluent-accent-fg);
-  background: var(--fluent-accent);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-}
-
-html[data-theme="fluent"] .theme-option img {
-  aspect-ratio: 16 / 8;
-  opacity: 0.9;
-}
-
-html[data-theme="fluent"] .theme-option-copy {
-  gap: 2px;
-  padding: 8px 10px 10px;
-}
-
-html[data-theme="fluent"] .theme-option-copy strong {
-  overflow: hidden;
-  color: var(--fluent-text-primary);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[data-theme="fluent"] .theme-option-copy small {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--fluent-text-tertiary);
-  font-size: 10px;
-  line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-html[data-theme="fluent"] .theme-option-check {
-  top: 7px;
-  right: 7px;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: var(--fluent-accent-fg);
-  background: var(--fluent-accent);
-  font-size: 12px;
-}
-
-/* Preview harness and Home profile grid use an explicit Fluent layout grid. */
-html[data-theme="fluent"] .theme-preview-switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 0 0 18px;
-  padding: 3px;
-  border: 1px solid var(--fluent-stroke-subtle);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.16);
-}
-
-html[data-theme="fluent"] .theme-preview-switcher button {
-  min-height: 30px;
-  padding: 0 14px;
-  border-color: transparent !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .theme-preview-switcher button.selected {
-  color: var(--fluent-text-primary) !important;
-  border-color: var(--fluent-stroke-control) !important;
-  background: var(--fluent-fill-control-selected) !important;
-}
-
-html[data-theme="fluent"] .card-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  padding: 12px;
-}
-
-html[data-theme="fluent"] .card-grid .mod-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  min-width: 0;
-  width: auto;
-  min-height: 132px;
-  padding: 14px;
-}
-
-html[data-theme="fluent"] .card-grid .mod-card h2 {
-  margin: 0 0 8px;
-  overflow: hidden;
-  color: var(--fluent-text-primary);
-  font-size: 15px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[data-theme="fluent"] .card-grid .mod-card p {
-  min-height: 34px;
-  margin: 0 0 12px;
-  color: var(--fluent-text-tertiary);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-html[data-theme="fluent"] .card-grid .mod-card button {
-  min-height: 28px;
-  padding-inline: 12px;
-  font-size: 11px;
-}
-
-html[data-theme="fluent"] .linear-command-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--fluent-stroke-divider);
+  border-color: var(--fluent-stroke-control);
   background: var(--fluent-fill-subtle);
-}
 
-html[data-theme="fluent"] .linear-command-bar input {
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 32px;
-}
+  &:hover {
+    border-color: var(--fluent-stroke-strong);
+    background: var(--fluent-fill-control-hover);
+  }
 
-html[data-theme="fluent"] .linear-command-bar button {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding-inline: 13px;
-}
+  &.selected {
+    border-color: var(--fluent-accent);
+    background: rgba(96, 205, 255, 0.09);
+    box-shadow: inset 0 0 0 1px var(--fluent-accent);
 
-html[data-theme="fluent"] .mod-list {
-  display: grid;
-  gap: 0;
-  padding: 4px 12px 12px;
-}
+    .theme-option-check {
+      border-color: var(--fluent-accent);
+      color: var(--fluent-accent-fg);
+      background: var(--fluent-accent);
+    }
+  }
 
-html[data-theme="fluent"] .mod-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-  gap: 12px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .mod-row > span {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-
-html[data-theme="fluent"] .mod-row strong {
-  overflow: hidden;
-  color: var(--fluent-text-primary);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[data-theme="fluent"] .mod-row small {
-  color: var(--fluent-text-tertiary);
-  font-size: 10px;
-}
-
-html[data-theme="fluent"] .mod-row button {
-  flex: 0 0 auto;
-  min-height: 28px;
-  padding-inline: 12px;
-  font-size: 11px;
-}
-
-html[data-theme="fluent"] .theme-preview-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px 16px;
-}
-
-@media (max-width: 820px) {
-  html[data-theme="fluent"] .card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .theme-option-check {
+    border-radius: 5px;
   }
 }
 
-@media (max-width: 520px) {
-  html[data-theme="fluent"] .card-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  html[data-theme="fluent"] .theme-picker {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 620px) {
-  html[data-theme="fluent"] .theme-picker {
-    grid-template-columns: 1fr;
-  }
-}
-
-html[data-theme="fluent"] .download-type-grid label {
-  border: 1px solid var(--fluent-stroke-subtle);
-  border-radius: 4px;
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .download-type-grid label:hover {
-  background: var(--fluent-fill-control-hover);
-}
-
+/* Home */
 html[data-theme="fluent"] .home-page {
   width: min(920px, 100%);
-  margin: 0 auto;
   padding: 24px 32px 56px;
-  box-sizing: border-box;
+
+  .home-launch-card,
+  .home-updates-card,
+  .home-active-mods {
+    border-color: var(--fluent-stroke-subtle);
+    border-radius: var(--fluent-radius-card);
+    background: var(--fluent-acrylic-base);
+    box-shadow: var(--fluent-shadow-card);
+    backdrop-filter: blur(20px) saturate(130%);
+  }
+
+  .home-updates-card {
+    border-color: color-mix(
+      in srgb,
+      var(--fluent-accent) 34%,
+      var(--fluent-stroke-subtle)
+    );
+  }
+
+  .home-status-strip {
+    background: rgba(0, 0, 0, 0.14);
+  }
+
+  .home-profiles-section .profile,
+  .home-shortcut {
+    border-radius: var(--fluent-radius-card);
+    background: var(--fluent-fill-subtle);
+
+    &:hover {
+      border-color: var(--fluent-stroke-strong);
+      background: var(--fluent-fill-control-hover);
+    }
+  }
+
+  .home-profiles-section .profile.selected {
+    border-color: color-mix(in srgb, var(--fluent-accent) 55%, transparent);
+    background: rgba(96, 205, 255, 0.09);
+  }
 }
 
-html[data-theme="fluent"] .home-page .home-brand-title {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-html[data-theme="fluent"] .home-page .home-brand-subtitle,
-html[data-theme="fluent"] .home-page .home-language,
-html[data-theme="fluent"] .home-page .home-section-head h2,
-html[data-theme="fluent"] .home-page .home-footer {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .home-page .home-launch-card,
-html[data-theme="fluent"] .home-page .home-updates-card,
-html[data-theme="fluent"] .home-page .home-active-mods {
-  border-color: var(--fluent-stroke-subtle);
-  border-radius: var(--fluent-radius-card);
-  background: var(--fluent-acrylic-base);
-  box-shadow: var(--fluent-shadow-card);
-  backdrop-filter: blur(20px) saturate(130%);
-}
-
-html[data-theme="fluent"] .home-page .home-updates-card {
-  border-color: color-mix(in srgb, var(--fluent-accent) 34%, var(--fluent-stroke-subtle));
-}
-
-html[data-theme="fluent"] .home-page .home-updates-header,
-html[data-theme="fluent"] .home-page .home-update-row {
-  border-bottom-color: var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .home-page .home-updates-icon {
-  background: rgba(96, 205, 255, 0.14);
-  color: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .home-page .home-update-row-link {
-  min-height: 30px !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--fluent-text-secondary) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-update-row-link:hover {
-  color: var(--fluent-text-primary) !important;
-  background: var(--fluent-fill-subtle) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-update-row-btn {
-  min-height: 30px !important;
-}
-
-html[data-theme="fluent"] .home-page .home-status-strip {
-  border-top-color: var(--fluent-stroke-divider);
-  background: rgba(0, 0, 0, 0.14);
-}
-
-html[data-theme="fluent"] .home-page .home-status-item {
-  min-height: 58px !important;
-  border: 0 !important;
-  border-right: 1px solid var(--fluent-stroke-divider) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .home-page .home-status-item:last-child {
-  border-right: 0 !important;
-}
-
-html[data-theme="fluent"] .home-page .home-status-item:hover {
-  background: var(--fluent-fill-subtle) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-status-pill {
-  color: var(--fluent-accent);
-  background: rgba(96, 205, 255, 0.14);
-}
-
-html[data-theme="fluent"] .home-page .home-active-mods-toggle {
-  min-height: 42px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .home-page .home-active-mods-toggle:hover {
-  background: var(--fluent-fill-subtle) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-active-mod-list[role="status"] {
-  border: 0;
-  border-top: 1px solid var(--fluent-stroke-divider);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-html[data-theme="fluent"] .home-page .home-community-link {
-  min-height: 28px !important;
-  padding-inline: 8px !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: var(--fluent-text-secondary) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-community-link:hover {
-  color: var(--fluent-accent) !important;
-  background: var(--fluent-fill-subtle) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-keyboard-input-banner {
-  border: 1px solid rgba(252, 225, 0, 0.25);
-  border-radius: var(--fluent-radius-card);
-  background: rgba(252, 225, 0, 0.06);
-}
-
-html[data-theme="fluent"] .home-page .home-profiles-section .profile,
-html[data-theme="fluent"] .home-page .home-shortcut {
-  border: 1px solid var(--fluent-stroke-subtle) !important;
-  border-radius: var(--fluent-radius-card) !important;
-  background: var(--fluent-fill-subtle) !important;
-  box-shadow: none !important;
-  transition:
-    background var(--fluent-duration-fast),
-    border-color var(--fluent-duration-fast);
-}
-
-html[data-theme="fluent"] .home-page .home-profiles-section .profile:hover,
-html[data-theme="fluent"] .home-page .home-shortcut:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-profiles-section .profile.selected {
-  border-color: color-mix(in srgb, var(--fluent-accent) 55%, transparent) !important;
-  background: rgba(96, 205, 255, 0.09) !important;
-}
-
-html[data-theme="fluent"] .home-page .home-profiles-section .profile .profile-active-indicator.is-active {
-  border-color: var(--fluent-accent);
-  background: var(--fluent-accent);
-  color: var(--fluent-accent-fg);
-}
-
-html[data-theme="fluent"] .home-page .home-shortcut:hover .shortcut-icon {
-  color: var(--fluent-accent);
-  background: rgba(96, 205, 255, 0.14);
-}
-
-html[data-theme="fluent"] .home-page .gameSelector .game-path-field select {
-  height: 38px;
-  min-height: 38px;
-  border-radius: var(--fluent-radius-control) !important;
-  background: rgba(0, 0, 0, 0.2) !important;
-}
-
-html[data-theme="fluent"] .home-page .gameSelector .game-mods-btn,
-html[data-theme="fluent"] .home-page .gameSelector .game-launch-secondary {
-  min-height: 38px;
-  border-radius: var(--fluent-radius-control) !important;
-}
-
-html[data-theme="fluent"] .home-page .gameSelector .game-launch-primary {
-  min-height: 38px;
-  border-radius: var(--fluent-radius-control) !important;
-}
-
+/* Search & Mod Cards */
 html[data-theme="fluent"] .filter,
 html[data-theme="fluent"] .manage-toolbar,
 html[data-theme="fluent"] .keybindings-toolbar {
-  min-height: 46px;
-  padding: 6px 10px !important;
-  border-bottom: 1px solid var(--fluent-stroke-divider) !important;
-  background: color-mix(
-    in srgb,
-    var(--fluent-mica-alt) 82%,
-    transparent
-  ) !important;
-  backdrop-filter: blur(20px) saturate(120%);
+  border-bottom-color: var(--fluent-stroke-divider);
+  background: color-mix(in srgb, var(--fluent-mica-alt) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(120%);
 }
 
-html[data-theme="fluent"] .filter {
-  gap: 6px;
-}
-
-/* Keep the command buttons on the search bar on one Fluent control grid. */
-html[data-theme="fluent"] .filter .search-submit,
-html[data-theme="fluent"] .filter .filter-toggle,
-html[data-theme="fluent"] .filter .view-toggle {
-  width: 36px;
-  min-width: 36px;
-  height: 32px;
-  min-height: 32px;
-  padding: 0;
-  box-sizing: border-box;
-  border-radius: 4px !important;
-}
-
-html[data-theme="fluent"] .search-field .icon,
-html[data-theme="fluent"] .manage-search .icon,
-html[data-theme="fluent"] .keybindings-search .icon {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .searchinput,
-html[data-theme="fluent"] .manage-search input,
-html[data-theme="fluent"] .keybindings-search input {
-  height: 32px;
-  border-radius: 4px !important;
-  background: rgba(0, 0, 0, 0.18) !important;
-}
-
-html[data-theme="fluent"] .searchinput:focus,
-html[data-theme="fluent"] .manage-search input:focus,
-html[data-theme="fluent"] .keybindings-search input:focus {
-  border-bottom-color: var(--fluent-accent) !important;
-  box-shadow: inset 0 -2px var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .search-results,
-html[data-theme="fluent"] .search-grid {
-  padding: 14px;
-  gap: 10px;
-}
-
-html[data-theme="fluent"] .search-result-card,
-html[data-theme="fluent"] .search-skeleton-card,
-html[data-theme="fluent"] .mod-card {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--fluent-stroke-subtle) !important;
-  border-radius: 6px !important;
-  background: var(--fluent-fill-subtle) !important;
-  box-shadow: none !important;
-  transition:
-    border-color var(--fluent-duration-fast),
-    background var(--fluent-duration-fast);
-}
-
-html[data-theme="fluent"] .search-result-card:hover,
-html[data-theme="fluent"] .mod-card:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-/* ModList renders cards with the `.mod` class (rather than `.mod-card`).
-   Apply the same Fluent surface treatment to the real runtime cards. */
-html[data-theme="fluent"] .mod {
-  border-color: var(--fluent-stroke-subtle) !important;
-  border-radius: var(--fluent-radius-card) !important;
-  background: var(--fluent-fill-subtle) !important;
-  box-shadow: var(--fluent-shadow-card) !important;
-}
-
-html[data-theme="fluent"] .mod:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-  box-shadow: var(--fluent-shadow-card) !important;
-}
-
-html[data-theme="fluent"] .mod .mod-badges > span {
-  height: 22px;
-  border-radius: 4px;
-  border-color: var(--fluent-stroke-control);
-  background: var(--fluent-fill-control);
-  backdrop-filter: blur(14px) saturate(125%);
-}
-
-html[data-theme="fluent"] .mod .mod-badges .mod-installed-badge {
-  border-color: color-mix(in srgb, var(--fluent-accent) 55%, transparent);
+html[data-theme="fluent"] .filter .search-submit {
+  border-color: transparent;
   color: var(--fluent-accent-fg);
   background: var(--fluent-accent);
+
+  &:hover {
+    background: var(--fluent-accent-hover);
+  }
 }
 
-html[data-theme="fluent"] .mod .operations button {
-  border-radius: var(--fluent-radius-control);
-  border-color: var(--fluent-stroke-control);
-  background: var(--fluent-fill-control);
-  box-shadow: none;
-  backdrop-filter: blur(14px) saturate(125%);
+/* Fluent card surface applies only to card/grid mode, preserving flat ListView */
+html[data-theme="fluent"] .mod-list-shell:not(.view-list) .mod {
+  border-color: var(--fluent-stroke-subtle);
+  border-radius: var(--fluent-radius-card);
+  background: var(--fluent-fill-subtle);
+  box-shadow: var(--fluent-shadow-card);
+
+  &:hover {
+    border-color: var(--fluent-stroke-strong);
+    box-shadow: var(--fluent-shadow-flyout);
+  }
+
+  .mod-info-backdrop {
+    background: var(--fluent-acrylic-base);
+
+    img {
+      opacity: 0.32;
+      filter: blur(42px) brightness(0.36) saturate(0.8);
+    }
+  }
 }
 
-html[data-theme="fluent"] .mod .operations button:hover {
-  border-color: var(--fluent-stroke-strong);
-  background: var(--fluent-fill-control-hover);
+html[data-theme="fluent"] .recommended-map-row {
+  border-radius: var(--fluent-radius-card);
+  border-color: var(--fluent-stroke-subtle);
+  background: var(--fluent-acrylic-base);
+  box-shadow: var(--fluent-shadow-card);
+
+  .recommended-map-card .mod {
+    border-radius: var(--fluent-radius-card) 0 0 var(--fluent-radius-card);
+  }
 }
 
-/* The media preview remains visible, while the information area uses a
-   restrained acrylic surface instead of a saturated image wash. */
-html[data-theme="fluent"] .mod .mod-info-backdrop {
-  background: var(--fluent-acrylic-base) !important;
-}
-
-html[data-theme="fluent"] .mod .mod-info-backdrop img {
-  opacity: 0.28;
-  filter: blur(42px) brightness(0.34) saturate(0.72);
-}
-
+/* Manage */
 html[data-theme="fluent"] .manage-page {
   grid-template-columns: minmax(0, 1fr) 256px;
-  min-width: 0;
-  background: transparent;
-}
-
-html[data-theme="fluent"] .manage-main,
-html[data-theme="fluent"] .manage-side,
-html[data-theme="fluent"] .manage-tree-scroll {
-  min-width: 0;
-}
-
-html[data-theme="fluent"] .manage-tree-scroll {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-html[data-theme="fluent"] .theme-preview-content .manage-page {
-  display: flex;
-  flex-direction: column;
-  grid-template-columns: none;
-  min-height: 260px;
-}
-
-html[data-theme="fluent"]
-  .theme-preview-content
-  .manage-page
-  .linear-command-bar {
-  flex: 0 0 auto;
-}
-
-html[data-theme="fluent"] .theme-preview-content .manage-page .mod-list {
-  flex: 1 1 auto;
-}
-
-html[data-theme="fluent"] .manage-main {
-  border-right-color: var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .manage-toolbar {
-  gap: 5px;
-}
-
-html[data-theme="fluent"] .manage-title-block h1 {
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .manage-title-block span {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .manage-notice-bar,
-html[data-theme="fluent"] .manage-filter-hint {
-  border-color: var(--fluent-stroke-divider);
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .manage-tree-scroll {
-  padding: 0 8px 14px 0;
-}
-
-html[data-theme="fluent"] .manage-tree-row {
-  position: relative;
-  min-height: 40px;
-  border-radius: 0;
-  transition:
-    background var(--fluent-duration-fast),
-    color var(--fluent-duration-fast);
-}
-
-/* Fluent ListView rows use one flat surface; inline controls must not become
-   a stack of tiny cards. */
-html[data-theme="fluent"] .manage-tree-row .tree-expander,
-html[data-theme="fluent"] .manage-tree-row .state-switch,
-html[data-theme="fluent"] .manage-tree-row .tree-name,
-html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button {
-  border: 0 !important;
-  border-radius: 2px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .manage-tree-row .tree-expander,
-html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button {
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-}
-
-html[data-theme="fluent"] .manage-tree-row .tree-name {
-  min-height: 32px;
-  padding-inline: 4px;
-}
-
-html[data-theme="fluent"] .manage-tree-row .tree-expander:hover,
-html[data-theme="fluent"] .manage-tree-row .state-switch:hover,
-html[data-theme="fluent"] .manage-tree-row .tree-name:hover,
-html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button:hover {
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-/* Status text is a compact Fluent badge, not an unframed text button. */
-html[data-theme="fluent"] .manage-tree-row .state-switch {
-  min-height: 23px;
-  padding: 0 8px;
-  border: 1px solid var(--fluent-stroke-control) !important;
-  border-radius: 999px !important;
-  color: var(--fluent-text-tertiary);
-  background: var(--fluent-fill-subtle) !important;
-  font-size: calc(11px * var(--manage-font-scale, 1));
-  line-height: 1;
-}
-
-html[data-theme="fluent"] .manage-tree-row .state-switch.enabled {
-  border-color: rgba(91, 209, 117, 0.42) !important;
-  color: #9be6a4;
-  background: rgba(65, 184, 117, 0.14) !important;
-}
-
-html[data-theme="fluent"] .manage-tree-row .state-switch.always {
-  border-color: rgba(96, 205, 255, 0.42) !important;
-  color: #9cddff;
-  background: rgba(96, 205, 255, 0.12) !important;
-}
-
-html[data-theme="fluent"]
-  .manage-tree-row
-  .state-switch:not(.enabled):not(.always) {
-  background: rgba(255, 255, 255, 0.045) !important;
-}
-
-html[data-theme="fluent"] .manage-tree-row:hover {
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .manage-tree-row.selected {
-  background: var(--fluent-fill-control-selected) !important;
-}
-
-html[data-theme="fluent"] .manage-tree-row.selected::before {
-  content: "";
-  position: absolute;
-  top: 7px;
-  bottom: 7px;
-  left: 1px;
-  width: 3px;
-  border-radius: 2px;
-  background: var(--fluent-accent);
 }
 
 html[data-theme="fluent"] .manage-side {
   background: rgba(0, 0, 0, 0.08);
+
+  .profile-row {
+    position: relative;
+    border-radius: 5px;
+
+    &.selected {
+      background: var(--fluent-fill-control-selected);
+      border-color: transparent;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 7px;
+        bottom: 7px;
+        left: 0;
+        width: 3px;
+        border-radius: 2px;
+        background: var(--fluent-accent);
+        pointer-events: none;
+      }
+    }
+  }
 }
 
-html[data-theme="fluent"] .manage-side .profile-row {
-  position: relative;
-  box-sizing: border-box;
-  min-height: 38px;
-  border: 0 !important;
-  border-bottom: 1px solid var(--fluent-stroke-divider) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+/* Downloads */
+html[data-theme="fluent"] .download-page {
+  .download-filter-bar {
+    padding: 3px;
+    gap: 2px;
+    border-color: var(--fluent-stroke-subtle);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .download-filter-pill {
+    border-radius: 4px;
+
+    &.is-active {
+      color: var(--fluent-text-primary);
+      background: var(--fluent-fill-control-selected);
+      box-shadow: inset 0 0 0 1px var(--fluent-stroke-subtle);
+    }
+  }
+
+  .download-page-list {
+    border-color: var(--fluent-stroke-subtle);
+    border-radius: var(--fluent-radius-card);
+    background: var(--fluent-acrylic-base);
+    box-shadow: var(--fluent-shadow-card);
+  }
 }
 
-html[data-theme="fluent"] .manage-side .profile-row.selected {
-  /* Draw the selection indicator without changing the grid's content box;
-     adding a real left border shifted the selected profile and its actions
-     a few pixels to the right of the other rows. */
-  border-left: 0 !important;
-  background: var(--fluent-fill-control-selected) !important;
-}
-
-html[data-theme="fluent"] .manage-side .profile-row.selected::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--fluent-accent);
-  pointer-events: none;
-}
-
-/* Profile command buttons are icon affordances, not individual Fluent cards.
-   Use a stronger selector than the global button treatment so their borders
-   and fills cannot reappear. */
-html[data-theme="fluent"] .manage-side .profile-select,
-html[data-theme="fluent"] .manage-side .profile-export,
-html[data-theme="fluent"] .manage-side .profile-rename,
-html[data-theme="fluent"] .manage-side .profile-delete,
-html[data-theme="fluent"] .manage-side .profile-folder,
-html[data-theme="fluent"] .manage-side .profile-import {
-  min-height: 0 !important;
-  border: 0 !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .manage-side .profile-export,
-html[data-theme="fluent"] .manage-side .profile-rename,
-html[data-theme="fluent"] .manage-side .profile-delete,
-html[data-theme="fluent"] .manage-side .profile-folder,
-html[data-theme="fluent"] .manage-side .profile-import {
-  width: 32px;
-  height: 32px;
-}
-
-html[data-theme="fluent"] .manage-side .profile-select:hover,
-html[data-theme="fluent"] .manage-side .profile-export:hover,
-html[data-theme="fluent"] .manage-side .profile-rename:hover,
-html[data-theme="fluent"] .manage-side .profile-delete:hover,
-html[data-theme="fluent"] .manage-side .profile-folder:hover,
-html[data-theme="fluent"] .manage-side .profile-import:hover {
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .manage-side section,
-html[data-theme="fluent"] .manage-side .profile-card {
-  border-color: var(--fluent-stroke-subtle) !important;
-  border-radius: 6px !important;
-  background: var(--fluent-fill-subtle) !important;
-}
-
-html[data-theme="fluent"] .channel-card,
-html[data-theme="fluent"] .everest-card,
-html[data-theme="fluent"] .version-card {
-  border: 1px solid var(--fluent-stroke-subtle) !important;
-  border-radius: 8px !important;
-  background: var(--fluent-fill-subtle) !important;
-  box-shadow: var(--fluent-shadow-card) !important;
-}
-
-html[data-theme="fluent"] .channel-card:hover,
-html[data-theme="fluent"] .everest-card:hover,
-html[data-theme="fluent"] .version-card:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .keybindings-page {
-  width: 100%;
-  grid-template-columns: 180px minmax(0, 1fr);
-  background: transparent;
-}
-
-/* Downloads use a clean Fluent ListView surface with compact icon actions
-   and segmented filter pills, avoiding chunky filled button frames. */
-html[data-theme="fluent"] .page-Downloads {
-  background: transparent;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page {
-  color: var(--fluent-text-secondary);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-inner {
-  width: min(940px, 100%);
-  padding: 24px 32px 48px;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-header {
-  border-bottom-color: var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-heading h1 {
-  color: var(--fluent-text-primary);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-subtitle {
-  border: 0;
-  border-radius: 0;
-  color: var(--fluent-text-tertiary);
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-html[data-theme="fluent"] .loenn[role="status"],
-html[data-theme="fluent"] .loenn [role="status"] {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-filter-bar {
-  padding: 3px;
-  gap: 2px;
-  border-color: var(--fluent-stroke-subtle);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-filter-pill {
-  min-height: 28px !important;
-  border: 0 !important;
-  border-radius: 4px !important;
-  color: var(--fluent-text-secondary) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-filter-pill:hover {
-  color: var(--fluent-text-primary) !important;
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-filter-pill.is-active {
-  color: var(--fluent-text-primary) !important;
-  background: var(--fluent-fill-control-selected) !important;
-  box-shadow: inset 0 0 0 1px var(--fluent-stroke-subtle) !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-list {
-  border: 1px solid var(--fluent-stroke-subtle);
+/* Multiplayer & RecommendMods acrylic cards */
+html[data-theme="fluent"] .multiplayer-account-card,
+html[data-theme="fluent"] .multiplayer-settings-card,
+html[data-theme="fluent"] .multiplayer-settings-footer {
+  border-color: var(--fluent-stroke-control);
   border-radius: var(--fluent-radius-card);
   background: var(--fluent-acrylic-base);
   box-shadow: var(--fluent-shadow-card);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task {
-  border-bottom-color: var(--fluent-stroke-divider);
-}
+/* Theme Preview Harness accents (layout lives in themePreview.scss) */
+html[data-theme="fluent"] .theme-preview-content {
+  .theme-preview-switcher {
+    border-color: var(--fluent-stroke-subtle);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.16);
 
-html[data-theme="fluent"] .page-Downloads .download-task:hover {
-  background: var(--fluent-fill-subtle);
-}
+    button.selected {
+      border-color: var(--fluent-stroke-control);
+      background: var(--fluent-fill-control-selected);
+    }
+  }
 
-html[data-theme="fluent"] .page-Downloads .download-task-toggle,
-html[data-theme="fluent"] .page-Downloads .download-task-action,
-html[data-theme="fluent"] .page-Downloads .download-dependency-actions button {
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 4px !important;
-  color: var(--fluent-text-secondary) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-toggle:hover,
-html[data-theme="fluent"] .page-Downloads .download-task-action:hover,
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-dependency-actions
-  button:hover {
-  color: var(--fluent-text-primary) !important;
-  background: var(--fluent-fill-control-hover) !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-title {
-  color: var(--fluent-text-primary);
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-summary,
-html[data-theme="fluent"] .page-Downloads .download-dependency-meta {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-progress,
-html[data-theme="fluent"] .page-Downloads .download-dependency-progress {
-  background: var(--fluent-fill-control);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-progress > span,
-html[data-theme="fluent"] .page-Downloads .download-dependency-progress > span {
-  background: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-finished .download-task-progress > span,
-html[data-theme="fluent"] .page-Downloads .download-detail-row-finished .download-dependency-progress > span {
-  background: var(--fluent-success);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-progress > span,
-html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-progress > span {
-  background: var(--fluent-danger);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-cancel:hover,
-html[data-theme="fluent"] .page-Downloads .download-dependency-actions button.download-dependency-cancel:hover {
-  color: var(--fluent-danger) !important;
-  background: color-mix(
-    in srgb,
-    var(--fluent-danger) 14%,
-    transparent
-  ) !important;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-dependency-list {
-  border-left-color: var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-empty-icon {
-  border-color: var(--fluent-stroke-control);
-  border-radius: var(--fluent-radius-card);
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-empty-action .icon {
-  color: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .keybindings-main {
-  width: 100%;
-}
-
-/* Keep the source list flat; only the selected source gets a surface tint. */
-html[data-theme="fluent"] .keybindings-sources > button {
-  min-height: 32px;
-  border: 0 !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .keybindings-sources > button.selected {
-  background: var(--fluent-fill-control-selected) !important;
-}
-
-html[data-theme="fluent"] .keybindings-toolbar {
-  grid-template-columns: auto minmax(180px, 1fr) auto;
-  gap: 8px;
-  padding-inline: 12px;
-}
-
-html[data-theme="fluent"] .keybindings-actions {
-  gap: 6px;
-  overflow: hidden;
-}
-
-html[data-theme="fluent"] .keybindings-actions button {
-  min-width: 0;
-  padding-inline: 10px;
-  border: 0 !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  white-space: nowrap;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-panel {
-  margin: 8px 0 0;
-  border-radius: 6px;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-board {
-  /* Keep the keyboard's intrinsic layout intact and let the surrounding
-     scroll viewport handle narrow windows. Shrinking the board itself makes
-     the fixed-width key groups overlap and clips the rightmost keys. */
-  width: 776px;
-  min-width: 776px;
-  max-width: none;
-  margin-inline: 0;
-  overflow: visible;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-html[data-theme="fluent"] .keybindings-list,
-html[data-theme="fluent"] .keybindings-scroll {
-  padding: 8px 12px 20px;
-}
-
-html[data-theme="fluent"] .keybinding-row,
-html[data-theme="fluent"] .keybindings-row {
-  border-bottom: 1px solid var(--fluent-stroke-divider);
-  background: transparent;
-  transition: background var(--fluent-duration-fast);
-}
-
-html[data-theme="fluent"] .keybinding-row:hover,
-html[data-theme="fluent"] .keybindings-row:hover {
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .keybinding-key,
-html[data-theme="fluent"] .binding-chip,
-html[data-theme="fluent"] .binding-add {
-  border: 0 !important;
-  border-radius: 4px;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-key {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-key.used {
-  border: 1px solid color-mix(in srgb, var(--fluent-accent) 42%, transparent) !important;
-  background: color-mix(
-    in srgb,
-    var(--fluent-accent) 11%,
-    transparent
-  ) !important;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-key.multiple {
-  border: 1px solid color-mix(in srgb, var(--fluent-warning) 42%, transparent) !important;
-  background: color-mix(
-    in srgb,
-    var(--fluent-warning) 11%,
-    transparent
-  ) !important;
-}
-
-html[data-theme="fluent"] .virtual-keyboard-key:hover,
-html[data-theme="fluent"] .virtual-keyboard-key.selected,
-html[data-theme="fluent"] .binding-chip:hover,
-html[data-theme="fluent"] .binding-add:hover {
-  border-color: var(--fluent-stroke-strong);
-  background: var(--fluent-fill-control-hover) !important;
-  box-shadow: none;
+  .card-grid .mod-card {
+    border-color: var(--fluent-stroke-subtle);
+    border-radius: 6px;
+    background: var(--fluent-fill-subtle);
+  }
 }

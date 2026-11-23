@@ -1,6 +1,3 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .recommend-mods-page {
   display: flex;
   flex-direction: column;
@@ -20,13 +17,14 @@
 
   h1 {
     margin: 8px 0 4px;
+    color: var(--color-fg);
     font-size: 28px;
   }
 
   p {
     margin: 0;
-    color: theme.$fg2;
-    font-size: 12px;
+    color: var(--color-fg-subtle);
+    font-size: 12.5px;
   }
 }
 
@@ -35,22 +33,29 @@
   align-items: center;
   min-height: 34px;
   padding: 0 14px;
-  border: 1px solid color.change(theme.$primary, $alpha: 0.48);
-  background: color.change(theme.$primary, $alpha: 0.22);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--btn-radius, 8px);
+  color: var(--color-fg);
+  background: var(--color-primary-soft);
+  box-shadow: none;
   gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
   transition:
     background-color var(--motion-fast, 140ms) ease,
     border-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease;
 
   &:hover {
-    background: color.change(theme.$primary, $alpha: 0.42);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
   }
 }
 
 .recommend-mods-page .recommend-tabs {
   justify-content: flex-start;
-  margin: 20px 0 14px;
+  margin: 18px 0 14px;
 }
 
 .recommend-tab-content {
@@ -80,17 +85,17 @@
   align-items: center;
   min-height: 57px;
   padding: 7px 9px 7px 13px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   gap: 16px;
-  transition: background 150ms ease;
+  transition: background-color 150ms ease;
 
   &:first-child {
-    border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-top: 1px solid var(--color-divider);
   }
 
   &:hover {
-    background: color.change(theme.$fg, $alpha: 0.025);
+    background: var(--color-surface-subtle);
   }
 }
 
@@ -104,7 +109,7 @@
   min-width: 0;
   align-items: center;
   overflow: hidden;
-  color: theme.$fg;
+  color: var(--color-fg);
   font-size: 13px;
   font-weight: 600;
   line-height: 20px;
@@ -122,14 +127,14 @@
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
-  color: #e5b959;
-  font-size: 8px;
+  color: var(--color-warning);
+  font-size: 9px;
 }
 
 .helper-mod-description {
   overflow: hidden;
-  color: theme.$fg2;
-  font-size: 11px;
+  color: var(--color-fg-subtle);
+  font-size: 11.5px;
   line-height: 17px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -145,11 +150,11 @@
   height: 32px;
   min-height: 32px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 9px;
-  color: white;
-  background: rgba(15, 15, 18, 0.75);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 9px);
+  color: var(--color-fg);
+  background: var(--color-surface-elevated);
+  box-shadow: none;
   letter-spacing: 0;
   transition:
     border-color var(--motion-fast, 140ms) ease,
@@ -158,8 +163,9 @@
     opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
-    border-color: color.change(theme.$primary, $alpha: 0.62);
-    background: color.change(theme.$primary, $alpha: 0.8);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
   }
 
   &:disabled {
@@ -177,8 +183,8 @@
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(
-    color.adjust(theme.$primary, $lightness: 12%) var(--download-progress),
-    rgba(255, 255, 255, 0.16) 0
+    var(--color-primary) var(--download-progress),
+    color-mix(in srgb, var(--color-fg) 18%, transparent) 0
   );
   transition: --download-progress 220ms
     var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
@@ -187,13 +193,14 @@
     position: absolute;
     inset: 3px;
     border-radius: inherit;
-    background: #1b1b1d;
+    background: var(--color-surface-elevated);
     content: "";
   }
 
   > span {
     position: relative;
     z-index: 1;
+    color: var(--color-fg);
     font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
     font-size: 8px;
     font-weight: 700;
@@ -212,22 +219,18 @@
   grid-template-columns: minmax(280px, 340px) minmax(280px, 1fr);
   min-height: 242px;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 15px;
-  background: linear-gradient(
-    125deg,
-    color.change(theme.$bg2, $alpha: 0.74),
-    color.change(theme.$bg1, $alpha: 0.88)
-  );
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--color-surface-card);
+  box-shadow: var(--shadow-card);
   transition:
     border-color var(--motion-fast, 140ms) ease,
     box-shadow var(--motion-normal, 210ms)
       var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
 
   &:hover {
-    border-color: color.change(theme.$fg, $alpha: 0.15);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-elevated);
   }
 }
 
@@ -236,8 +239,8 @@
 
   .mod {
     border: 0;
-    border-right: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 14px 0 0 14px;
+    border-right: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg, 14px) 0 0 var(--radius-lg, 14px);
     box-shadow: none;
   }
 }
@@ -251,13 +254,13 @@
 
   h2 {
     margin: 8px 0 2px;
-    color: theme.$fg;
+    color: var(--color-fg);
     font-size: 22px;
   }
 
   .map-alias {
     margin-bottom: 10px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 11px;
   }
 
@@ -265,7 +268,7 @@
     position: relative;
     margin: 3px 0;
     padding-left: 14px;
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-size: 12px;
     line-height: 1.55;
 
@@ -276,7 +279,7 @@
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background: color.adjust(theme.$primary, $lightness: 18%);
+      background: var(--color-primary);
       content: "";
     }
   }
@@ -286,7 +289,7 @@
   display: inline-flex;
   align-items: center;
   width: max-content;
-  color: color.adjust(theme.$primary, $lightness: 20%);
+  color: var(--color-primary-text);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;

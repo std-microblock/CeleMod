@@ -1,67 +1,44 @@
 html[data-theme="fluent"] .filter-popup,
 html[data-theme="fluent"] .manage-filter-popup,
 html[data-theme="fluent"] .manage-action-menu,
-html[data-theme="fluent"] .popup-content,
-html[data-theme="fluent"] .download-list,
-html[data-theme="fluent"] .download-list-menu,
-html[data-theme="fluent"] .context-menu,
-html[data-theme="fluent"] [role="menu"] {
-  border: 1px solid var(--fluent-stroke-strong) !important;
-  border-radius: var(--fluent-radius-overlay) !important;
-  background: var(--fluent-acrylic-strong) !important;
-  box-shadow: var(--fluent-shadow-flyout) !important;
-  backdrop-filter: blur(30px) saturate(140%);
-}
-
-html[data-theme="fluent"] .filter-popup {
-  padding: 14px;
-}
-
-html[data-theme="fluent"] .filter-popup-header {
-  border-bottom-color: var(--fluent-stroke-divider) !important;
-}
-
-html[data-theme="fluent"] .filter-popup-header strong,
-html[data-theme="fluent"] .popup-heading strong {
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .filter-popup-header span,
-html[data-theme="fluent"] .popup-heading span {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .manage-filter-popup > label,
-html[data-theme="fluent"] .filter-grid label {
-  border-radius: 4px;
-}
-
-html[data-theme="fluent"] .manage-action-menu button,
-html[data-theme="fluent"] [role="menu"] button,
-html[data-theme="fluent"] .context-menu button {
-  width: 100%;
-  justify-content: flex-start;
-  border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .manage-action-menu button:hover,
-html[data-theme="fluent"] [role="menu"] button:hover,
-html[data-theme="fluent"] .context-menu button:hover {
-  background: var(--fluent-fill-control-hover) !important;
-}
-
-html[data-theme="fluent"] .popup-container,
-html[data-theme="fluent"] .dialog-backdrop,
-html[data-theme="fluent"] .modal-backdrop {
-  background: var(--fluent-smoke);
-  backdrop-filter: blur(3px);
+html[data-theme="fluent"] .mod-row-menu,
+html[data-theme="fluent"] .profile-import-menu {
+  border-color: var(--fluent-stroke-strong);
+  border-radius: var(--fluent-radius-overlay);
+  background: var(--fluent-acrylic-strong);
+  box-shadow: var(--fluent-shadow-flyout);
+  backdrop-filter: blur(28px) saturate(140%);
 }
 
 html[data-theme="fluent"] .popup-container {
+  background: var(--fluent-smoke);
+  backdrop-filter: blur(3px);
   transition: opacity var(--fluent-duration-normal)
     var(--fluent-ease-decelerate);
+}
+
+html[data-theme="fluent"] .popup-content:not(.crash-assistant-popup),
+html[data-theme="fluent"] .download-file-popup .download-file-dialog,
+html[data-theme="fluent"] .miaonet-atlas-picker,
+html[data-theme="fluent"] .update-prompt {
+  border-color: var(--fluent-stroke-strong);
+  border-radius: var(--fluent-radius-overlay);
+  background: var(--fluent-acrylic-strong);
+  box-shadow: var(--fluent-shadow-dialog);
+  backdrop-filter: blur(28px) saturate(140%);
+}
+
+html[data-theme="fluent"] .popup-content:not(.crash-assistant-popup) {
+  .title {
+    color: var(--fluent-text-primary);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .buttons {
+    justify-content: flex-end;
+    gap: 8px;
+  }
 }
 
 html[data-theme="fluent"]
@@ -99,6 +76,23 @@ html[data-theme="fluent"]
     var(--fluent-ease-accelerate) both;
 }
 
+html[data-theme="fluent"] .blocking-mask {
+  color: var(--fluent-text-primary);
+  background: rgba(18, 18, 18, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme="fluent"] .startup-splash-backdrop {
+  background: var(--fluent-mica-base);
+}
+
+html[data-theme="fluent"] .drop-install-overlay {
+  border-color: rgba(96, 205, 255, 0.55);
+  border-radius: var(--fluent-radius-overlay);
+  background: rgba(32, 32, 32, 0.84);
+  backdrop-filter: blur(24px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-theme="fluent"] .popup-container {
     transition: none;
@@ -133,169 +127,4 @@ html[data-theme="fluent"]
     img {
     animation: none;
   }
-}
-
-html[data-theme="fluent"] .popup-content,
-html[data-theme="fluent"] .dialog,
-html[data-theme="fluent"] [role="dialog"]:not(.mod-detail-dialog) {
-  border-radius: 8px !important;
-  background: var(--fluent-acrylic-strong) !important;
-  box-shadow: var(--fluent-shadow-dialog) !important;
-}
-
-html[data-theme="fluent"] .popup-content .title,
-html[data-theme="fluent"] .dialog-title {
-  color: var(--fluent-text-primary);
-  font-size: 20px;
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .popup-content .content,
-html[data-theme="fluent"] .dialog-content {
-  color: var(--fluent-text-secondary);
-}
-
-html[data-theme="fluent"] .popup-content .buttons,
-html[data-theme="fluent"] .dialog-actions {
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-html[data-theme="fluent"] .download-list-container,
-html[data-theme="fluent"] .download-list-menu {
-  color: var(--fluent-text-primary);
-}
-
-html[data-theme="fluent"] .download-list-header {
-  border-bottom: 1px solid var(--fluent-stroke-divider);
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .download-list-header h2,
-html[data-theme="fluent"] .download-list-title {
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .download-item,
-html[data-theme="fluent"] .download-list-item {
-  border-bottom: 1px solid var(--fluent-stroke-divider);
-  background: transparent;
-  transition: background var(--fluent-duration-fast);
-}
-
-html[data-theme="fluent"] .download-item:hover,
-html[data-theme="fluent"] .download-list-item:hover {
-  background: var(--fluent-fill-subtle);
-}
-
-html[data-theme="fluent"] .download-item-progress,
-html[data-theme="fluent"] .download-progress {
-  overflow: hidden;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--fluent-fill-control-selected);
-}
-
-html[data-theme="fluent"] .download-item-progress > *,
-html[data-theme="fluent"] .download-progress > * {
-  border-radius: inherit;
-  background: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .toast,
-html[data-theme="fluent"] .snackbar,
-html[data-theme="fluent"] [role="status"] {
-  border: 1px solid var(--fluent-stroke-strong);
-  border-radius: 6px;
-  color: var(--fluent-text-primary);
-  background: var(--fluent-acrylic-strong);
-  box-shadow: var(--fluent-shadow-flyout);
-  backdrop-filter: blur(24px) saturate(135%);
-}
-
-html[data-theme="fluent"] .toast.success,
-html[data-theme="fluent"] .snackbar.success {
-  border-left: 3px solid var(--fluent-success);
-}
-
-html[data-theme="fluent"] .toast.warning,
-html[data-theme="fluent"] .snackbar.warning {
-  border-left: 3px solid var(--fluent-warning);
-}
-
-html[data-theme="fluent"] .toast.error,
-html[data-theme="fluent"] .snackbar.error {
-  border-left: 3px solid var(--fluent-danger);
-}
-
-html[data-theme="fluent"] .blocking-mask {
-  color: var(--fluent-text-primary);
-  background: rgba(18, 18, 18, 0.75);
-  backdrop-filter: blur(8px);
-}
-
-html[data-theme="fluent"] .blocking-mask-spinner {
-  border-color: rgba(255, 255, 255, 0.18);
-  border-top-color: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .startup-splash {
-  border: 0;
-  border-radius: 0;
-  color: var(--fluent-text-primary);
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-html[data-theme="fluent"] .startup-splash-backdrop {
-  background: var(--fluent-mica-base);
-}
-
-html[data-theme="fluent"] .startup-splash-spinner {
-  border-color: rgba(255, 255, 255, 0.18);
-  border-top-color: var(--fluent-accent);
-}
-
-html[data-theme="fluent"] .startup-splash-skip {
-  border-color: var(--fluent-stroke-control) !important;
-  background: var(--fluent-fill-control) !important;
-  color: var(--fluent-text-secondary) !important;
-}
-
-html[data-theme="fluent"] .startup-splash-skip:hover {
-  border-color: var(--fluent-stroke-strong) !important;
-  background: var(--fluent-fill-control-hover) !important;
-  color: var(--fluent-text-primary) !important;
-}
-
-html[data-theme="fluent"] .drop-install-overlay,
-html[data-theme="fluent"] .drop-installer-overlay {
-  border: 2px dashed rgba(96, 205, 255, 0.55);
-  border-radius: 8px;
-  background: rgba(32, 32, 32, 0.82);
-  backdrop-filter: blur(24px);
-}
-
-html[data-theme="fluent"] .drop-install-card {
-  border: 1px solid var(--fluent-stroke-strong) !important;
-  border-radius: 8px !important;
-  background: var(--fluent-acrylic-strong) !important;
-  box-shadow: var(--fluent-shadow-dialog) !important;
-}
-
-html[data-theme="fluent"] .crash-assistant {
-  border: 1px solid var(--fluent-stroke-strong) !important;
-  border-radius: 8px !important;
-  background: var(--fluent-acrylic-strong) !important;
-  box-shadow: var(--fluent-shadow-dialog) !important;
-  backdrop-filter: blur(30px) saturate(135%);
-}
-
-html[data-theme="fluent"] .crash-assistant header {
-  border-bottom-color: var(--fluent-stroke-divider) !important;
-}
-
-html[data-theme="fluent"] .crash-assistant footer {
-  border-top-color: var(--fluent-stroke-divider) !important;
 }

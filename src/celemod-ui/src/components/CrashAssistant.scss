@@ -1,13 +1,12 @@
-@use "../styles/theme" as theme;
-
 .popup-container.crash-popup-container,
 .popup-container:has(.crash-assistant-popup) {
-  inset: 45px 0 0;
+  inset: var(--window-titlebar-height, 45px) 0 0;
+  padding: 0;
   align-items: stretch;
   justify-content: stretch;
   border-radius: 0;
   overflow: hidden;
-  background: theme.$bg !important;
+  background: var(--color-canvas) !important;
 }
 
 .popup-content.crash-assistant-popup {
@@ -27,13 +26,13 @@
   border-radius: 0;
   box-sizing: border-box;
   text-align: left;
-  background: theme.$bg;
+  background: var(--color-canvas);
   box-shadow: none;
 }
 
 .crash-popup-heading {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) 30px;
+  grid-template-columns: 36px minmax(0, 1fr) 32px;
   align-items: center;
   gap: 10px;
   margin-bottom: 9px;
@@ -51,26 +50,37 @@
   width: 34px;
   height: 34px;
   border: 1px solid rgba(255, 159, 67, 0.5);
-  border-radius: 8px;
+  border-radius: var(--radius-md, 8px);
   color: #ffad61;
   background: rgba(255, 132, 40, 0.12);
   font-size: 18px;
 }
 
 .crash-time {
-  color: theme.$fg1;
+  color: var(--color-fg-muted);
   font-size: 11px;
 }
 
 .crash-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   min-width: 32px;
   min-height: 32px;
   padding: 0;
+  border: 0;
   border-radius: 50%;
   background: transparent;
   box-shadow: none;
-  color: theme.$fg1;
+  color: var(--color-fg-muted);
   font-size: 22px;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    color: var(--color-fg);
+    background: var(--color-surface-hover);
+  }
 }
 
 .crash-summary-line {
@@ -79,8 +89,8 @@
   gap: 9px;
   margin-bottom: 8px;
   padding: 7px 10px;
-  background: rgba(255, 159, 67, 0.07);
-  border-radius: 6px;
+  background: rgba(255, 159, 67, 0.08);
+  border-radius: var(--radius-sm, 6px);
 }
 
 .crash-summary-line strong {
@@ -91,7 +101,7 @@
 .crash-summary-line span {
   min-width: 0;
   overflow: hidden;
-  color: theme.$fg1;
+  color: var(--color-fg-muted);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -105,8 +115,8 @@
   max-height: none;
   margin-bottom: 8px;
   overflow: hidden;
-  border-top: 1px solid theme.$bg2;
-  border-bottom: 1px solid theme.$bg2;
+  border-top: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
 }
 
 .crash-main-grid section {
@@ -117,13 +127,13 @@
 
 .crash-main-grid h3 {
   margin: 0 0 7px;
-  color: theme.$fg;
+  color: var(--color-fg);
   font-size: 11px;
   font-weight: 600;
 }
 
 .crash-trace {
-  border-left: 1px solid theme.$bg2;
+  border-left: 1px solid var(--color-divider);
 }
 
 .crash-trace-heading {
@@ -143,7 +153,8 @@
   padding: 6px 8px;
   user-select: text;
   color: #ffc58f;
-  background: rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.24);
+  border-radius: var(--radius-xs, 4px);
   font-size: 10px;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -151,17 +162,17 @@
 
 .crash-suspect {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
   gap: 6px;
   margin: 0;
   padding: 6px 3px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  border-bottom: 1px solid var(--color-border-subtle);
   cursor: pointer;
 }
 
 .crash-suspect:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--color-surface-subtle);
 }
 
 .crash-suspect-main,
@@ -194,7 +205,7 @@
 }
 
 .crash-suspect-main small {
-  color: theme.$fg1;
+  color: var(--color-fg-subtle);
   font-size: 10px;
 }
 
@@ -219,7 +230,7 @@
 
 .crash-empty {
   padding: 16px 8px;
-  color: theme.$fg1;
+  color: var(--color-fg-subtle);
   font-size: 11px;
   text-align: center;
 }
@@ -233,13 +244,13 @@
 }
 
 .crash-everest-state span {
-  color: theme.$fg1;
-  background: theme.$bg1;
+  color: var(--color-fg-muted);
+  background: var(--color-surface-elevated);
 }
 
 .crash-everest-state .ultra {
-  color: #d9c5ff;
-  background: rgba(143, 89, 255, 0.18);
+  color: var(--color-primary-text);
+  background: var(--color-primary-soft);
 }
 
 .crash-advice {
@@ -249,12 +260,12 @@
   gap: 7px 10px;
   margin-bottom: 8px;
   padding: 4px 2px;
-  color: theme.$fg1;
+  color: var(--color-fg-muted);
   font-size: 10px;
 }
 
 .crash-advice > strong {
-  color: theme.$fg;
+  color: var(--color-fg);
   font-size: 11px;
 }
 
@@ -266,7 +277,7 @@
 
 .crash-advice small {
   grid-column: 2;
-  color: #df8c8c;
+  color: var(--color-danger);
   font-size: 9px;
 }
 
@@ -277,8 +288,8 @@
   gap: 10px;
   margin-bottom: 8px;
   padding: 10px 12px;
-  border: 1px dashed rgba(116, 185, 255, 0.2);
-  border-radius: 8px;
+  border: 1px dashed color-mix(in srgb, var(--color-info) 35%, transparent);
+  border-radius: var(--radius-md, 8px);
   cursor: grab;
 }
 
@@ -287,7 +298,7 @@
 }
 
 .crash-report-file > .icon {
-  color: #80bfff;
+  color: var(--color-info);
   font-size: 22px;
 }
 
@@ -306,14 +317,14 @@
 }
 
 .crash-report-file span {
-  color: theme.$fg1;
+  color: var(--color-fg-subtle);
   font-size: 10px;
 }
 
 .crash-report-file button {
-  min-height: 27px;
-  padding: 2px 9px;
-  font-size: 10px;
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 11px;
 }
 
 .crash-excerpt {
@@ -323,11 +334,12 @@
   margin: 0;
   padding: 8px;
   overflow: auto;
-  border: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm, 6px);
   user-select: text;
-  color: #c9c9c9;
-  background: #0d0d0d;
-  font-size: 9px;
+  color: var(--color-fg-muted);
+  background: color-mix(in srgb, var(--color-canvas) 82%, #000000);
+  font-size: 10px;
   line-height: 1.45;
   white-space: pre-wrap;
 }
@@ -336,30 +348,30 @@
 .crash-action-error {
   margin: 8px 0;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   font-size: 11px;
 }
 
 .crash-action-status {
-  color: #bfe1ff;
-  background: rgba(64, 150, 255, 0.1);
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
 }
 
 .crash-action-error {
   user-select: text;
-  color: #ffb5b5;
-  background: rgba(220, 60, 60, 0.12);
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
 .crash-actions {
   flex-wrap: wrap;
-  justify-content: flex-end !important;
+  justify-content: flex-end;
   margin-top: 8px;
 }
 
 .crash-actions button {
-  margin: 0 !important;
-  letter-spacing: 0.2px;
+  margin: 0;
+  letter-spacing: 0.01em;
 }
 
 .crash-actions button:disabled,
@@ -375,7 +387,7 @@
   }
 
   .crash-trace {
-    border-top: 1px solid theme.$bg2;
+    border-top: 1px solid var(--color-divider);
     border-left: 0;
   }
 }

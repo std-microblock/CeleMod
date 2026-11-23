@@ -39,11 +39,11 @@
       min-height: 40px;
       min-width: 0;
       margin: 0;
-      padding: 0 28px 0 34px;
+      padding: 10px 30px 10px 34px;
       border: 1px solid
         color-mix(in srgb, var(--color-fg, #{theme.$fg}) 10%, transparent);
       border-radius: var(--radius-lg, 10px);
-      background: color-mix(
+      background-color: color-mix(
         in srgb,
         var(--color-surface, #{theme.$bg}) 74%,
         transparent
@@ -52,6 +52,7 @@
       font-family:
         ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
       font-size: 12.5px;
+      line-height: 18px;
       font-variant-numeric: tabular-nums;
       text-overflow: ellipsis;
       outline: none;
@@ -66,7 +67,7 @@
           var(--color-fg, #{theme.$fg}) 18%,
           transparent
         );
-        background: color-mix(
+        background-color: color-mix(
           in srgb,
           var(--color-surface-hover, #{theme.$bg2}) 58%,
           transparent
@@ -176,7 +177,7 @@
     border: 1px solid
       color-mix(in srgb, var(--color-primary, #{theme.$primary}) 88%, #ffffff);
     background: var(--color-primary, #{theme.$primary});
-    color: #130f1c;
+    color: var(--color-on-primary, #130f1c);
     font-size: 13.5px;
     font-weight: 600;
 

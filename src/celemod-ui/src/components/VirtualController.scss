@@ -1,12 +1,9 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .virtual-controller-panel {
-  margin: 8px 0 0 8px;
+  margin: 8px 8px 0 8px;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.075);
-  border-radius: 9px;
-  background: color.change(theme.$bg1, $alpha: 0.5);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-card);
 }
 
 .virtual-controller-header {
@@ -16,7 +13,7 @@
   justify-content: space-between;
   padding: 5px 9px;
   gap: 12px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
 }
 
@@ -27,17 +24,18 @@
   gap: 7px;
 
   > strong {
+    color: var(--color-fg);
     font-size: calc(10px * var(--keybindings-font-scale, 1));
   }
 }
 
 .virtual-controller-connection,
 .virtual-controller-summary {
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 99px;
-  background: color.change(theme.$fg, $alpha: 0.055);
-  color: theme.$fg3;
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  background: var(--color-surface-subtle);
+  color: var(--color-fg-subtle);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   white-space: nowrap;
 }
 
@@ -46,26 +44,32 @@
   flex: 0 0 auto;
   padding: 2px;
   gap: 2px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 6px;
-  background: color.change(theme.$bg1, $alpha: 0.7);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface-input);
 
   button {
-    height: 20px;
-    min-height: 20px;
-    padding: 0 6px;
+    height: 22px;
+    min-height: 22px;
+    padding: 0 7px;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
-    font-size: calc(6.5px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    font-weight: 500;
     letter-spacing: 0;
 
-    &:hover,
+    &:hover {
+      background: var(--color-surface-subtle);
+      color: var(--color-fg);
+    }
+
     &.selected {
-      background: color.change(theme.$primary, $alpha: 0.13);
-      color: theme.$fg;
+      background: var(--color-primary-soft);
+      color: var(--color-primary-text);
+      font-weight: 600;
     }
   }
 }
@@ -79,18 +83,18 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: color.change(theme.$fg, $alpha: 0.24);
+    background: var(--color-fg-disabled);
     content: "";
   }
   &.connected::before {
-    background: #71c995;
-    box-shadow: 0 0 5px color.change(#71c995, $alpha: 0.45);
+    background: var(--color-success);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--color-success) 50%, transparent);
   }
 }
 
 .virtual-controller-summary {
-  background: color.change(theme.$primary, $alpha: 0.08);
-  color: color.adjust(theme.$primary, $lightness: 19%);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
 }
 
 .virtual-controller-legend {
@@ -103,8 +107,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: color.change(theme.$fg, $alpha: 0.48);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
     white-space: nowrap;
 
     &::before {
@@ -115,16 +119,16 @@
       content: "";
     }
     &.unused::before {
-      border-color: color.change(theme.$fg, $alpha: 0.13);
-      background: color.change(theme.$fg, $alpha: 0.025);
+      border-color: var(--color-border);
+      background: var(--color-surface-subtle);
     }
     &.used::before {
-      border-color: color.change(theme.$primary, $alpha: 0.42);
-      background: color.change(theme.$primary, $alpha: 0.18);
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-soft);
     }
     &.multiple::before {
-      border-color: color.change(#ffc66d, $alpha: 0.48);
-      background: color.change(#ffc66d, $alpha: 0.18);
+      border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+      background: color-mix(in srgb, var(--color-warning) 20%, transparent);
     }
   }
 }
@@ -132,14 +136,13 @@
 .virtual-controller-hint {
   margin: 0;
   padding: 4px 9px 0;
-  color: color.change(theme.$fg, $alpha: 0.35);
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  color: var(--color-fg-disabled);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
 }
 
 .virtual-controller-scroll {
   padding: 2px 8px 8px;
   overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .virtual-controller-diagram {
@@ -161,7 +164,7 @@
   height: 100%;
   object-fit: fill;
   opacity: 0.34;
-  filter: drop-shadow(0 6px 12px color.change(#000, $alpha: 0.15));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.16));
   pointer-events: none;
   user-select: none;
 
@@ -176,20 +179,22 @@
   display: flex;
   width: 28px;
   height: 28px;
+  min-width: 0;
   min-height: 28px;
   align-items: center;
   justify-content: center;
   padding: 0;
   overflow: visible;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.18);
+  border: 1px solid var(--color-border-strong);
   border-radius: 50%;
-  background: color.change(theme.$bg1, $alpha: 0.66);
-  box-shadow: 0 1px 4px color.change(#000, $alpha: 0.2);
-  color: color.change(theme.$fg, $alpha: 0.58);
+  background: color-mix(in srgb, var(--color-surface-elevated) 72%, transparent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  color: var(--color-fg-muted);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: calc(7px * var(--keybindings-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0;
+  box-sizing: border-box;
   transform: translate(-50%, -50%);
 
   > small {
@@ -202,42 +207,43 @@
     padding: 0 2px;
     place-items: center;
     border-radius: 99px;
-    background: color.change(theme.$primary, $alpha: 0.78);
-    color: theme.$fg;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
     font-size: calc(5.5px * var(--keybindings-font-scale, 1));
     line-height: 11px;
   }
   &.unused {
-    opacity: 0.68;
+    opacity: 0.72;
   }
   &.used {
-    border-color: color.change(theme.$primary, $alpha: 0.72);
-    background: color.change(theme.$primary, $alpha: 0.25);
-    color: theme.$fg;
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 26%, transparent);
+    color: var(--color-fg);
   }
   &.multiple {
-    border-color: color.change(#ffc66d, $alpha: 0.8);
-    background: color.change(#ffc66d, $alpha: 0.25);
-    color: #ffe0a8;
+    border-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 24%, transparent);
+    color: var(--color-warning);
 
     > small {
-      background: color.change(#d89a38, $alpha: 0.92);
+      background: var(--color-warning);
+      color: #16130b;
     }
   }
   &:hover,
   &.selected {
     z-index: 4;
-    border-color: color.change(theme.$primary, $alpha: 0.95);
-    background: color.change(theme.$primary, $alpha: 0.42);
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 44%, transparent);
     box-shadow:
-      0 0 0 2px color.change(theme.$primary, $alpha: 0.2),
-      0 2px 6px color.change(#000, $alpha: 0.25);
-    color: theme.$fg;
+      0 0 0 2px var(--color-primary-soft),
+      0 2px 6px rgba(0, 0, 0, 0.25);
+    color: var(--color-fg);
     opacity: 1;
   }
   &:focus-visible {
     z-index: 5;
-    outline: 1px solid color.change(theme.$primary, $alpha: 0.9);
+    outline: 1px solid var(--color-primary);
     outline-offset: 2px;
   }
 
@@ -293,8 +299,8 @@
 }
 
 .stick-segment {
-  fill: color.change(theme.$bg1, $alpha: 0.66);
-  stroke: color.change(theme.$fg, $alpha: 0.18);
+  fill: color-mix(in srgb, var(--color-surface-elevated) 70%, transparent);
+  stroke: var(--color-border-strong);
   stroke-width: 1.5;
   cursor: pointer;
   transition:
@@ -303,21 +309,21 @@
     opacity 100ms ease;
 
   &.unused {
-    opacity: 0.68;
+    opacity: 0.7;
   }
   &.used {
-    fill: color.change(theme.$primary, $alpha: 0.25);
-    stroke: color.change(theme.$primary, $alpha: 0.72);
+    fill: color-mix(in srgb, var(--color-primary) 26%, transparent);
+    stroke: var(--color-primary);
   }
   &.multiple {
-    fill: color.change(#ffc66d, $alpha: 0.25);
-    stroke: color.change(#ffc66d, $alpha: 0.8);
+    fill: color-mix(in srgb, var(--color-warning) 24%, transparent);
+    stroke: var(--color-warning);
   }
   &:hover,
   &.selected,
   &:focus-visible {
-    fill: color.change(theme.$primary, $alpha: 0.42);
-    stroke: color.change(theme.$primary, $alpha: 0.95);
+    fill: color-mix(in srgb, var(--color-primary) 42%, transparent);
+    stroke: var(--color-primary);
     stroke-width: 2.5;
     opacity: 1;
     outline: none;
@@ -326,7 +332,7 @@
 
 .stick-segment-label,
 .stick-segment-count {
-  fill: color.change(theme.$fg, $alpha: 0.72);
+  fill: var(--color-fg-muted);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 11px;
   font-weight: 700;
@@ -337,11 +343,11 @@
 }
 
 .stick-segment-count {
-  fill: color.adjust(theme.$primary, $lightness: 24%);
+  fill: var(--color-primary-text);
   font-size: 8px;
 
   &.multiple {
-    fill: #ffd58c;
+    fill: var(--color-warning);
   }
 }
 
@@ -353,19 +359,21 @@
 
   > span {
     flex: 0 0 auto;
-    color: color.change(theme.$fg, $alpha: 0.38);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-disabled);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
   > div {
     display: flex;
     min-width: 0;
     flex-wrap: wrap;
-    gap: 3px;
+    gap: 4px;
   }
   .virtual-controller-button.extra {
     position: relative;
     width: auto;
     min-width: 40px;
+    height: 24px;
+    min-height: 24px;
     padding: 0 8px;
     border-radius: 99px;
     transform: none;
@@ -373,8 +381,8 @@
 }
 
 .virtual-controller-detail {
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  background: color.change(theme.$bg2, $alpha: 0.2);
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-surface-subtle);
 }
 
 .virtual-controller-detail-title {
@@ -386,26 +394,33 @@
   box-sizing: border-box;
 
   > strong {
-    color: color.adjust(theme.$primary, $lightness: 21%);
+    color: var(--color-primary-text);
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: calc(9px * var(--keybindings-font-scale, 1));
+    font-size: calc(9.5px * var(--keybindings-font-scale, 1));
   }
   > span {
-    color: theme.$fg3;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
   }
   > button {
     display: grid;
-    width: 21px;
-    height: 21px;
-    min-height: 0;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
     margin-left: auto;
     padding: 0;
     place-items: center;
     border: 0;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
+
+    &:hover {
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
+    }
 
     .icon {
       width: 9px;
@@ -428,24 +443,25 @@
     align-items: center;
     padding: 4px 6px;
     gap: 5px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.065);
-    border-radius: 5px;
-    background: color.change(theme.$bg1, $alpha: 0.55);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xs, 5px);
+    background: var(--color-surface-elevated);
   }
   strong {
     max-width: 180px;
     overflow: hidden;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   span {
-    color: theme.$fg3;
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
   code {
-    color: color.change(theme.$fg, $alpha: 0.5);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-disabled);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
 }
 

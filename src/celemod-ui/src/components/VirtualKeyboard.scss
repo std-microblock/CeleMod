@@ -1,12 +1,9 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .virtual-keyboard-panel {
-  margin: 8px 0 0 8px;
+  margin: 8px 8px 0 8px;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.075);
-  border-radius: 9px;
-  background: color.change(theme.$bg1, $alpha: 0.5);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-card);
 }
 
 .virtual-keyboard-header {
@@ -16,7 +13,7 @@
   justify-content: space-between;
   padding: 5px 9px;
   gap: 12px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
 
   > div {
@@ -26,23 +23,24 @@
     gap: 7px;
   }
   strong {
+    color: var(--color-fg);
     font-size: calc(10px * var(--keybindings-font-scale, 1));
   }
 }
 
 .virtual-keyboard-platform,
 .virtual-keyboard-summary {
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 99px;
-  background: color.change(theme.$fg, $alpha: 0.055);
-  color: theme.$fg3;
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  background: var(--color-surface-subtle);
+  color: var(--color-fg-subtle);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   white-space: nowrap;
 }
 
 .virtual-keyboard-summary {
-  background: color.change(theme.$primary, $alpha: 0.08);
-  color: color.adjust(theme.$primary, $lightness: 19%);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
 }
 
 .virtual-keyboard-legend {
@@ -52,8 +50,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: color.change(theme.$fg, $alpha: 0.48);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
     white-space: nowrap;
 
     &::before {
@@ -64,16 +62,16 @@
       content: "";
     }
     &.unused::before {
-      border-color: color.change(theme.$fg, $alpha: 0.13);
-      background: color.change(theme.$fg, $alpha: 0.025);
+      border-color: var(--color-border);
+      background: var(--color-surface-subtle);
     }
     &.used::before {
-      border-color: color.change(theme.$primary, $alpha: 0.42);
-      background: color.change(theme.$primary, $alpha: 0.18);
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-soft);
     }
     &.multiple::before {
-      border-color: color.change(#ffc66d, $alpha: 0.48);
-      background: color.change(#ffc66d, $alpha: 0.18);
+      border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+      background: color-mix(in srgb, var(--color-warning) 20%, transparent);
     }
   }
 }
@@ -81,14 +79,13 @@
 .virtual-keyboard-hint {
   margin: 0;
   padding: 4px 9px 0;
-  color: color.change(theme.$fg, $alpha: 0.35);
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  color: var(--color-fg-disabled);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
 }
 
 .virtual-keyboard-scroll {
   padding: 7px 8px 9px;
   overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .virtual-keyboard-board {
@@ -160,6 +157,7 @@
   .virtual-keyboard-key {
     width: auto;
     min-width: 0;
+    height: 100%;
   }
 }
 
@@ -173,17 +171,18 @@
   justify-content: center;
   padding: 0 3px;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.11);
-  border-radius: 4px;
-  background: color.change(theme.$bg2, $alpha: 0.48);
-  box-shadow: 0 1px 0 color.change(theme.$fg, $alpha: 0.035);
-  color: color.change(theme.$fg, $alpha: 0.48);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs, 4px);
+  background: color-mix(in srgb, var(--color-surface-hover) 55%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-fg) 4%, transparent);
+  color: var(--color-fg-subtle);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: calc(6.8px * var(--keybindings-font-scale, 1));
   font-weight: 620;
   letter-spacing: -0.02em;
   line-height: 1;
   text-transform: none;
+  box-sizing: border-box;
 
   > span {
     overflow: hidden;
@@ -200,37 +199,37 @@
     padding: 0 2px;
     place-items: center;
     border-radius: 99px;
-    background: color.change(theme.$primary, $alpha: 0.26);
-    color: color.adjust(theme.$primary, $lightness: 26%);
+    background: color-mix(in srgb, var(--color-primary) 26%, transparent);
+    color: var(--color-primary-text);
     font-family: inherit;
     font-size: calc(5.5px * var(--keybindings-font-scale, 1));
     line-height: 10px;
   }
   &.used {
-    border-color: color.change(theme.$primary, $alpha: 0.36);
-    background: color.change(theme.$primary, $alpha: 0.12);
-    color: color.change(theme.$fg, $alpha: 0.82);
+    border-color: var(--color-primary-border);
+    background: var(--color-primary-soft);
+    color: var(--color-fg);
   }
   &.multiple {
-    border-color: color.change(#ffc66d, $alpha: 0.43);
-    background: color.change(#ffc66d, $alpha: 0.12);
-    color: #efc575;
+    border-color: color-mix(in srgb, var(--color-warning) 48%, transparent);
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    color: var(--color-warning);
     > small {
-      background: color.change(#ffc66d, $alpha: 0.22);
-      color: #ffd58c;
+      background: color-mix(in srgb, var(--color-warning) 24%, transparent);
+      color: var(--color-warning);
     }
   }
   &:hover,
   &.selected {
     z-index: 1;
-    border-color: color.change(theme.$primary, $alpha: 0.78);
-    background: color.change(theme.$primary, $alpha: 0.24);
-    box-shadow: 0 0 0 1px color.change(theme.$primary, $alpha: 0.13);
-    color: theme.$fg;
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 26%, transparent);
+    box-shadow: 0 0 0 1px var(--color-primary-soft);
+    color: var(--color-fg);
   }
   &:focus-visible {
     z-index: 2;
-    outline: 1px solid color.change(theme.$primary, $alpha: 0.85);
+    outline: 1px solid var(--color-primary);
     outline-offset: 1px;
   }
 }
@@ -243,8 +242,8 @@
 
   > span {
     flex: 0 0 auto;
-    color: color.change(theme.$fg, $alpha: 0.38);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-disabled);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
   > div {
     display: flex;
@@ -261,8 +260,8 @@
 }
 
 .virtual-keyboard-detail {
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  background: color.change(theme.$bg2, $alpha: 0.2);
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-surface-subtle);
 }
 
 .virtual-keyboard-detail-title {
@@ -274,26 +273,33 @@
   box-sizing: border-box;
 
   > strong {
-    color: color.adjust(theme.$primary, $lightness: 21%);
+    color: var(--color-primary-text);
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: calc(9px * var(--keybindings-font-scale, 1));
+    font-size: calc(9.5px * var(--keybindings-font-scale, 1));
   }
   > span {
-    color: theme.$fg3;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
   }
   > button {
     display: grid;
-    width: 21px;
-    height: 21px;
-    min-height: 0;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
     margin-left: auto;
     padding: 0;
     place-items: center;
     border: 0;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
+
+    &:hover {
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
+    }
 
     .icon {
       width: 9px;
@@ -316,24 +322,25 @@
     align-items: center;
     padding: 4px 6px;
     gap: 5px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.065);
-    border-radius: 5px;
-    background: color.change(theme.$bg1, $alpha: 0.55);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xs, 5px);
+    background: var(--color-surface-elevated);
   }
   strong {
     max-width: 180px;
     overflow: hidden;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   span {
-    color: theme.$fg3;
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
   code {
-    color: color.change(theme.$fg, $alpha: 0.5);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-disabled);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   }
 }
 

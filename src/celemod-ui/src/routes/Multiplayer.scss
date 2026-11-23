@@ -1,6 +1,3 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .multiplayer-page {
   display: flex;
   width: min(760px, 100%);
@@ -11,7 +8,7 @@
   margin: 0 auto;
   padding: 12px 18px 48px;
   box-sizing: border-box;
-  color: theme.$fg;
+  color: var(--color-fg);
 }
 
 .multiplayer-page-header {
@@ -20,13 +17,13 @@
   align-items: flex-end;
   justify-content: space-between;
   padding: 18px 4px 16px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-bottom: 1px solid var(--color-divider);
   gap: 20px;
 
   > span {
     padding-bottom: 4px;
-    color: theme.$fg2;
-    font-size: 10px;
+    color: var(--color-fg-subtle);
+    font-size: 11px;
     white-space: nowrap;
   }
 }
@@ -37,12 +34,13 @@
   gap: 10px;
 
   > svg {
-    color: theme.$primary;
+    color: var(--color-primary);
     font-size: 20px;
   }
 
   h1 {
     margin: 0;
+    color: var(--color-fg);
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.025em;
@@ -83,21 +81,22 @@
 
   > strong {
     margin-top: 1px;
+    color: var(--color-fg);
     font-size: 16px;
     font-weight: 650;
     line-height: 1.35;
   }
 
   > small {
-    color: theme.$fg3;
-    font-size: 9px;
+    color: var(--color-fg-subtle);
+    font-size: 10px;
   }
 }
 
 .multiplayer-state-description {
   max-width: 520px;
-  color: theme.$fg2;
-  font-size: 12px;
+  color: var(--color-fg-muted);
+  font-size: 12.5px;
   line-height: 1.6;
 }
 
@@ -106,32 +105,33 @@
   width: 36px;
   height: 36px;
   place-items: center;
-  color: color.adjust(theme.$primary, $lightness: 14%);
+  color: var(--color-primary-text);
 
   svg {
     font-size: 19px;
   }
 
   &.complete {
-    color: #8fc79f;
+    color: var(--color-success);
   }
 
   &.error {
-    color: #e77d84;
+    color: var(--color-danger);
   }
 }
 
 .multiplayer-download-progress {
   width: min(460px, 100%);
-  height: 3px;
+  height: 4px;
   margin-top: 8px;
   overflow: hidden;
-  background: theme.$bg2;
+  border-radius: 999px;
+  background: var(--color-surface-hover);
 
   span {
     display: block;
     height: 100%;
-    background: theme.$primary;
+    background: var(--color-primary);
     transition: width 180ms ease;
   }
 }
@@ -142,23 +142,23 @@
   min-height: 36px;
   margin-top: 9px;
   padding: 0 18px;
-  border: 1px solid color.change(theme.$primary, $alpha: 0.68);
-  border-radius: 7px;
-  color: theme.$fg;
-  background: color.change(theme.$primary, $alpha: 0.28);
+  border: 1px solid transparent;
+  border-radius: var(--btn-radius, 7px);
+  color: var(--color-on-primary);
+  background: var(--color-primary);
   box-shadow: none;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
   transition:
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     border-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
     opacity var(--motion-fast, 140ms) ease;
 
-  &:hover {
-    background: color.change(theme.$primary, $alpha: 0.27);
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
   }
 
   &:disabled {
@@ -173,7 +173,7 @@
   gap: 7px;
 
   svg {
-    font-size: 9px;
+    font-size: 11px;
   }
 }
 
@@ -182,8 +182,8 @@
   flex-wrap: wrap;
   align-items: center;
   margin-top: 4px;
-  color: theme.$fg2;
-  font-size: 9px;
+  color: var(--color-fg-subtle);
+  font-size: 10.5px;
   gap: 0;
 
   span {
@@ -191,7 +191,7 @@
     align-items: center;
     min-height: 22px;
     padding: 0 10px;
-    border-left: 1px solid color.change(theme.$fg, $alpha: 0.12);
+    border-left: 1px solid var(--color-border);
 
     &:first-child {
       padding-left: 0;
@@ -202,25 +202,27 @@
 
 .multiplayer-logout {
   width: max-content;
-  min-height: 27px;
+  min-height: 28px;
+  height: 28px;
   margin-top: 7px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
-  color: theme.$fg2;
+  border-radius: var(--control-radius, 6px);
+  color: var(--color-fg-subtle);
   background: transparent;
   box-shadow: none;
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
   transition:
     color var(--motion-fast, 140ms) ease,
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     opacity var(--motion-fast, 140ms) ease;
 
-  &:hover {
-    color: theme.$fg;
-    background: theme.$bg2;
+  &:hover:not(:disabled) {
+    color: var(--color-fg);
+    background: var(--color-surface-hover);
   }
 
   &:disabled {
@@ -230,17 +232,17 @@
 }
 
 .multiplayer-waiting {
-  color: theme.$fg2;
-  font-size: 10px;
+  color: var(--color-fg-subtle);
+  font-size: 11px;
 }
 
 .multiplayer-auth-error {
   display: block;
   max-width: 520px;
   padding-left: 9px;
-  border-left: 2px solid #b95e64;
-  color: #ddaeb1;
-  font-size: 9px;
+  border-left: 2px solid var(--color-danger);
+  color: var(--color-danger);
+  font-size: 11px;
   line-height: 1.5;
   user-select: text;
 }
@@ -271,9 +273,9 @@
 .multiplayer-account-card,
 .multiplayer-settings-card,
 .multiplayer-settings-footer {
-  border: 1px solid color.change(theme.$fg, $alpha: 0.09);
-  border-radius: 10px;
-  background: color.change(theme.$fg, $alpha: 0.025);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--color-surface-card);
 }
 
 .multiplayer-account-card {
@@ -284,6 +286,7 @@
   gap: 20px;
 
   > div > strong {
+    color: var(--color-fg);
     font-size: 14px;
   }
 
@@ -309,31 +312,32 @@
 
     h2 {
       margin: 0;
+      color: var(--color-fg);
       font-size: 15px;
       font-weight: 650;
     }
 
     p {
       margin: 4px 0 0;
-      color: theme.$fg3;
-      font-size: 9px;
+      color: var(--color-fg-subtle);
+      font-size: 11px;
       line-height: 1.55;
     }
 
     > span {
       flex: 0 0 auto;
-      padding: 4px 7px;
-      border-radius: 5px;
-      color: theme.$fg3;
-      background: color.change(theme.$fg, $alpha: 0.045);
-      font-size: 8px;
+      padding: 4px 8px;
+      border-radius: var(--radius-xs, 5px);
+      color: var(--color-fg-subtle);
+      background: var(--color-surface-subtle);
+      font-size: 10px;
       transition:
-        background var(--motion-fast, 140ms) ease,
+        background-color var(--motion-fast, 140ms) ease,
         color var(--motion-fast, 140ms) ease;
 
       &.dirty {
-        color: #e6c889;
-        background: rgba(184, 132, 43, 0.15);
+        color: var(--color-warning);
+        background: color-mix(in srgb, var(--color-warning) 16%, transparent);
       }
     }
   }
@@ -342,8 +346,8 @@
 .multiplayer-toggle-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  border-left: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-top: 1px solid var(--color-divider);
+  border-left: 1px solid var(--color-divider);
 }
 
 .multiplayer-toggle-row {
@@ -353,15 +357,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 9px 11px;
-  border-right: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-right: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   cursor: pointer;
   gap: 12px;
-  transition: background var(--motion-fast, 140ms) ease;
+  transition: background-color var(--motion-fast, 140ms) ease;
 
   &:hover {
-    background: color.change(theme.$fg, $alpha: 0.03);
+    background: var(--color-surface-subtle);
   }
 
   > span {
@@ -372,25 +376,23 @@
   }
 
   strong {
-    font-size: 10px;
+    color: var(--color-fg);
+    font-size: 11.5px;
     font-weight: 600;
   }
 
   small {
     overflow: hidden;
-    color: theme.$fg3;
-    font-size: 8px;
+    color: var(--color-fg-subtle);
+    font-size: 10px;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   input {
-    width: 15px;
-    height: 15px;
     flex: 0 0 auto;
     margin: 0;
-    accent-color: theme.$primary;
   }
 }
 
@@ -398,8 +400,8 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 13px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  border-left: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-top: 1px solid var(--color-divider);
+  border-left: 1px solid var(--color-divider);
 }
 
 .multiplayer-opacity-setting {
@@ -409,8 +411,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 9px 11px;
-  border-right: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-right: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   gap: 16px;
   transition: opacity 160ms ease;
@@ -425,13 +427,14 @@
     gap: 3px;
 
     strong {
-      font-size: 10px;
+      color: var(--color-fg);
+      font-size: 11.5px;
       font-weight: 600;
     }
 
     small {
-      color: theme.$fg3;
-      font-size: 8px;
+      color: var(--color-fg-subtle);
+      font-size: 10px;
     }
   }
 
@@ -442,16 +445,22 @@
     align-items: center;
     gap: 10px;
 
-    input {
+    input[type="range"] {
       min-width: 0;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
       flex: 1;
-      accent-color: theme.$primary;
+      accent-color: var(--color-primary);
     }
 
     output {
       width: 34px;
-      color: theme.$fg2;
-      font-size: 9px;
+      color: var(--color-fg-muted);
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
       text-align: right;
     }
   }
@@ -467,9 +476,9 @@
   position: relative;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 8px;
-  background: color.change(theme.$fg, $alpha: 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-subtle);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -490,7 +499,7 @@
     pointer-events: none;
     opacity: 0.96;
     cursor: grabbing;
-    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+    box-shadow: var(--shadow-elevated);
   }
 }
 
@@ -531,13 +540,14 @@
   textarea {
     width: 100%;
     height: 86px;
+    min-height: 86px;
     padding: 9px;
     resize: none;
-    border: 1px solid color.change(theme.$primary, $alpha: 0.55);
-    border-radius: 6px;
+    border: 1px solid var(--color-primary-border);
+    border-radius: var(--control-radius, 6px);
     outline: none;
-    color: theme.$fg1;
-    background: color.change(theme.$bg, $alpha: 0.9);
+    color: var(--color-fg);
+    background: var(--color-surface-input);
     box-sizing: border-box;
     touch-action: auto;
     user-select: text;
@@ -552,11 +562,11 @@
   left: 7px;
   z-index: 2;
   min-width: 17px;
-  padding: 2px 4px;
+  padding: 2px 5px;
   border-radius: 4px;
-  color: theme.$fg3;
-  background: color.change(theme.$bg, $alpha: 0.78);
-  font-size: 7px;
+  color: var(--color-fg-subtle);
+  background: color-mix(in srgb, var(--color-canvas) 78%, transparent);
+  font-size: 8px;
   text-align: center;
 }
 
@@ -564,7 +574,7 @@
   display: -webkit-box;
   max-width: 100%;
   overflow: hidden;
-  color: theme.$fg;
+  color: var(--color-fg);
   font-size: 18px;
   font-weight: 650;
   line-height: 1.3;
@@ -579,7 +589,7 @@
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   gap: 8px;
 
   svg {
@@ -602,42 +612,43 @@
 .multiplayer-emote-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-top: 1px solid var(--color-divider);
 
   button {
     display: inline-flex;
     min-width: 0;
-    min-height: 31px;
+    min-height: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
-    padding: 0 7px;
+    padding: 0 6px;
     border: 0;
-    border-right: 1px solid color.change(theme.$fg, $alpha: 0.06);
+    border-right: 1px solid var(--color-divider);
     border-radius: 0;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     background: transparent;
     box-shadow: none;
-    font-size: 8px;
+    font-size: 9.5px;
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
     gap: 5px;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease;
+      background-color var(--motion-fast, 140ms) ease;
 
     &:last-child {
       border-right: 0;
     }
 
     &:hover {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.06);
+      color: var(--color-fg);
+      background: color-mix(in srgb, var(--color-fg) 7%, transparent);
     }
 
     &.danger:hover {
-      color: #e8a1a5;
-      background: rgba(154, 54, 60, 0.14);
+      color: var(--color-danger);
+      background: color-mix(in srgb, var(--color-danger) 15%, transparent);
     }
   }
 }
@@ -645,8 +656,8 @@
 .multiplayer-emote-empty {
   grid-column: 1 / -1;
   padding: 36px 14px;
-  color: theme.$fg3;
-  font-size: 9px;
+  color: var(--color-fg-subtle);
+  font-size: 11px;
   text-align: center;
 }
 
@@ -657,29 +668,30 @@
 
   button {
     display: inline-flex;
-    min-height: 30px;
+    min-height: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
-    padding: 0 11px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.09);
-    border-radius: 6px;
-    color: theme.$fg2;
-    background: color.change(theme.$fg, $alpha: 0.035);
+    padding: 0 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 6px);
+    color: var(--color-fg-muted);
+    background: var(--color-surface-subtle);
     box-shadow: none;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease,
       opacity var(--motion-fast, 140ms) ease;
 
     &:hover:not(:disabled) {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.07);
+      color: var(--color-fg);
+      background: var(--color-surface-hover);
     }
 
     &:disabled {
@@ -695,23 +707,23 @@
 
 .multiplayer-settings-message {
   padding: 9px 11px;
-  border-left: 2px solid theme.$primary;
-  color: theme.$fg2;
-  background: color.change(theme.$primary, $alpha: 0.07);
-  font-size: 9px;
+  border-left: 2px solid var(--color-primary);
+  color: var(--color-fg-muted);
+  background: var(--color-primary-soft);
+  font-size: 11px;
   line-height: 1.5;
   user-select: text;
 
   &.error {
-    border-left-color: #b95e64;
-    color: #e2b0b3;
-    background: rgba(137, 48, 54, 0.1);
+    border-left-color: var(--color-danger);
+    color: var(--color-danger);
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   }
 
   &.success {
-    border-left-color: #6ea57d;
-    color: #afd3b8;
-    background: rgba(64, 126, 80, 0.1);
+    border-left-color: var(--color-success);
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
   }
 }
 
@@ -725,9 +737,9 @@
   align-items: center;
   justify-content: flex-end;
   padding: 9px;
-  background: color.change(theme.$bg1, $alpha: 0.98);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.38);
-  gap: 7px;
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-elevated);
+  gap: 8px;
   animation: ui-slide-up-in var(--motion-normal, 210ms)
     var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 
@@ -739,39 +751,41 @@
 
   button {
     display: inline-flex;
-    min-height: 31px;
+    min-height: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
-    padding: 0 12px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 6px;
-    color: theme.$fg2;
-    background: color.change(theme.$fg, $alpha: 0.035);
+    padding: 0 13px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--btn-radius, 7px);
+    color: var(--color-fg-muted);
+    background: var(--color-surface-subtle);
     box-shadow: none;
-    font-size: 9px;
+    font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease,
       opacity var(--motion-fast, 140ms) ease;
 
     &.primary {
-      border-color: color.change(theme.$primary, $alpha: 0.6);
-      color: #fff;
-      background: color.change(theme.$primary, $alpha: 0.24);
+      border-color: transparent;
+      color: var(--color-on-primary);
+      background: var(--color-primary);
     }
 
     &:hover:not(:disabled) {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.075);
+      color: var(--color-fg);
+      background: var(--color-surface-hover);
     }
 
     &.primary:hover:not(:disabled) {
-      background: color.change(theme.$primary, $alpha: 0.34);
+      color: var(--color-on-primary);
+      background: var(--color-primary-hover);
     }
 
     &:disabled {
@@ -787,34 +801,27 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: theme.$fg2;
+  color: var(--color-fg-subtle);
   gap: 10px;
 
   > svg {
-    color: #e77d84;
+    color: var(--color-danger);
     font-size: 22px;
   }
 
   > span {
     max-width: 520px;
-    color: #ddaeb1;
-    font-size: 9px;
+    color: var(--color-danger);
+    font-size: 11px;
     line-height: 1.5;
     text-align: center;
     user-select: text;
   }
 
   button {
-    min-height: 30px;
-    padding: 0 13px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 6px;
-    color: theme.$fg2;
-    background: color.change(theme.$fg, $alpha: 0.04);
-    box-shadow: none;
-    font-size: 9px;
-    letter-spacing: 0;
-    text-transform: none;
+    min-height: 32px;
+    padding: 0 14px;
+    font-size: 11px;
   }
 }
 
@@ -889,6 +896,7 @@ html[data-platform="android"] {
     margin-top: 8px;
     button {
       min-height: 44px;
+      height: auto;
       font-size: 13px;
     }
   }

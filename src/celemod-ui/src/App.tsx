@@ -40,6 +40,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import celemodLogo from "./resources/Celemod.png";
 import { MobileNavigation } from "./components/MobileNavigation";
 import { StartupSplash } from "./components/StartupSplash";
+import { detectDesktopPlatform } from "./tauri/window";
 
 const pages = {
   Search: memo(Search),
@@ -237,7 +238,7 @@ export default function App() {
     <div
       className={`app-frame${splashHandoffActive ? " is-splash-handoff" : ""}`}
     >
-      <WindowTitlebar />
+      <WindowTitlebar showBrand={theme.theme === "material-you"} />
       <StartupSplash
         visible={modManage.splashVisible}
         loadingSlow={modManage.loadingSlow}
@@ -269,11 +270,12 @@ export default function App() {
             onScroll={updateSidebarFade}
           >
             <div className="sidebar-items">
-              {theme.theme === "material-you" && (
-                <div className="sidebar-brand" aria-label="CeleMod">
-                  <img src={celemodLogo} alt="CeleMod" />
-                </div>
-              )}
+              {theme.theme === "material-you" &&
+                detectDesktopPlatform() !== "windows" && (
+                  <div className="sidebar-brand" aria-label="CeleMod">
+                    <img src={celemodLogo} alt="CeleMod" />
+                  </div>
+                )}
               <SidebarButton icon="home" name="Home" title={_i18n.t("主页")} />
               {gamePath && (
                 <Fragment>

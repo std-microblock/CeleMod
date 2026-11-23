@@ -1,31 +1,7 @@
-@use "sass:color";
-@use "./styles/theme" as *;
+@use "./styles/tokens";
 @use "./styles/motion";
 @use "./styles/themes/fluent";
 @use "./styles/themes/material-you";
-
-:root {
-  --window-titlebar-height: 45px;
-  /* Runtime theme tokens. Theme providers can override these values on
-     [data-theme] without recompiling component styles. */
-  --color-canvas: #{$bg};
-  --color-surface: #{$bg};
-  --color-surface-elevated: #{$bg1};
-  --color-surface-hover: #{$bg2};
-  --color-surface-active: #{$bg3};
-  --color-fg: #{$fg};
-  --color-fg-muted: #{$fg1};
-  --color-fg-subtle: #{$fg2};
-  --color-fg-disabled: #{$fg3};
-  --color-primary: #{$primary};
-  --radius-sm: 4px;
-  --radius-md: 7px;
-  --radius-lg: 10px;
-  --shadow-button: 0 2px 5px #00000040;
-  --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.5);
-  color: var(--color-fg);
-  color-scheme: dark;
-}
 
 html,
 body,
@@ -37,20 +13,159 @@ body,
 }
 
 html {
-  background: var(--color-canvas, #050505);
+  background: var(--color-canvas);
 }
 
-html[window-blurbehind] {
-  // Keep the acrylic visible while preventing bright desktop content from
-  // washing out the UI. The legacy app also kept a dark tint over the blur.
+html[window-blurbehind]:not([data-theme="fluent"]):not([data-theme="material-you"]) {
+  // Keep desktop acrylic visible while preventing bright desktop content from
+  // washing out the Vanilla UI.
   background: rgba(5, 5, 5, 0.28);
 }
 
 body {
-  color: var(--color-fg, #{$fg});
+  color: var(--color-fg);
   background: transparent;
   font-size: 14px;
 }
+
+/* ========================================================================== */
+/*                           Base Element Defaults                            */
+/* ========================================================================== */
+
+@layer base {
+  a {
+    display: inline-block;
+    margin: 0 4px;
+    color: var(--color-primary-text);
+    text-decoration: none;
+    transition: color var(--motion-fast, 140ms) ease;
+  }
+
+  a:hover {
+    color: var(--color-primary);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea {
+    min-height: var(--control-height-md, 34px);
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 7px);
+    box-sizing: border-box;
+    color: var(--color-fg);
+    background: var(--color-surface-input);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      box-shadow var(--motion-fast, 140ms) ease;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
+  textarea:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+  textarea:focus {
+    border-color: var(--color-primary-border);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+
+  input[type="range"] {
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  input[type="checkbox"] {
+    appearance: none;
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    margin: 0 4px 0 0;
+    padding: 0;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-xs, 4px);
+    box-sizing: border-box;
+    background: var(--color-surface-elevated);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px 8px;
+    cursor: pointer;
+    opacity: 0.85;
+    vertical-align: middle;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      opacity var(--motion-fast, 140ms) ease;
+  }
+
+  input[type="checkbox"]:hover {
+    border-color: var(--color-fg-subtle);
+    opacity: 1;
+  }
+
+  input[type="checkbox"]:checked {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23130f1c' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    box-shadow: none;
+    opacity: 1;
+  }
+
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"]:disabled {
+    cursor: default;
+    opacity: 0.45;
+  }
+
+  select {
+    width: max-content;
+    height: 32px;
+    min-height: 32px;
+    padding: 6px 26px 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 7px);
+    box-sizing: border-box;
+    color: var(--color-fg);
+    background-color: var(--color-surface-elevated);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 18px;
+    outline: none;
+    cursor: pointer;
+    transition:
+      background-color var(--motion-fast, 140ms) ease,
+      border-color var(--motion-fast, 140ms) ease,
+      color var(--motion-fast, 140ms) ease;
+  }
+
+  select:hover {
+    border-color: var(--color-border-strong);
+    background-color: var(--color-surface-hover);
+  }
+
+  select:focus-visible {
+    border-color: var(--color-primary-border);
+    box-shadow: 0 0 0 2px var(--color-primary-soft);
+  }
+
+  select option {
+    color: var(--color-fg);
+    background-color: var(--color-surface-elevated);
+  }
+}
+
+/* ========================================================================== */
+/*                                 App Frame                                  */
+/* ========================================================================== */
 
 .app-frame {
   display: flex;
@@ -70,9 +185,9 @@ textarea,
 
 .window-titlebar {
   display: flex;
-  flex: 0 0 45px;
+  flex: 0 0 var(--window-titlebar-height, 45px);
   align-items: center;
-  min-height: 45px;
+  min-height: var(--window-titlebar-height, 45px);
   user-select: none;
 }
 
@@ -87,10 +202,10 @@ textarea,
 .window-caption {
   flex: 0 0 auto;
   padding: 0;
-  color: var(--color-fg, #{$fg});
+  color: var(--color-fg);
   font-size: 14px;
   font-weight: 400;
-  opacity: 0.8;
+  opacity: 0.84;
 }
 
 .celemod-version {
@@ -98,70 +213,81 @@ textarea,
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  gap: 0;
   min-height: 0;
   margin: 0 0 0 8px;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
   cursor: pointer;
   letter-spacing: 0;
   text-transform: none;
+
+  &:hover,
+  &:active {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  &::before,
+  &::after {
+    display: none;
+  }
 }
 
 .caption-version {
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--color-fg-subtle);
   font-size: 10px;
+  opacity: 0.78;
 }
 
 .caption-hash {
-  margin-bottom: -4px;
-  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: -3px;
+  color: var(--color-fg-disabled);
   font-size: 9px;
+  opacity: 0.65;
 }
 
 #tbo-controls {
-  --tbo-symbol: #fff;
+  --tbo-symbol: var(--color-fg);
   --tbo-default: transparent;
-  --tbo-hover: rgba(255, 255, 255, 0.06);
-  --tbo-pressed: rgba(255, 255, 255, 0.1);
+  --tbo-hover: color-mix(in srgb, var(--color-fg) 6%, transparent);
+  --tbo-pressed: color-mix(in srgb, var(--color-fg) 10%, transparent);
   --tbo-inactive: transparent;
 }
 
 #tbo-controls .tbo-btn {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  letter-spacing: normal !important;
-  text-transform: none !important;
-  color: #fff !important;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--color-fg);
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: normal;
+  text-transform: none;
+
+  &:hover,
+  &:active {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  &::before,
+  &::after {
+    display: none;
+  }
 }
 
-#tbo-controls,
-#tbo-controls:hover,
-#tbo-controls .tbo-btn:hover,
-#tbo-controls .tbo-btn:active {
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.celemod-version,
-.celemod-version:hover,
-.celemod-version:active,
-.celemod-version:focus-visible {
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
+/* ========================================================================== */
+/*                              Shell & Sidebar                               */
+/* ========================================================================== */
 
 .app-shell {
   display: grid;
@@ -181,7 +307,7 @@ textarea,
 }
 
 .sidebar-scroll {
-  width: 55px;
+  width: 56px;
   min-height: 0;
   flex: 1 1 auto;
   overflow-x: visible;
@@ -246,6 +372,13 @@ textarea,
   align-items: flex-start;
 }
 
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 0 auto;
+}
+
 .sidebar .navBtn {
   position: relative;
   display: flex;
@@ -253,26 +386,28 @@ textarea,
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0;
   width: 50px;
-  height: 43px;
+  height: 50px;
   min-height: 0;
   margin: 0 0 10px;
-  padding: 7px 0 0;
+  padding: 6px 0 4px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md, 7px);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-fg);
   background: transparent;
   box-shadow: none;
   cursor: pointer;
-  box-sizing: content-box;
+  box-sizing: border-box;
   font-size: 15px;
+  font-weight: 500;
   letter-spacing: normal;
   text-transform: none;
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease,
-    color var(--motion-fast, 140ms) ease,
-    transform 100ms ease;
+    color var(--motion-fast, 140ms) ease;
 }
 
 .sidebar .nav-badge {
@@ -285,7 +420,7 @@ textarea,
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  border: 2px solid var(--color-surface, #{$bg});
+  border: 2px solid var(--color-surface);
   border-radius: 99px;
   color: #fff;
   background: #d84f6f;
@@ -299,17 +434,18 @@ textarea,
 }
 
 .sidebar .navBtn.selected {
-  border-color: var(--color-surface-hover, #{$bg2});
-  background: var(--color-surface-elevated, #{$bg1});
-  box-shadow: 0 2px 10px var(--color-surface-elevated, #{$bg1});
+  border-color: var(--color-surface-hover);
+  background: var(--color-surface-elevated);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-surface-elevated) 80%, transparent);
 }
 
 .sidebar .navBtn:not(.selected):hover {
-  background: var(--color-surface-hover, #{$bg2});
+  border-color: transparent;
+  background: var(--color-surface-hover);
 }
 
 .sidebar .navBtn:active {
-  background: var(--color-surface-active, #{$bg3});
+  background: var(--color-surface-active);
 }
 
 .sidebar .navBtn .icon {
@@ -325,7 +461,7 @@ textarea,
   color: inherit;
   font-size: 10px;
   line-height: normal;
-  opacity: 0.6;
+  opacity: 0.62;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -337,7 +473,7 @@ textarea,
 }
 
 .sidebar :where(.navBtn.selected) .title {
-  opacity: 0.95;
+  opacity: 0.96;
 }
 
 .downloadListBtn {
@@ -351,7 +487,8 @@ textarea,
   margin-bottom: 10px;
   padding: 10px;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--color-fg);
   background: transparent;
   box-shadow: none;
   cursor: pointer;
@@ -359,15 +496,19 @@ textarea,
   opacity: 0.8;
   box-sizing: border-box;
   transition:
-    background 0.1s,
-    opacity 0.1s;
+    background-color 120ms ease,
+    opacity 120ms ease;
 }
 
 .downloadListBtn:hover {
-  background: var(--color-surface-hover, #{$bg2});
-  box-shadow: 0 2px 10px var(--color-surface-elevated, #{$bg1});
+  background: var(--color-surface-hover);
+  box-shadow: 0 2px 10px var(--color-surface-elevated);
   opacity: 1;
 }
+
+/* ========================================================================== */
+/*                              Route Viewport                                */
+/* ========================================================================== */
 
 .app-content {
   position: relative;
@@ -423,27 +564,12 @@ textarea,
 
 .page-Search,
 .page-Multiplayer,
-.page-RecommendMods {
-  width: 100%;
-  overflow: hidden;
-}
-
-.page-Downloads {
-  width: 100%;
-  overflow: hidden;
-}
-
-.page-Everest {
-  overflow: hidden;
-}
-
-.page-Manage {
-  width: 100%;
-  overflow: hidden;
-}
-
+.page-RecommendMods,
+.page-Downloads,
+.page-Everest,
+.page-Manage,
 .page-KeyBindings {
-  width: calc(100vw - 97px);
+  width: 100%;
   overflow: hidden;
 }
 
@@ -458,6 +584,10 @@ textarea,
   }
 }
 
+/* ========================================================================== */
+/*                               Shared Helpers                               */
+/* ========================================================================== */
+
 .icon {
   display: inline-block;
   flex: 0 0 auto;
@@ -469,92 +599,13 @@ textarea,
   overflow: visible;
 }
 
-a {
-  display: inline-block;
-  margin: 0 4px;
-  color: color.adjust($primary, $lightness: 10%);
-  text-decoration: none;
-  transition: color var(--motion-fast, 140ms) ease;
-}
-
-a:hover {
-  color: color.adjust($primary, $lightness: -10%);
-}
-
-input[type="checkbox"] {
-  appearance: none;
-  display: inline-block;
-  flex: 0 0 auto;
-  width: 15px;
-  height: 15px;
-  margin: 0 4px 0 0;
-  border: 1px solid var(--color-surface-active, #{$bg3});
-  border-radius: var(--radius-sm, 4px);
-  box-sizing: border-box;
-  background: var(--color-surface-elevated, #{$bg1});
-  opacity: 0.7;
-  vertical-align: middle;
-  transition:
-    background-color var(--motion-fast, 140ms) ease,
-    border-color var(--motion-fast, 140ms) ease,
-    opacity var(--motion-fast, 140ms) ease;
-}
-
-input[type="checkbox"]:checked {
-  background-color: var(--color-surface-elevated, #{$bg1});
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='%23d1d1d1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 9px 8px;
-  box-shadow: none;
-}
-
 .icon-i-asterisk {
   font-size: 0.55em;
 }
 
-*::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-input[type="checkbox"]:hover {
-  opacity: 1;
-}
-
-input[type="checkbox"]:disabled {
-  opacity: 0.5;
-}
-
-select {
-  width: max-content;
-  height: 30px;
-  min-height: 30px;
-  padding: 4px 26px 4px 8px;
-  border: 0;
-  border-radius: var(--radius-sm, 4px);
-  box-sizing: border-box;
-  color: var(--color-fg, #{$fg});
-  background: var(--color-surface-elevated, #{$bg1});
-  transition:
-    background-color var(--motion-fast, 140ms) ease,
-    border-color var(--motion-fast, 140ms) ease,
-    color var(--motion-fast, 140ms) ease;
-}
-
-select:hover {
-  background: var(--color-surface-hover, #{$bg2});
-}
-
-select option {
-  color: var(--color-fg, #{$fg});
-  background: var(--color-surface-elevated, #{$bg1});
-}
-
 .blocking-mask {
   position: fixed;
-  inset: var(--window-titlebar-height) 0 0;
+  inset: var(--window-titlebar-height, 45px) 0 0;
   z-index: 1200;
   display: none;
   align-items: center;
@@ -562,9 +613,9 @@ select option {
   margin: 0;
   padding: 24px;
   overflow: hidden;
-  color: var(--color-fg, #{$fg});
+  color: var(--color-fg);
   text-align: center;
-  background: rgba(5, 5, 7, 0.82);
+  background: color-mix(in srgb, var(--color-canvas) 84%, transparent);
   opacity: 0;
   gap: 12px;
   transition: opacity 180ms ease-out;
@@ -574,8 +625,8 @@ select option {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  border-top-color: var(--color-primary, #{$primary});
+  border: 2px solid color-mix(in srgb, var(--color-fg) 18%, transparent);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: blocking-mask-spin 700ms linear infinite;
 }
@@ -606,17 +657,17 @@ select option {
 
   > button {
     display: inline-flex;
-    min-width: 112px;
+    min-width: 104px;
     min-height: 34px;
     align-items: center;
     justify-content: center;
     padding: 0 16px;
-    border: 1px solid color-mix(in srgb, var(--color-fg) 10%, transparent);
-    border-radius: 8px;
-    color: var(--color-fg-subtle, #{$fg2});
-    background: color-mix(in srgb, var(--color-fg) 2.5%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    color: var(--color-fg-subtle);
+    background: var(--color-surface-subtle);
     box-shadow: none;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 600;
     letter-spacing: 0;
     gap: 7px;
@@ -626,32 +677,55 @@ select option {
       color var(--motion-fast, 140ms) ease;
 
     &:hover {
-      color: var(--color-fg, #{$fg});
+      color: var(--color-fg);
       background: color-mix(in srgb, var(--color-fg) 6%, transparent);
     }
 
     &.selected,
     &.active {
-      border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
-      color: var(--color-fg, #fff);
-      background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+      border-color: var(--color-primary-border);
+      color: var(--color-fg);
+      background: var(--color-primary-soft);
     }
   }
 }
 
 .no-everest {
+  max-width: 680px;
   padding: 30px;
+  box-sizing: border-box;
+
+  h2 {
+    margin: 0 0 12px;
+    color: var(--color-fg);
+  }
+
+  pre {
+    margin: 0 0 18px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: inherit;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--color-fg-muted);
+  }
 }
+
+/* ========================================================================== */
+/*                              Popups & Dialogs                              */
+/* ========================================================================== */
 
 .popup-container {
   position: fixed;
-  inset: 38px 15px 10px 10px;
+  inset: var(--window-titlebar-height, 45px) 0 0 0;
   z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
   overflow: auto;
-  border-radius: 10px;
+  box-sizing: border-box;
+  border-radius: 0;
   opacity: 0;
   /* Opacity-only motion on purpose: a leftover `transform: scale()` on this
      element is not reset when the popup is shown, so every popup renders
@@ -681,28 +755,28 @@ select option {
 }
 
 .popup-content {
-  max-width: 400px;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 30px;
-  border: 1px solid var(--color-surface-hover, #{$bg2});
-  border-radius: var(--radius-lg, 10px);
-  color: var(--color-fg, #{$fg});
+  padding: 26px 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  color: var(--color-fg);
   text-align: center;
-  background: var(--color-surface-elevated, #{$bg1});
-  box-shadow: var(--shadow-elevated, 0 4px 20px rgba(0, 0, 0, 0.5));
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-dialog);
 }
 
 .popup-content .title {
-  margin-bottom: 15px;
-  color: var(--color-fg, #{$fg});
+  margin-bottom: 14px;
+  color: var(--color-fg);
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .popup-content .content {
-  margin-bottom: 25px;
-  color: var(--color-fg-muted, #{$fg1});
-  line-height: 1.5;
+  margin-bottom: 22px;
+  color: var(--color-fg-muted);
+  line-height: 1.55;
 }
 
 .popup-content .buttons {
@@ -712,7 +786,7 @@ select option {
 }
 
 .popup-content .buttons button {
-  margin: 4px;
+  margin: 0;
 }
 
 .loading-popup {
@@ -726,26 +800,39 @@ select option {
   overflow-y: auto;
 }
 
+.loading-popup > button {
+  margin-top: 16px;
+}
+
 .catalog-offline {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   flex-shrink: 0;
   gap: 6px 12px;
-  padding: 8px 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-divider);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+  color: var(--color-fg);
   font-size: 12px;
   animation: ui-fade-in var(--motion-normal, 210ms)
     var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+
   small {
-    opacity: 0.75;
+    color: var(--color-fg-subtle);
   }
+
   button {
     margin-left: auto;
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
   }
 }
-.loading-popup > button {
-  margin-top: 16px;
-}
+
+/* ========================================================================== */
+/*                               Startup Splash                               */
+/* ========================================================================== */
 
 /* While the splash covers the frame nothing else paints. The shell stays
    mounted so its layout is available for the roll-in handoff, but it never
@@ -762,14 +849,14 @@ html.is-splash-covering .catalog-offline {
 
 .startup-splash {
   position: fixed;
-  inset: var(--window-titlebar-height) 0 0;
+  inset: var(--window-titlebar-height, 45px) 0 0;
   z-index: 1050;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: var(--color-fg, #{$fg});
+  color: var(--color-fg);
   background: transparent;
   user-select: none;
 
@@ -782,11 +869,12 @@ html.is-splash-covering .catalog-offline {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: var(--color-canvas, #{$bg});
+  background: var(--color-canvas);
   will-change: opacity;
 }
 
-html[window-blurbehind] .startup-splash-backdrop {
+html[window-blurbehind]:not([data-theme="fluent"]):not([data-theme="material-you"])
+  .startup-splash-backdrop {
   background: rgba(10, 10, 12, 0.78);
 }
 
@@ -905,7 +993,7 @@ html[window-blurbehind] .startup-splash-backdrop {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--color-fg-muted, #{$fg1});
+  color: var(--color-fg-muted);
   font-size: 13px;
 }
 
@@ -913,8 +1001,8 @@ html[window-blurbehind] .startup-splash-backdrop {
   width: 15px;
   height: 15px;
   flex: 0 0 auto;
-  border: 2px solid color-mix(in srgb, var(--color-fg, #{$fg}) 16%, transparent);
-  border-top-color: var(--color-primary, #{$primary});
+  border: 2px solid color-mix(in srgb, var(--color-fg) 16%, transparent);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: blocking-mask-spin 700ms linear infinite;
 }
@@ -922,18 +1010,18 @@ html[window-blurbehind] .startup-splash-backdrop {
 .startup-splash-skip {
   min-height: 30px;
   padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--color-fg, #{$fg}) 12%, transparent);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 8px);
   background: transparent;
   box-shadow: none;
-  color: var(--color-fg-subtle, #{$fg2});
+  color: var(--color-fg-subtle);
   font-size: 12px;
   letter-spacing: 0;
 
   &:hover {
-    border-color: color-mix(in srgb, var(--color-fg, #{$fg}) 22%, transparent);
-    background: color-mix(in srgb, var(--color-fg, #{$fg}) 6%, transparent);
-    color: var(--color-fg, #{$fg});
+    border-color: var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-fg) 6%, transparent);
+    color: var(--color-fg);
   }
 }
 

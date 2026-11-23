@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { THEME_REGISTRY, type ThemeId } from "./themes/registry";
 import { installMaterialYouInteractions } from "./styles/themes/material-you";
 import { mountFluentInteractions } from "./styles/themes/fluent/runtime";
+import "./themePreview.scss";
 
 const applyTheme = (id: ThemeId) => {
   const root = document.documentElement;
@@ -9,7 +10,7 @@ const applyTheme = (id: ThemeId) => {
     THEME_REGISTRY.find((item) => item.id === id) ?? THEME_REGISTRY[0];
   root.dataset.theme = theme.id;
   for (const [key, value] of Object.entries(theme.variables))
-    root.style.setProperty(`--${key}`, value);
+    root.style.setProperty(`--theme-${key}`, value);
 };
 
 const sampleRows = [

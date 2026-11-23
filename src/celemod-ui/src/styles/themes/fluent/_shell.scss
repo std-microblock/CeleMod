@@ -6,6 +6,10 @@ html[data-theme="fluent"] .app-frame {
   backdrop-filter: blur(42px) saturate(125%);
 }
 
+html[data-theme="fluent"][window-blurbehind] .app-frame {
+  background: rgba(28, 28, 30, 0.66);
+}
+
 html[data-theme="fluent"] .app-frame::before {
   content: "";
   position: fixed;
@@ -27,19 +31,13 @@ html[data-theme="fluent"] .app-frame::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.18;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
 }
 
-html[data-theme="fluent"] {
-  --window-titlebar-height: 46px;
-}
-
 html[data-theme="fluent"] .window-titlebar {
-  flex-basis: 46px;
-  min-height: 46px;
-  padding-inline: 10px;
+  padding-inline: 8px;
 }
 
 html[data-theme="fluent"] .window-caption {
@@ -49,145 +47,137 @@ html[data-theme="fluent"] .window-caption {
   opacity: 0.92;
 }
 
-html[data-theme="fluent"] .caption-version {
-  color: var(--fluent-text-tertiary);
-  font-size: 10px;
-}
-
-html[data-theme="fluent"] .caption-hash {
-  color: var(--fluent-text-disabled);
-  font-size: 9px;
-}
-
 html[data-theme="fluent"] .app-shell {
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 8px;
 }
 
 html[data-theme="fluent"] .sidebar {
-  width: 212px;
+  width: 216px;
   margin-right: 0;
-  padding: 8px 8px 0 0;
+  padding: 6px 4px 0 0;
   box-sizing: border-box;
 }
 
-html[data-theme="fluent"] .sidebar-scroll {
-  width: 212px;
+html[data-theme="fluent"] .sidebar-scroll,
+html[data-theme="fluent"] .sidebar-items,
+html[data-theme="fluent"] .sidebar-footer {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 html[data-theme="fluent"] .sidebar-items {
-  width: 212px;
   gap: 2px;
 }
 
-html[data-theme="fluent"] .sidebar .navBtn,
-html[data-theme="fluent"] .downloadListBtn {
+html[data-theme="fluent"] .sidebar-footer {
+  gap: 2px;
+  padding-top: 6px;
+  margin-bottom: 8px;
+  border-top: 1px solid var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .sidebar .navBtn {
   position: relative;
-  /* Keep the complete navigation row inside the wider Fluent rail. */
-  width: 212px;
-  height: 40px;
-  margin: 0 0 2px;
-  padding: 0 14px;
+  width: 100%;
+  height: 38px;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 12px;
   box-sizing: border-box;
   flex-direction: row;
   justify-content: flex-start;
-  gap: 12px;
-  border: 0 !important;
-  border-radius: 4px !important;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-radius: 5px;
   color: var(--fluent-text-secondary);
-  background: transparent !important;
+  background: transparent;
   box-shadow: none;
-  overflow: hidden;
+  overflow: visible;
   transition:
     background-color var(--fluent-duration-fast) var(--fluent-ease-standard),
     color var(--fluent-duration-fast) var(--fluent-ease-standard);
-}
 
-/* NavigationView items are flat rows, not elevated cards. */
-html[data-theme="fluent"] .sidebar .navBtn:not(.selected),
-html[data-theme="fluent"] .sidebar .navBtn:not(.selected):focus,
-html[data-theme="fluent"] .sidebar .navBtn:not(.selected):focus-visible {
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--fluent-reveal-opacity, 0);
+    background: radial-gradient(
+      84px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%),
+      rgba(255, 255, 255, 0.16),
+      transparent 68%
+    );
+    transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn::before,
-html[data-theme="fluent"] .downloadListBtn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: var(--fluent-reveal-opacity, 0);
-  background: radial-gradient(
-    84px circle at var(--fluent-reveal-x, 50%) var(--fluent-reveal-y, 50%),
-    rgba(255, 255, 255, 0.2),
-    transparent 68%
-  );
-  transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
-}
+  &::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    bottom: 9px;
+    left: 0;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--fluent-accent);
+    box-shadow: 0 0 8px rgba(96, 205, 255, 0.42);
+    transform: scaleY(0);
+    opacity: 0;
+    transition:
+      transform var(--fluent-duration-normal) var(--fluent-ease-decelerate),
+      opacity var(--fluent-duration-fast) ease;
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn:hover,
-html[data-theme="fluent"] .downloadListBtn:hover {
-  color: var(--fluent-text-primary);
-  background: rgba(255, 255, 255, 0.055) !important;
-}
+  &:hover {
+    color: var(--fluent-text-primary);
+    background: var(--fluent-fill-control);
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn:active,
-html[data-theme="fluent"] .downloadListBtn:active {
-  background: var(--fluent-fill-control-pressed);
-}
+  &:active {
+    background: var(--fluent-fill-control-pressed);
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn.selected {
-  color: var(--fluent-text-primary);
-  border-color: transparent !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: none !important;
-}
+  &.selected {
+    color: var(--fluent-text-primary);
+    background: var(--fluent-fill-control-selected);
+    box-shadow: none;
 
-html[data-theme="fluent"] .sidebar .navBtn::after {
-  content: "";
-  position: absolute;
-  top: 7px;
-  bottom: 7px;
-  left: -1px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--fluent-accent);
-  box-shadow: 0 0 10px rgba(96, 205, 255, 0.42);
-  transform: scaleY(0);
-  opacity: 0;
-  transition:
-    transform var(--fluent-duration-normal) var(--fluent-ease-decelerate),
-    opacity var(--fluent-duration-fast) ease;
-}
+    &::after {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn.selected::after {
-  transform: scaleY(1);
-  opacity: 1;
-}
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
 
-html[data-theme="fluent"] .sidebar .navBtn .icon {
-  width: 18px;
-  height: 18px;
-}
+  .title {
+    width: auto;
+    margin-top: 0;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    opacity: 0.94;
+    text-align: left;
+  }
 
-html[data-theme="fluent"] .sidebar .title {
-  width: auto;
-  color: inherit;
-  font-size: 13px;
-  line-height: 1.2;
-  opacity: 0.9;
-  text-align: left;
-}
-
-html[data-theme="fluent"] .downloadListBtn {
-  margin-top: 8px;
-  border: 0 !important;
-  justify-content: flex-start;
-  gap: 10px;
-  padding-inline: 12px;
-  background: transparent !important;
+  .nav-badge {
+    position: static;
+    margin-left: auto;
+    border: 0;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    color: var(--fluent-accent-fg);
+    background: var(--fluent-accent);
+    font-size: 10px;
+  }
 }
 
 html[data-theme="fluent"] .app-content {
@@ -196,23 +186,6 @@ html[data-theme="fluent"] .app-content {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-}
-
-html[data-theme="fluent"] .celemod-version,
-html[data-theme="fluent"] #tbo-controls,
-html[data-theme="fluent"] #tbo-controls .tbo-btn {
-  min-height: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="fluent"] .page {
-  width: 100%;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 @keyframes fluent-page-enter {
@@ -247,13 +220,9 @@ html[data-theme="fluent"] .page-leaving {
 }
 
 html[data-theme="fluent"][data-fluent-keyboard="true"] :focus-visible {
-  outline: 2px solid var(--fluent-focus) !important;
+  outline: 2px solid var(--fluent-focus);
   outline-offset: 2px;
   box-shadow:
     0 0 0 1px var(--fluent-bg),
-    0 0 0 4px rgba(96, 205, 255, 0.24) !important;
-}
-
-html[data-theme="fluent"] .sidebar-footer {
-  margin-bottom: 8px;
+    0 0 0 4px rgba(96, 205, 255, 0.24);
 }

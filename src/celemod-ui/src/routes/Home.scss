@@ -108,17 +108,18 @@
     height: 32px;
     min-height: 32px;
     min-width: 132px;
-    padding: 0 24px 0 29px;
+    padding: 7px 26px 7px 29px;
     border: 1px solid
       color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
     border-radius: var(--radius-md, 8px);
-    background: color-mix(
+    background-color: color-mix(
       in srgb,
       var(--color-surface-elevated, #{theme.$bg1}) 72%,
       transparent
     );
     color: var(--color-fg-muted, #{theme.$fg1});
     font-size: 12px;
+    line-height: 16px;
     outline: none;
     transition:
       border-color 140ms ease,
@@ -131,7 +132,7 @@
         var(--color-fg, #{theme.$fg}) 16%,
         transparent
       );
-      background: var(--color-surface-hover, #{theme.$bg2});
+      background-color: var(--color-surface-hover, #{theme.$bg2});
       color: var(--color-fg, #{theme.$fg});
     }
   }
@@ -378,7 +379,7 @@
     color-mix(in srgb, var(--color-primary, #{theme.$primary}) 88%, #ffffff);
   border-radius: var(--radius-lg, 10px);
   background: var(--color-primary, #{theme.$primary});
-  color: #130f1c;
+  color: var(--color-on-primary, #130f1c);
   box-shadow: none;
   font-size: 13px;
   font-weight: 600;
@@ -739,7 +740,7 @@
     &.is-active {
       border-color: var(--color-primary, #{theme.$primary});
       background: var(--color-primary, #{theme.$primary});
-      color: #130f1c;
+      color: var(--color-on-primary, #130f1c);
 
       .icon {
         opacity: 1;
@@ -952,7 +953,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md, 9px);
   background: var(--color-primary, #{theme.$primary});
-  color: #130f1c;
+  color: var(--color-on-primary, #130f1c);
   box-shadow: none;
   font-size: 12.5px;
   font-weight: 600;

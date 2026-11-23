@@ -1,6 +1,3 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .android-keybindings {
   box-sizing: border-box;
   width: 100%;
@@ -8,7 +5,7 @@
   min-width: 0;
   overflow-y: auto;
   padding: 18px 16px max(32px, env(safe-area-inset-bottom));
-  color: theme.$fg;
+  color: var(--color-fg);
   > * {
     max-width: 860px;
     margin-left: auto;
@@ -39,7 +36,7 @@
     box-sizing: border-box;
     min-height: 44px;
     font: inherit;
-    border-radius: 10px;
+    border-radius: var(--radius-md, 10px);
   }
   button {
     padding: 8px 14px;
@@ -58,37 +55,37 @@
     width: 22px;
     height: 22px;
     flex-shrink: 0;
-    accent-color: theme.$fg;
+    accent-color: var(--color-primary);
   }
   small {
     display: block;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     line-height: 1.5;
     overflow-wrap: anywhere;
   }
   .touch-help {
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 13px;
   }
   .touch-error,
   .touch-notice {
     padding: 12px;
     border: 1px solid currentColor;
-    border-radius: 10px;
+    border-radius: var(--radius-md, 10px);
     margin-bottom: 14px;
     overflow-wrap: anywhere;
   }
   .touch-error {
-    color: #da6357;
+    color: var(--color-danger);
   }
   .touch-button-card,
   .touch-button-editor,
   .touch-empty {
     padding: 16px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.15);
-    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg, 16px);
     margin-top: 14px;
-    background: color.change(theme.$bg, $alpha: 0.5);
+    background: var(--color-surface-card);
   }
   .touch-button-title > strong {
     font-size: 18px;
@@ -127,10 +124,11 @@
     padding: 8px 4px;
     min-height: 66px;
     border: 1px solid transparent;
+    background: var(--color-surface-subtle);
   }
   .touch-icon-options button[aria-pressed="true"] {
-    border-color: currentColor;
-    background: color.change(theme.$fg, $alpha: 0.15);
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
   }
   .touch-icon-options svg {
     display: block;
@@ -208,7 +206,7 @@
     gap: 12px;
     padding: 12px 4px;
     min-height: 48px;
-    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
+    border-bottom: 1px solid var(--color-divider);
   }
   .touch-action-list > label > span {
     min-width: 0;
@@ -222,11 +220,11 @@
     position: sticky;
     bottom: 0;
     z-index: 1;
-    background: theme.$bg;
+    background: var(--color-canvas);
   }
   footer > span {
     width: 100%;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 13px;
   }
   @media (min-width: 650px) {

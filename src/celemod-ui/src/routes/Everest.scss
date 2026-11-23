@@ -1,18 +1,15 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .everest {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 30px 38px;
+  padding: 28px 36px;
   box-sizing: border-box;
   overflow: hidden;
 
   .everest-header {
     display: flex;
     align-items: center;
-    gap: 34px;
+    gap: 32px;
     flex: 0 0 auto;
     margin-bottom: 18px;
 
@@ -38,47 +35,57 @@
     }
 
     .ti {
+      color: var(--color-fg-subtle);
       font-size: 11px;
-      opacity: 0.48;
+      opacity: 0.72;
     }
 
     .value {
-      color: color.mix(theme.$primary, theme.$fg, 55%);
+      color: var(--color-primary-text);
       font-size: 23px;
-      font-weight: 720;
-      line-height: 1.1;
+      font-weight: 700;
+      line-height: 1.15;
     }
 
     &.missing .value {
-      color: rgba(255, 255, 255, 0.34);
+      color: var(--color-fg-disabled);
+      opacity: 0.65;
     }
   }
 
   .everest-edition-badge {
     margin-left: 9px;
-    padding: 3px 7px;
-    border: 1px solid rgba(174, 121, 231, 0.42);
+    padding: 3px 8px;
+    border: 1px solid var(--color-primary-border);
     border-radius: 999px;
-    color: #e2caff;
-    background: rgba(174, 121, 231, 0.14);
-    font-size: 9px;
+    color: var(--color-primary-text);
+    background: var(--color-primary-soft);
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     vertical-align: middle;
   }
 
   .manual-everest-version {
+    min-height: 0;
     margin-top: 8px;
-    padding: 0;
+    padding: 3px 6px;
+    margin-left: -6px;
     border: 0;
-    background: none;
-    color: rgba(255, 255, 255, 0.46);
+    border-radius: var(--radius-xs, 4px);
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-fg-subtle);
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    transition: color var(--motion-fast, 140ms) ease;
+    transition:
+      color var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease;
 
     &:hover {
-      color: rgba(255, 255, 255, 0.78);
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
     }
   }
 
@@ -106,6 +113,7 @@
     justify-content: flex-start;
 
     > button {
+      min-width: 0;
       transition:
         color var(--motion-fast, 140ms) ease,
         background-color var(--motion-fast, 140ms) ease,
@@ -118,14 +126,14 @@
 
       &:hover {
         border-color: transparent;
-        background: transparent;
+        background: var(--color-surface-subtle);
       }
     }
 
     > button.ultra.active {
-      border-color: rgba(174, 121, 231, 0.64);
-      color: #e2caff;
-      background: rgba(174, 121, 231, 0.18);
+      border-color: var(--color-primary-border);
+      color: var(--color-primary-text);
+      background: var(--color-primary-soft);
     }
   }
 
@@ -135,28 +143,29 @@
     align-items: center;
     justify-content: space-between;
     gap: 18px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     padding: 4px 2px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--color-divider);
 
     .ultra-kicker {
       display: block;
       margin-bottom: 4px;
-      color: rgba(211, 166, 255, 0.76);
-      font-size: 9px;
-      font-weight: 750;
-      letter-spacing: 0.18em;
+      color: var(--color-primary-text);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
     }
 
     strong {
       display: block;
+      color: var(--color-fg);
       font-size: 19px;
     }
 
     p {
       max-width: 760px;
       margin: 7px 0 0;
-      color: rgba(255, 255, 255, 0.68);
+      color: var(--color-fg-muted);
       font-size: 13px;
       line-height: 1.65;
       white-space: pre-line;
@@ -183,8 +192,8 @@
     h2 {
       flex: 0 0 auto;
       margin: 0 0 12px;
-      font-size: 15px;
-      opacity: 0.75;
+      color: var(--color-fg-muted);
+      font-size: 14px;
     }
   }
 
@@ -205,16 +214,16 @@
 
   .version-item {
     min-width: 0;
-    padding: 11px 5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
+    padding: 11px 8px;
+    border-bottom: 1px solid var(--color-divider);
+    border-radius: var(--radius-sm, 6px);
     transition:
       background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease;
 
     &:hover {
-      background: color.change(theme.$fg, $alpha: 0.035);
-      border-bottom-color: rgba(255, 255, 255, 0.16);
+      background: var(--color-surface-subtle);
+      border-bottom-color: var(--color-border-strong);
     }
 
     &:last-child {
@@ -222,14 +231,18 @@
     }
 
     &.installed {
-      border-bottom-color: rgba(167, 127, 219, 0.24);
+      border-bottom-color: color-mix(
+        in srgb,
+        var(--color-primary) 28%,
+        transparent
+      );
 
       &:hover {
-        border-bottom-color: rgba(167, 127, 219, 0.38);
+        border-bottom-color: var(--color-primary-border);
       }
 
       .version-main strong {
-        color: color.mix(theme.$primary, theme.$fg, 62%);
+        color: var(--color-primary-text);
       }
     }
   }
@@ -245,34 +258,48 @@
   .version-main {
     strong {
       overflow: hidden;
+      color: var(--color-fg);
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     span {
       flex: 0 0 auto;
-      font-size: 9px;
-      opacity: 0.5;
+      color: var(--color-fg-subtle);
+      font-size: 10px;
+      opacity: 0.72;
     }
   }
 
   .version-meta {
-    min-height: 24px;
+    min-height: 26px;
     margin-top: 4px;
-
     justify-content: flex-start;
 
     span {
-      font-size: 10px;
-      opacity: 0.48;
+      color: var(--color-fg-subtle);
+      font-size: 11px;
+      opacity: 0.72;
     }
 
     button {
       margin-left: auto;
-      padding: 3px 8px;
-      border: 0;
+      min-height: 26px;
+      height: 26px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--control-radius, 6px);
       background: transparent;
-      font-size: 11px;
+      box-shadow: none;
+      color: var(--color-fg-muted);
+      font-size: 11.5px;
+      font-weight: 500;
+
+      &:hover {
+        border-color: var(--color-primary-border);
+        background: var(--color-primary-soft);
+        color: var(--color-fg);
+      }
     }
   }
 
@@ -280,8 +307,8 @@
   .load-error,
   .catalog-loading {
     padding: 28px;
+    color: var(--color-fg-subtle);
     text-align: center;
-    opacity: 0.62;
   }
 
   .catalog-loading {
@@ -311,14 +338,15 @@
 
     .tip {
       margin-bottom: 8px;
-      font-size: 30px;
+      color: var(--color-fg);
+      font-size: 28px;
       font-weight: 700;
     }
 
     .url {
       max-width: 78%;
       overflow: hidden;
-      color: rgba(255, 255, 255, 0.62);
+      color: var(--color-fg-subtle);
       font-size: 13px;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -330,8 +358,8 @@
       justify-content: center;
       margin-top: 8px;
       overflow: hidden;
+      color: var(--color-fg-muted);
       font-size: 13px;
-      opacity: 0.74;
       text-align: center;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -339,11 +367,13 @@
       textarea {
         width: 90%;
         height: 70px;
+        min-height: 70px;
         padding: 0;
         border: 0;
-        background: none;
-        color: theme.$fg;
-        font-size: 14px;
+        background: transparent;
+        box-shadow: none;
+        color: var(--color-fg);
+        font-size: 13px;
         resize: none;
         text-align: left;
       }

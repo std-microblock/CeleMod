@@ -955,71 +955,6 @@ html[data-theme="fluent"] .loenn {
   --loenn-divider-subtle: var(--fluent-stroke-divider);
   --loenn-row-hover: var(--fluent-fill-control-hover);
   --loenn-accent: var(--fluent-accent);
-
-  .loenn-install-section[role="status"] {
-    border: 0;
-    background: transparent;
-  }
-
-  .loenn-edition-tabs.centered-tab-buttons {
-    padding: 0;
-    gap: 6px;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-
-    > button {
-      min-height: 32px !important;
-      padding: 0 13px !important;
-      border: 1px solid transparent !important;
-      border-radius: 6px !important;
-      color: var(--fluent-text-secondary) !important;
-      background: transparent !important;
-      box-shadow: none !important;
-
-      &:hover:not(:disabled):not(.active) {
-        color: var(--fluent-text-primary) !important;
-        background: var(--fluent-fill-control-hover) !important;
-      }
-
-      &.active {
-        color: var(--fluent-text-primary) !important;
-        border-color: var(--fluent-stroke-control) !important;
-        background: var(--fluent-fill-control-selected) !important;
-        box-shadow: none !important;
-      }
-    }
-  }
-
-  .loenn-ghost-btn,
-  .loenn-inline-link,
-  .loenn-icon-btn {
-    min-height: 0 !important;
-    border: 0 !important;
-    border-radius: 4px !important;
-    color: var(--fluent-text-secondary) !important;
-    background: transparent !important;
-    box-shadow: none !important;
-
-    &:hover:not(:disabled) {
-      color: var(--fluent-text-primary) !important;
-      background: var(--fluent-fill-control-hover) !important;
-    }
-  }
-
-  .loenn-ghost-btn {
-    min-height: 30px !important;
-  }
-
-  .loenn-icon-btn {
-    width: 30px;
-    height: 30px;
-    min-height: 30px !important;
-  }
-
-  .loenn-row-btn {
-    min-height: 30px !important;
-  }
 }
 
 /* Material You harmony */
@@ -1033,83 +968,14 @@ html[data-theme="material-you"] .loenn {
   --loenn-row-hover: color-mix(in srgb, var(--md-on-surface) 4.5%, transparent);
   --loenn-accent: var(--md-primary);
 
-  .loenn-edition-tabs.centered-tab-buttons {
-    padding: 0;
-    gap: 8px;
-    border: 0;
-    background: transparent;
-
-    > button {
-      min-height: 34px !important;
-      padding: 0 16px !important;
-      border: 0 !important;
-      border-radius: 999px !important;
-      color: var(--md-on-surface-variant) !important;
-      background: transparent !important;
-      box-shadow: none !important;
-
-      &:hover:not(:disabled):not(.active) {
-        color: var(--md-on-surface) !important;
-        background: color-mix(
-          in srgb,
-          var(--md-on-surface) 8%,
-          transparent
-        ) !important;
-      }
-
-      &.active {
-        color: var(--md-on-secondary-container) !important;
-        background: var(--md-secondary-container) !important;
-      }
-    }
-  }
-
   .loenn-ghost-btn,
-  .loenn-inline-link,
-  .loenn-icon-btn {
-    min-height: 0 !important;
-    border: 0 !important;
-    color: var(--md-on-surface-variant) !important;
-    background: transparent !important;
-    box-shadow: none !important;
-
-    &:hover:not(:disabled) {
-      color: var(--md-on-surface) !important;
-      background: var(--md-state-hover) !important;
-      box-shadow: none !important;
-    }
-  }
-
-  .loenn-ghost-btn {
-    min-height: 34px !important;
-    padding: 0 12px !important;
-    border-radius: 999px !important;
-  }
-
-  .loenn-inline-link {
-    padding: 3px 8px !important;
-    border-radius: 8px !important;
-    font-weight: 500;
-  }
-
-  .loenn-icon-btn {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-  }
-
-  .loenn-row-btn {
-    min-height: 34px !important;
-    padding: 0 16px !important;
-    font-size: 13px;
-  }
-
+  .loenn-row-btn,
   .loenn-launch-btn {
-    min-height: 40px !important;
-    padding: 0 20px !important;
+    border-radius: var(--md-shape-full);
+  }
+
+  .loenn-icon-btn {
+    border-radius: 50%;
   }
 }
 

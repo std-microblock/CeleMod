@@ -1,0 +1,131 @@
+@use "./theme" as theme;
+
+// Base element defaults live in lower cascade layers so component classes
+// never need `!important` wars to style specialized controls (icon buttons,
+// tabs, chips, tiles, virtual keys, overlays).
+@layer base, theme-base;
+
+:root {
+  --window-titlebar-height: 45px;
+
+  /* Raw palette tokens (Vanilla default). Themes override these on
+     html[data-theme="..."] in CSS — never via inline root styles. */
+  --bg: #{theme.$bg};
+  --bg1: #{theme.$bg1};
+  --bg2: #{theme.$bg2};
+  --bg3: #{theme.$bg3};
+  --fg: #{theme.$fg};
+  --fg1: #{theme.$fg1};
+  --fg2: #{theme.$fg2};
+  --fg3: #{theme.$fg3};
+  --primary: #{theme.$primary};
+
+  /* Semantic surfaces & inks */
+  --color-canvas: var(--bg);
+  --color-surface: var(--bg);
+  --color-surface-elevated: var(--bg1);
+  --color-surface-hover: var(--bg2);
+  --color-surface-active: var(--bg3);
+  --color-surface-subtle: color-mix(in srgb, var(--color-fg) 3.5%, transparent);
+  --color-surface-card: color-mix(
+    in srgb,
+    var(--color-surface-elevated) 78%,
+    transparent
+  );
+  --color-surface-overlay: color-mix(
+    in srgb,
+    var(--color-surface-elevated) 95%,
+    transparent
+  );
+  --color-surface-input: color-mix(
+    in srgb,
+    var(--color-surface-elevated) 86%,
+    transparent
+  );
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg1);
+  --color-fg-subtle: var(--fg2);
+  --color-fg-disabled: var(--fg3);
+
+  /* Accent & semantic tones */
+  --color-primary: var(--primary);
+  --color-on-primary: #130f1c;
+  --color-primary-hover: color-mix(
+    in srgb,
+    var(--color-primary) 88%,
+    #ffffff
+  );
+  --color-primary-active: color-mix(
+    in srgb,
+    var(--color-primary) 84%,
+    #000000
+  );
+  --color-primary-soft: color-mix(
+    in srgb,
+    var(--color-primary) 15%,
+    transparent
+  );
+  --color-primary-border: color-mix(
+    in srgb,
+    var(--color-primary) 45%,
+    transparent
+  );
+  --color-primary-text: color-mix(
+    in srgb,
+    var(--color-primary) 62%,
+    var(--color-fg)
+  );
+
+  --color-success: #62cf8f;
+  --color-warning: #f2be5c;
+  --color-danger: #f07b85;
+  --color-info: #78c2ff;
+
+  /* Borders, dividers & scrims */
+  --color-border-subtle: color-mix(in srgb, var(--color-fg) 7%, transparent);
+  --color-border: color-mix(in srgb, var(--color-fg) 10%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--color-fg) 18%, transparent);
+  --color-divider: color-mix(in srgb, var(--color-fg) 8%, transparent);
+  --color-scrim: rgba(0, 0, 0, 0.52);
+
+  /* Radii & elevation */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --radius: var(--radius-lg);
+
+  --shadow-button: 0 2px 5px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.42);
+  --shadow-dialog: 0 22px 64px rgba(0, 0, 0, 0.54);
+  --elevation: var(--shadow-card);
+
+  /* Control tokens */
+  --control-height-sm: 28px;
+  --control-height-md: 34px;
+  --control-height-lg: 40px;
+  --control-radius: 7px;
+
+  --btn-bg: var(--color-surface-elevated);
+  --btn-bg-hover: var(--color-surface-hover);
+  --btn-bg-active: var(--color-surface-active);
+  --btn-fg: var(--color-fg);
+  --btn-border: var(--color-border);
+  --btn-radius: var(--control-radius);
+
+  --btn-primary-bg: var(--color-primary);
+  --btn-primary-bg-hover: var(--color-primary-hover);
+  --btn-primary-bg-active: var(--color-primary-active);
+  --btn-primary-fg: var(--color-on-primary);
+  --btn-primary-border: transparent;
+
+  --focus-ring: color-mix(in srgb, var(--color-primary) 72%, transparent);
+  --scrollbar-thumb: var(--color-fg-subtle);
+
+  color: var(--color-fg);
+  color-scheme: dark;
+}

@@ -1,14 +1,8 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .keybindings-page {
   --binding-source-width: 180px;
   display: grid;
-  grid-template-columns: var(--binding-source-width) minmax(
-      0,
-      calc(100vw - 97px - var(--binding-source-width))
-    );
-  width: calc(100vw - 97px);
+  grid-template-columns: var(--binding-source-width) minmax(0, 1fr);
+  width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
@@ -20,13 +14,13 @@
   min-height: 0;
   padding: 7px 7px 40px;
   overflow-y: auto;
-  border-right: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  background: color.change(theme.$bg, $alpha: 0.22);
+  border-right: 1px solid var(--color-divider);
+  background: color-mix(in srgb, var(--color-canvas) 24%, transparent);
 
   .source-heading {
     height: 29px;
     padding: 0 8px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(9px * var(--keybindings-font-scale, 1));
     font-weight: 700;
     line-height: 29px;
@@ -43,15 +37,16 @@
     gap: 8px;
     overflow: hidden;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--radius-sm, 7px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
-    font-size: calc(9px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(9.5px * var(--keybindings-font-scale, 1));
+    font-weight: 500;
     letter-spacing: 0;
     text-align: left;
     transition:
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease;
 
@@ -61,17 +56,18 @@
       white-space: nowrap;
     }
     small {
-      color: color.change(theme.$fg, $alpha: 0.35);
+      color: var(--color-fg-disabled);
       font-size: calc(8px * var(--keybindings-font-scale, 1));
     }
     &:hover {
-      background: color.change(theme.$bg2, $alpha: 0.56);
-      color: theme.$fg;
+      background: var(--color-surface-subtle);
+      color: var(--color-fg);
     }
     &.selected {
-      border-color: color.change(theme.$primary, $alpha: 0.27);
-      background: color.change(theme.$primary, $alpha: 0.075);
-      color: theme.$fg;
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-soft);
+      color: var(--color-fg);
+      font-weight: 600;
     }
     &.conflict-source > span {
       display: flex;
@@ -81,7 +77,7 @@
       font-weight: 650;
       small {
         flex: 0 0 auto;
-        color: color.change(theme.$fg, $alpha: 0.34);
+        color: var(--color-fg-disabled);
         font-family: inherit;
         font-size: calc(7px * var(--keybindings-font-scale, 1));
       }
@@ -93,7 +89,7 @@
   display: flex;
   min-width: 0;
   min-height: 0;
-  width: calc(100vw - 97px - var(--binding-source-width));
+  width: 100%;
   flex-direction: column;
 }
 
@@ -102,10 +98,10 @@
   grid-template-columns: auto minmax(80px, 1fr) auto;
   flex: 0 0 auto;
   align-items: center;
-  min-height: 43px;
-  padding: 5px 6px 6px 8px;
-  gap: 4px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  min-height: 46px;
+  padding: 6px 10px;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
 }
 
@@ -113,7 +109,7 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 4px;
+  gap: 6px;
 }
 
 .keybindings-title {
@@ -121,13 +117,14 @@
   min-width: 72px;
   h1 {
     margin: 0;
+    color: var(--color-fg);
     font-size: calc(15px * var(--keybindings-font-scale, 1));
     line-height: 1.15;
   }
   span {
     display: block;
     margin-top: 3px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(9px * var(--keybindings-font-scale, 1));
   }
 }
@@ -143,45 +140,49 @@
     position: absolute;
     left: 11px;
     z-index: 1;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     pointer-events: none;
   }
   input {
     width: 100%;
-    height: 30px;
-    padding: 0 34px 0 32px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 6px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 32px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 6px);
     box-sizing: border-box;
-    background: color.change(theme.$bg1, $alpha: 0.82);
-    color: theme.$fg;
+    background: var(--color-surface-input);
+    color: var(--color-fg);
     outline: none;
-    font-size: calc(10px * var(--keybindings-font-scale, 1));
+    font-size: calc(10.5px * var(--keybindings-font-scale, 1));
     transition:
       border-color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease;
+      background-color var(--motion-fast, 140ms) ease;
     &:focus {
-      border-color: color.change(theme.$primary, $alpha: 0.58);
+      border-color: var(--color-primary-border);
     }
   }
   button {
     position: absolute;
     right: 4px;
     display: grid;
-    width: 25px;
-    height: 25px;
-    min-height: 0;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
     padding: 0;
     place-items: center;
     border: 0;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease;
+      background-color var(--motion-fast, 140ms) ease;
     &:hover {
-      color: theme.$fg;
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
     }
   }
 }
@@ -192,44 +193,47 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  min-height: 30px;
-  padding: 0 7px;
-  gap: 4px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 6px;
-  background: color.change(theme.$bg1, $alpha: 0.82);
+  height: 32px;
+  min-height: 32px;
+  padding: 0 9px;
+  gap: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--control-radius, 6px);
+  background: var(--color-surface-input);
   box-shadow: none;
-  color: theme.$fg3;
-  font-size: calc(9px * var(--keybindings-font-scale, 1));
+  color: var(--color-fg-subtle);
+  font-size: calc(9.5px * var(--keybindings-font-scale, 1));
+  font-weight: 500;
   letter-spacing: 0;
+  white-space: nowrap;
   transition:
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
     border-color var(--motion-fast, 140ms) ease;
   span {
     min-width: 15px;
-    color: #ffc66d;
+    color: var(--color-warning);
   }
   &:hover,
   &.selected {
-    border-color: color.change(#ffc66d, $alpha: 0.34);
-    background: color.change(#ffc66d, $alpha: 0.07);
-    color: theme.$fg;
+    border-color: color-mix(in srgb, var(--color-warning) 42%, transparent);
+    background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+    color: var(--color-fg);
   }
 }
 
 .disabled-toggle {
-  width: 42px;
+  width: 44px;
   padding: 0;
+  &:hover,
   &.selected {
-    border-color: color.change(theme.$primary, $alpha: 0.36);
-    background: color.change(theme.$primary, $alpha: 0.1);
-    color: theme.$fg;
+    border-color: var(--color-primary-border);
+    background: var(--color-primary-soft);
+    color: var(--color-fg);
   }
   span {
     min-width: 12px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
   }
 }
 
@@ -237,23 +241,32 @@
   display: flex;
   flex: 0 0 auto;
   padding: 2px;
-  border-radius: 7px;
-  background: color.change(theme.$bg1, $alpha: 0.82);
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  gap: 2px;
+  border-radius: var(--radius-md, 7px);
+  background: var(--color-surface-input);
+  border: 1px solid var(--color-border);
 
   button {
-    height: 24px;
-    min-height: 24px;
-    padding: 0 6px;
+    height: 26px;
+    min-height: 26px;
+    padding: 0 8px;
     border: 0;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     .icon {
       width: 11px;
       height: 11px;
     }
+    &:hover:not(.selected) {
+      border-color: transparent;
+      background: var(--color-surface-subtle);
+      color: var(--color-fg);
+    }
     &.selected {
-      background: theme.$bg3;
-      color: theme.$fg;
+      border-color: transparent;
+      background: var(--color-surface-active);
+      color: var(--color-fg);
+      font-weight: 600;
     }
   }
 }
@@ -270,39 +283,42 @@
   min-height: 32px;
   padding: 4px 11px;
   gap: 7px;
-  border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.12);
-  background: color.change(#ffc66d, $alpha: 0.05);
-  color: color.change(theme.$fg, $alpha: 0.73);
-  font-size: calc(9px * var(--keybindings-font-scale, 1));
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 18%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 7%, transparent);
+  color: var(--color-fg-muted);
+  font-size: calc(9.5px * var(--keybindings-font-scale, 1));
   box-sizing: border-box;
   > .icon {
-    color: #ffc66d;
+    color: var(--color-warning);
   }
 }
 
 .keybindings-error {
-  border-bottom-color: color.change(#ef5350, $alpha: 0.14);
-  background: color.change(#ef5350, $alpha: 0.055);
+  border-bottom-color: color-mix(in srgb, var(--color-danger) 20%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
   > .icon {
-    color: #ff8583;
+    color: var(--color-danger);
   }
   span {
     flex: 1 1 auto;
   }
   button {
     display: grid;
-    width: 23px;
-    height: 23px;
-    min-height: 0;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
     padding: 0;
     place-items: center;
     border: 0;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     transition: color var(--motion-fast, 140ms) ease;
     &:hover {
-      color: theme.$fg;
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
     }
   }
 }
@@ -319,16 +335,16 @@
   grid-template-columns: minmax(150px, 0.7fr) minmax(230px, 1.3fr);
   align-items: center;
   min-height: 54px;
-  padding: 7px 8px 7px 11px;
+  padding: 7px 10px 7px 12px;
   gap: 15px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.05);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   transition:
-    background 100ms ease,
+    background-color 100ms ease,
     opacity 160ms ease;
 
   &:hover {
-    background: color.change(theme.$bg2, $alpha: 0.28);
+    background: var(--color-surface-subtle);
   }
   &.disabled {
     opacity: 0.58;
@@ -346,16 +362,17 @@
   strong {
     min-width: 0;
     overflow: hidden;
-    font-size: calc(10px * var(--keybindings-font-scale, 1));
-    font-weight: 680;
+    color: var(--color-fg);
+    font-size: calc(10.5px * var(--keybindings-font-scale, 1));
+    font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   p {
     margin: 3px 0 0;
     overflow: hidden;
-    color: color.change(theme.$fg, $alpha: 0.55);
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -364,8 +381,8 @@
     display: block;
     margin-top: 2px;
     overflow: hidden;
-    color: color.change(theme.$fg, $alpha: 0.28);
-    font-size: calc(7px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-disabled);
+    font-size: calc(7.5px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -375,26 +392,26 @@
 .conflict-badge,
 .disabled-badge {
   flex: 0 0 auto;
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: 99px;
-  background: color.change(theme.$fg, $alpha: 0.055);
-  color: theme.$fg3;
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  background: var(--color-surface-subtle);
+  color: var(--color-fg-subtle);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
 }
 
 .conflict-badge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: color.change(#ffc66d, $alpha: 0.09);
-  color: #e9b75f;
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: var(--color-warning);
   .icon {
     width: 8px;
     height: 8px;
   }
 }
 .disabled-badge {
-  color: color.change(theme.$fg, $alpha: 0.42);
+  color: var(--color-fg-disabled);
 }
 
 .binding-devices {
@@ -405,19 +422,19 @@
 }
 .binding-device {
   display: grid;
-  grid-template-columns: 35px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   flex: 1 1 0;
   align-items: center;
-  min-height: 23px;
-  gap: 5px;
+  min-height: 24px;
+  gap: 6px;
 }
 .binding-device-mouse {
   flex: 0 1 auto;
-  min-width: 70px;
+  min-width: 72px;
 }
 .device-name {
-  color: color.change(theme.$fg, $alpha: 0.42);
-  font-size: calc(7px * var(--keybindings-font-scale, 1));
+  color: var(--color-fg-disabled);
+  font-size: calc(7.5px * var(--keybindings-font-scale, 1));
   text-align: right;
 }
 .binding-values {
@@ -431,27 +448,29 @@
 .binding-add {
   display: inline-flex;
   align-items: center;
-  min-height: 21px;
-  padding: 0 5px 0 7px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0 6px 0 8px;
   gap: 5px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.09);
-  border-radius: 5px;
-  background: color.change(theme.$bg1, $alpha: 0.7);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs, 5px);
+  background: var(--color-surface-elevated);
   box-shadow: none;
-  color: color.change(theme.$fg, $alpha: 0.78);
+  color: var(--color-fg-muted);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: calc(8px * var(--keybindings-font-scale, 1));
+  font-size: calc(8.5px * var(--keybindings-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0;
   transition:
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     border-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
     opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
-    border-color: color.change(theme.$primary, $alpha: 0.38);
-    background: theme.$bg2;
+    border-color: var(--color-primary-border);
+    background: var(--color-surface-hover);
+    color: var(--color-fg);
   }
   > span {
     display: grid;
@@ -459,14 +478,14 @@
     height: 14px;
     place-items: center;
     border-radius: 3px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     transition:
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
   }
   > span:hover {
-    background: color.change(#ef5350, $alpha: 0.15);
-    color: #ff8c89;
+    background: color-mix(in srgb, var(--color-danger) 18%, transparent);
+    color: var(--color-danger);
   }
   .icon {
     width: 8px;
@@ -476,9 +495,10 @@
 
 .binding-add {
   justify-content: center;
-  width: 22px;
+  width: 24px;
+  min-width: 24px;
   padding: 0;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-family: inherit;
 }
 
@@ -491,8 +511,8 @@
   min-height: 39px;
   padding: 5px 12px;
   gap: 12px;
-  border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.14);
-  background: color.change(#ffc66d, $alpha: 0.035);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 6%, transparent);
   box-sizing: border-box;
 
   div {
@@ -501,17 +521,17 @@
     gap: 8px;
   }
   span {
-    color: theme.$fg3;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
   }
   strong {
-    color: #efc16c;
+    color: var(--color-warning);
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: calc(12px * var(--keybindings-font-scale, 1));
   }
   > small {
     margin-left: auto;
-    color: color.change(theme.$fg, $alpha: 0.43);
+    color: var(--color-fg-disabled);
     font-size: calc(8px * var(--keybindings-font-scale, 1));
   }
 }
@@ -521,16 +541,16 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   min-height: 45px;
-  padding: 5px 12px;
+  padding: 6px 12px;
   gap: 14px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.055);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   transition:
-    background 100ms ease,
+    background-color 100ms ease,
     opacity 160ms ease;
 
   &:hover {
-    background: color.change(theme.$bg2, $alpha: 0.28);
+    background: var(--color-surface-subtle);
   }
   &.disabled {
     opacity: 0.56;
@@ -539,18 +559,19 @@
     min-width: 0;
   }
   strong {
-    font-size: calc(10px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg);
+    font-size: calc(10.5px * var(--keybindings-font-scale, 1));
   }
   span {
     margin-left: 7px;
-    color: theme.$fg3;
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
   }
   p {
     margin: 4px 0 0;
     overflow: hidden;
-    color: color.change(theme.$fg, $alpha: 0.5);
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg-subtle);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -559,35 +580,37 @@
 .conflict-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 
   button {
     display: inline-flex;
     align-items: center;
-    min-height: 25px;
-    padding: 0 8px;
+    min-height: 26px;
+    height: 26px;
+    padding: 0 9px;
     gap: 5px;
-    border: 1px solid color.change(theme.$primary, $alpha: 0.28);
-    border-radius: 6px;
-    background: color.change(theme.$primary, $alpha: 0.075);
+    border: 1px solid var(--color-primary-border);
+    border-radius: var(--control-radius, 6px);
+    background: var(--color-primary-soft);
     box-shadow: none;
-    color: color.adjust(theme.$primary, $lightness: 21%);
-    font-size: calc(8px * var(--keybindings-font-scale, 1));
+    color: var(--color-primary-text);
+    font-size: calc(8.5px * var(--keybindings-font-scale, 1));
+    font-weight: 600;
     letter-spacing: 0;
     transition:
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease,
       opacity var(--motion-fast, 140ms) ease;
     &:hover:not(:disabled) {
-      background: color.change(theme.$primary, $alpha: 0.14);
+      background: color-mix(in srgb, var(--color-primary) 24%, transparent);
     }
     &.clear-binding {
-      border-color: color.change(#ef5350, $alpha: 0.18);
+      border-color: color-mix(in srgb, var(--color-danger) 28%, transparent);
       background: transparent;
-      color: #d88b89;
+      color: var(--color-danger);
       &:hover:not(:disabled) {
-        background: color.change(#ef5350, $alpha: 0.1);
+        background: color-mix(in srgb, var(--color-danger) 14%, transparent);
       }
     }
   }
@@ -600,19 +623,21 @@
   justify-content: center;
   flex-direction: column;
   gap: 9px;
-  color: theme.$fg3;
-  font-size: calc(10px * var(--keybindings-font-scale, 1));
+  color: var(--color-fg-subtle);
+  font-size: calc(10.5px * var(--keybindings-font-scale, 1));
   .icon {
     width: 24px;
     height: 24px;
   }
   strong {
-    font-size: calc(11px * var(--keybindings-font-scale, 1));
+    color: var(--color-fg);
+    font-size: calc(12px * var(--keybindings-font-scale, 1));
   }
 }
 
 .popup-container.binding-capture-overlay {
   inset: 0;
+  padding: 0;
   border-radius: 0;
   transform: none;
 }
@@ -626,43 +651,49 @@
   align-items: center;
   justify-content: center;
   gap: 13px;
-  color: theme.$fg;
+  color: var(--color-fg);
   text-align: center;
 
   > .icon {
     width: 42px;
     height: 42px;
-    color: color.adjust(theme.$primary, $lightness: 18%);
+    color: var(--color-primary-text);
   }
   > strong {
     font-size: calc(20px * var(--keybindings-font-scale, 1));
   }
   > span {
     min-height: 22px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: calc(11px * var(--keybindings-font-scale, 1));
   }
   > button:not(.capture-cancel) {
-    min-height: 31px;
-    padding: 0 13px;
-    font-size: calc(9px * var(--keybindings-font-scale, 1));
+    min-height: 32px;
+    padding: 0 14px;
+    font-size: calc(10px * var(--keybindings-font-scale, 1));
   }
   .capture-cancel {
     position: absolute;
-    top: 48px;
-    right: 25px;
+    top: calc(var(--window-titlebar-height, 45px) + 12px);
+    right: 24px;
     display: grid;
     width: 34px;
     height: 34px;
-    min-height: 0;
+    min-width: 34px;
+    min-height: 34px;
     padding: 0;
     place-items: center;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 7px;
-    background: color.change(theme.$bg1, $alpha: 0.75);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    background: var(--color-surface-elevated);
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
+
+    &:hover {
+      color: var(--color-fg);
+      background: var(--color-surface-hover);
+    }
   }
 }
 

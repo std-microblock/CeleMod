@@ -259,6 +259,7 @@ export const DropInstaller = () => {
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
+    if (!("__TAURI_INTERNALS__" in window)) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
     void getCurrentWindow()

@@ -1,9 +1,10 @@
 import _i18n from "src/i18n";
 import { useEffect, useRef, useState } from "react";
+import celemodLogo from "../resources/Celemod.png";
 import { callRemote } from "../tauri/commands";
 import { detectDesktopPlatform } from "../tauri/window";
 
-export function WindowTitlebar() {
+export function WindowTitlebar({ showBrand = false }: { showBrand?: boolean }) {
   const titlebarRef = useRef<HTMLElement>(null);
   const [version, setVersion] = useState("");
   const [hash, setHash] = useState("");
@@ -63,6 +64,11 @@ export function WindowTitlebar() {
       className="window-titlebar"
       data-tauri-drag-region="deep"
     >
+      {showBrand && (
+        <div className="window-brand" aria-label="CeleMod">
+          <img src={celemodLogo} alt="CeleMod" />
+        </div>
+      )}
       <div className="window-caption">CeleMod</div>
       <button
         className="celemod-version"

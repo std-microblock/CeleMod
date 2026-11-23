@@ -730,9 +730,11 @@
 
   &::after {
     position: absolute;
+    top: auto;
     right: 8px;
     bottom: 0;
     left: 8px;
+    z-index: 1;
     height: 2px;
     border-radius: 2px 2px 0 0;
     background: var(--detail-accent);
@@ -747,6 +749,10 @@
 
   &:hover {
     color: var(--detail-fg);
+
+    &::after {
+      opacity: 0;
+    }
   }
 
   &.active {
@@ -2393,7 +2399,7 @@ html[data-theme="fluent"] {
   }
 
   .popup-container.mod-detail-overlay {
-    background: var(--fluent-smoke) !important;
+    background: var(--fluent-smoke);
   }
 
   .mod-detail-dialog {
@@ -2435,33 +2441,6 @@ html[data-theme="fluent"] {
   .mod-detail-icon-btn {
     border-radius: 4px;
   }
-
-  .mod-detail-dialog button.detail-pill {
-    height: 22px;
-    min-height: 22px;
-    padding: 0 8px;
-    border-radius: 999px;
-    font-size: 11px;
-  }
-
-  .mod-detail-dialog .mod-detail-thumb,
-  .mod-detail-dialog .mod-detail-shot {
-    padding: 0;
-    min-height: 0;
-  }
-
-  .mod-detail-dialog .mod-detail-gallery-arrow,
-  .mod-lightbox .mod-lightbox-nav {
-    position: absolute;
-    padding: 0;
-  }
-
-  .mod-detail-dialog .mod-detail-icon-btn,
-  .mod-detail-dialog .kv-copy-btn,
-  .mod-lightbox .mod-lightbox-btn,
-  .mod-lightbox .mod-lightbox-thumb {
-    padding: 0;
-  }
 }
 
 html[data-theme="material-you"] {
@@ -2501,294 +2480,10 @@ html[data-theme="material-you"] {
     );
   }
 
-  // Isolate custom dialog/lightbox buttons from Material You's global button rule
-  .mod-detail-dialog button.mod-detail-thumb {
-    min-height: 0;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-radius: 14px !important;
-    background: var(--detail-surface-raised) !important;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.36);
-
-    &::after {
-      display: none;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-shot {
-    min-height: 0;
-    padding: 0;
-    border: 1px solid var(--detail-border) !important;
-    border-radius: 12px !important;
-    background: var(--detail-surface-raised) !important;
-    box-shadow: none;
-
-    &::after {
-      display: none;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-gallery-arrow {
-    position: absolute;
-    min-height: 32px;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-radius: 50% !important;
-    background: rgba(18, 19, 24, 0.84) !important;
-    color: white !important;
-    box-shadow: none;
-
-    &:hover {
-      background: var(--detail-accent) !important;
-      color: var(--detail-accent-fg) !important;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-icon-btn,
-  .mod-detail-dialog button.kv-copy-btn {
-    min-height: 0;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 10px !important;
-    background: rgba(16, 17, 22, 0.3) !important;
-    color: var(--detail-fg-muted) !important;
-    box-shadow: none;
-
-    &:hover {
-      border-color: var(--detail-border-strong) !important;
-      background: rgba(255, 255, 255, 0.14) !important;
-      color: var(--detail-fg) !important;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-link-btn {
-    height: 30px;
-    min-height: 30px;
-    padding: 0 11px;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    border-radius: 999px !important;
-    background: rgba(16, 17, 22, 0.36) !important;
-    color: var(--detail-fg) !important;
-    font-size: 11.5px;
-    box-shadow: none !important;
-
-    &:hover {
-      border-color: var(--detail-border-strong) !important;
-      background: rgba(255, 255, 255, 0.14) !important;
-      color: var(--detail-fg) !important;
-    }
-
-    &.secondary-link {
-      border-color: rgba(255, 255, 255, 0.08) !important;
-      background: rgba(16, 17, 22, 0.22) !important;
-      color: var(--detail-fg-muted) !important;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-tab {
-    height: 42px;
-    min-height: 42px;
-    padding: 0 12px;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--detail-fg-subtle) !important;
-    font-size: 12.5px;
-    box-shadow: none !important;
-
-    &:hover,
-    &.active {
-      background: transparent !important;
-      color: var(--detail-fg) !important;
-      box-shadow: none !important;
-    }
-
-    &::after {
-      top: auto;
-      right: 8px;
-      bottom: 0;
-      left: 8px;
-      z-index: 1;
-      height: 2px;
-      border-radius: 2px 2px 0 0;
-      background: var(--detail-accent);
-      opacity: 0;
-      transform: scaleX(0.4);
-    }
-
-    &:hover::after {
-      opacity: 0;
-    }
-
-    &.active::after {
-      opacity: 1;
-      transform: scaleX(1);
-    }
-  }
-
-  .mod-detail-dialog button.detail-pill {
-    height: 22px;
-    min-height: 22px;
-    padding: 0 8px;
-    border: 1px solid rgba(255, 198, 109, 0.38) !important;
-    border-radius: 999px !important;
-    background: rgba(255, 198, 109, 0.14) !important;
-    color: #ffd58c !important;
-    font-size: 11px;
-    box-shadow: none;
-  }
-
-  .mod-detail-dialog button.detail-action-btn {
-    height: 34px;
-    min-height: 34px;
-    padding: 0 14px;
-    border: 1px solid var(--detail-border) !important;
-    border-radius: 999px !important;
-    background: var(--detail-surface-subtle) !important;
-    color: var(--detail-fg) !important;
-    font-size: 12.5px;
-    box-shadow: none;
-
-    &.is-primary {
-      border-color: transparent !important;
-      background: var(--detail-accent) !important;
-      color: var(--detail-accent-fg) !important;
-    }
-
-    &.is-installed,
-    &.is-enabled {
-      border-color: rgba(82, 206, 134, 0.36) !important;
-      background: rgba(65, 184, 117, 0.16) !important;
-      color: #93e8b7 !important;
-    }
-
-    &.is-info,
-    &.is-active {
-      border-color: rgba(96, 190, 255, 0.36) !important;
-      background: rgba(66, 165, 245, 0.15) !important;
-      color: #96d4ff !important;
-    }
-
-    &.is-warning {
-      border-color: rgba(255, 198, 109, 0.44) !important;
-      background: rgba(255, 198, 109, 0.18) !important;
-      color: #ffdc9c !important;
-    }
-
-    &.is-danger {
-      border-color: rgba(239, 89, 111, 0.44) !important;
-      background: rgba(239, 89, 111, 0.18) !important;
-      color: #ffadb9 !important;
-    }
-
-    &.is-danger-ghost {
-      width: 34px;
-      padding: 0;
-      border-color: transparent !important;
-      background: transparent !important;
-      color: var(--detail-fg-subtle) !important;
-    }
-  }
-
-  .mod-detail-dialog button.mod-detail-credit-card.clickable {
-    min-height: 0;
-    padding: 10px 28px 10px 12px;
-    border: 1px solid var(--detail-border) !important;
-    border-radius: 12px !important;
-    background: var(--detail-surface-subtle) !important;
-    color: var(--detail-fg) !important;
-    font-size: 13px;
-    font-weight: 500;
-    box-shadow: none;
-
-    &:hover {
-      border-color: var(--detail-accent-border) !important;
-      background: var(--detail-accent-soft) !important;
-    }
-  }
-
-  .mod-detail-dialog button.file-card-download {
-    height: 32px;
-    min-height: 32px;
-    padding: 0 13px;
-    border: 1px solid var(--detail-border) !important;
-    border-radius: 999px !important;
-    background: var(--detail-surface-hover) !important;
-    color: var(--detail-fg) !important;
-    font-size: 12px;
-
-    &.is-primary {
-      border-color: transparent !important;
-      background: var(--detail-accent) !important;
-      color: var(--detail-accent-fg) !important;
-    }
-  }
-
-  .mod-detail-dialog button.dep-mini-btn,
-  .mod-detail-dialog button.detail-inline-btn,
-  .mod-detail-dialog .mod-detail-local-strip button,
-  .mod-detail-dialog .mod-detail-callout button {
-    height: 28px;
-    min-height: 28px;
-    padding: 0 11px;
-    font-size: 11.5px;
-    box-shadow: none;
-  }
-
-  .mod-detail-dialog button.dep-mini-btn.is-ghost {
-    width: 28px;
-    padding: 0;
-    background: transparent !important;
-    color: var(--detail-fg-subtle) !important;
-  }
-
-  .mod-detail-dialog button.mod-detail-rev-chip {
-    height: 30px;
-    min-height: 30px;
-    padding: 0 11px;
-    border: 1px solid var(--detail-border) !important;
-    background: var(--detail-surface-subtle) !important;
-    color: var(--detail-fg-muted) !important;
-    font-size: 12px;
-    box-shadow: none;
-  }
-
-  .mod-lightbox button.mod-lightbox-btn {
-    min-height: 36px;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    border-radius: 10px !important;
-    background: rgba(20, 22, 28, 0.72) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-    box-shadow: none;
-  }
-
-  .mod-lightbox button.mod-lightbox-nav {
-    position: absolute;
-    min-height: 42px;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    border-radius: 50% !important;
-    background: rgba(18, 20, 26, 0.78) !important;
-    color: white !important;
-    box-shadow: none;
-  }
-
-  .mod-lightbox button.mod-lightbox-thumb {
-    min-height: 44px;
-    padding: 0;
-    border: 2px solid transparent !important;
-    border-radius: 7px !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    box-shadow: none;
-
-    &.active {
-      border-color: white !important;
-    }
-
-    &::after {
-      display: none;
-    }
+  .mod-detail-dialog .detail-action-btn,
+  .mod-detail-dialog .mod-detail-link-btn,
+  .mod-detail-dialog .file-card-download {
+    border-radius: var(--md-shape-full);
   }
 }
 

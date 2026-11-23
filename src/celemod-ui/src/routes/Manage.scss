@@ -1,6 +1,3 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .manage-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 248px;
@@ -24,7 +21,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-right: 1px solid var(--color-divider);
 
   > .ui-collapse {
     flex: 0 0 auto;
@@ -38,21 +35,22 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 6px;
-  padding: 5px 8px 6px 2px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.07);
+  padding: 6px 10px 6px 6px;
+  border-bottom: 1px solid var(--color-divider);
 
   .manage-title-block {
     flex: 0 0 auto;
     min-width: 96px;
     h1 {
       margin: 0;
+      color: var(--color-fg);
       font-size: calc(18px * var(--manage-font-scale, 1));
       line-height: 1.15;
     }
     span {
       display: block;
       margin-top: 3px;
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(12px * var(--manage-font-scale, 1));
       font-variant-numeric: tabular-nums;
     }
@@ -70,29 +68,28 @@
     position: absolute;
     left: 11px;
     z-index: 1;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     pointer-events: none;
   }
   input {
     width: 100%;
     height: 34px;
-    padding: 0 34px 0 32px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 6px;
+    min-height: 34px;
+    padding: 0 32px 0 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 7px);
     box-sizing: border-box;
-    background: color.change(theme.$bg1, $alpha: 0.82);
-    color: theme.$fg;
+    background: var(--color-surface-input);
+    color: var(--color-fg);
     outline: none;
     font-size: calc(13px * var(--manage-font-scale, 1));
     transition:
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease;
     &:focus {
-      border-color: color.change(theme.$primary, $alpha: 0.6);
+      border-color: var(--color-primary-border);
     }
 
-    // The toolbar has its own clear button; hide the browser-provided one
-    // so search controls are not duplicated in WebKit-based builds.
     &::-webkit-search-cancel-button {
       display: none;
     }
@@ -101,20 +98,23 @@
     position: absolute;
     right: 5px;
     display: grid;
-    width: 25px;
-    height: 25px;
-    min-height: 0;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
     padding: 0;
     place-items: center;
     border: 0;
+    border-radius: var(--radius-xs, 4px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     transition:
       color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease;
     &:hover {
-      color: theme.$fg;
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
     }
   }
 }
@@ -131,19 +131,25 @@
   justify-content: center;
   height: 34px;
   min-height: 34px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08) !important;
-  border-radius: 6px !important;
-  background: color.change(theme.$bg1, $alpha: 0.82) !important;
-  box-shadow: none !important;
-  letter-spacing: 0 !important;
+  border: 1px solid var(--color-border);
+  border-radius: var(--control-radius, 7px);
+  color: var(--color-fg-muted);
+  background: var(--color-surface-input);
+  box-shadow: none;
+  letter-spacing: 0;
   transition:
     border-color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease;
   &.active,
   &:hover {
-    border-color: color.change(theme.$primary, $alpha: 0.45) !important;
-    background: theme.$bg2 !important;
+    border-color: var(--color-primary-border);
+    color: var(--color-fg);
+    background: var(--color-surface-hover);
+  }
+  &.active {
+    color: var(--color-primary-text);
+    background: var(--color-primary-soft);
   }
 }
 
@@ -151,12 +157,15 @@
   position: relative;
   width: 34px;
   min-width: 34px;
-  padding: 0 !important;
+  padding: 0;
 }
+
 .toolbar-action-button {
   gap: 6px;
-  padding: 0 11px !important;
-  font-size: calc(12.5px * var(--manage-font-scale, 1)) !important;
+  padding: 0 11px;
+  font-size: calc(12.5px * var(--manage-font-scale, 1));
+  font-weight: 500;
+  white-space: nowrap;
   .icon {
     transition: transform 160ms
       var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
@@ -165,6 +174,7 @@
     transform: rotate(180deg);
   }
 }
+
 .toolbar-count {
   position: absolute;
   top: -5px;
@@ -174,13 +184,14 @@
   height: 18px;
   padding: 0 4px;
   place-items: center;
-  border: 2px solid theme.$bg;
+  border: 2px solid var(--color-canvas);
   border-radius: 99px;
-  background: theme.$primary;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-size: calc(10px * var(--manage-font-scale, 1));
   font-variant-numeric: tabular-nums;
-  font-weight: 750;
+  font-weight: 700;
+  box-sizing: border-box;
 }
 
 .manage-filter-popup,
@@ -190,10 +201,10 @@
   right: 0;
   z-index: 80;
   transform-origin: right top;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  border-radius: 8px;
-  background: color.change(theme.$bg1, $alpha: 0.96);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.44);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 10px);
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-elevated);
   backdrop-filter: blur(18px);
 }
 
@@ -209,16 +220,24 @@
     justify-content: space-between;
     margin-bottom: 12px;
     strong {
+      color: var(--color-fg);
       font-size: calc(14px * var(--manage-font-scale, 1));
     }
     button {
       min-height: 26px;
+      height: 26px;
       padding: 0 8px;
       border: 0;
+      border-radius: var(--radius-xs, 5px);
       background: transparent;
       box-shadow: none;
-      color: color.adjust(theme.$primary, $lightness: 18%);
+      color: var(--color-primary-text);
       font-size: calc(11.5px * var(--manage-font-scale, 1));
+      font-weight: 600;
+
+      &:hover {
+        background: var(--color-primary-soft);
+      }
     }
   }
 
@@ -229,16 +248,20 @@
     gap: 10px;
     margin-top: 9px;
     span {
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(12px * var(--manage-font-scale, 1));
     }
     select {
+      width: 100%;
       height: 32px;
-      border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-      border-radius: 5px;
-      background: theme.$bg2;
-      color: theme.$fg;
+      min-height: 32px;
+      padding: 6px 28px 6px 10px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--control-radius, 6px);
+      background-color: var(--color-surface-input);
+      color: var(--color-fg);
       font-size: calc(12px * var(--manage-font-scale, 1));
+      line-height: 18px;
     }
   }
 
@@ -247,17 +270,20 @@
     gap: 8px;
     margin-top: 13px;
     padding-top: 12px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: 0.07);
+    border-top: 1px solid var(--color-divider);
     label {
       display: flex;
       align-items: center;
+      gap: 6px;
+      color: var(--color-fg-muted);
       font-size: calc(12px * var(--manage-font-scale, 1));
+      cursor: pointer;
     }
   }
 
   .filter-type-title {
     margin: 11px 0 6px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(11.5px * var(--manage-font-scale, 1));
     font-weight: 650;
   }
@@ -269,13 +295,12 @@
   .filter-type-list label {
     display: flex;
     align-items: center;
+    gap: 5px;
     min-width: 0;
     min-height: 26px;
+    color: var(--color-fg-muted);
     font-size: calc(11.5px * var(--manage-font-scale, 1));
     cursor: pointer;
-    input {
-      margin-right: 4px;
-    }
     span {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -290,26 +315,28 @@
   button {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     width: 100%;
-    min-height: 36px;
+    min-height: 34px;
     padding: 0 10px;
     gap: 9px;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-sm, 6px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg;
+    color: var(--color-fg);
     font-size: calc(12.5px * var(--manage-font-scale, 1));
+    font-weight: 500;
     letter-spacing: 0;
     text-align: left;
     transition:
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
     &:hover {
-      background: theme.$bg2;
+      background: var(--color-surface-hover);
     }
     .icon {
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
     }
   }
 }
@@ -317,22 +344,25 @@
 .manage-notice-bar {
   display: flex;
   flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: 7px;
   padding: 7px 10px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
-  background: color.change(theme.$primary, $alpha: 0.045);
+  border-bottom: 1px solid var(--color-divider);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
   button {
     display: inline-flex;
     align-items: center;
     min-height: 30px;
+    height: 30px;
     padding: 0 12px;
     gap: 6px;
-    border: 1px solid color.change(theme.$primary, $alpha: 0.25);
-    border-radius: 7px;
-    background: color.change(theme.$primary, $alpha: 0.11);
+    border: 1px solid var(--color-primary-border);
+    border-radius: var(--control-radius, 7px);
+    background: var(--color-primary-soft);
     box-shadow: none;
-    color: color.adjust(theme.$primary, $lightness: 22%);
+    color: var(--color-primary-text);
     font-size: calc(12px * var(--manage-font-scale, 1));
+    font-weight: 600;
     letter-spacing: 0;
     transition:
       border-color var(--motion-fast, 140ms) ease,
@@ -340,8 +370,8 @@
       color var(--motion-fast, 140ms) ease,
       opacity var(--motion-fast, 140ms) ease;
     &:hover:not(:disabled) {
-      border-color: color.change(theme.$primary, $alpha: 0.45);
-      background: color.change(theme.$primary, $alpha: 0.18);
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 24%, transparent);
     }
   }
 }
@@ -353,14 +383,14 @@
   gap: 7px;
   min-height: 36px;
   padding: 5px 10px;
-  border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.12);
-  background: color.change(#ffc66d, $alpha: 0.055);
-  color: color.change(theme.$fg, $alpha: 0.72);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 18%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 7%, transparent);
+  color: var(--color-fg-muted);
   font-size: calc(12px * var(--manage-font-scale, 1));
 
   > .icon {
     flex: 0 0 auto;
-    color: #ffc66d;
+    color: var(--color-warning);
   }
   span {
     flex: 1 1 auto;
@@ -369,21 +399,23 @@
   button {
     flex: 0 0 auto;
     min-height: 28px;
+    height: 28px;
     padding: 0 10px;
-    border: 1px solid color.change(#ffc66d, $alpha: 0.24);
-    border-radius: 6px;
-    background: color.change(#ffc66d, $alpha: 0.08);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+    border-radius: var(--control-radius, 6px);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
     box-shadow: none;
-    color: #ffd893;
+    color: var(--color-warning);
     font-size: calc(12px * var(--manage-font-scale, 1));
+    font-weight: 600;
     letter-spacing: 0;
     transition:
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
     &:hover {
-      border-color: color.change(#ffc66d, $alpha: 0.45);
-      background: color.change(#ffc66d, $alpha: 0.16);
+      border-color: color-mix(in srgb, var(--color-warning) 55%, transparent);
+      background: color-mix(in srgb, var(--color-warning) 20%, transparent);
     }
   }
 }
@@ -404,12 +436,12 @@
   min-height: 38px;
   margin: 0;
   border: 0;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.045);
+  border-bottom: 1px solid var(--color-border-subtle);
   border-radius: 0;
-  transition: background 100ms ease;
+  transition: background-color 100ms ease;
 
   &:hover {
-    background: color.change(theme.$bg2, $alpha: 0.36);
+    background: var(--color-surface-subtle);
   }
   > .tree-row-main {
     transition: opacity 160ms ease;
@@ -423,7 +455,7 @@
   &.disabled {
     > .tree-expander,
     > .tree-row-main {
-      opacity: 0.76;
+      opacity: 0.72;
     }
   }
   &.menu-open {
@@ -435,26 +467,26 @@
   &.missing {
     grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
     min-height: 42px;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     background: linear-gradient(
       90deg,
-      color.change(#ef5350, $alpha: 0.045),
+      color-mix(in srgb, var(--color-danger) 8%, transparent),
       transparent 68%
     );
 
     &:hover {
       background: linear-gradient(
         90deg,
-        color.change(#ef5350, $alpha: 0.08),
-        color.change(theme.$bg2, $alpha: 0.25)
+        color-mix(in srgb, var(--color-danger) 12%, transparent),
+        var(--color-surface-subtle)
       );
     }
     .tree-expander {
-      color: #ff9997;
-      opacity: 0.8;
+      color: var(--color-danger);
+      opacity: 0.85;
     }
     .missing-main strong {
-      color: color.change(theme.$fg, $alpha: 0.9);
+      color: var(--color-fg);
       font-size: calc(13px * var(--manage-font-scale, 1));
     }
   }
@@ -465,8 +497,8 @@
     top: -4px;
     bottom: 50%;
     width: 12px;
-    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-left: 1px solid color.change(theme.$fg, $alpha: 0.1);
+    border-bottom: 1px solid var(--color-border);
+    border-left: 1px solid var(--color-border);
     border-radius: 0 0 0 5px;
   }
 }
@@ -477,16 +509,17 @@
   align-self: center;
   justify-self: end;
   display: grid;
-  width: 21px;
-  height: 21px;
-  min-height: 0;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
   padding: 0;
   place-items: center;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--radius-xs, 4px);
   background: transparent;
   box-shadow: none;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   transition:
     background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
@@ -504,8 +537,8 @@
     cursor: default;
   }
   &:not(.leaf):hover {
-    background: theme.$bg3;
-    color: theme.$fg;
+    background: var(--color-surface-hover);
+    color: var(--color-fg);
   }
 }
 
@@ -552,13 +585,15 @@
   flex: 0 0 auto;
   align-items: center;
   min-height: 22px;
+  height: 22px;
   padding: 0 8px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 10px;
-  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-subtle);
   box-shadow: none;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-size: calc(11px * var(--manage-font-scale, 1));
+  font-weight: 500;
   letter-spacing: 0;
   white-space: nowrap;
   transition:
@@ -566,23 +601,26 @@
     background-color 140ms ease,
     color 140ms ease;
   &:hover {
-    border-color: color.change(theme.$fg, $alpha: 0.2);
-    background: color.change(theme.$fg, $alpha: 0.04);
+    border-color: var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-fg) 8%, transparent);
+    color: var(--color-fg);
   }
   &.enabled {
-    border-color: color.change(#4caf50, $alpha: 0.28);
-    color: #8cdb91;
+    border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+    background: color-mix(in srgb, var(--color-success) 13%, transparent);
+    color: var(--color-success);
     &:hover {
-      border-color: color.change(#4caf50, $alpha: 0.48);
-      background: color.change(#4caf50, $alpha: 0.08);
+      border-color: color-mix(in srgb, var(--color-success) 60%, transparent);
+      background: color-mix(in srgb, var(--color-success) 20%, transparent);
     }
   }
   &.always {
-    border-color: color.change(#2196f3, $alpha: 0.32);
-    color: #8ac9ff;
+    border-color: color-mix(in srgb, var(--color-info) 44%, transparent);
+    background: color-mix(in srgb, var(--color-info) 13%, transparent);
+    color: var(--color-info);
     &:hover {
-      border-color: color.change(#2196f3, $alpha: 0.52);
-      background: color.change(#2196f3, $alpha: 0.08);
+      border-color: color-mix(in srgb, var(--color-info) 64%, transparent);
+      background: color-mix(in srgb, var(--color-info) 20%, transparent);
     }
   }
 }
@@ -590,21 +628,27 @@
 .tree-name {
   min-width: 0;
   min-height: 22px;
-  padding: 0 2px;
+  height: auto;
+  padding: 1px 4px;
   overflow: hidden;
   border: 0;
+  border-radius: var(--radius-xs, 4px);
   background: transparent;
   box-shadow: none;
-  color: theme.$fg;
+  color: var(--color-fg);
   font-size: calc(13.5px * var(--manage-font-scale, 1));
   font-weight: 650;
   letter-spacing: 0;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &:hover {
+    background: var(--color-surface-subtle);
+  }
 }
 .tree-version {
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-size: calc(11.5px * var(--manage-font-scale, 1));
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -612,19 +656,21 @@
 .tree-mod-name {
   max-width: 220px;
   overflow: hidden;
-  color: color.change(theme.$fg, $alpha: 0.52);
+  color: var(--color-fg-subtle);
+  opacity: 0.78;
   font-size: calc(11.5px * var(--manage-font-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tree-comment-input {
   height: 28px;
+  min-height: 28px;
   max-width: 240px;
   padding: 0 8px;
-  border: 1px solid color.change(theme.$primary, $alpha: 0.5);
-  border-radius: 6px;
-  background: theme.$bg;
-  color: theme.$fg;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--control-radius, 6px);
+  background: var(--color-canvas);
+  color: var(--color-fg);
   font-size: calc(12.5px * var(--manage-font-scale, 1));
   outline: none;
 }
@@ -634,7 +680,8 @@
   max-width: 420px;
   margin-left: 3px;
   overflow: hidden;
-  color: color.change(theme.$fg, $alpha: 0.32);
+  color: var(--color-fg-disabled);
+  opacity: 0.72;
   font-size: calc(11px * var(--manage-font-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -645,15 +692,17 @@
   align-self: center;
   align-items: center;
   min-height: 26px;
+  height: 26px;
   margin-right: 6px;
   padding: 0 10px;
   gap: 5px;
-  border: 1px solid color.change(#ef5350, $alpha: 0.3);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 38%, transparent);
   border-radius: 999px;
-  background: color.change(#ef5350, $alpha: 0.1);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   box-shadow: none;
-  color: #ffaaa8;
+  color: var(--color-danger);
   font-size: calc(11.5px * var(--manage-font-scale, 1));
+  font-weight: 600;
   letter-spacing: 0;
   transition:
     border-color var(--motion-fast, 140ms) ease,
@@ -662,8 +711,8 @@
     opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
-    border-color: color.change(#ef5350, $alpha: 0.5);
-    background: color.change(#ef5350, $alpha: 0.18);
+    border-color: color-mix(in srgb, var(--color-danger) 58%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 20%, transparent);
   }
   &:disabled {
     cursor: wait;
@@ -678,7 +727,7 @@
   padding: 0 5px;
   border-radius: 3px;
   background: transparent;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-size: calc(10.5px * var(--manage-font-scale, 1));
   font-weight: 650;
   white-space: nowrap;
@@ -686,19 +735,19 @@
     cursor: pointer;
   }
   &.tone-success {
-    color: #8cdb91;
+    color: var(--color-success);
   }
   &.tone-warning {
-    color: #ffc66d;
+    color: var(--color-warning);
   }
   &.tone-danger {
-    color: #ff9997;
+    color: var(--color-danger);
   }
   &.tone-info {
-    color: #82c4fa;
+    color: var(--color-info);
   }
   &.tone-accent {
-    color: #dda2e7;
+    color: var(--color-primary-text);
   }
 }
 
@@ -708,8 +757,8 @@
   margin-left: 5px;
   padding: 0 4px;
   border-radius: 3px;
-  background: color.change(#42a5f5, $alpha: 0.12);
-  color: #82c4fa;
+  background: color-mix(in srgb, var(--color-info) 14%, transparent);
+  color: var(--color-info);
   font-size: 0.88em;
   font-weight: 650;
   line-height: 1.45;
@@ -717,18 +766,18 @@
   white-space: nowrap;
 }
 
-/* Duplicate Mods are actionable, so the badge is a real button. */
 .duplicate-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   min-height: 20px;
+  height: 20px;
   padding: 0 8px;
-  border: 1px solid color.change(#ffc66d, $alpha: 0.45);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 48%, transparent);
   border-radius: 99px;
-  background: color.change(#ffc66d, $alpha: 0.14);
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
   box-shadow: none;
-  color: #ffd08a;
+  color: var(--color-warning);
   font-family: inherit;
   font-size: calc(11px * var(--manage-font-scale, 1));
   font-weight: 700;
@@ -738,9 +787,8 @@
   cursor: pointer;
   transition:
     border-color 120ms ease,
-    background 120ms ease,
-    color 120ms ease,
-    transform 120ms ease;
+    background-color 120ms ease,
+    color 120ms ease;
   b {
     font-weight: 750;
   }
@@ -750,21 +798,17 @@
     opacity: 0.85;
   }
   &:hover {
-    border-color: color.change(#ffc66d, $alpha: 0.8);
-    background: color.change(#ffc66d, $alpha: 0.26);
-    color: #ffe0ac;
-  }
-  &:active {
-    transform: translateY(1px);
+    border-color: var(--color-warning);
+    background: color-mix(in srgb, var(--color-warning) 24%, transparent);
   }
   &.resolved {
-    border-color: color.change(theme.$fg, $alpha: 0.16);
-    background: color.change(theme.$fg, $alpha: 0.05);
-    color: theme.$fg2;
+    border-color: var(--color-border);
+    background: var(--color-surface-subtle);
+    color: var(--color-fg-subtle);
     &:hover {
-      border-color: color.change(theme.$primary, $alpha: 0.55);
-      background: color.change(theme.$primary, $alpha: 0.18);
-      color: theme.$fg;
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-soft);
+      color: var(--color-fg);
     }
   }
 }
@@ -774,8 +818,9 @@
   align-items: center;
   position: relative;
   align-self: center;
-  padding-right: 3px;
-  opacity: 0.35;
+  padding-right: 4px;
+  gap: 2px;
+  opacity: 0.4;
   transition: opacity 120ms ease;
   .manage-tree-row:hover & {
     opacity: 1;
@@ -790,66 +835,65 @@
   }
   > button {
     display: grid;
-    width: 24px;
-    height: 24px;
-    min-height: 0;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
     padding: 0;
     place-items: center;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     transition:
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
-    &:hover {
-      background: theme.$bg3;
-      color: theme.$fg;
-    }
     &.active,
     &:hover {
-      background: theme.$bg2;
-      color: theme.$fg;
+      background: var(--color-surface-hover);
+      color: var(--color-fg);
     }
   }
 }
 
 .mod-row-menu {
   position: absolute;
-  top: 26px;
+  top: 28px;
   right: 3px;
   z-index: 60;
   transform-origin: right top;
   width: 210px;
-  padding: 4px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  border-radius: 6px;
-  background: theme.$bg1;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-elevated);
   button {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     width: 100%;
     min-height: 32px;
     padding: 0 9px;
     gap: 8px;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg;
+    color: var(--color-fg);
     font-size: calc(12.5px * var(--manage-font-scale, 1));
+    font-weight: 500;
     letter-spacing: 0;
     text-align: left;
     transition:
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
     &:hover {
-      background: theme.$bg2;
+      background: var(--color-surface-hover);
     }
     &.danger {
-      color: #ff9290;
+      color: var(--color-danger);
     }
   }
 }
@@ -862,17 +906,18 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   .icon {
     width: 26px;
     height: 26px;
   }
   strong {
+    color: var(--color-fg);
     font-size: calc(14px * var(--manage-font-scale, 1));
   }
   button {
     min-height: 32px;
-    padding: 0 12px;
+    padding: 0 14px;
     font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
@@ -880,9 +925,9 @@
 .manage-side {
   min-width: 0;
   min-height: 0;
-  padding: 4px 7px 40px;
+  padding: 6px 8px 40px;
   overflow-y: auto;
-  background: color.change(theme.$bg, $alpha: 0.24);
+  background: color-mix(in srgb, var(--color-canvas) 24%, transparent);
 }
 
 .side-title,
@@ -905,25 +950,26 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  min-height: 35px;
+  min-height: 36px;
   padding: 0 5px 0 10px;
   gap: 4px;
   border: 1px solid transparent;
-  border-radius: 10px;
-  color: theme.$fg3;
+  border-radius: var(--radius-md, 9px);
+  color: var(--color-fg-subtle);
   transition:
     border-color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease;
 
   &:hover:not(.selected) {
-    background: color.change(theme.$bg2, $alpha: 0.45);
-    color: theme.$fg2;
+    background: var(--color-surface-subtle);
+    color: var(--color-fg-muted);
   }
 
   &.selected {
-    border-color: color.change(theme.$primary, $alpha: 0.35);
-    color: theme.$fg;
+    border-color: var(--color-primary-border);
+    background: var(--color-primary-soft);
+    color: var(--color-fg);
   }
 }
 
@@ -932,15 +978,22 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   min-width: 0;
+  min-height: 32px;
   padding: 0;
   gap: 6px;
   border: 0;
-  background: transparent !important;
-  box-shadow: none !important;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: inherit;
   font-size: calc(13px * var(--manage-font-scale, 1));
+  font-weight: 500;
   letter-spacing: 0;
   text-align: left;
+
+  &:hover {
+    background: transparent;
+  }
 }
 
 .profile-name {
@@ -950,7 +1003,7 @@
 }
 
 .profile-select small {
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-size: calc(11px * var(--manage-font-scale, 1));
   font-variant-numeric: tabular-nums;
 }
@@ -961,26 +1014,30 @@
 .profile-import,
 .profile-folder {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
   place-items: center;
   border: 0;
-  border-radius: 5px;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: theme.$fg3;
+  border-radius: var(--radius-xs, 5px);
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-fg-subtle);
   transition:
     color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease;
 
   &:hover {
-    color: theme.$fg;
+    color: var(--color-fg);
+    background: var(--color-surface-hover);
   }
 }
 
 .profile-delete:hover {
-  color: #ff8d8a;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
 .profile-rename-popup {
@@ -998,7 +1055,7 @@
   }
 
   small {
-    color: #ff8d8a;
+    color: var(--color-danger);
     overflow-wrap: anywhere;
   }
 }
@@ -1049,7 +1106,7 @@
 
   span {
     flex: 0 0 auto;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 12.5px;
     font-variant-numeric: tabular-nums;
   }
@@ -1059,9 +1116,9 @@
   min-height: 80px;
   overflow-x: hidden;
   overflow-y: auto;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 9px;
-  background: color.change(theme.$bg2, $alpha: 0.42);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-subtle);
 }
 
 .profile-install-confirm-popup {
@@ -1080,20 +1137,20 @@
     display: grid;
     padding: 11px 12px;
     gap: 5px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 9px;
-    background: color.change(theme.$bg2, $alpha: 0.72);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 9px);
+    background: var(--color-surface-subtle);
     overflow-wrap: anywhere;
 
     h4 {
       margin: 0;
-      color: theme.$fg2;
+      color: var(--color-fg-muted);
       font-size: 12px;
     }
 
     &.failed {
-      border-color: color.change(#ff8d8a, $alpha: 0.45);
-      color: #ff8d8a;
+      border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+      color: var(--color-danger);
     }
   }
 
@@ -1114,7 +1171,7 @@
 
   span {
     flex: 0 0 auto;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
   }
 }
 
@@ -1134,7 +1191,7 @@
 
   > label,
   .profile-editor-label-row label {
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-size: 12px;
     font-weight: 650;
   }
@@ -1143,10 +1200,10 @@
   textarea {
     box-sizing: border-box;
     width: 100%;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.12);
-    border-radius: 9px;
-    background: theme.$bg2;
-    color: theme.$fg;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 8px);
+    background: var(--color-surface-input);
+    color: var(--color-fg);
   }
 
   input {
@@ -1160,7 +1217,7 @@
     resize: vertical;
     line-height: 24px;
     white-space: pre;
-    color: theme.$fg;
+    color: var(--color-fg);
     font:
       12px/24px ui-monospace,
       SFMono-Regular,
@@ -1193,10 +1250,10 @@
   padding: 0 7px;
   align-items: center;
   gap: 4px;
-  border: 1px solid color.change(#65c477, $alpha: 0.32);
+  border: 1px solid color-mix(in srgb, var(--color-success) 36%, transparent);
   border-radius: 99px;
-  background: color.change(theme.$bg1, $alpha: 0.94);
-  color: #65c477;
+  background: var(--color-surface-overlay);
+  color: var(--color-success);
   font-size: 11px;
   line-height: 20px;
   white-space: nowrap;
@@ -1208,13 +1265,13 @@
 
   &.missing,
   &.version-mismatch {
-    border-color: color.change(#e8a95f, $alpha: 0.38);
-    color: #e8a95f;
+    border-color: color-mix(in srgb, var(--color-warning) 44%, transparent);
+    color: var(--color-warning);
   }
 }
 
 .profile-editor-hint {
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   font-size: 12.5px;
 }
 
@@ -1223,9 +1280,9 @@
   padding: 10px 12px;
   align-items: flex-start;
   gap: 9px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 9px;
-  background: color.change(theme.$bg2, $alpha: 0.72);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-subtle);
 
   span {
     display: grid;
@@ -1233,7 +1290,7 @@
   }
 
   small {
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
   }
 }
 
@@ -1258,10 +1315,10 @@
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-bottom: 1px solid var(--color-divider);
   background: linear-gradient(
     135deg,
-    color.change(theme.$primary, $alpha: 0.15),
+    var(--color-primary-soft),
     transparent 55%
   );
 
@@ -1271,7 +1328,7 @@
   }
 
   span {
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 12.5px;
   }
 }
@@ -1282,7 +1339,7 @@
   text-align: right;
 
   strong {
-    color: theme.$primary;
+    color: var(--color-primary);
     font-size: 22px;
     font-variant-numeric: tabular-nums;
   }
@@ -1292,25 +1349,34 @@
   display: flex;
   padding: 3px;
   gap: 3px;
-  border-radius: 9px;
-  background: theme.$bg2;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-subtle);
 
   button {
     flex: 1;
-    min-height: 34px;
+    min-height: 32px;
+    height: 32px;
     border: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-sm, 7px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: 12.5px;
+    font-weight: 500;
     transition:
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
 
+    &:hover:not(.selected) {
+      color: var(--color-fg);
+      background: color-mix(in srgb, var(--color-fg) 6%, transparent);
+    }
+
     &.selected {
-      background: color.change(theme.$primary, $alpha: 0.18);
-      color: theme.$fg;
+      background: var(--color-primary-soft);
+      color: var(--color-fg);
+      font-weight: 600;
     }
   }
 }
@@ -1325,16 +1391,16 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-size: 12.5px;
   }
 }
 
 .profile-export-preview {
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  border-radius: 10px;
-  background: color.change(#090909, $alpha: 0.72);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 10px);
+  background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
 
   textarea {
     width: 100%;
@@ -1346,7 +1412,8 @@
     resize: vertical;
     outline: 0;
     background: transparent;
-    color: theme.$fg2;
+    box-shadow: none;
+    color: var(--color-fg-muted);
     font:
       12.5px/1.55 ui-monospace,
       SFMono-Regular,
@@ -1361,17 +1428,24 @@
   padding: 0 8px 0 13px;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  color: theme.$fg3;
+  border-bottom: 1px solid var(--color-divider);
+  color: var(--color-fg-subtle);
   font-size: 12px;
 
   button {
     min-height: 24px;
+    height: 24px;
     padding: 0 9px;
     border: 0;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     box-shadow: none;
-    color: theme.$primary;
+    color: var(--color-primary-text);
+    font-weight: 600;
+
+    &:hover {
+      background: var(--color-primary-soft);
+    }
   }
 }
 
@@ -1381,24 +1455,26 @@
 
   button {
     flex: 1;
-    min-height: 32px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.09);
-    background: theme.$bg2;
-    color: theme.$fg2;
+    min-height: 34px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 7px);
+    background: var(--color-surface-subtle);
+    color: var(--color-fg-muted);
+
+    &:hover {
+      color: var(--color-fg);
+      background: var(--color-surface-hover);
+    }
   }
 }
 
 .profile-export-actions {
-  justify-content: flex-end !important;
-  margin: 0 !important;
+  justify-content: flex-end;
+  margin: 0;
   padding: 14px 18px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
-
-  .primary {
-    background: theme.$primary;
-    color: #fff;
-  }
+  border-top: 1px solid var(--color-divider);
 }
+
 .profile-import-wrap {
   position: relative;
   display: flex;
@@ -1414,29 +1490,33 @@
   transform-origin: right top;
   display: grid;
   min-width: 176px;
-  padding: 4px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.12);
-  border-radius: 8px;
-  background: theme.$bg1;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-elevated);
   gap: 2px;
 
   button {
+    justify-content: flex-start;
+    width: 100%;
     min-height: 32px;
     padding: 0 9px;
     border: 0;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-size: calc(12px * var(--manage-font-scale, 1));
+    font-weight: 500;
     text-align: left;
     transition:
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease;
 
     &:hover {
-      background: theme.$bg2;
-      color: theme.$fg;
+      background: var(--color-surface-hover);
+      color: var(--color-fg);
     }
   }
 }
@@ -1462,26 +1542,30 @@
   input {
     min-width: 0;
     height: 34px;
+    min-height: 34px;
     padding: 0 9px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 8px;
-    background: theme.$bg1;
-    color: theme.$fg;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 8px);
+    background: var(--color-surface-input);
+    color: var(--color-fg);
     outline: none;
     font-size: calc(12.5px * var(--manage-font-scale, 1));
     transition:
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease;
     &:focus {
-      border-color: color.change(theme.$primary, $alpha: 0.6);
+      border-color: var(--color-primary-border);
     }
   }
   button {
     display: grid;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
     min-height: 34px;
     padding: 0;
     place-items: center;
-    border-radius: 8px;
+    border-radius: var(--control-radius, 8px);
   }
 }
 
@@ -1489,12 +1573,13 @@
 .duplicate-mod-popup,
 .popup-content.full-mod-check-popup {
   width: min(520px, 82vw);
+  max-width: none;
   padding: 20px;
   text-align: left;
   .title {
     margin-bottom: 14px;
     font-size: calc(18px * var(--manage-font-scale, 1));
-    font-weight: 750;
+    font-weight: 700;
   }
   .buttons {
     display: flex;
@@ -1506,14 +1591,19 @@
       padding: 0 14px;
     }
     .delete-confirm {
+      border-color: transparent;
       background: #d94c50;
-      color: white;
+      color: #ffffff;
+
+      &:hover:not(:disabled) {
+        background: #e25f63;
+      }
     }
   }
 }
 
 .popup-container.full-mod-check-overlay {
-  inset: 45px 16px 12px 81px;
+  inset: var(--window-titlebar-height, 45px) 0 0 0;
   padding: 24px;
   box-sizing: border-box;
 }
@@ -1534,19 +1624,21 @@
     flex: 0 0 auto;
     margin: 0;
     padding: 18px 20px;
-    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-bottom: 1px solid var(--color-divider);
   }
 
   > .buttons {
     flex: 0 0 auto;
     margin: 0;
     padding: 12px 16px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-top: 1px solid var(--color-divider);
   }
 }
+
 .duplicate-mod-popup {
   width: min(620px, 86vw);
 }
+
 .duplicate-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1558,9 +1650,9 @@
     width: 34px;
     height: 34px;
     place-items: center;
-    border-radius: 10px;
-    background: color.change(#ffc66d, $alpha: 0.14);
-    color: #ffc66d;
+    border-radius: var(--radius-md, 10px);
+    background: color-mix(in srgb, var(--color-warning) 16%, transparent);
+    color: var(--color-warning);
     font-size: 15px;
   }
   .duplicate-header-text {
@@ -1573,7 +1665,7 @@
     }
     p {
       margin: 3px 0 0;
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(12px * var(--manage-font-scale, 1));
       line-height: 1.4;
     }
@@ -1585,13 +1677,14 @@
     padding: 0 8px;
     place-items: center;
     border-radius: 99px;
-    background: color.change(#ffc66d, $alpha: 0.16);
-    color: #ffc66d;
+    background: color-mix(in srgb, var(--color-warning) 18%, transparent);
+    color: var(--color-warning);
     font-size: calc(12.5px * var(--manage-font-scale, 1));
     font-variant-numeric: tabular-nums;
-    font-weight: 750;
+    font-weight: 700;
   }
 }
+
 .duplicate-file-list {
   display: grid;
   gap: 6px;
@@ -1599,36 +1692,37 @@
   overflow-y: auto;
   padding-right: 2px;
 }
+
 .duplicate-file {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   padding: 5px 8px 5px 5px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.07);
-  border-radius: 9px;
-  background: theme.$bg1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 9px);
+  background: var(--color-surface-subtle);
   transition:
     border-color 120ms ease,
-    background 120ms ease;
+    background-color 120ms ease;
   &:hover {
-    border-color: color.change(theme.$fg, $alpha: 0.15);
+    border-color: var(--color-border-strong);
   }
   &.kept {
-    border-color: color.change(#4caf50, $alpha: 0.5);
-    background: color.change(#4caf50, $alpha: 0.1);
+    border-color: color-mix(in srgb, var(--color-success) 55%, transparent);
+    background: color-mix(in srgb, var(--color-success) 11%, transparent);
     .duplicate-radio {
-      border-color: #6fce76;
+      border-color: var(--color-success);
       &::after {
-        background: #6fce76;
+        background: var(--color-success);
       }
     }
   }
   &.marked {
-    border-color: color.change(#ef5350, $alpha: 0.55);
-    background: color.change(#ef5350, $alpha: 0.1);
+    border-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
+    background: color-mix(in srgb, var(--color-danger) 11%, transparent);
     .duplicate-file-info strong {
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       text-decoration: line-through;
     }
   }
@@ -1641,30 +1735,35 @@
     min-height: 0;
     padding: 4px;
     border: 0;
+    border-radius: var(--radius-xs, 5px);
     background: transparent;
     box-shadow: none;
     color: inherit;
     letter-spacing: 0;
     text-align: left;
     cursor: pointer;
+
+    &:hover {
+      background: transparent;
+    }
   }
   .duplicate-radio {
     display: grid;
     width: 15px;
     height: 15px;
     place-items: center;
-    border: 1.5px solid color.change(theme.$fg, $alpha: 0.35);
+    border: 1.5px solid var(--color-border-strong);
     border-radius: 50%;
     transition:
       border-color 120ms ease,
-      background 120ms ease;
+      background-color 120ms ease;
     &::after {
       content: "";
       width: 7px;
       height: 7px;
       border-radius: 50%;
       background: transparent;
-      transition: background 120ms ease;
+      transition: background-color 120ms ease;
     }
   }
   .duplicate-file-info {
@@ -1678,10 +1777,11 @@
       white-space: nowrap;
     }
     strong {
+      color: var(--color-fg);
       font-size: calc(12.5px * var(--manage-font-scale, 1));
     }
     small {
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(11px * var(--manage-font-scale, 1));
     }
   }
@@ -1692,70 +1792,80 @@
     font-weight: 700;
     white-space: nowrap;
     &.on {
-      background: color.change(#4caf50, $alpha: 0.16);
-      color: #8cdb91;
+      background: color-mix(in srgb, var(--color-success) 16%, transparent);
+      color: var(--color-success);
     }
     &.off {
-      background: color.change(theme.$fg, $alpha: 0.08);
-      color: theme.$fg3;
+      background: var(--color-surface-subtle);
+      color: var(--color-fg-subtle);
     }
     &.pending {
-      border: 1px solid color.change(#ffc66d, $alpha: 0.5);
-      color: #ffd08a;
+      border: 1px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
+      color: var(--color-warning);
     }
   }
   .duplicate-delete-toggle {
     display: grid;
     width: 26px;
     height: 26px;
-    min-height: 0;
+    min-width: 26px;
+    min-height: 26px;
     padding: 0;
     place-items: center;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--radius-sm, 7px);
     background: transparent;
     box-shadow: none;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     cursor: pointer;
     &:hover {
-      border-color: color.change(#ef5350, $alpha: 0.5);
-      color: #ff8d8a;
+      border-color: color-mix(in srgb, var(--color-danger) 50%, transparent);
+      color: var(--color-danger);
+      background: color-mix(in srgb, var(--color-danger) 10%, transparent);
     }
     &.active {
       border-color: transparent;
-      background: color.change(#ef5350, $alpha: 0.2);
-      color: #ff8d8a;
+      background: color-mix(in srgb, var(--color-danger) 20%, transparent);
+      color: var(--color-danger);
     }
   }
 }
+
 .duplicate-error {
   margin-top: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: color.change(#ef5350, $alpha: 0.12);
-  color: #ff8d8a;
+  border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  color: var(--color-danger);
   font-size: calc(12px * var(--manage-font-scale, 1));
 }
+
 .duplicate-mod-popup .buttons {
   .duplicate-summary {
     align-self: center;
     margin-right: auto;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(11px * var(--manage-font-scale, 1));
     white-space: nowrap;
   }
   .duplicate-keep-confirm {
-    background: theme.$primary;
-    color: white;
+    border-color: transparent;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
   }
 }
+
 .delete-target {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 5px;
   padding: 12px;
-  border-radius: 9px;
-  background: color.change(#ff9800, $alpha: 0.1);
+  border-radius: var(--radius-md, 9px);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
   strong,
   span {
     overflow: hidden;
@@ -1763,26 +1873,28 @@
     white-space: nowrap;
   }
   span {
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
+
 .warning-section {
   display: grid;
   gap: 5px;
   margin-top: 10px;
   padding: 11px;
-  border-radius: 9px;
-  background: color.change(#ef5350, $alpha: 0.1);
+  border-radius: var(--radius-md, 9px);
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   strong {
-    color: #ff8d8a;
+    color: var(--color-danger);
     font-size: calc(12.5px * var(--manage-font-scale, 1));
   }
   span {
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
+
 .orphan-section {
   margin-top: 14px;
   .orphan-heading {
@@ -1795,34 +1907,38 @@
     font-size: calc(12.5px * var(--manage-font-scale, 1));
   }
 }
+
 .orphan-actions {
   display: inline-flex;
   gap: 4px;
 
   button {
     min-height: 26px;
+    height: 26px;
     padding: 0 8px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.14);
-    border-radius: 5px;
-    background: theme.$bg2;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xs, 5px);
+    background: var(--color-surface-subtle);
     box-shadow: none;
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-size: calc(11px * var(--manage-font-scale, 1));
 
     &:hover {
-      background: theme.$bg3;
-      color: theme.$fg;
+      background: var(--color-surface-hover);
+      color: var(--color-fg);
     }
   }
 }
+
 .orphan-option {
   display: inline-flex;
   align-items: center;
   margin-top: 8px;
   gap: 6px;
-  color: theme.$fg2;
+  color: var(--color-fg-muted);
   font-size: calc(11px * var(--manage-font-scale, 1));
 }
+
 .orphan-list {
   display: grid;
   gap: 5px;
@@ -1835,8 +1951,8 @@
     align-items: center;
     padding: 7px 8px;
     gap: 8px;
-    border-radius: 7px;
-    background: theme.$bg1;
+    border-radius: var(--radius-sm, 7px);
+    background: var(--color-surface-subtle);
     font-size: calc(12px * var(--manage-font-scale, 1));
   }
   .orphan-mod-info {
@@ -1854,22 +1970,22 @@
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(11px * var(--manage-font-scale, 1));
 
       > span {
         padding: 2px 6px;
         border-radius: 999px;
-        background: theme.$bg2;
+        background: var(--color-surface-hover);
 
         &.enabled {
-          color: #8cdb91;
+          color: var(--color-success);
         }
         &.disabled {
-          color: #ff9a9a;
+          color: var(--color-danger);
         }
         &.always-on {
-          color: color.adjust(theme.$primary, $lightness: 18%);
+          color: var(--color-primary-text);
         }
       }
     }
@@ -1887,7 +2003,7 @@
   gap: 10px;
 
   > span {
-    color: theme.$fg2;
+    color: var(--color-fg-muted);
     font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
     font-size: calc(12.5px * var(--manage-font-scale, 1));
     font-variant-numeric: tabular-nums;
@@ -1896,7 +2012,7 @@
   small {
     width: 100%;
     overflow: hidden;
-    color: theme.$fg3;
+    color: var(--color-fg-subtle);
     font-size: calc(11px * var(--manage-font-scale, 1));
     text-align: center;
     text-overflow: ellipsis;
@@ -1923,7 +2039,7 @@
     min-height: 180px;
     align-items: center;
     justify-content: center;
-    color: #8cdb91;
+    color: var(--color-success);
 
     .icon {
       width: 28px;
@@ -1937,12 +2053,12 @@
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-top: 1px solid var(--color-divider);
 
   div {
     display: grid;
     padding: 10px 2px;
-    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.07);
+    border-bottom: 1px solid var(--color-divider);
     gap: 4px;
 
     b {
@@ -1953,7 +2069,7 @@
     }
 
     span {
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font-size: calc(11px * var(--manage-font-scale, 1));
       line-height: 1.45;
       overflow-wrap: anywhere;
@@ -1997,19 +2113,5 @@
   .profile-import-menu button,
   .profile-create input {
     transition: none;
-  }
-
-  .manage-search button:active,
-  .toolbar-icon-button:active,
-  .toolbar-action-button:active,
-  .manage-notice-bar button:active,
-  .manage-filter-hint button:active,
-  .missing-download-button:active,
-  .profile-export:active,
-  .profile-rename:active,
-  .profile-delete:active,
-  .profile-import:active,
-  .profile-folder:active {
-    transform: none;
   }
 }

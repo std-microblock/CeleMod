@@ -1,6 +1,3 @@
-@use "sass:color";
-@use "../styles/theme" as theme;
-
 .popup-container.miaonet-atlas-popup-container {
   padding: 24px;
   overflow: hidden;
@@ -15,11 +12,11 @@
   max-height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.13);
-  border-radius: 12px;
-  color: theme.$fg;
-  background: color.change(theme.$bg, $alpha: 0.98);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
+  color: var(--color-fg);
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-dialog);
 
   > header {
     display: flex;
@@ -27,11 +24,12 @@
     align-items: flex-start;
     justify-content: space-between;
     padding: 17px 18px 14px;
-    border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
+    border-bottom: 1px solid var(--color-divider);
     gap: 20px;
 
     h2 {
       margin: 0;
+      color: var(--color-fg);
       font-size: 16px;
       font-weight: 650;
     }
@@ -40,9 +38,9 @@
       max-width: 700px;
       margin: 4px 0 0;
       overflow: hidden;
-      color: theme.$fg3;
+      color: var(--color-fg-subtle);
       font:
-        9px ui-monospace,
+        10px ui-monospace,
         "Cascadia Mono",
         monospace;
       text-overflow: ellipsis;
@@ -53,22 +51,22 @@
       display: grid;
       width: 30px;
       height: 30px;
-      min-width: 0;
-      min-height: 0;
+      min-width: 30px;
+      min-height: 30px;
       padding: 0;
       place-items: center;
       border: 0;
-      border-radius: 6px;
-      color: theme.$fg3;
+      border-radius: var(--radius-sm, 6px);
+      color: var(--color-fg-subtle);
       background: transparent;
       box-shadow: none;
       transition:
         color var(--motion-fast, 140ms) ease,
-        background var(--motion-fast, 140ms) ease;
+        background-color var(--motion-fast, 140ms) ease;
 
       &:hover {
-        color: theme.$fg;
-        background: color.change(theme.$fg, $alpha: 0.07);
+        color: var(--color-fg);
+        background: var(--color-surface-hover);
       }
     }
   }
@@ -93,7 +91,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 18px;
-  border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.06);
+  border-bottom: 1px solid var(--color-divider);
   box-sizing: border-box;
   gap: 14px;
 }
@@ -104,30 +102,31 @@
 
   button {
     min-height: 31px;
+    height: 31px;
     padding: 0 12px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    border-radius: 6px;
-    color: theme.$fg3;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 6px);
+    color: var(--color-fg-subtle);
     background: transparent;
     box-shadow: none;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease;
 
     &:hover,
     &.active {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.07);
+      color: var(--color-fg);
+      background: var(--color-surface-subtle);
     }
 
     &.active {
-      border-color: color.change(theme.$primary, $alpha: 0.55);
-      background: color.change(theme.$primary, $alpha: 0.2);
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-soft);
     }
   }
 }
@@ -135,36 +134,49 @@
 .miaonet-atlas-search {
   display: flex;
   width: min(390px, 46%);
-  height: 33px;
+  height: 34px;
   align-items: center;
   padding: 0 10px;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-  border-radius: 6px;
-  color: theme.$fg3;
-  background: color.change(theme.$fg, $alpha: 0.025);
+  border: 1px solid var(--color-border);
+  border-radius: var(--control-radius, 6px);
+  color: var(--color-fg-subtle);
+  background: var(--color-surface-input);
   gap: 7px;
+  box-sizing: border-box;
   transition:
     border-color var(--motion-fast, 140ms) ease,
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease;
 
   &:focus-within {
-    border-color: color.change(theme.$primary, $alpha: 0.55);
+    border-color: var(--color-primary-border);
   }
 
   svg {
     flex: 0 0 auto;
-    font-size: 9px;
+    font-size: 11px;
   }
 
   input {
     width: 100%;
+    height: 100%;
     min-width: 0;
+    min-height: 0;
+    padding: 0;
     border: 0;
+    border-radius: 0;
     outline: none;
-    color: theme.$fg1;
+    color: var(--color-fg);
     background: transparent;
-    font-size: 9px;
+    box-shadow: none;
+    font-size: 12px;
+
+    &:hover,
+    &:focus {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+    }
   }
 }
 
@@ -177,30 +189,31 @@
     gap: 7px;
 
     span {
-      color: theme.$fg3;
-      font-size: 9px;
+      color: var(--color-fg-subtle);
+      font-size: 11px;
     }
   }
 
   select {
     min-width: 92px;
     height: 31px;
-    padding: 0 8px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 6px;
+    min-height: 31px;
+    padding: 6px 26px 6px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--control-radius, 6px);
     outline: none;
-    color: theme.$fg1;
-    background: theme.$bg1;
+    color: var(--color-fg);
+    background-color: var(--color-surface-input);
     font:
-      9px ui-monospace,
+      11px/17px ui-monospace,
       "Cascadia Mono",
       monospace;
   }
 
   > span {
     margin-left: auto;
-    color: theme.$fg2;
-    font-size: 9px;
+    color: var(--color-fg-muted);
+    font-size: 11px;
   }
 }
 
@@ -211,11 +224,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 18px;
-  color: theme.$fg3;
-  font-size: 8px;
+  color: var(--color-fg-subtle);
+  font-size: 10px;
 
   .error {
-    color: #ddaeb1;
+    color: var(--color-danger);
   }
 }
 
@@ -256,10 +269,10 @@
   justify-content: flex-end;
   padding: 7px;
   overflow: hidden;
-  border: 1px solid color.change(theme.$fg, $alpha: 0.08);
-  border-radius: 8px;
-  color: theme.$fg2;
-  background: color.change(theme.$fg, $alpha: 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  color: var(--color-fg-muted);
+  background: var(--color-surface-subtle);
   box-shadow: none;
   box-sizing: border-box;
   letter-spacing: 0;
@@ -268,7 +281,7 @@
   transition:
     border-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
-    background var(--motion-fast, 140ms) ease,
+    background-color var(--motion-fast, 140ms) ease,
     box-shadow var(--motion-fast, 140ms) ease;
 
   > span:last-of-type {
@@ -276,7 +289,7 @@
     overflow: hidden;
     padding-top: 5px;
     font:
-      8px ui-monospace,
+      9px ui-monospace,
       "Cascadia Mono",
       monospace;
     line-height: 1.3;
@@ -289,22 +302,22 @@
     top: 7px;
     right: 7px;
     z-index: 2;
-    padding: 3px 5px;
+    padding: 2px 5px;
     border-radius: 4px;
-    color: color.adjust(theme.$primary, $lightness: 18%);
-    background: color.change(theme.$bg, $alpha: 0.8);
-    font-size: 7px;
+    color: var(--color-primary-text);
+    background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
+    font-size: 8px;
   }
 
   &:hover,
   &.selected {
-    border-color: color.change(theme.$primary, $alpha: 0.62);
-    color: theme.$fg;
-    background: color.change(theme.$primary, $alpha: 0.09);
+    border-color: var(--color-primary-border);
+    color: var(--color-fg);
+    background: var(--color-primary-soft);
   }
 
   &.selected {
-    box-shadow: inset 0 0 0 1px color.change(theme.$primary, $alpha: 0.45);
+    box-shadow: inset 0 0 0 1px var(--color-primary-border);
   }
 }
 
@@ -341,7 +354,7 @@
   width: 36px;
   height: 36px;
   place-items: center;
-  color: theme.$fg3;
+  color: var(--color-fg-subtle);
   opacity: 0.25;
 }
 
@@ -350,12 +363,12 @@
   min-height: 300px;
   align-items: center;
   justify-content: center;
-  color: theme.$fg3;
-  font-size: 10px;
+  color: var(--color-fg-subtle);
+  font-size: 11px;
   gap: 10px;
 
   &.error {
-    color: #ddaeb1;
+    color: var(--color-danger);
     user-select: text;
   }
 }
@@ -367,44 +380,46 @@
   align-items: center;
   justify-content: flex-end;
   padding: 9px 18px;
-  border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
+  border-top: 1px solid var(--color-divider);
   box-sizing: border-box;
-  gap: 7px;
+  gap: 8px;
 
   button {
     display: inline-flex;
     min-height: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
-    padding: 0 13px;
-    border: 1px solid color.change(theme.$fg, $alpha: 0.1);
-    border-radius: 6px;
-    color: theme.$fg2;
-    background: color.change(theme.$fg, $alpha: 0.035);
+    padding: 0 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--btn-radius, 7px);
+    color: var(--color-fg-muted);
+    background: var(--color-surface-subtle);
     box-shadow: none;
-    font-size: 9px;
+    font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
     gap: 6px;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background var(--motion-fast, 140ms) ease,
+      background-color var(--motion-fast, 140ms) ease,
       border-color var(--motion-fast, 140ms) ease,
       opacity var(--motion-fast, 140ms) ease;
 
     &:hover:not(:disabled) {
-      color: theme.$fg;
-      background: color.change(theme.$fg, $alpha: 0.075);
+      color: var(--color-fg);
+      background: var(--color-surface-hover);
     }
 
     &.primary {
-      border-color: color.change(theme.$primary, $alpha: 0.6);
-      color: #fff;
-      background: color.change(theme.$primary, $alpha: 0.24);
+      border-color: transparent;
+      color: var(--color-on-primary);
+      background: var(--color-primary);
 
       &:hover:not(:disabled) {
-        background: color.change(theme.$primary, $alpha: 0.34);
+        color: var(--color-on-primary);
+        background: var(--color-primary-hover);
       }
     }
   }

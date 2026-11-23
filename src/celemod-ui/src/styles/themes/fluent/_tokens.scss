@@ -1,92 +1,146 @@
 html[data-theme="fluent"] {
+  /* Windows 11 Fluent Design (Dark) Palette */
   --fluent-bg: #202020;
-  --fluent-mica-base: rgba(32, 32, 32, 0.84);
-  --fluent-mica-alt: rgba(39, 39, 39, 0.88);
-  --fluent-acrylic-base: rgba(44, 44, 44, 0.76);
-  --fluent-acrylic-strong: rgba(48, 48, 48, 0.9);
-  --fluent-smoke: rgba(0, 0, 0, 0.42);
+  --fluent-mica-base: rgba(32, 32, 32, 0.86);
+  --fluent-mica-alt: rgba(39, 39, 39, 0.9);
+  --fluent-acrylic-base: rgba(44, 44, 44, 0.78);
+  --fluent-acrylic-strong: rgba(46, 46, 46, 0.94);
+  --fluent-smoke: rgba(0, 0, 0, 0.46);
+
   --fluent-fill-subtle: rgba(255, 255, 255, 0.035);
   --fluent-fill-control: rgba(255, 255, 255, 0.06);
-  --fluent-fill-control-hover: rgba(255, 255, 255, 0.09);
+  --fluent-fill-control-hover: rgba(255, 255, 255, 0.095);
   --fluent-fill-control-pressed: rgba(255, 255, 255, 0.04);
-  --fluent-fill-control-selected: rgba(255, 255, 255, 0.12);
+  --fluent-fill-control-selected: rgba(255, 255, 255, 0.11);
   --fluent-fill-secondary: rgba(255, 255, 255, 0.08);
   --fluent-fill-tertiary: rgba(255, 255, 255, 0.12);
   --fluent-fill-disabled: rgba(255, 255, 255, 0.03);
+
   --fluent-stroke-subtle: rgba(255, 255, 255, 0.075);
   --fluent-stroke-control: rgba(255, 255, 255, 0.12);
   --fluent-stroke-strong: rgba(255, 255, 255, 0.2);
   --fluent-stroke-divider: rgba(255, 255, 255, 0.085);
+
   --fluent-text-primary: #f5f5f5;
   --fluent-text-secondary: #d6d6d6;
   --fluent-text-tertiary: #a6a6a6;
-  --fluent-text-disabled: #777;
+  --fluent-text-disabled: #777777;
+
   --fluent-accent: #60cdff;
   --fluent-accent-hover: #74d4ff;
   --fluent-accent-pressed: #42b9ec;
   --fluent-accent-fg: #082630;
+  --fluent-focus: var(--fluent-accent);
+
   --fluent-success: #6ccb5f;
   --fluent-warning: #fce100;
   --fluent-danger: #ff99a4;
   --fluent-info: #75b6e7;
+
   --fluent-shadow-card:
     0 2px 8px rgba(0, 0, 0, 0.18), inset 0 1px rgba(255, 255, 255, 0.025);
   --fluent-shadow-flyout:
     0 8px 18px rgba(0, 0, 0, 0.34), 0 2px 4px rgba(0, 0, 0, 0.2);
   --fluent-shadow-dialog:
     0 24px 54px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.28);
+
   --fluent-radius-control: 4px;
   --fluent-radius-card: 8px;
   --fluent-radius-overlay: 8px;
-  --fluent-space-1: 4px;
-  --fluent-space-2: 8px;
-  --fluent-space-3: 12px;
-  --fluent-space-4: 16px;
-  --fluent-space-5: 20px;
-  --fluent-space-6: 24px;
+
   --fluent-control-sm: 24px;
   --fluent-control-md: 32px;
   --fluent-control-lg: 40px;
+
   --fluent-duration-fast: 83ms;
   --fluent-duration-normal: 167ms;
   --fluent-duration-slow: 250ms;
   --fluent-ease-standard: cubic-bezier(0.33, 0, 0.67, 1);
   --fluent-ease-decelerate: cubic-bezier(0.1, 0.9, 0.2, 1);
   --fluent-ease-accelerate: cubic-bezier(0.9, 0.1, 1, 0.2);
+
+  /* Semantic token bindings */
+  --window-titlebar-height: 46px;
   --bg: var(--fluent-bg);
   --bg1: #292929;
-  --bg2: #333;
+  --bg2: #333333;
   --bg3: #3d3d3d;
   --fg: var(--fluent-text-primary);
   --fg1: var(--fluent-text-secondary);
   --fg2: var(--fluent-text-tertiary);
-  --fg3: var(--fluent-text-tertiary);
+  --fg3: var(--fluent-text-disabled);
   --primary: var(--fluent-accent);
-  --radius: var(--fluent-radius-control);
-  --elevation: var(--fluent-shadow-flyout);
-  --font: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+
   --color-canvas: var(--fluent-bg);
   --color-surface: var(--fluent-mica-base);
-  --color-surface-elevated: var(--fluent-mica-alt);
-  --color-surface-hover: var(--fluent-fill-control-hover);
-  --color-surface-active: var(--fluent-fill-control-pressed);
+  --color-surface-elevated: #292929;
+  --color-surface-hover: #333333;
+  --color-surface-active: #3d3d3d;
+  --color-surface-subtle: var(--fluent-fill-subtle);
+  --color-surface-card: var(--fluent-acrylic-base);
+  --color-surface-overlay: var(--fluent-acrylic-strong);
+  --color-surface-input: rgba(0, 0, 0, 0.2);
+
   --color-fg: var(--fluent-text-primary);
   --color-fg-muted: var(--fluent-text-secondary);
   --color-fg-subtle: var(--fluent-text-tertiary);
   --color-fg-disabled: var(--fluent-text-disabled);
+
   --color-primary: var(--fluent-accent);
+  --color-on-primary: var(--fluent-accent-fg);
+  --color-primary-hover: var(--fluent-accent-hover);
+  --color-primary-active: var(--fluent-accent-pressed);
+  --color-primary-soft: rgba(96, 205, 255, 0.14);
+  --color-primary-border: rgba(96, 205, 255, 0.45);
+  --color-primary-text: var(--fluent-accent);
+
+  --color-success: var(--fluent-success);
+  --color-warning: var(--fluent-warning);
+  --color-danger: var(--fluent-danger);
+  --color-info: var(--fluent-info);
+
+  --color-border-subtle: var(--fluent-stroke-subtle);
+  --color-border: var(--fluent-stroke-control);
+  --color-border-strong: var(--fluent-stroke-strong);
+  --color-divider: var(--fluent-stroke-divider);
+  --color-scrim: var(--fluent-smoke);
+
+  --radius-xs: 3px;
   --radius-sm: var(--fluent-radius-control);
   --radius-md: 6px;
   --radius-lg: var(--fluent-radius-card);
-  --shadow-button: none;
+  --radius-xl: var(--fluent-radius-overlay);
+  --radius: var(--fluent-radius-card);
+  --control-radius: var(--fluent-radius-control);
+
+  --btn-bg: var(--fluent-fill-control);
+  --btn-bg-hover: var(--fluent-fill-control-hover);
+  --btn-bg-active: var(--fluent-fill-control-pressed);
+  --btn-fg: var(--fluent-text-primary);
+  --btn-border: var(--fluent-stroke-control);
+  --btn-radius: var(--fluent-radius-control);
+
+  --btn-primary-bg: var(--fluent-accent);
+  --btn-primary-bg-hover: var(--fluent-accent-hover);
+  --btn-primary-bg-active: var(--fluent-accent-pressed);
+  --btn-primary-fg: var(--fluent-accent-fg);
+  --btn-primary-border: transparent;
+
+  --shadow-button: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-card: var(--fluent-shadow-card);
   --shadow-elevated: var(--fluent-shadow-flyout);
+  --shadow-dialog: var(--fluent-shadow-dialog);
+  --elevation: var(--fluent-shadow-flyout);
+  --focus-ring: var(--fluent-focus);
+  --scrollbar-thumb: var(--fluent-text-tertiary);
+  --font: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+
   color-scheme: dark;
   color: var(--fluent-text-primary);
-  font-family: var(--font);
   background:
     radial-gradient(
       110% 92% at 6% 0%,
-      rgba(73, 88, 122, 0.25),
+      rgba(73, 88, 122, 0.24),
       transparent 61%
     ),
     radial-gradient(
@@ -97,10 +151,13 @@ html[data-theme="fluent"] {
     var(--fluent-bg);
 }
 
+html[data-theme="fluent"][window-blurbehind] {
+  background: rgba(24, 26, 30, 0.45);
+}
+
 html[data-theme="fluent"] body {
   color: var(--fluent-text-primary);
   background: transparent;
-  font-family: inherit;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
