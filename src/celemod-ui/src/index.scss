@@ -747,6 +747,15 @@ select option {
   margin-top: 16px;
 }
 
+/* While the splash covers the frame nothing else paints. The shell stays
+   mounted so its layout is available for the roll-in handoff, but it never
+   composites behind the splash: blurring the app there smears through the
+   acrylic window instead of hiding it. */
+html.is-splash-covering .app-shell,
+html.is-splash-covering .catalog-offline {
+  visibility: hidden;
+}
+
 .app-frame.is-splash-handoff .home-brand-mark {
   visibility: hidden;
 }
@@ -779,7 +788,6 @@ select option {
 
 html[window-blurbehind] .startup-splash-backdrop {
   background: rgba(10, 10, 12, 0.78);
-  backdrop-filter: blur(18px);
 }
 
 .startup-splash-brand {

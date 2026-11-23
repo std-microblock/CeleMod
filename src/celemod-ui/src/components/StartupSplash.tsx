@@ -109,6 +109,19 @@ export function StartupSplash({
     };
   }, []);
 
+  // The spinning splash is the only surface on screen: keep the rest of the
+  // frame unpainted so the app (and the desktop behind an acrylic window)
+  // cannot bleed through it instead of being blurred there.
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle(
+      "is-splash-covering",
+      phase === "spinning",
+    );
+    return () => {
+      document.documentElement.classList.remove("is-splash-covering");
+    };
+  }, [phase]);
+
   // Synchronize external `visible` prop with internal animation phase.
   useEffect(() => {
     if (visible) {
