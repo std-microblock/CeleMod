@@ -68,6 +68,7 @@ interface DownloadStore {
   tasks: Record<string, Download.TaskInfo>;
   cancelDownload: (name: string) => boolean;
   togglePauseDownload: (name: string) => boolean;
+  clearFinishedTasks: () => void;
   downloadMods: (
     items: Array<{ name: string; source: string }>,
     options?: BatchDownloadOptions,
@@ -144,6 +145,77 @@ export const useDownloadStore = create<DownloadStore>((set, get) => ({
       ),
     }));
     return true;
+  },
+
+  clearFinishedTasks() {
+    set((state) => {
+      const entries = Object.entries(state.tasks);
+      if (entries.length === 0) return state;
+
+      const activeCancelKeys = new Set<string>();
+      const unfinishedKeys = new Set<string>();
+
+      for (const [key, task] of entries) {
+        const isActive = task.state === "pending" && !task.canceled;
+        const isFailed = task.state === "failed" && !task.canceled;
+        if (isActive) {
+          unfinishedKeys.add(key);
+          if (task.cancelKey) activeCancelKeys.add(task.cancelKey);
+        } else if (isFailed) {
+          unfinishedKeys.add(key);
+        }
+      }
+
+      // Propagate upwards: keep any task whose dependency is still active or failed.
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const [key, task] of entries) {
+          if (unfinishedKeys.has(key)) continue;
+          if (
+            task.dependencies.some((dep) =>
+              unfinishedKeys.has(normalizeName(dep)),
+            )
+          ) {
+            unfinishedKeys.add(key);
+            changed = true;
+          }
+        }
+      }
+
+      const protectedKeys = new Set<string>(unfinishedKeys);
+      for (const [key, task] of entries) {
+        if (task.cancelKey && activeCancelKeys.has(task.cancelKey)) {
+          protectedKeys.add(key);
+        }
+      }
+
+      // Propagate downwards: keep all dependencies of every protected task.
+      changed = true;
+      while (changed) {
+        changed = false;
+        for (const [key, task] of entries) {
+          if (!protectedKeys.has(key)) continue;
+          for (const dep of task.dependencies) {
+            const depKey = normalizeName(dep);
+            if (depKey in state.tasks && !protectedKeys.has(depKey)) {
+              protectedKeys.add(depKey);
+              changed = true;
+            }
+          }
+        }
+      }
+
+      if (protectedKeys.size === entries.length) return state;
+
+      const nextTasks: Record<string, Download.TaskInfo> = {};
+      for (const [key, task] of entries) {
+        if (protectedKeys.has(key)) {
+          nextTasks[key] = task;
+        }
+      }
+      return { tasks: nextTasks };
+    });
   },
 
   async downloadMods(items, options = {}) {
