@@ -19,11 +19,13 @@ import {
 import {
   reloadInstalledMods,
   useAppStore,
+  useCurrentBlacklistProfile,
   useCurrentEverestUltra,
   useCurrentLang,
   useGamePath,
   useMirror,
 } from "../states";
+import { selectRepresentativeInstalledMods } from "../stores/manage";
 import { useDownloadStore } from "../stores/download";
 import { detectDesktopPlatform } from "../tauri/window";
 import { callRemote, compareVersion } from "../utils";
@@ -86,6 +88,9 @@ export const HomeUpdatesCard = ({
   const [mirror] = useMirror();
   const { currentEverestIsUltra } = useCurrentEverestUltra();
   const installedMods = useAppStore((state) => state.installedMods);
+  const profileEnabled = useAppStore((state) => state.profileEnabled);
+  const { profiles, activeProfileNames, currentProfile } =
+    useCurrentBlacklistProfile();
   const showUpdate = useAppStore((state) => state.showUpdate);
   const downloadMod = useDownloadStore((state) => state.downloadMod);
   const { data: updateInfo } = useUpdateInfo();
@@ -172,26 +177,35 @@ export const HomeUpdatesCard = ({
     };
   }, [gamePath, installedMods, showUpdate, refreshToken]);
 
+  const activeDisabledFiles = useMemo(() => {
+    const active = profileEnabled
+      ? profiles.filter((profile) => activeProfileNames.includes(profile.name))
+      : [];
+    const source =
+      active.length > 0 ? active : currentProfile ? [currentProfile] : [];
+    return source.flatMap((profile) => profile.disabled_files ?? []);
+  }, [activeProfileNames, currentProfile, profileEnabled, profiles]);
+
   const modUpdates = useMemo<LatestModInfo[]>(() => {
     if (!gamePath || !showUpdate || installedMods.length === 0) return [];
-    // Deduplicate by mod name (keep highest version per name)
-    const byName = new Map<
-      string,
-      { name: string; version: string; file: string; isDirectory: boolean }
-    >();
-    for (const mod of installedMods) {
-      const existing = byName.get(mod.name);
-      if (!existing || compareVersion(mod.version, existing.version) > 0) {
-        byName.set(mod.name, {
-          name: mod.name,
-          version: mod.version,
-          file: mod.file,
-          isDirectory: mod.is_directory,
-        });
-      }
-    }
-    return collectModUpdates([...byName.values()], archiveHashes, latestRaw);
-  }, [archiveHashes, gamePath, installedMods, latestRaw, showUpdate]);
+    const enabledNames = currentProfile
+      ? new Set(currentProfile.enabled_mods ?? [])
+      : null;
+    const representative = selectRepresentativeInstalledMods({
+      installedMods,
+      enabledNames,
+      disabledFiles: activeDisabledFiles,
+    });
+    return collectModUpdates(representative, archiveHashes, latestRaw);
+  }, [
+    activeDisabledFiles,
+    archiveHashes,
+    currentProfile,
+    gamePath,
+    installedMods,
+    latestRaw,
+    showUpdate,
+  ]);
 
   // 3. Loenn / Loenn Ultra update state
   const [platform, setPlatform] = useState<string | null>(null);

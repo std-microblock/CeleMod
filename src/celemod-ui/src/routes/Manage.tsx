@@ -1717,10 +1717,23 @@ export const Manage = () => {
   const installedArchiveMatches = useCallback(
     async (name: string, update: LatestModInfo) => {
       if (update.xxHash.length === 0) return true;
-      const hashes = await callRemote<Record<string, string>>(
-        "get_mod_archive_hashes",
-        `${gamePath}/Mods`,
-      );
+      const hashes = await new Promise<Record<string, string>>((resolve) => {
+        void callRemote(
+          "get_mod_archive_hashes",
+          `${gamePath}/Mods`,
+          (data: string) => {
+            try {
+              resolve(JSON.parse(data) as Record<string, string>);
+            } catch (error) {
+              console.error("Failed to parse mod hashes", error);
+              resolve({});
+            }
+          },
+        ).catch((error) => {
+          console.error("Failed to hash installed Mods", error);
+          resolve({});
+        });
+      });
       const installed = (await reloadInstalledMods(gamePath)).find(
         (mod) => mod.name === name,
       );

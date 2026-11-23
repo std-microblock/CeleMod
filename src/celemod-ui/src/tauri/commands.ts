@@ -23,6 +23,7 @@ const parameterNames: Record<string, string[]> = {
   take_pending_deep_links: [],
   get_installed_mod_ids: ["modsFolderPath", "onEvent"],
   get_installed_mods: ["modsFolderPath", "onEvent"],
+  get_mod_archive_hashes: ["modsFolderPath", "onEvent"],
   get_invalid_zip_mod_files: ["modsFolderPath", "onEvent"],
   check_all_mod_contents: ["modsFolderPath", "onEvent"],
   get_installed_miaonet: ["modsFolderPath", "onEvent"],
