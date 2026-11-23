@@ -92,7 +92,9 @@ export default function App() {
   const [gamePath] = useGamePath();
   const { currentLang } = useCurrentLang();
   const { data: updateInfo } = useUpdateInfo();
-  const showLoenn = featureVisible(updateInfo?.loenn, currentLang);
+  const showLoenn =
+    featureVisible(updateInfo?.loenn, currentLang) ||
+    featureVisible(updateInfo?.loenn_ultra, currentLang);
 
   const modManage = createModManageContext();
   const everest = createEverestContext();

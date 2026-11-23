@@ -97,6 +97,7 @@ const parameterNames: Record<string, string[]> = {
     "fileName",
     "executable",
     "sha256",
+    "edition",
     "onEvent",
   ],
   start_loenn: ["installRoot"],

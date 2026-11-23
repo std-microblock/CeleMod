@@ -44,6 +44,8 @@ export interface LoennVersion {
   packages: Partial<Record<"windows" | "linux" | "macos", LoennPackage>>;
 }
 
+export type LoennEdition = "ultra" | "official";
+
 export interface LoennConfig {
   enabled: boolean;
   only_zh_cn?: boolean;
@@ -51,6 +53,10 @@ export interface LoennConfig {
   description?: string;
   homepage?: string;
   versions: LoennVersion[];
+}
+
+export interface LoennUltraConfig extends LoennConfig {
+  default_tab?: LoennEdition;
 }
 
 export interface CrashModFix {
@@ -75,6 +81,7 @@ export interface UpdateInfo {
   force?: string;
   everest_ultra?: EverestUltraConfig;
   loenn?: LoennConfig;
+  loenn_ultra?: LoennUltraConfig;
   crash_mod_fixes?: CrashModFix[];
 }
 
