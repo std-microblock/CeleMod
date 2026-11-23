@@ -1,0 +1,23 @@
+/* Floating scrollbar thumb drawn by overlayScrollbar.ts. It is fixed to the
+   viewport, so reveal it above page content and modals (highest app layer is
+   1250) but below native drag surfaces. */
+.overlay-scrollbar-thumb {
+  position: fixed;
+  z-index: 2000;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.32));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast, 140ms) ease;
+  will-change: top, height;
+
+  &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &.is-dragging {
+    background: var(--scrollbar-thumb-active, rgba(255, 255, 255, 0.46));
+  }
+}

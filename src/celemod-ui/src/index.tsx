@@ -6,10 +6,12 @@ import "./styles/android.scss";
 import { initializeWindowChrome } from "./tauri/window";
 import { initializeCeleModDeepLinks } from "./deepLink";
 import { initializeFrontendLogging } from "./logging";
+import { initializeOverlayScrollbars } from "./overlayScrollbar";
 import { ThemePreview } from "./themePreview";
 
 initializeFrontendLogging();
 initializeWindowChrome();
+initializeOverlayScrollbars();
 void initializeCeleModDeepLinks().catch((error) =>
   console.error("Failed to initialize CeleMod deep links", error),
 );

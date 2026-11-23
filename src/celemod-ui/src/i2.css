@@ -9,6 +9,18 @@
     "Segoe UI",
     sans-serif;
   scroll-behavior: smooth;
+  /* Hide the native scrollbar everywhere: a styled `::-webkit-scrollbar` still
+     reserves layout width in Chromium, and real overlay scrollbars are gone
+     from the engine. `overlayScrollbar.ts` draws the floating thumb instead. */
+  scrollbar-width: none;
+}
+
+/* Fallback for engines that style scrollbars but do not know
+   `scrollbar-width` (Safari before 18.2). */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -17,19 +29,8 @@
   }
 }
 
-/* Minimal scrollbars: one rounded pill per scroll area, with no track, no
-   buttons and no arrows.
-   `scrollbar-color` / `scrollbar-width` are intentionally left unset on the
-   elements styled below: Chromium resolves the standard properties first and
-   would swap the pill back for a native scrollbar. Engines without the WebKit
-   pseudo-elements fall back to a thin native scrollbar in the same tone. */
+/* Tones for the floating thumb, derived from the active theme's text color. */
 :root {
-  --scrollbar-size: 10px;
-  --scrollbar-thumb-rest: color-mix(
-    in srgb,
-    var(--scrollbar-thumb, #bbbbbb) 30%,
-    transparent
-  );
   --scrollbar-thumb-hover: color-mix(
     in srgb,
     var(--scrollbar-thumb, #bbbbbb) 50%,
@@ -40,42 +41,4 @@
     var(--scrollbar-thumb, #bbbbbb) 68%,
     transparent
   );
-}
-
-*::-webkit-scrollbar {
-  width: var(--scrollbar-size);
-  height: var(--scrollbar-size);
-}
-
-*::-webkit-scrollbar-track,
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background-color: var(--scrollbar-thumb-rest);
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-hover);
-}
-
-*::-webkit-scrollbar-thumb:active {
-  background-color: var(--scrollbar-thumb-active);
-}
-
-*::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb-hover) transparent;
-  }
 }
