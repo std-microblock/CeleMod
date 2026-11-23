@@ -18,10 +18,17 @@ import {
   useAlwaysOnMods,
   useAppStore,
   useCurrentBlacklistProfile,
+  useCurrentEverestVersion,
   useGamePath,
   useInstalledMods,
   useModComments,
 } from "../states";
+import { useGlobalContext } from "../App";
+import { useEverestInstallState } from "../context/everest";
+import {
+  findRequiredEverestVersion,
+  useEverestUpdate,
+} from "../api/everestUpdate";
 import { callRemote, compareVersion } from "../utils";
 import {
   installOlympusProfiles,
@@ -748,6 +755,7 @@ interface ManageActions {
   checkOptional: boolean;
   fullTree: boolean;
   showDetailed: boolean;
+  currentEverestVersion: string;
 }
 
 const ManageActionsContext = createContext<ManageActions | null>(null);
@@ -837,7 +845,12 @@ const ManageTreeNode = ({
   );
   const hasDependencies = visibleDependencies.length > 0;
   const cycle = path.includes(name);
-  const health = getDependencyHealth(name, nodes, actions.checkOptional);
+  const health = getDependencyHealth(
+    name,
+    nodes,
+    actions.checkOptional,
+    actions.currentEverestVersion,
+  );
   const isAlwaysOn = actions.alwaysOnMods.some(
     (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
   );
@@ -1097,9 +1110,19 @@ const ManageTreeNode = ({
 let lastApplyRequest = 0;
 
 export const Manage = () => {
+  const ctx = useGlobalContext();
   const [mobileProfilesOpen, setMobileProfilesOpen] = useState(false);
   const noEverest = enforceEverest();
   const [gamePath] = useGamePath();
+  const { currentEverestVersion } = useCurrentEverestVersion();
+  const everestInstallState = useEverestInstallState(
+    (state) => state.everestInstallState,
+  );
+  const {
+    installedBuild,
+    target: everestTarget,
+    hasUpdate: hasEverestUpdate,
+  } = useEverestUpdate();
   const modPath = `${gamePath}/Mods`;
   const { installedMods } = useInstalledMods();
   const {
@@ -1363,6 +1386,7 @@ export const Manage = () => {
         hiddenTypes: hiddenModTypes,
         updateNames,
         displayNames: displayNamesByMod,
+        currentEverestVersion,
       }),
     [
       nodes,
@@ -1372,6 +1396,7 @@ export const Manage = () => {
       hiddenModTypes,
       updateNames,
       displayNamesByMod,
+      currentEverestVersion,
     ],
   );
 
@@ -1397,6 +1422,7 @@ export const Manage = () => {
         hiddenTypes: hiddenModTypes,
         updateNames,
         displayNames: displayNamesByMod,
+        currentEverestVersion,
       }),
     [
       nodes,
@@ -1405,6 +1431,7 @@ export const Manage = () => {
       hiddenModTypes,
       updateNames,
       displayNamesByMod,
+      currentEverestVersion,
     ],
   );
   const hasSearchQuery = filters.query.trim().length > 0;
@@ -1741,8 +1768,51 @@ export const Manage = () => {
     [downloadUpdate, installedArchiveMatches, updateSources, updates],
   );
 
+  const everestRequirement = useMemo(
+    () => findRequiredEverestVersion(nodes),
+    [nodes],
+  );
+  const everestTooOld = Boolean(
+    everestRequirement &&
+      installedBuild > 0 &&
+      everestRequirement.build > installedBuild,
+  );
+  const everestInstalling =
+    everestInstallState.installingUrl !== null &&
+    everestInstallState.status !== "Success" &&
+    everestInstallState.status !== "Failed";
+  const canUpdateEverest = Boolean(
+    hasEverestUpdate && everestTarget && !everestInstalling,
+  );
+  const totalUpdateCount =
+    updates.length + (hasEverestUpdate && everestTarget ? 1 : 0);
+
+  const startEverestUpdate = useCallback(() => {
+    if (!everestTarget || everestInstalling) return;
+    if (everestInstallState.installingUrl !== null) {
+      ctx.everest.clearInstallState();
+    }
+    ctx.everest.downloadAndInstallEverest(
+      everestTarget.url,
+      everestTarget.postInstallFixes,
+    );
+  }, [
+    ctx.everest,
+    everestInstallState.installingUrl,
+    everestInstalling,
+    everestTarget,
+  ]);
+
   const updateAll = useCallback(() => {
-    if (batchUpdateProgress || updates.length === 0) return;
+    if (batchUpdateProgress) return;
+    if (updates.length === 0 && !canUpdateEverest) return;
+
+    if (canUpdateEverest && everestTarget) {
+      startEverestUpdate();
+    }
+
+    if (updates.length === 0) return;
+
     const names = updates.map((update) => update.name);
     setBatchUpdateProgress({ completed: 0, total: names.length });
 
@@ -1765,7 +1835,15 @@ export const Manage = () => {
       )
       .catch(console.error)
       .finally(() => setBatchUpdateProgress(null));
-  }, [batchUpdateProgress, reloadMods, updateNode, updates]);
+  }, [
+    batchUpdateProgress,
+    canUpdateEverest,
+    everestTarget,
+    reloadMods,
+    startEverestUpdate,
+    updateNode,
+    updates,
+  ]);
 
   const deleteNode = useCallback(
     (name: string) => {
@@ -2266,12 +2344,14 @@ export const Manage = () => {
       checkOptional,
       fullTree,
       showDetailed,
+      currentEverestVersion,
     }),
     [
       autoUseSubmissionNameAsComment,
       alwaysOnMods,
       checkOptional,
       comments,
+      currentEverestVersion,
       currentProfile,
       currentProfileName,
       deleteNode,
@@ -2524,11 +2604,18 @@ export const Manage = () => {
               )}
             </div>
           </header>
-          {(updates.length > 0 || missingDependencies.length > 0) && (
+          {((showUpdate && totalUpdateCount > 0) ||
+            missingDependencies.length > 0 ||
+            everestTooOld ||
+            everestInstalling) && (
             <div className="manage-notice-bar">
-              {showUpdate && updates.length > 0 && (
+              {showUpdate && totalUpdateCount > 0 && (
                 <button
-                  disabled={batchUpdateProgress !== null}
+                  type="button"
+                  disabled={
+                    batchUpdateProgress !== null ||
+                    (updates.length === 0 && everestInstalling)
+                  }
                   onClick={updateAll}
                 >
                   {batchUpdateProgress
@@ -2537,11 +2624,53 @@ export const Manage = () => {
                         batchUpdateProgress.total -
                           batchUpdateProgress.completed,
                       )} / ${batchUpdateProgress.total})`
-                    : _i18n.t("更新全部 ({count})", { count: updates.length })}
+                    : _i18n.t("更新全部 ({count})", {
+                        count: totalUpdateCount,
+                      })}
                 </button>
               )}
+              {everestInstalling ? (
+                <button
+                  type="button"
+                  title={everestInstallState.status ?? undefined}
+                  onClick={() => ctx.pageController.setPage("Everest")}
+                >
+                  {_i18n.t("Everest 更新中…")}
+                </button>
+              ) : (showUpdate || everestTooOld) &&
+                hasEverestUpdate &&
+                everestTarget ? (
+                <button
+                  type="button"
+                  title={
+                    everestTooOld && everestRequirement
+                      ? everestRequirement.requiredBy.join(", ")
+                      : undefined
+                  }
+                  onClick={startEverestUpdate}
+                >
+                  {everestTooOld
+                    ? _i18n.t("需更新 Everest → {version}", {
+                        version: everestTarget.version,
+                      })
+                    : _i18n.t("Everest 可更新至 {version}", {
+                        version: everestTarget.version,
+                      })}
+                </button>
+              ) : everestTooOld && everestRequirement ? (
+                <button
+                  type="button"
+                  title={everestRequirement.requiredBy.join(", ")}
+                  onClick={() => ctx.pageController.setPage("Everest")}
+                >
+                  {_i18n.t("Everest 版本过低（需 {version}）", {
+                    version: everestRequirement.version,
+                  })}
+                </button>
+              ) : null}
               {missingDependencies.length > 0 && (
                 <button
+                  type="button"
                   disabled={fixingDependencies}
                   onClick={() => {
                     setFixingDependencies(true);
