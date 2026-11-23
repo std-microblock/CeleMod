@@ -726,10 +726,6 @@ html[data-theme="material-you"] .popup-content .buttons {
 html[data-theme="material-you"] .popup-content .buttons button {
   min-height: 40px;
 }
-html[data-theme="material-you"] .page {
-  scrollbar-color: var(--md-outline) transparent;
-}
-
 /* Dense data routes use compact controls rather than filled M3 buttons. */
 html[data-theme="material-you"] .manage-page,
 html[data-theme="material-you"] .keybindings-page {

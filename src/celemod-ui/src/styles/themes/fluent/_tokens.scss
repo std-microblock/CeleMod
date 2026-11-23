@@ -109,29 +109,3 @@ html[data-theme="fluent"] ::selection {
   color: var(--fluent-accent-fg);
   background: var(--fluent-accent);
 }
-
-html[data-theme="fluent"] * {
-  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
-}
-
-html[data-theme="fluent"] *::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-html[data-theme="fluent"] *::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-html[data-theme="fluent"] *::-webkit-scrollbar-thumb {
-  min-height: 36px;
-  border: 4px solid transparent;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.26);
-  background-clip: padding-box;
-}
-
-html[data-theme="fluent"] *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
-  background-clip: padding-box;
-}

@@ -40,7 +40,7 @@ export const createThemeContext = () => {
       "--radius-md": "--radius",
       "--shadow-card": "--elevation",
       "--shadow-button": "--elevation",
-      "--scrollbar-thumb": "--bg3",
+      "--scrollbar-thumb": "--fg2",
     };
     for (const [alias, token] of Object.entries(aliases))
       root.style.setProperty(alias, `var(${token})`);
