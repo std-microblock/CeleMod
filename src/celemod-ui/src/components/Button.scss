@@ -18,8 +18,7 @@ button {
     border-color 140ms ease,
     color 140ms ease,
     box-shadow 140ms ease,
-    opacity 140ms ease,
-    transform 90ms ease;
+    opacity 140ms ease;
 }
 
 button.large {
@@ -40,10 +39,6 @@ button:active {
   background: var(--color-surface-active, #{theme.$bg3});
 }
 
-button:active:not(:disabled) {
-  transform: scale(0.985);
-}
-
 button:disabled {
   cursor: default;
   opacity: 0.55;
@@ -52,9 +47,5 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   button {
     transition: none;
-  }
-
-  button:active:not(:disabled) {
-    transform: none;
   }
 }

@@ -155,17 +155,11 @@
     border-color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
-    opacity var(--motion-fast, 140ms) ease,
-    transform var(--motion-fast, 140ms)
-      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+    opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
     border-color: color.change(theme.$primary, $alpha: 0.62);
     background: color.change(theme.$primary, $alpha: 0.8);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.95);
   }
 
   &:disabled {

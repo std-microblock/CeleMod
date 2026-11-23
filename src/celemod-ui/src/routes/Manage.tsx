@@ -1108,7 +1108,16 @@ const ManageTreeNode = ({
           )}
         </div>
       </div>
-      {expanded && !cycle && (!optional || actions.fullTree) && (
+      <Collapse
+        open={
+          expanded &&
+          !cycle &&
+          (!optional || actions.fullTree) &&
+          visibleDependencies.length > 0
+        }
+        unmountOnExit
+        className="tree-children-collapse"
+      >
         <div className="tree-children">
           {visibleDependencies.map((dependency) =>
             nodes[dependency.name] ? (
@@ -1128,7 +1137,7 @@ const ManageTreeNode = ({
             ),
           )}
         </div>
-      )}
+      </Collapse>
     </div>
   );
 };

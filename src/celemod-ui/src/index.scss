@@ -497,12 +497,7 @@ input[type="checkbox"] {
   transition:
     background-color var(--motion-fast, 140ms) ease,
     border-color var(--motion-fast, 140ms) ease,
-    opacity var(--motion-fast, 140ms) ease,
-    transform 100ms ease;
-}
-
-input[type="checkbox"]:active:not(:disabled) {
-  transform: scale(0.92);
+    opacity var(--motion-fast, 140ms) ease;
 }
 
 input[type="checkbox"]:checked {
@@ -752,6 +747,112 @@ select option {
   margin-top: 16px;
 }
 
+.startup-splash {
+  position: fixed;
+  inset: var(--window-titlebar-height) 0 0;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--color-fg, #{$fg});
+  background: var(--color-canvas, #{$bg});
+  user-select: none;
+
+  &.is-closing {
+    pointer-events: none;
+    animation: startup-splash-exit 240ms
+      var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  }
+}
+
+html[window-blurbehind] .startup-splash {
+  background: rgba(10, 10, 12, 0.78);
+  backdrop-filter: blur(18px);
+}
+
+.startup-splash-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.startup-splash-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.startup-splash-title {
+  color: var(--color-fg, #{$fg});
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.startup-splash-status-collapse {
+  width: 100%;
+  max-width: 360px;
+}
+
+.startup-splash-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-top: 22px;
+}
+
+.startup-splash-status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-fg-muted, #{$fg1});
+  font-size: 13px;
+}
+
+.startup-splash-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border: 2px solid color-mix(in srgb, var(--color-fg, #{$fg}) 16%, transparent);
+  border-top-color: var(--color-primary, #{$primary});
+  border-radius: 50%;
+  animation: blocking-mask-spin 700ms linear infinite;
+}
+
+.startup-splash-skip {
+  min-height: 30px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--color-fg, #{$fg}) 12%, transparent);
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-fg-subtle, #{$fg2});
+  font-size: 12px;
+  letter-spacing: 0;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--color-fg, #{$fg}) 22%, transparent);
+    background: color-mix(in srgb, var(--color-fg, #{$fg}) 6%, transparent);
+    color: var(--color-fg, #{$fg});
+  }
+}
+
+@keyframes startup-splash-exit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sidebar .navBtn,
   .sidebar .title,
@@ -763,10 +864,7 @@ select option {
     transition: none;
   }
 
-  input[type="checkbox"]:active:not(:disabled) {
-    transform: none;
-  }
-
+  .startup-splash.is-closing,
   .sidebar .nav-badge,
   .catalog-offline,
   .popup-container[data-state="open"]

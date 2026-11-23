@@ -251,17 +251,12 @@
       transition:
         background-color var(--motion-fast, 140ms) ease,
         border-color var(--motion-fast, 140ms) ease,
-        color var(--motion-fast, 140ms) ease,
-        transform 120ms ease;
+        color var(--motion-fast, 140ms) ease;
     }
 
     button:hover {
       border-color: color.change(theme.$primary, $alpha: 0.62);
       background: color.change(theme.$primary, $alpha: 0.8);
-    }
-
-    button:active {
-      transform: scale(0.94);
     }
 
     .download-progress {
@@ -485,17 +480,10 @@
     font-size: 20px;
     opacity: 0.6;
     cursor: pointer;
-    transition:
-      opacity 150ms ease,
-      transform 120ms ease;
+    transition: opacity 150ms ease;
 
     &:hover {
       opacity: 1;
-      transform: scale(1.06);
-    }
-
-    &:active {
-      transform: scale(0.94);
     }
   }
   .openExternal {
@@ -543,10 +531,6 @@
       &:hover {
         border-color: color.change(theme.$primary, $alpha: 0.62);
         transform: scale(1.015);
-      }
-
-      &:active {
-        transform: scale(0.99);
       }
     }
   }
@@ -724,16 +708,11 @@ html[data-theme="fluent"] .mod-detail-popup .content {
     cursor: pointer;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background-color var(--motion-fast, 140ms) ease,
-      transform 120ms ease;
+      background-color var(--motion-fast, 140ms) ease;
 
     &:hover {
       color: theme.$fg;
       background: color.change(theme.$fg, $alpha: 0.08);
-    }
-
-    &:active {
-      transform: scale(0.94);
     }
   }
 

@@ -112,13 +112,9 @@
     color: theme.$fg3;
     transition:
       color var(--motion-fast, 140ms) ease,
-      background-color var(--motion-fast, 140ms) ease,
-      transform 100ms ease;
+      background-color var(--motion-fast, 140ms) ease;
     &:hover {
       color: theme.$fg;
-    }
-    &:active {
-      transform: scale(0.92);
     }
   }
 }
@@ -143,15 +139,11 @@
   transition:
     border-color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease,
-    color var(--motion-fast, 140ms) ease,
-    transform 100ms ease;
+    color var(--motion-fast, 140ms) ease;
   &.active,
   &:hover {
     border-color: color.change(theme.$primary, $alpha: 0.45) !important;
     background: theme.$bg2 !important;
-  }
-  &:active {
-    transform: scale(0.97);
   }
 }
 
@@ -346,14 +338,10 @@
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease,
-      opacity var(--motion-fast, 140ms) ease,
-      transform 100ms ease;
+      opacity var(--motion-fast, 140ms) ease;
     &:hover:not(:disabled) {
       border-color: color.change(theme.$primary, $alpha: 0.45);
       background: color.change(theme.$primary, $alpha: 0.18);
-    }
-    &:active:not(:disabled) {
-      transform: scale(0.98);
     }
   }
 }
@@ -392,14 +380,10 @@
     transition:
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease,
-      color var(--motion-fast, 140ms) ease,
-      transform 100ms ease;
+      color var(--motion-fast, 140ms) ease;
     &:hover {
       border-color: color.change(#ffc66d, $alpha: 0.45);
       background: color.change(#ffc66d, $alpha: 0.16);
-    }
-    &:active {
-      transform: scale(0.98);
     }
   }
 }
@@ -675,15 +659,11 @@
     border-color var(--motion-fast, 140ms) ease,
     background-color var(--motion-fast, 140ms) ease,
     color var(--motion-fast, 140ms) ease,
-    opacity var(--motion-fast, 140ms) ease,
-    transform 100ms ease;
+    opacity var(--motion-fast, 140ms) ease;
 
   &:hover:not(:disabled) {
     border-color: color.change(#ef5350, $alpha: 0.5);
     background: color.change(#ef5350, $alpha: 0.18);
-  }
-  &:active:not(:disabled) {
-    transform: scale(0.97);
   }
   &:disabled {
     cursor: wait;
@@ -992,14 +972,10 @@
   color: theme.$fg3;
   transition:
     color var(--motion-fast, 140ms) ease,
-    background-color var(--motion-fast, 140ms) ease,
-    transform 100ms ease;
+    background-color var(--motion-fast, 140ms) ease;
 
   &:hover {
     color: theme.$fg;
-  }
-  &:active {
-    transform: scale(0.94);
   }
 }
 
@@ -1533,14 +1509,10 @@
     color: theme.$fg3;
     transition:
       background-color var(--motion-fast, 140ms) ease,
-      color var(--motion-fast, 140ms) ease,
-      transform 100ms ease;
+      color var(--motion-fast, 140ms) ease;
     &:hover {
       background: theme.$bg3;
       color: theme.$fg;
-    }
-    &:active {
-      transform: scale(0.94);
     }
   }
   .detail-heading {
@@ -1568,11 +1540,7 @@
       transition:
         background-color var(--motion-fast, 140ms) ease,
         border-color var(--motion-fast, 140ms) ease,
-        color var(--motion-fast, 140ms) ease,
-        transform 100ms ease;
-      &:active {
-        transform: scale(0.94);
-      }
+        color var(--motion-fast, 140ms) ease;
     }
   }
   .detail-kicker {

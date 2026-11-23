@@ -6,12 +6,13 @@ import {
   initModComments,
   reloadInstalledMods,
 } from "../states";
-import { useEffect, useContext, useState } from "react";
+import { useEffect, useContext, useRef, useState } from "react";
 import { createPopup, PopupContext } from "src/components/Popup";
-import { ProgressIndicator } from "src/components/Progress";
 import { syncModsWatcher } from "../modsWatcher";
 import { waitForCatalogDownload } from "../catalogDownload";
 import { isCatalogDownloading } from "../api/modCatalog";
+
+const STARTUP_LOADING_HINT_DELAY_MS = 600;
 
 export const createModManageContext = () => {
   initModComments();
@@ -19,7 +20,10 @@ export const createModManageContext = () => {
   const [gamePath] = useGamePath();
   const [offline, setOffline] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => Boolean(gamePath));
+  const [splashVisible, setSplashVisible] = useState(() => Boolean(gamePath));
+  const [loadingSlow, setLoadingSlow] = useState(false);
+  const initialLoadSettledRef = useRef(false);
 
   const skipCatalog = async () => {
     await callRemote("set_catalog_offline", true);
@@ -39,6 +43,9 @@ export const createModManageContext = () => {
   const ctx = {
     offline,
     loading,
+    splashVisible,
+    loadingSlow,
+    skipCatalog,
     retryCatalog: () => {
       setLoading(true);
       void callRemote("set_catalog_offline", false)
@@ -115,79 +122,77 @@ export const createModManageContext = () => {
   useEffect(() => {
     if (!gamePath) {
       setLoading(false);
+      setSplashVisible(false);
+      setLoadingSlow(false);
       return;
     }
 
     setLoading(true);
+    setLoadingSlow(false);
+    const isInitialStartup = !initialLoadSettledRef.current;
+    if (isInitialStartup) {
+      setSplashVisible(true);
+    }
+
     let cancelled = false;
-    let popup: ReturnType<typeof createPopup> | undefined;
-    const timer = window.setTimeout(() => {
+    const slowTimer = window.setTimeout(() => {
       if (cancelled) return;
-      popup = createPopup(
-        () => (
-          <div className="loading-popup">
-            <ProgressIndicator infinite />
-            <span>{_i18n.t("正在加载 Mod 列表，请稍等")}</span>
-            <button
-              type="button"
-              onClick={() => void skipCatalog().catch(console.error)}
-            >
-              {_i18n.t("跳过下载，离线继续")}
-            </button>
-          </div>
-        ),
-        { cancelable: false },
-      );
-      (async () => {
-        if (!navigator.onLine) await skipCatalog();
-        await ctx.reloadMods();
-        const isOffline = await callRemote<boolean>("is_catalog_offline");
-        if (!cancelled) setOffline(isOffline);
-        // A slow connection can still be downloading the catalog after the
-        // first screen stopped waiting for it: refresh the Mod list once it
-        // lands instead of leaving the Mod metadata missing.
-        if (!isOffline && (await isCatalogDownloading())) {
-          void waitForCatalogDownload(isCatalogDownloading, sleep).then(
-            (settled) => {
-              if (settled && !cancelled) {
-                void ctx.reloadMods().catch(console.error);
-              }
-            },
-          );
-        }
-      })()
-        .then(() => {
-          popup?.hide();
-          if (!cancelled) ctx.checkInvalidZipMods();
-        })
-        .catch((error) => {
-          popup?.hide();
-          if (cancelled) return;
-          const errorPopup = createPopup(() => (
-            <div className="popup-content">
-              <div className="title">{_i18n.t("加载 Mod 列表失败")}</div>
-              <div className="content">
-                <p>{_i18n.t("请检查游戏路径是否正确，或网络连接是否正常")}</p>
-                <p>{_i18n.t("部分功能将不可用")}</p>
-                <p>{String(error)}</p>
-              </div>
-              <div className="buttons">
-                <button onClick={() => errorPopup.hide()}>
-                  {_i18n.t("确定")}
-                </button>
-              </div>
+      setLoadingSlow(true);
+      setSplashVisible(true);
+    }, STARTUP_LOADING_HINT_DELAY_MS);
+
+    (async () => {
+      if (!navigator.onLine) await skipCatalog();
+      await ctx.reloadMods();
+      const isOffline = await callRemote<boolean>("is_catalog_offline");
+      if (!cancelled) setOffline(isOffline);
+      // A slow connection can still be downloading the catalog after the
+      // first screen stopped waiting for it: refresh the Mod list once it
+      // lands instead of leaving the Mod metadata missing.
+      if (!isOffline && (await isCatalogDownloading())) {
+        void waitForCatalogDownload(isCatalogDownloading, sleep).then(
+          (settled) => {
+            if (settled && !cancelled) {
+              void ctx.reloadMods().catch(console.error);
+            }
+          },
+        );
+      }
+    })()
+      .then(() => {
+        if (!cancelled) ctx.checkInvalidZipMods();
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const errorPopup = createPopup(() => (
+          <div className="popup-content">
+            <div className="title">{_i18n.t("加载 Mod 列表失败")}</div>
+            <div className="content">
+              <p>{_i18n.t("请检查游戏路径是否正确，或网络连接是否正常")}</p>
+              <p>{_i18n.t("部分功能将不可用")}</p>
+              <p>{String(error)}</p>
             </div>
-          ));
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }, 10);
+            <div className="buttons">
+              <button onClick={() => errorPopup.hide()}>
+                {_i18n.t("确定")}
+              </button>
+            </div>
+          </div>
+        ));
+      })
+      .finally(() => {
+        window.clearTimeout(slowTimer);
+        if (!cancelled) {
+          initialLoadSettledRef.current = true;
+          setSplashVisible(false);
+          setLoadingSlow(false);
+          setLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
-      popup?.hide();
+      window.clearTimeout(slowTimer);
     };
   }, [gamePath, retry]);
 

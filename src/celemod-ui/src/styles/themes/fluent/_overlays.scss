@@ -399,6 +399,29 @@ html[data-theme="fluent"] .blocking-mask-spinner {
   border-top-color: var(--fluent-accent);
 }
 
+html[data-theme="fluent"] .startup-splash {
+  color: var(--fluent-text-primary);
+  background: var(--fluent-mica-base);
+  backdrop-filter: blur(36px) saturate(125%);
+}
+
+html[data-theme="fluent"] .startup-splash-spinner {
+  border-color: rgba(255, 255, 255, 0.18);
+  border-top-color: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .startup-splash-skip {
+  border-color: var(--fluent-stroke-control) !important;
+  background: var(--fluent-fill-control) !important;
+  color: var(--fluent-text-secondary) !important;
+}
+
+html[data-theme="fluent"] .startup-splash-skip:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+  color: var(--fluent-text-primary) !important;
+}
+
 html[data-theme="fluent"] .drop-install-overlay,
 html[data-theme="fluent"] .drop-installer-overlay {
   border: 2px dashed rgba(96, 205, 255, 0.55);

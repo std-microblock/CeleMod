@@ -126,6 +126,10 @@
     opacity: 1;
     pointer-events: auto;
   }
+
+  &.is-settled > .ui-collapse-inner {
+    overflow: visible;
+  }
 }
 
 .ui-collapse-inner {

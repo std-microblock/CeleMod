@@ -28,7 +28,7 @@
   transform: translateY(-1px);
 }
 .theme-option:active {
-  transform: translateY(0) scale(0.99);
+  transform: translateY(0);
 }
 .theme-option.selected {
   border-color: var(--primary, #a77fdb);

@@ -355,12 +355,6 @@ html[data-theme="fluent"] .home-page {
   box-sizing: border-box;
 }
 
-html[data-theme="fluent"] .home-page .home-brand .home-brand-mark {
-  border-color: var(--fluent-stroke-control);
-  border-radius: var(--fluent-radius-card);
-  background: var(--fluent-fill-subtle);
-}
-
 html[data-theme="fluent"] .home-page .home-brand-title {
   font-weight: 600;
   letter-spacing: -0.02em;

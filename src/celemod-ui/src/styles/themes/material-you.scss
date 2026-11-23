@@ -679,6 +679,32 @@ html[data-theme="material-you"] .theme-option-check {
 }
 
 /* Menus/dialogs and FAB-like floating actions */
+html[data-theme="material-you"] .startup-splash {
+  color: var(--md-on-surface);
+  background: var(--md-surface);
+  background-image:
+    radial-gradient(
+      900px 500px at 100% -10%,
+      rgb(103 80 164 / 20%),
+      transparent 72%
+    ),
+    radial-gradient(
+      700px 460px at -10% 100%,
+      rgb(239 184 200 / 9%),
+      transparent 72%
+    );
+}
+html[data-theme="material-you"] .startup-splash-skip {
+  min-height: 36px;
+  padding: 0 18px;
+  border: 1px solid var(--md-outline-variant) !important;
+  background: transparent !important;
+  color: var(--md-on-surface-variant) !important;
+}
+html[data-theme="material-you"] .startup-splash-skip:hover {
+  background: var(--md-state-hover) !important;
+  color: var(--md-on-surface) !important;
+}
 html[data-theme="material-you"] .popup-container {
   backdrop-filter: blur(4px);
 }

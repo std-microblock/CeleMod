@@ -82,15 +82,10 @@
     letter-spacing: 0;
     transition:
       background-color var(--motion-fast, 140ms) ease,
-      border-color var(--motion-fast, 140ms) ease,
-      transform 120ms ease;
+      border-color var(--motion-fast, 140ms) ease;
 
     &:hover {
       background: color.change(theme.$primary, $alpha: 0.9);
-    }
-
-    &:active {
-      transform: scale(0.96);
     }
   }
 
@@ -119,17 +114,12 @@
       border-color var(--motion-fast, 140ms) ease,
       background-color var(--motion-fast, 140ms) ease,
       color var(--motion-fast, 140ms) ease,
-      box-shadow var(--motion-fast, 140ms) ease,
-      transform 120ms ease;
+      box-shadow var(--motion-fast, 140ms) ease;
 
     &:hover,
     &.active {
       border-color: color.change(theme.$primary, $alpha: 0.48);
       background: theme.$bg2;
-    }
-
-    &:active {
-      transform: scale(0.96);
     }
 
     &.active {
@@ -225,15 +215,10 @@
         letter-spacing: 0;
         transition:
           background-color var(--motion-fast, 140ms) ease,
-          color var(--motion-fast, 140ms) ease,
-          transform 120ms ease;
+          color var(--motion-fast, 140ms) ease;
 
         &:hover:not(.selected) {
           color: theme.$fg2;
-        }
-
-        &:active {
-          transform: scale(0.97);
         }
 
         &.selected {
@@ -334,16 +319,11 @@
         transition:
           border-color var(--motion-fast, 140ms) ease,
           background-color var(--motion-fast, 140ms) ease,
-          color var(--motion-fast, 140ms) ease,
-          transform 120ms ease;
+          color var(--motion-fast, 140ms) ease;
 
         &:hover {
           border-color: color.change(theme.$fg, $alpha: 0.18);
           background: theme.$bg3;
-        }
-
-        &:active {
-          transform: scale(0.97);
         }
       }
     }

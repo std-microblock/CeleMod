@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -627,30 +628,34 @@ export const ModList = (props: {
   loading?: boolean;
   viewMode?: "grid" | "list";
 }) => {
-  const [installedMods, setInstalledMods] = useState<
+  const storeInstalledMods = useAppStore((state) => state.installedMods);
+  const [fetchedInstalledMods, setFetchedInstalledMods] = useState<
     InstalledModSummary[] | null
   >(null);
+  const installedMods: InstalledModSummary[] =
+    fetchedInstalledMods ?? storeInstalledMods;
   const [listWidth, setListWidth] = useState(0);
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
   const refList = useRef<HTMLDivElement>(null);
   const loadMoreLocked = useRef(false);
 
   useEffect(() => {
+    let active = true;
     callRemote("get_installed_mods", props.modFolder, (data: string) => {
-      setInstalledMods(JSON.parse(data));
+      if (active) setFetchedInstalledMods(JSON.parse(data));
     });
+    return () => {
+      active = false;
+    };
   }, [props.modFolder]);
 
   const installedModIDs = useMemo(
-    () =>
-      installedMods === null
-        ? null
-        : new Set(installedMods.map((item) => item.game_banana_id.toString())),
+    () => new Set(installedMods.map((item) => item.game_banana_id.toString())),
     [installedMods],
   );
   const installedModVersions = useMemo(() => {
     const versions = new Map<string, Set<string>>();
-    for (const item of installedMods ?? []) {
+    for (const item of installedMods) {
       const name = item.name.toLocaleLowerCase();
       const current = versions.get(name) ?? new Set<string>();
       current.add(item.version);
@@ -659,7 +664,7 @@ export const ModList = (props: {
     return versions;
   }, [installedMods]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = refList.current;
     if (!element) return;
 
@@ -680,14 +685,14 @@ export const ModList = (props: {
     prevViewModeRef.current = viewMode;
     hasSwitchedViewRef.current = true;
   }
-  const loadingSpinner = useAnimatedPresence(
-    Boolean(props.loading || installedMods === null),
-    140,
-  );
+  const loadingSpinner = useAnimatedPresence(Boolean(props.loading), 140);
   const gridRightPadding = Math.max(0, GRID_PADDING - scrollbarWidth);
   const columnCount = useMemo(() => {
     if (viewMode === "list") return 1;
-    const available = Math.max(0, listWidth - GRID_PADDING * 2);
+    const measuredWidth =
+      listWidth ||
+      (typeof window !== "undefined" ? Math.max(320, window.innerWidth - 100) : 900);
+    const available = Math.max(0, measuredWidth - GRID_PADDING * 2);
     return Math.max(
       1,
       Math.floor((available + GRID_GAP) / (CARD_MIN_WIDTH + GRID_GAP)),
@@ -702,6 +707,10 @@ export const ModList = (props: {
     getScrollElement: () => refList.current,
     estimateSize: () => rowHeight + rowGap,
     overscan: 2,
+    initialRect: {
+      width: typeof window !== "undefined" ? window.innerWidth : 900,
+      height: typeof window !== "undefined" ? window.innerHeight : 800,
+    },
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
 
@@ -806,41 +815,40 @@ export const ModList = (props: {
           }`}
           style={{ height: rowVirtualizer.getTotalSize() + GRID_PADDING * 2 }}
         >
-          {installedMods !== null &&
-            virtualRows.map((virtualRow) => {
-              const startIndex = virtualRow.index * columnCount;
-              const rowMods = props.mods.slice(
-                startIndex,
-                startIndex + columnCount,
-              );
+          {virtualRows.map((virtualRow) => {
+            const startIndex = virtualRow.index * columnCount;
+            const rowMods = props.mods.slice(
+              startIndex,
+              startIndex + columnCount,
+            );
 
-              return (
-                <div
-                  className="mod-grid-row"
-                  key={virtualRow.key}
-                  style={{
-                    height: rowHeight,
-                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
-                    paddingRight: gridRightPadding,
-                    transform: `translateY(${
-                      virtualRow.start + GRID_PADDING
-                    }px)`,
-                  }}
-                >
-                  {rowMods.map((mod2) => {
-                    const mod = createModInfo(mod2);
-                    return (
-                      <Mod
-                        key={`${mod2.gameBananaId ?? mod2.id}-${mod2.name}`}
-                        mod={mod}
-                        modFolder={props.modFolder}
-                        isInstalled={mod.isInstalled}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
+            return (
+              <div
+                className="mod-grid-row"
+                key={virtualRow.key}
+                style={{
+                  height: rowHeight,
+                  gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                  paddingRight: gridRightPadding,
+                  transform: `translateY(${
+                    virtualRow.start + GRID_PADDING
+                  }px)`,
+                }}
+              >
+                {rowMods.map((mod2) => {
+                  const mod = createModInfo(mod2);
+                  return (
+                    <Mod
+                      key={`${mod2.gameBananaId ?? mod2.id}-${mod2.name}`}
+                      mod={mod}
+                      modFolder={props.modFolder}
+                      isInstalled={mod.isInstalled}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 

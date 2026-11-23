@@ -59,6 +59,7 @@ export function Collapse({
 }) {
   const [mounted, setMounted] = useState(open || !unmountOnExit);
   const [expanded, setExpanded] = useState(open && !appear);
+  const [settled, setSettled] = useState(open && !appear);
   const lastChildrenRef = useRef<ReactNode>(open ? children : null);
 
   if (open) {
@@ -70,21 +71,28 @@ export function Collapse({
       setMounted(true);
       if (prefersReducedMotion()) {
         setExpanded(true);
+        setSettled(true);
         return;
       }
       let frame1 = 0;
       let frame2 = 0;
+      let settleTimer = 0;
       frame1 = window.requestAnimationFrame(() => {
         frame2 = window.requestAnimationFrame(() => {
           setExpanded(true);
+          settleTimer = window.setTimeout(() => {
+            setSettled(true);
+          }, durationMs);
         });
       });
       return () => {
         window.cancelAnimationFrame(frame1);
         window.cancelAnimationFrame(frame2);
+        if (settleTimer) window.clearTimeout(settleTimer);
       };
     }
 
+    setSettled(false);
     setExpanded(false);
     if (!unmountOnExit) return;
     if (prefersReducedMotion() || durationMs <= 0) {
@@ -105,7 +113,9 @@ export function Collapse({
 
   return (
     <div
-      className={`ui-collapse${expanded ? " is-open" : ""}${className ? ` ${className}` : ""}`}
+      className={`ui-collapse${expanded ? " is-open" : ""}${
+        settled && open ? " is-settled" : ""
+      }${className ? ` ${className}` : ""}`}
       aria-hidden={!open || undefined}
       style={style}
     >

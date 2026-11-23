@@ -39,23 +39,19 @@
 .home-page .home-brand .home-brand-mark {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
-  border-radius: 13px;
-  border: 1px solid
-    color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--color-surface-elevated, #{theme.$bg1}) 82%,
-    transparent
-  );
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 
   img {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     image-rendering: pixelated;
     filter: none;
