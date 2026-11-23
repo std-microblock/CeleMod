@@ -34,9 +34,7 @@ test("a response without a Mod list is an error instead of an empty catalog", ()
 test("a failed catalog request keeps its reason", () => {
   assert.throws(
     () =>
-      parseCatalogResponse(
-        '{"data":null,"code":404,"message":"接口未找到"}',
-      ),
+      parseCatalogResponse('{"data":null,"code":404,"message":"接口未找到"}'),
     /code 404/,
   );
   assert.throws(
@@ -46,5 +44,8 @@ test("a failed catalog request keeps its reason", () => {
 });
 
 test("a non-JSON body is an error", () => {
-  assert.throws(() => parseCatalogResponse("<html>502</html>"), /not valid JSON/);
+  assert.throws(
+    () => parseCatalogResponse("<html>502</html>"),
+    /not valid JSON/,
+  );
 });

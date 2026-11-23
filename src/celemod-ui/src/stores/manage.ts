@@ -91,8 +91,7 @@ const compareVersion = (left: string, right: string) => {
 export const preferManageFile = (
   candidate: Pick<ManageModFile, "enabled" | "version" | "modifiedAt">,
   current:
-    | Pick<ManageModFile, "enabled" | "version" | "modifiedAt">
-    | undefined,
+    Pick<ManageModFile, "enabled" | "version" | "modifiedAt"> | undefined,
 ) => {
   if (!current) return true;
   if (candidate.enabled !== current.enabled) return candidate.enabled;
@@ -570,7 +569,10 @@ export const getDependencyHealth = (
         continue;
       if (EVEREST_DEPENDENCIES.has(dependency.name)) {
         const requiredBuild = extractEverestBuild(dependency.version);
-        if (installedEverestBuild > 0 && requiredBuild > installedEverestBuild) {
+        if (
+          installedEverestBuild > 0 &&
+          requiredBuild > installedEverestBuild
+        ) {
           merge(
             "version",
             `Everest ${installedEverestBuild} < ${dependency.version}`,

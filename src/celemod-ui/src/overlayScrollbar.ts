@@ -57,7 +57,10 @@ function place(element: HTMLElement): boolean {
     track,
     Math.max(MIN_THUMB_HEIGHT, (track * track) / total),
   );
-  const progress: number = Math.min(1, Math.max(0, element.scrollTop / maxScroll));
+  const progress: number = Math.min(
+    1,
+    Math.max(0, element.scrollTop / maxScroll),
+  );
   const top: number =
     rect.top + element.clientTop + (track - height) * progress;
   const borderRight: number =
@@ -155,7 +158,9 @@ export function initializeOverlayScrollbars(): void {
     document.addEventListener("pointermove", handlePointerMove, {
       passive: true,
     });
-    document.addEventListener("pointerout", handlePointerOut, { passive: true });
+    document.addEventListener("pointerout", handlePointerOut, {
+      passive: true,
+    });
     document.addEventListener("scroll", handleScroll, {
       capture: true,
       passive: true,

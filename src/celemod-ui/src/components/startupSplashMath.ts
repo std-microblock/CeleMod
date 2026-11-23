@@ -41,13 +41,13 @@ function sampleCubicBezier(p1: number, p2: number, t: number): number {
   return 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t;
 }
 
-function sampleCubicBezierDerivative(p1: number, p2: number, t: number): number {
+function sampleCubicBezierDerivative(
+  p1: number,
+  p2: number,
+  t: number,
+): number {
   const u = 1 - t;
-  return (
-    3 * u * u * p1 +
-    6 * u * t * (p2 - p1) +
-    3 * t * t * (1 - p2)
-  );
+  return 3 * u * u * p1 + 6 * u * t * (p2 - p1) + 3 * t * t * (1 - p2);
 }
 
 /**

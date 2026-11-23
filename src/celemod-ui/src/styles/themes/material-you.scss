@@ -78,7 +78,11 @@ html[data-theme="material-you"] {
   --color-primary-hover: color-mix(in srgb, var(--md-primary) 92%, white);
   --color-primary-active: color-mix(in srgb, var(--md-primary) 86%, black);
   --color-primary-soft: color-mix(in srgb, var(--md-primary) 16%, transparent);
-  --color-primary-border: color-mix(in srgb, var(--md-primary) 48%, transparent);
+  --color-primary-border: color-mix(
+    in srgb,
+    var(--md-primary) 48%,
+    transparent
+  );
   --color-primary-text: var(--md-primary);
 
   --color-error: var(--md-error);
@@ -381,13 +385,15 @@ html[data-theme="material-you"] .window-titlebar {
   box-sizing: border-box;
 }
 
-html[data-theme="material-you"] .window-titlebar:not(:has(.window-brand))::before {
+html[data-theme="material-you"]
+  .window-titlebar:not(:has(.window-brand))::before {
   display: block;
   width: 76px;
   height: 100%;
   flex: 0 0 76px;
   margin-right: 16px;
-  border-right: 1px solid color-mix(in srgb, var(--md-outline-variant) 45%, transparent);
+  border-right: 1px solid
+    color-mix(in srgb, var(--md-outline-variant) 45%, transparent);
   background: var(--md-surface-container-low);
   box-sizing: border-box;
   content: "";
@@ -401,7 +407,8 @@ html[data-theme="material-you"] .window-brand {
   margin-right: 16px;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid color-mix(in srgb, var(--md-outline-variant) 45%, transparent);
+  border-right: 1px solid
+    color-mix(in srgb, var(--md-outline-variant) 45%, transparent);
   background: var(--md-surface-container-low);
   box-sizing: border-box;
 

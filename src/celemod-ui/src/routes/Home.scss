@@ -1068,11 +1068,7 @@
   border: 1px solid
     color-mix(in srgb, var(--color-fg, #{theme.$fg}) 11%, transparent);
   border-radius: var(--radius-md, 7px);
-  background: color-mix(
-    in srgb,
-    var(--color-fg, #{theme.$fg}) 5%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 5%, transparent);
   box-shadow: none;
   color: var(--color-fg, #{theme.$fg});
   font-size: 12px;

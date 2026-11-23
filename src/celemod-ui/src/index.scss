@@ -16,7 +16,9 @@ html {
   background: var(--color-canvas);
 }
 
-html[window-blurbehind]:not([data-theme="fluent"]):not([data-theme="material-you"]) {
+html[window-blurbehind]:not([data-theme="fluent"]):not(
+    [data-theme="material-you"]
+  ) {
   // Keep desktop acrylic visible while preventing bright desktop content from
   // washing out the Vanilla UI.
   background: rgba(5, 5, 5, 0.28);
@@ -45,7 +47,9 @@ body {
     color: var(--color-primary);
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]),
   textarea {
     min-height: var(--control-height-md, 34px);
     padding: 6px 10px;
@@ -63,12 +67,16 @@ body {
       box-shadow var(--motion-fast, 140ms) ease;
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):hover,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]):hover,
   textarea:hover {
     border-color: var(--color-border-strong);
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):focus,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]):focus,
   textarea:focus {
     border-color: var(--color-primary-border);
     box-shadow: 0 0 0 2px var(--color-primary-soft);
@@ -436,7 +444,8 @@ textarea,
 .sidebar .navBtn.selected {
   border-color: var(--color-surface-hover);
   background: var(--color-surface-elevated);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-surface-elevated) 80%, transparent);
+  box-shadow: 0 2px 10px
+    color-mix(in srgb, var(--color-surface-elevated) 80%, transparent);
 }
 
 .sidebar .navBtn:not(.selected):hover {
@@ -873,7 +882,9 @@ html.is-splash-covering .catalog-offline {
   will-change: opacity;
 }
 
-html[window-blurbehind]:not([data-theme="fluent"]):not([data-theme="material-you"])
+html[window-blurbehind]:not([data-theme="fluent"]):not(
+    [data-theme="material-you"]
+  )
   .startup-splash-backdrop {
   background: rgba(10, 10, 12, 0.78);
 }

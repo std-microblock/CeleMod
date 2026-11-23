@@ -38,7 +38,8 @@
       rgba(255, 255, 255, 0.14),
       transparent 66%
     );
-    transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
+    transition: opacity var(--fluent-duration-normal)
+      var(--fluent-ease-standard);
   }
 
   html[data-theme="fluent"] button:hover:not(:disabled) {

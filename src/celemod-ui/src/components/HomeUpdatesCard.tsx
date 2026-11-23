@@ -120,9 +120,9 @@ export const HomeUpdatesCard = ({
   );
   const hasCelemodUpdate = Boolean(
     !isAndroid &&
-      appVersion &&
-      celemodLatestVersion &&
-      compareVersion(appVersion, celemodLatestVersion) < 0,
+    appVersion &&
+    celemodLatestVersion &&
+    compareVersion(appVersion, celemodLatestVersion) < 0,
   );
 
   // 2. Mod updates state (exact same archive hash + catalog check as Manage)
@@ -439,7 +439,10 @@ export const HomeUpdatesCard = ({
 
   return (
     <Collapse open={hasAnyVisibleRow} appear>
-      <section className="home-updates-card" aria-label={_i18n.t("发现可用更新")}>
+      <section
+        className="home-updates-card"
+        aria-label={_i18n.t("发现可用更新")}
+      >
         <div className="home-updates-header">
           <div className="home-updates-title-group">
             <span className="home-updates-icon" aria-hidden="true">
@@ -514,9 +517,7 @@ export const HomeUpdatesCard = ({
                       : startEverestUpdate()
                   }
                 >
-                  {everestInstalling
-                    ? _i18n.t("查看进度")
-                    : _i18n.t("更新")}
+                  {everestInstalling ? _i18n.t("查看进度") : _i18n.t("更新")}
                 </button>
               </div>
             </div>

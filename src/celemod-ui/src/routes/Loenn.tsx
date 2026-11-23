@@ -197,8 +197,8 @@ export const Loenn = () => {
     (itemVersion: string, edition: LoennEdition) =>
       Boolean(
         localState?.installed &&
-          localState.version === itemVersion &&
-          matchesEdition(edition),
+        localState.version === itemVersion &&
+        matchesEdition(edition),
       ),
     [localState?.installed, localState?.version, matchesEdition],
   );
@@ -421,9 +421,7 @@ export const Loenn = () => {
               >
                 <Icon name="folder" />
                 <span className="loenn-path-text">
-                  {localState?.path ||
-                    installRoot ||
-                    _i18n.t("默认安装目录")}
+                  {localState?.path || installRoot || _i18n.t("默认安装目录")}
                 </span>
               </span>
               <span className="loenn-path-actions">
@@ -748,13 +746,16 @@ export const Loenn = () => {
             <div className="loenn-version-list">
               {activeVersions.map((item, index) => {
                 const pkg = getPackageForPlatform(item);
-                const rowInstalled = isRowInstalled(item.version, activeEdition);
+                const rowInstalled = isRowInstalled(
+                  item.version,
+                  activeEdition,
+                );
                 const isLatest = index === 0;
                 const isUpdate = Boolean(
                   localState?.installed &&
-                    matchesEdition(activeEdition) &&
-                    isLatest &&
-                    !rowInstalled,
+                  matchesEdition(activeEdition) &&
+                  isLatest &&
+                  !rowInstalled,
                 );
                 const rowKey = `${activeEdition}-${item.version}`;
                 const desc = item.description?.trim() || "";
@@ -831,9 +832,7 @@ export const Loenn = () => {
                           >
                             <Icon name="download" />
                             <span>
-                              {isUpdate
-                                ? _i18n.t("更新")
-                                : _i18n.t("安装")}
+                              {isUpdate ? _i18n.t("更新") : _i18n.t("安装")}
                             </span>
                           </Button>
                         )}
@@ -857,9 +856,7 @@ export const Loenn = () => {
                             aria-expanded={isExpanded}
                             onClick={() => toggleDescription(rowKey)}
                           >
-                            {isExpanded
-                              ? _i18n.t("收起")
-                              : _i18n.t("展开详情")}
+                            {isExpanded ? _i18n.t("收起") : _i18n.t("展开详情")}
                           </button>
                         ) : null}
                       </div>

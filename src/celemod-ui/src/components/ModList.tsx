@@ -14,10 +14,7 @@ import type { CSSProperties } from "react";
 import "./ModList.scss";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
-import {
-  Awaitable,
-  callRemote,
-} from "../utils";
+import { Awaitable, callRemote } from "../utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Content } from "../api/wegfan";
 import type { LocalSubmission } from "../api/modCatalog";
@@ -27,10 +24,7 @@ import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { useAnimatedPresence } from "./Motion";
 import { pickDownloadFiles } from "../downloadFiles";
-import {
-  openSearchModDetail,
-  type ModDetailPayload,
-} from "./ModDetailModal";
+import { openSearchModDetail, type ModDetailPayload } from "./ModDetailModal";
 // @ts-ignore
 import celemodIcon from "../resources/Celemod.png";
 
@@ -218,9 +212,16 @@ export const Mod = memo(
           });
         },
       });
-    }, [autoDisableNewMods, downloadMod, downloadOwnerId, mod, props.isInstalled]);
+    }, [
+      autoDisableNewMods,
+      downloadMod,
+      downloadOwnerId,
+      mod,
+      props.isInstalled,
+    ]);
 
-    const handleCardClick = props.onClick ?? (mod.detail ? openDetail : undefined);
+    const handleCardClick =
+      props.onClick ?? (mod.detail ? openDetail : undefined);
 
     return (
       <div
@@ -575,7 +576,9 @@ export const ModList = (props: {
     if (viewMode === "list") return 1;
     const measuredWidth =
       listWidth ||
-      (typeof window !== "undefined" ? Math.max(320, window.innerWidth - 100) : 900);
+      (typeof window !== "undefined"
+        ? Math.max(320, window.innerWidth - 100)
+        : 900);
     const available = Math.max(0, measuredWidth - GRID_PADDING * 2);
     return Math.max(
       1,
@@ -745,9 +748,7 @@ export const ModList = (props: {
                   height: rowHeight,
                   gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
                   paddingRight: gridRightPadding,
-                  transform: `translateY(${
-                    virtualRow.start + GRID_PADDING
-                  }px)`,
+                  transform: `translateY(${virtualRow.start + GRID_PADDING}px)`,
                 }}
               >
                 {rowMods.map((mod2) => {

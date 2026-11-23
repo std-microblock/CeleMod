@@ -111,7 +111,8 @@ html[data-theme="fluent"] .sidebar .navBtn {
       rgba(255, 255, 255, 0.16),
       transparent 68%
     );
-    transition: opacity var(--fluent-duration-normal) var(--fluent-ease-standard);
+    transition: opacity var(--fluent-duration-normal)
+      var(--fluent-ease-standard);
   }
 
   &::after {

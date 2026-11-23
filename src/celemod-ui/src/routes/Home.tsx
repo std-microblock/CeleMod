@@ -293,9 +293,7 @@ export const Home = () => {
               value={i18n.currentLang}
               onChange={(event) => {
                 i18n.setLang(event.target.value);
-                setMirror(
-                  event.target.value === "zh-CN" ? "wegfan" : "0x0ade",
-                );
+                setMirror(event.target.value === "zh-CN" ? "wegfan" : "0x0ade");
               }}
             >
               <option value="zh-CN">{_i18n.t("简体中文")}</option>
@@ -368,7 +366,10 @@ export const Home = () => {
         </aside>
       </Collapse>
 
-      <section className="home-launch-card" aria-label={_i18n.t("选择游戏路径")}>
+      <section
+        className="home-launch-card"
+        aria-label={_i18n.t("选择游戏路径")}
+      >
         <div className="home-launch-body">
           <div className="home-launch-eyebrow">
             <span>{_i18n.t("选择游戏路径")}</span>
@@ -438,9 +439,7 @@ export const Home = () => {
                 onClick={() => selectGamePath(setGamePath)}
               >
                 <Icon name="folder" />
-                <span>
-                  {chinese ? "手动选择游戏路径" : "Select game path"}
-                </span>
+                <span>{chinese ? "手动选择游戏路径" : "Select game path"}</span>
               </button>
             </div>
           )}
@@ -530,7 +529,10 @@ export const Home = () => {
                     {chinese ? "当前预设" : "Active profile"}
                   </span>
                   <span className="home-status-value">
-                    <span className="home-status-ellipsis" title={activeProfileNames.join(", ")}>
+                    <span
+                      className="home-status-ellipsis"
+                      title={activeProfileNames.join(", ")}
+                    >
                       {activeProfileLabel}
                     </span>
                     <span className="home-status-sub">
@@ -637,7 +639,9 @@ export const Home = () => {
                   activeMods.map((name) => <span key={name}>{name}</span>)
                 ) : (
                   <p className="home-active-mods-empty">
-                    {chinese ? "当前未启用任何模组" : "No mods currently active"}
+                    {chinese
+                      ? "当前未启用任何模组"
+                      : "No mods currently active"}
                   </p>
                 )}
               </div>

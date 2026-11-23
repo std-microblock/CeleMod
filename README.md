@@ -8,7 +8,7 @@
 [Github](https://github.com/MicroCBer/CeleMod/releases/latest) · [蓝奏云 (密码·ok)](https://microblock.lanzouo.com/b0apezvij)
 
 An alternative mod manager for Celeste  
- 一个 ⌈ 更好用、更强大 ⌋ 的蔚蓝 Mod 管理器
+一个 ⌈ 更好用、更强大 ⌋ 的蔚蓝 Mod 管理器
 
 </div>
 

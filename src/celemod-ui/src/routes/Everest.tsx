@@ -1,11 +1,5 @@
 import _i18n from "src/i18n";
-import {
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import "./Everest.scss";
 import { fetch } from "../lib/http";
 import {

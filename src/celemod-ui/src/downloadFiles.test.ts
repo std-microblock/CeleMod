@@ -3,9 +3,7 @@ import test from "node:test";
 import { pickDownloadFiles } from "./downloadFiles";
 import type { File as SubmissionFile } from "./api/wegfan";
 
-const file = (
-  overrides: Partial<SubmissionFile> = {},
-): SubmissionFile =>
+const file = (overrides: Partial<SubmissionFile> = {}): SubmissionFile =>
   ({
     id: "1",
     createTime: new Date(0),

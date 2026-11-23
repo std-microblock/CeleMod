@@ -61,9 +61,7 @@ test("findRequiredEverestVersion picks highest non-optional build from enabled m
   const nodes: Record<string, ManageNode> = {
     DisabledMod: makeNode("DisabledMod", {
       enabled: false,
-      dependencies: [
-        { name: "Everest", version: "1.9999.0", optional: false },
-      ],
+      dependencies: [{ name: "Everest", version: "1.9999.0", optional: false }],
     }),
     OptionalOnlyMod: makeNode("OptionalOnlyMod", {
       dependencies: [
@@ -71,9 +69,7 @@ test("findRequiredEverestVersion picks highest non-optional build from enabled m
       ],
     }),
     OlderMod: makeNode("OlderMod", {
-      dependencies: [
-        { name: "Everest", version: "1.5000.0", optional: false },
-      ],
+      dependencies: [{ name: "Everest", version: "1.5000.0", optional: false }],
     }),
     NewerModA: makeNode("NewerModA", {
       dependencies: [
@@ -142,7 +138,10 @@ test("resolveEverestUpdateTarget handles Official Everest with wegfan and direct
   });
   assert.equal(directResult.installedBuild, 5577);
   assert.equal(directResult.hasUpdate, true);
-  assert.equal(directResult.target?.url, "https://example.com/everest-6696.zip");
+  assert.equal(
+    directResult.target?.url,
+    "https://example.com/everest-6696.zip",
+  );
 });
 
 test("resolveEverestUpdateTarget reports up-to-date and dev-build-0 without false updates", () => {

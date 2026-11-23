@@ -2,12 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 import "./Button.scss";
 
 export type ButtonType =
-  | "primary"
-  | "critical"
-  | "success"
-  | "warning"
-  | "info"
-  | "default";
+  "primary" | "critical" | "success" | "warning" | "info" | "default";
 
 type ButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> & {
   large?: boolean;

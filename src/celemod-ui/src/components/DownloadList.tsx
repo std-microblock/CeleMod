@@ -107,7 +107,11 @@ const stateLabel = (task: Download.TaskInfo) => {
   if (task.paused)
     return { label: _i18n.t("已暂停"), icon: "pause", tone: "paused" };
   if (task.mirrorPreparing)
-    return { label: _i18n.t("制作镜像中"), icon: "download", tone: "preparing" };
+    return {
+      label: _i18n.t("制作镜像中"),
+      icon: "download",
+      tone: "preparing",
+    };
   return { label: _i18n.t("下载中"), icon: "download", tone: "active" };
 };
 
@@ -604,7 +608,9 @@ export const DownloadListPage = () => {
             </span>
             <h2>{_i18n.t("暂无下载任务")}</h2>
             <p>
-              {_i18n.t("在搜索或推荐模组中点击下载，进度与依赖会在这里实时显示")}
+              {_i18n.t(
+                "在搜索或推荐模组中点击下载，进度与依赖会在这里实时显示",
+              )}
             </p>
             {gamePath ? (
               <button

@@ -1746,8 +1746,8 @@ export const Manage = () => {
   );
   const everestTooOld = Boolean(
     everestRequirement &&
-      installedBuild > 0 &&
-      everestRequirement.build > installedBuild,
+    installedBuild > 0 &&
+    everestRequirement.build > installedBuild,
   );
   const everestInstalling =
     everestInstallState.installingUrl !== null &&
@@ -2324,7 +2324,8 @@ export const Manage = () => {
           getUpdateInfo: (targetName) => {
             const bridge = detailBridgeRef.current;
             return {
-              hasUpdate: bridge.showUpdate && bridge.updateNames.has(targetName),
+              hasUpdate:
+                bridge.showUpdate && bridge.updateNames.has(targetName),
               version: bridge.updateVersions[targetName],
               state: bridge.updateStates[targetName],
             };

@@ -64,7 +64,8 @@ export const ProgressIndicator = ({
 
       if (currentInfinite)
         targetSize = Math.sin(frame / 4) * Math.PI * 0.5 + Math.PI * 0.5;
-      else targetSize = (Number(currentValue) / Number(currentMax)) * Math.PI * 2;
+      else
+        targetSize = (Number(currentValue) / Number(currentMax)) * Math.PI * 2;
 
       if (
         currentInfinite ||

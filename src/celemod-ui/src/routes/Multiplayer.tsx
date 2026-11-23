@@ -618,8 +618,8 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
 
   const footerOpen = Boolean(
     localState?.authenticated &&
-      miaoNetSettings &&
-      (settingsDirty || settingsSaving),
+    miaoNetSettings &&
+    (settingsDirty || settingsSaving),
   );
   const settingsFooterPresence = useAnimatedPresence(footerOpen, 160);
 
@@ -1146,10 +1146,7 @@ const MultiplayerGame = ({ gamePath }: { gamePath: string }) => {
   }
 
   return (
-    <MultiplayerFrame
-      step={_i18n.t("步骤 2 / 2 · 登录并授权")}
-      viewKey="auth"
-    >
+    <MultiplayerFrame step={_i18n.t("步骤 2 / 2 · 登录并授权")} viewKey="auth">
       <div className="multiplayer-state-icon">
         <FaLock />
       </div>

@@ -283,7 +283,8 @@
   min-height: 32px;
   padding: 4px 11px;
   gap: 7px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 18%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-warning) 18%, transparent);
   background: color-mix(in srgb, var(--color-warning) 7%, transparent);
   color: var(--color-fg-muted);
   font-size: calc(9.5px * var(--keybindings-font-scale, 1));
@@ -511,7 +512,8 @@
   min-height: 39px;
   padding: 5px 12px;
   gap: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--color-warning) 20%, transparent);
   background: color-mix(in srgb, var(--color-warning) 6%, transparent);
   box-sizing: border-box;
 

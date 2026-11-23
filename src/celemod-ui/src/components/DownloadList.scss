@@ -202,11 +202,7 @@ $tone-failed: #f07b85;
   padding: 0 5px;
   border-radius: 999px;
   color: var(--color-fg-disabled, #{theme.$fg3});
-  background: color-mix(
-    in srgb,
-    var(--color-fg, #{theme.$fg}) 6%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 6%, transparent);
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -378,11 +374,7 @@ $tone-failed: #f07b85;
 
 .download-task-canceled .download-task-status-icon {
   color: var(--color-fg-disabled, #{theme.$fg3});
-  background: color-mix(
-    in srgb,
-    var(--color-fg, #{theme.$fg}) 9%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 9%, transparent);
 }
 
 .download-task-heading-group {
@@ -443,11 +435,7 @@ $tone-failed: #f07b85;
 
 .download-task-canceled .download-task-status-text {
   color: var(--color-fg-disabled, #{theme.$fg3});
-  background: color-mix(
-    in srgb,
-    var(--color-fg, #{theme.$fg}) 8%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 8%, transparent);
 }
 
 .download-task-dep-badge {
@@ -457,11 +445,7 @@ $tone-failed: #f07b85;
   padding: 2px 7px;
   border-radius: 999px;
   color: var(--color-fg-subtle, #{theme.$fg2});
-  background: color-mix(
-    in srgb,
-    var(--color-fg, #{theme.$fg}) 7%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--color-fg, #{theme.$fg}) 7%, transparent);
   font-size: 11px;
   font-weight: 500;
   line-height: 1.4;

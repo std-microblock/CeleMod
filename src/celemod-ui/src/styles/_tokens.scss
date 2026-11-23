@@ -51,16 +51,8 @@
   /* Accent & semantic tones */
   --color-primary: var(--primary);
   --color-on-primary: #130f1c;
-  --color-primary-hover: color-mix(
-    in srgb,
-    var(--color-primary) 88%,
-    #ffffff
-  );
-  --color-primary-active: color-mix(
-    in srgb,
-    var(--color-primary) 84%,
-    #000000
-  );
+  --color-primary-hover: color-mix(in srgb, var(--color-primary) 88%, #ffffff);
+  --color-primary-active: color-mix(in srgb, var(--color-primary) 84%, #000000);
   --color-primary-soft: color-mix(
     in srgb,
     var(--color-primary) 15%,

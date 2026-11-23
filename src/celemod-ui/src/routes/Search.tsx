@@ -344,238 +344,242 @@ export const Search = () => {
               <div key={mode} className="ui-fade-enter">
                 {mode === "cloud" ? (
                   <div className="filter-grid cloud-filter-grid">
-                  <label>
-                    <span>{_i18n.t("类型")}</span>
-                    <select
-                      value={cloudType}
-                      onChange={(event) => setCloudType(event.target.value)}
-                    >
-                      <option value="">{_i18n.t("全部")}</option>
-                      {Object.keys(categoryIdMap).map((category) => (
-                        <option value={category} key={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>{_i18n.t("排序")}</span>
-                    <select
-                      value={sort}
-                      onChange={(event) =>
-                        setSort(event.target.value as typeof sort)
-                      }
-                    >
-                      <option value="new">{_i18n.t("最近发布")}</option>
-                      <option value="updateAdded">{_i18n.t("最近添加")}</option>
-                      <option value="updated">{_i18n.t("最近更新")}</option>
-                      <option value="views">{_i18n.t("最多浏览")}</option>
-                      <option value="likes">{_i18n.t("最多点赞")}</option>
-                    </select>
-                  </label>
-                </div>
-              ) : (
-                <>
-                  <div className="filter-grid">
                     <label>
                       <span>{_i18n.t("类型")}</span>
                       <select
-                        value={localFilters.category}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            category: event.target.value,
-                          }))
-                        }
+                        value={cloudType}
+                        onChange={(event) => setCloudType(event.target.value)}
                       >
                         <option value="">{_i18n.t("全部")}</option>
-                        {catalogOptions.categories.map((value) => (
-                          <option key={value}>{value}</option>
+                        {Object.keys(categoryIdMap).map((category) => (
+                          <option value={category} key={category}>
+                            {category}
+                          </option>
                         ))}
                       </select>
                     </label>
                     <label>
-                      <span>{_i18n.t("子类型")}</span>
+                      <span>{_i18n.t("排序")}</span>
                       <select
-                        value={localFilters.subCategory}
+                        value={sort}
                         onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            subCategory: event.target.value,
-                          }))
+                          setSort(event.target.value as typeof sort)
                         }
                       >
-                        <option value="">{_i18n.t("全部")}</option>
-                        {catalogOptions.subCategories.map((value) => (
-                          <option key={value}>{value}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{_i18n.t("来源分区")}</span>
-                      <select
-                        value={localFilters.section}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            section: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">{_i18n.t("全部")}</option>
-                        {catalogOptions.sections.map((value) => (
-                          <option key={value}>{value}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{_i18n.t("作者")}</span>
-                      <input
-                        value={localFilters.submitter}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            submitter: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
-                  <div className="filter-section-title">
-                    {_i18n.t("更新时间")}
-                  </div>
-                  <div className="filter-grid">
-                    <label>
-                      <span>{_i18n.t("从")}</span>
-                      <input
-                        type="date"
-                        value={localFilters.updatedAfter}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            updatedAfter: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>{_i18n.t("到")}</span>
-                      <input
-                        type="date"
-                        value={localFilters.updatedBefore}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            updatedBefore: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
-                  <div className="filter-section-title">
-                    {_i18n.t("数值范围")}
-                  </div>
-                  <div className="filter-grid range-grid">
-                    <label>
-                      <span>{_i18n.t("最少下载")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={localFilters.minDownloads ?? ""}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            minDownloads: numberValue(event.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>{_i18n.t("最多下载")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={localFilters.maxDownloads ?? ""}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            maxDownloads: numberValue(event.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>{_i18n.t("最小大小 (MB)")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={localFilters.minSizeMb ?? ""}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            minSizeMb: numberValue(event.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      <span>{_i18n.t("最大大小 (MB)")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={localFilters.maxSizeMb ?? ""}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            maxSizeMb: numberValue(event.target.value),
-                          }))
-                        }
-                      />
-                    </label>
-                  </div>
-                  <div className="filter-grid sort-grid">
-                    <label>
-                      <span>{_i18n.t("排序字段")}</span>
-                      <select
-                        value={localFilters.sort}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            sort: event.target
-                              .value as LocalCatalogFilters["sort"],
-                          }))
-                        }
-                      >
-                        <option value="updated">{_i18n.t("更新时间")}</option>
-                        <option value="created">{_i18n.t("发布时间")}</option>
+                        <option value="new">{_i18n.t("最近发布")}</option>
                         <option value="updateAdded">
                           {_i18n.t("最近添加")}
                         </option>
-                        <option value="downloads">{_i18n.t("下载次数")}</option>
-                        <option value="size">{_i18n.t("文件大小")}</option>
-                        <option value="name">{_i18n.t("名称")}</option>
-                      </select>
-                    </label>
-                    <label>
-                      <span>{_i18n.t("顺序")}</span>
-                      <select
-                        value={localFilters.direction}
-                        onChange={(event) =>
-                          setLocalFilters((value) => ({
-                            ...value,
-                            direction: event.target.value as "asc" | "desc",
-                          }))
-                        }
-                      >
-                        <option value="desc">{_i18n.t("降序")}</option>
-                        <option value="asc">{_i18n.t("升序")}</option>
+                        <option value="updated">{_i18n.t("最近更新")}</option>
+                        <option value="views">{_i18n.t("最多浏览")}</option>
+                        <option value="likes">{_i18n.t("最多点赞")}</option>
                       </select>
                     </label>
                   </div>
-                </>
-              )}
+                ) : (
+                  <>
+                    <div className="filter-grid">
+                      <label>
+                        <span>{_i18n.t("类型")}</span>
+                        <select
+                          value={localFilters.category}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              category: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">{_i18n.t("全部")}</option>
+                          {catalogOptions.categories.map((value) => (
+                            <option key={value}>{value}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>{_i18n.t("子类型")}</span>
+                        <select
+                          value={localFilters.subCategory}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              subCategory: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">{_i18n.t("全部")}</option>
+                          {catalogOptions.subCategories.map((value) => (
+                            <option key={value}>{value}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>{_i18n.t("来源分区")}</span>
+                        <select
+                          value={localFilters.section}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              section: event.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">{_i18n.t("全部")}</option>
+                          {catalogOptions.sections.map((value) => (
+                            <option key={value}>{value}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        <span>{_i18n.t("作者")}</span>
+                        <input
+                          value={localFilters.submitter}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              submitter: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="filter-section-title">
+                      {_i18n.t("更新时间")}
+                    </div>
+                    <div className="filter-grid">
+                      <label>
+                        <span>{_i18n.t("从")}</span>
+                        <input
+                          type="date"
+                          value={localFilters.updatedAfter}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              updatedAfter: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>{_i18n.t("到")}</span>
+                        <input
+                          type="date"
+                          value={localFilters.updatedBefore}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              updatedBefore: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="filter-section-title">
+                      {_i18n.t("数值范围")}
+                    </div>
+                    <div className="filter-grid range-grid">
+                      <label>
+                        <span>{_i18n.t("最少下载")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={localFilters.minDownloads ?? ""}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              minDownloads: numberValue(event.target.value),
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>{_i18n.t("最多下载")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={localFilters.maxDownloads ?? ""}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              maxDownloads: numberValue(event.target.value),
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>{_i18n.t("最小大小 (MB)")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={localFilters.minSizeMb ?? ""}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              minSizeMb: numberValue(event.target.value),
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>{_i18n.t("最大大小 (MB)")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={localFilters.maxSizeMb ?? ""}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              maxSizeMb: numberValue(event.target.value),
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+                    <div className="filter-grid sort-grid">
+                      <label>
+                        <span>{_i18n.t("排序字段")}</span>
+                        <select
+                          value={localFilters.sort}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              sort: event.target
+                                .value as LocalCatalogFilters["sort"],
+                            }))
+                          }
+                        >
+                          <option value="updated">{_i18n.t("更新时间")}</option>
+                          <option value="created">{_i18n.t("发布时间")}</option>
+                          <option value="updateAdded">
+                            {_i18n.t("最近添加")}
+                          </option>
+                          <option value="downloads">
+                            {_i18n.t("下载次数")}
+                          </option>
+                          <option value="size">{_i18n.t("文件大小")}</option>
+                          <option value="name">{_i18n.t("名称")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        <span>{_i18n.t("顺序")}</span>
+                        <select
+                          value={localFilters.direction}
+                          onChange={(event) =>
+                            setLocalFilters((value) => ({
+                              ...value,
+                              direction: event.target.value as "asc" | "desc",
+                            }))
+                          }
+                        >
+                          <option value="desc">{_i18n.t("降序")}</option>
+                          <option value="asc">{_i18n.t("升序")}</option>
+                        </select>
+                      </label>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="filter-popup-footer">
                 <button

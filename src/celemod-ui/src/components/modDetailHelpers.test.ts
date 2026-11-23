@@ -59,9 +59,16 @@ test("matchCloudSubmission matches by submissionId even for WEGFan-exclusive ite
 });
 
 test("matchCloudSubmission falls back to gameBananaId then exact name", () => {
-  const item = makeContent({ id: "sub-42", name: "Frost Helper", gameBananaId: 53687 });
+  const item = makeContent({
+    id: "sub-42",
+    name: "Frost Helper",
+    gameBananaId: 53687,
+  });
   assert.equal(
-    matchCloudSubmission([item], { submissionId: "old-id", gameBananaId: 53687 })?.id,
+    matchCloudSubmission([item], {
+      submissionId: "old-id",
+      gameBananaId: 53687,
+    })?.id,
     "sub-42",
   );
   assert.equal(

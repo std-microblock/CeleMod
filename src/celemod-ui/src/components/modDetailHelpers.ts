@@ -1,5 +1,9 @@
 import type { Content, Credit } from "../api/wegfan";
-import { getModPageUrl, getOtherModPageSource, type ModPageLinks } from "../modPage";
+import {
+  getModPageUrl,
+  getOtherModPageSource,
+  type ModPageLinks,
+} from "../modPage";
 import type { ModPageSource } from "../states";
 
 export interface NormalizedCreditAuthor {

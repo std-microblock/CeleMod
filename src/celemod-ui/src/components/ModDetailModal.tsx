@@ -12,11 +12,7 @@ import "./ModDetailModal.scss";
 import { Icon } from "./Icon";
 import { ProgressIndicator } from "./Progress";
 import { PopupContext, createPopup } from "./Popup";
-import {
-  currentMirror,
-  useAppStore,
-  useAutoDisableNewMods,
-} from "../states";
+import { currentMirror, useAppStore, useAutoDisableNewMods } from "../states";
 import { useDownloadStore } from "../stores/download";
 import {
   getDependencyHealth,
@@ -25,11 +21,7 @@ import {
   useManageStore,
   type ManageNode,
 } from "../stores/manage";
-import {
-  searchSubmission,
-  type Content,
-  type Credit,
-} from "../api/wegfan";
+import { searchSubmission, type Content, type Credit } from "../api/wegfan";
 import type { CatalogMod } from "../api/modCatalog";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
 import { callRemote, type Awaitable } from "../utils";
@@ -533,7 +525,11 @@ const MetricsStrip = ({ items }: { items: MetricItem[] }) => {
   return (
     <div className="mod-detail-metrics">
       {items.map((item) => (
-        <div className="mod-detail-metric" key={item.key} title={item.title ?? item.value}>
+        <div
+          className="mod-detail-metric"
+          key={item.key}
+          title={item.title ?? item.value}
+        >
           <span className="metric-label">
             <Icon name={item.icon} />
             {item.label}
@@ -616,12 +612,10 @@ const ModDetailShell = ({
       aria-label={title}
       onClick={(event) => event.stopPropagation()}
     >
-      <div
-        ref={bodyRef}
-        className="mod-detail-body"
-        onScroll={handleScroll}
-      >
-        <header className={`mod-detail-topbar ${scrolled ? "is-scrolled" : ""}`}>
+      <div ref={bodyRef} className="mod-detail-body" onScroll={handleScroll}>
+        <header
+          className={`mod-detail-topbar ${scrolled ? "is-scrolled" : ""}`}
+        >
           <div className="mod-detail-topbar-left">
             {backButton && (
               <button
@@ -635,7 +629,9 @@ const ModDetailShell = ({
               </button>
             )}
             <div className="mod-detail-topbar-title-wrap">
-              {kicker && <span className="mod-detail-topbar-kicker">{kicker}</span>}
+              {kicker && (
+                <span className="mod-detail-topbar-kicker">{kicker}</span>
+              )}
               <strong
                 className={`mod-detail-topbar-title ${scrolled ? "is-visible" : ""}`}
                 title={compactHeaderTitle ?? title}
@@ -839,10 +835,10 @@ const SearchModDetailContent = (props: OpenSearchModDetailOptions) => {
   // enrich it from the cloud mirror automatically.
   const needsCloudEnrichment = Boolean(
     !detailLoading &&
-      detail &&
-      !detail.description?.trim() &&
-      !(detail.screenshots?.length || detail.images?.length) &&
-      (props.cloudLookup?.searchName || props.name),
+    detail &&
+    !detail.description?.trim() &&
+    !(detail.screenshots?.length || detail.images?.length) &&
+    (props.cloudLookup?.searchName || props.name),
   );
 
   useEffect(() => {
@@ -1106,9 +1102,7 @@ const SearchModDetailContent = (props: OpenSearchModDetailOptions) => {
       metrics={metrics}
       tabs={tabs}
       activeTab={activeTab}
-      onTabChange={(id) =>
-        setActiveTab(id as "overview" | "files" | "credits")
-      }
+      onTabChange={(id) => setActiveTab(id as "overview" | "files" | "credits")}
       hero={
         <div className="mod-detail-hero">
           {coverUrl && (
@@ -1347,9 +1341,7 @@ const SearchModDetailContent = (props: OpenSearchModDetailOptions) => {
                   >
                     <Icon name="download" />
                     <span>
-                      {file.isInstalled
-                        ? _i18n.t("重新下载")
-                        : _i18n.t("下载")}
+                      {file.isInstalled ? _i18n.t("重新下载") : _i18n.t("下载")}
                     </span>
                   </button>
                 </div>
@@ -1434,13 +1426,16 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
   const [remarkDraft, setRemarkDraft] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  const navigateToMod = useCallback((targetName: string) => {
-    if (!targetName || targetName === activeName) return;
-    setHistory((prev) => [...prev, targetName]);
-    setActiveTab("overview");
-    setEditingRemark(false);
-    bodyRef.current?.scrollTo({ top: 0, behavior: "instant" });
-  }, [activeName]);
+  const navigateToMod = useCallback(
+    (targetName: string) => {
+      if (!targetName || targetName === activeName) return;
+      setHistory((prev) => [...prev, targetName]);
+      setActiveTab("overview");
+      setEditingRemark(false);
+      bodyRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    },
+    [activeName],
+  );
 
   const navigateBack = useCallback(() => {
     setHistory((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
@@ -1554,8 +1549,7 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
 
   const requiredDeps = node.dependencies.filter((dep) => !dep.optional);
   const optionalDeps = node.dependencies.filter((dep) => dep.optional);
-  const depTotalCount =
-    node.dependencies.length + node.dependedBy.length;
+  const depTotalCount = node.dependencies.length + node.dependedBy.length;
   const hasDuplicates = node.duplicateFiles.length > 1;
   const unresolvedDuplicates =
     hasDuplicates &&
@@ -1784,9 +1778,7 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
       tabs={tabs}
       activeTab={activeTab}
       onTabChange={(id) =>
-        setActiveTab(
-          id as "overview" | "dependencies" | "local" | "credits",
-        )
+        setActiveTab(id as "overview" | "dependencies" | "local" | "credits")
       }
       hero={
         <div className="mod-detail-hero">
@@ -1881,11 +1873,7 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
               >
                 <Icon
                   name={
-                    isAlwaysOn
-                      ? "i-asterisk"
-                      : node.enabled
-                        ? "pause"
-                        : "play"
+                    isAlwaysOn ? "i-asterisk" : node.enabled ? "pause" : "play"
                   }
                 />
                 <span>
@@ -2042,10 +2030,7 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
               <span>{formatDetailSize(node.size)}</span>
               {modifiedText && <span>· {modifiedText}</span>}
             </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab("local")}
-            >
+            <button type="button" onClick={() => setActiveTab("local")}>
               {_i18n.t("本地信息")}
               <Icon name="i-right" />
             </button>
@@ -2219,10 +2204,7 @@ const ManageModDetailContent = (props: OpenManageModDetailOptions) => {
                   <button type="submit" className="is-primary">
                     {_i18n.t("保存")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingRemark(false)}
-                  >
+                  <button type="button" onClick={() => setEditingRemark(false)}>
                     {_i18n.t("取消")}
                   </button>
                 </form>

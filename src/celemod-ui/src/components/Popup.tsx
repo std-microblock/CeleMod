@@ -59,10 +59,13 @@ export const createPopup = (
       container.dataset.state = "closing";
       container.style.opacity = "0";
       container.style.pointerEvents = "none";
-      window.setTimeout(() => {
-        root.unmount();
-        container.remove();
-      }, prefersReducedMotion() ? 0 : 210);
+      window.setTimeout(
+        () => {
+          root.unmount();
+          container.remove();
+        },
+        prefersReducedMotion() ? 0 : 210,
+      );
     },
   };
 

@@ -44,8 +44,8 @@
   --detail-accent-fg: #ffffff;
   --detail-accent-soft: #{color.change(theme.$primary, $alpha: 0.16)};
   --detail-accent-border: #{color.change(theme.$primary, $alpha: 0.42)};
-  --detail-shadow: 0 26px 72px rgba(0, 0, 0, 0.58),
-    0 2px 10px rgba(0, 0, 0, 0.32);
+  --detail-shadow:
+    0 26px 72px rgba(0, 0, 0, 0.58), 0 2px 10px rgba(0, 0, 0, 0.32);
 
   position: relative;
   display: flex;
@@ -1040,11 +1040,7 @@
     left: 0;
     padding: 20px 10px 7px;
     overflow: hidden;
-    background: linear-gradient(
-      to top,
-      rgba(10, 10, 14, 0.85),
-      transparent
-    );
+    background: linear-gradient(to top, rgba(10, 10, 14, 0.85), transparent);
     color: rgba(255, 255, 255, 0.92);
     font-size: 11px;
     text-align: left;
@@ -1173,7 +1169,11 @@
   a {
     color: var(--detail-accent);
     text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, var(--detail-accent) 45%, transparent);
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--detail-accent) 45%,
+      transparent
+    );
     text-underline-offset: 3px;
 
     &:hover {
@@ -2164,7 +2164,9 @@
   overflow: hidden;
 }
 
-.popup-container.mod-lightbox-overlay[data-state="open"] .mod-lightbox-stage img {
+.popup-container.mod-lightbox-overlay[data-state="open"]
+  .mod-lightbox-stage
+  img {
   animation: ui-dialog-in 190ms
     var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
 }
@@ -2405,10 +2407,19 @@ html[data-theme="fluent"] {
   .mod-detail-dialog {
     --detail-surface: #252525;
     --detail-surface-raised: #2d2d2d;
-    --detail-surface-subtle: var(--fluent-fill-subtle, rgba(255, 255, 255, 0.035));
-    --detail-surface-hover: var(--fluent-fill-control-hover, rgba(255, 255, 255, 0.09));
+    --detail-surface-subtle: var(
+      --fluent-fill-subtle,
+      rgba(255, 255, 255, 0.035)
+    );
+    --detail-surface-hover: var(
+      --fluent-fill-control-hover,
+      rgba(255, 255, 255, 0.09)
+    );
     --detail-border: var(--fluent-stroke-divider, rgba(255, 255, 255, 0.085));
-    --detail-border-strong: var(--fluent-stroke-strong, rgba(255, 255, 255, 0.2));
+    --detail-border-strong: var(
+      --fluent-stroke-strong,
+      rgba(255, 255, 255, 0.2)
+    );
     --detail-radius: var(--fluent-radius-overlay, 8px);
     --detail-radius-sm: 6px;
     --detail-fg: var(--fluent-text-primary, #f5f5f5);

@@ -410,9 +410,7 @@ export const Settings = () => {
               checked={deleteOrphansByDefault}
               onChange={setDeleteOrphansByDefault}
             />
-            <Collapse
-              open={autoToggleDependencies || deleteOrphansByDefault}
-            >
+            <Collapse open={autoToggleDependencies || deleteOrphansByDefault}>
               <TypeSelectionSetting
                 title="孤立依赖自动处理类型"
                 description="所选类型会在禁用时自动禁用，并在删除时默认勾选一起删除；始终开启的 Mod 不会默认勾选删除"

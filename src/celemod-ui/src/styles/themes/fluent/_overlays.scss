@@ -101,7 +101,9 @@ html[data-theme="fluent"] .drop-install-overlay {
   html[data-theme="fluent"]
     .popup-container[data-state="open"]
     > .popup-content:not(.crash-assistant-popup),
-  html[data-theme="fluent"] .popup-container[data-state="open"] > .update-prompt,
+  html[data-theme="fluent"]
+    .popup-container[data-state="open"]
+    > .update-prompt,
   html[data-theme="fluent"]
     .popup-container[data-state="open"]
     > .miaonet-atlas-picker,

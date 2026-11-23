@@ -3757,8 +3757,14 @@ mod local_package_tests {
         fs::create_dir_all(&linux_dir).unwrap();
         fs::write(linux_dir.join("Loenn-v1.0.13-linux.AppImage"), b"appimage").unwrap();
         let detected_appimage = detect_loenn_executable_for_platform(&linux_dir, "linux").unwrap();
-        assert_eq!(detected_appimage, linux_dir.join("Loenn-v1.0.13-linux.AppImage"));
-        assert_eq!(infer_loenn_edition_from_executable(&detected_appimage), None);
+        assert_eq!(
+            detected_appimage,
+            linux_dir.join("Loenn-v1.0.13-linux.AppImage")
+        );
+        assert_eq!(
+            infer_loenn_edition_from_executable(&detected_appimage),
+            None
+        );
 
         fs::write(linux_dir.join("L\u{00f6}nn.sh"), b"#!/bin/sh").unwrap();
         let detected_linux_sh = detect_loenn_executable_for_platform(&linux_dir, "linux").unwrap();
@@ -3770,7 +3776,10 @@ mod local_package_tests {
 
         // macOS: prefers Lönn.app/Contents/MacOS/Lönn.sh over love and infers "ultra"
         let macos_dir = root.join("macos");
-        let macos_bin = macos_dir.join("L\u{00f6}nn.app").join("Contents").join("MacOS");
+        let macos_bin = macos_dir
+            .join("L\u{00f6}nn.app")
+            .join("Contents")
+            .join("MacOS");
         fs::create_dir_all(&macos_bin).unwrap();
         fs::write(macos_bin.join("love"), b"love").unwrap();
         let detected_love = detect_loenn_executable_for_platform(&macos_dir, "macos").unwrap();
