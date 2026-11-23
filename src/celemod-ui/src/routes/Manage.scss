@@ -3,7 +3,7 @@
 
 .manage-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 230px;
+  grid-template-columns: minmax(0, 1fr) 248px;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -42,14 +42,15 @@
     min-width: 96px;
     h1 {
       margin: 0;
-      font-size: calc(15px * var(--manage-font-scale, 1));
+      font-size: calc(18px * var(--manage-font-scale, 1));
       line-height: 1.15;
     }
     span {
       display: block;
       margin-top: 3px;
       color: theme.$fg3;
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
+      font-variant-numeric: tabular-nums;
     }
   }
 }
@@ -70,7 +71,7 @@
   }
   input {
     width: 100%;
-    height: 30px;
+    height: 34px;
     padding: 0 34px 0 32px;
     border: 1px solid color.change(theme.$fg, $alpha: 0.08);
     border-radius: 6px;
@@ -78,7 +79,7 @@
     background: color.change(theme.$bg1, $alpha: 0.82);
     color: theme.$fg;
     outline: none;
-    font-size: calc(11px * var(--manage-font-scale, 1));
+    font-size: calc(13px * var(--manage-font-scale, 1));
     &:focus {
       border-color: color.change(theme.$primary, $alpha: 0.6);
     }
@@ -115,8 +116,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  min-height: 30px;
+  height: 34px;
+  min-height: 34px;
   border: 1px solid color.change(theme.$fg, $alpha: 0.08) !important;
   border-radius: 6px !important;
   background: color.change(theme.$bg1, $alpha: 0.82) !important;
@@ -131,29 +132,30 @@
 
 .toolbar-icon-button {
   position: relative;
-  width: 32px;
-  min-width: 32px;
+  width: 34px;
+  min-width: 34px;
   padding: 0 !important;
 }
 .toolbar-action-button {
   gap: 6px;
   padding: 0 11px !important;
-  font-size: calc(10px * var(--manage-font-scale, 1)) !important;
+  font-size: calc(12.5px * var(--manage-font-scale, 1)) !important;
 }
 .toolbar-count {
   position: absolute;
   top: -5px;
   right: -5px;
   display: grid;
-  min-width: 17px;
-  height: 17px;
+  min-width: 18px;
+  height: 18px;
   padding: 0 4px;
   place-items: center;
   border: 2px solid theme.$bg;
   border-radius: 99px;
   background: theme.$primary;
   color: white;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(10px * var(--manage-font-scale, 1));
+  font-variant-numeric: tabular-nums;
   font-weight: 750;
 }
 
@@ -171,9 +173,9 @@
 }
 
 .manage-filter-popup {
-  width: 286px;
+  width: 300px;
   max-height: calc(100vh - 130px);
-  padding: 10px;
+  padding: 12px;
   overflow-y: auto;
 
   .popup-heading {
@@ -182,36 +184,36 @@
     justify-content: space-between;
     margin-bottom: 12px;
     strong {
-      font-size: calc(12px * var(--manage-font-scale, 1));
+      font-size: calc(14px * var(--manage-font-scale, 1));
     }
     button {
-      min-height: 25px;
+      min-height: 26px;
       padding: 0 8px;
       border: 0;
       background: transparent;
       box-shadow: none;
       color: color.adjust(theme.$primary, $lightness: 18%);
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(11.5px * var(--manage-font-scale, 1));
     }
   }
 
   > label {
     display: grid;
-    grid-template-columns: 90px 1fr;
+    grid-template-columns: 96px 1fr;
     align-items: center;
     gap: 10px;
     margin-top: 9px;
     span {
       color: theme.$fg3;
-      font-size: calc(10px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
     }
     select {
-      height: 28px;
+      height: 32px;
       border: 1px solid color.change(theme.$fg, $alpha: 0.08);
       border-radius: 5px;
       background: theme.$bg2;
       color: theme.$fg;
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
     }
   }
 
@@ -224,27 +226,27 @@
     label {
       display: flex;
       align-items: center;
-      font-size: calc(10px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
     }
   }
 
   .filter-type-title {
     margin: 11px 0 6px;
     color: theme.$fg3;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(11.5px * var(--manage-font-scale, 1));
     font-weight: 650;
   }
   .filter-type-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px 8px;
+    gap: 2px 8px;
   }
   .filter-type-list label {
     display: flex;
     align-items: center;
     min-width: 0;
-    min-height: 23px;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    min-height: 26px;
+    font-size: calc(11.5px * var(--manage-font-scale, 1));
     cursor: pointer;
     input {
       margin-right: 4px;
@@ -258,13 +260,13 @@
 }
 
 .manage-action-menu {
-  width: 205px;
+  width: 224px;
   padding: 6px;
   button {
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 34px;
+    min-height: 36px;
     padding: 0 10px;
     gap: 9px;
     border: 0;
@@ -272,7 +274,7 @@
     background: transparent;
     box-shadow: none;
     color: theme.$fg;
-    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
     &:hover {
@@ -294,15 +296,15 @@
   button {
     display: inline-flex;
     align-items: center;
-    min-height: 28px;
-    padding: 0 10px;
+    min-height: 30px;
+    padding: 0 12px;
     gap: 6px;
     border: 1px solid color.change(theme.$primary, $alpha: 0.25);
     border-radius: 7px;
     background: color.change(theme.$primary, $alpha: 0.11);
     box-shadow: none;
     color: color.adjust(theme.$primary, $lightness: 22%);
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
     letter-spacing: 0;
   }
 }
@@ -312,12 +314,12 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 7px;
-  min-height: 34px;
-  padding: 4px 10px;
+  min-height: 36px;
+  padding: 5px 10px;
   border-bottom: 1px solid color.change(#ffc66d, $alpha: 0.12);
   background: color.change(#ffc66d, $alpha: 0.055);
   color: color.change(theme.$fg, $alpha: 0.72);
-  font-size: calc(9px * var(--manage-font-scale, 1));
+  font-size: calc(12px * var(--manage-font-scale, 1));
 
   > .icon {
     flex: 0 0 auto;
@@ -329,14 +331,14 @@
   }
   button {
     flex: 0 0 auto;
-    min-height: 25px;
-    padding: 0 9px;
+    min-height: 28px;
+    padding: 0 10px;
     border: 1px solid color.change(#ffc66d, $alpha: 0.24);
     border-radius: 6px;
     background: color.change(#ffc66d, $alpha: 0.08);
     box-shadow: none;
     color: #ffd893;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
     letter-spacing: 0;
   }
 }
@@ -354,7 +356,7 @@
   position: relative;
   display: grid;
   grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
-  min-height: 31px;
+  min-height: 38px;
   margin: 0;
   border: 0;
   border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.045);
@@ -375,7 +377,7 @@
   }
   &.missing {
     grid-template-columns: calc(var(--indent) + 24px) minmax(0, 1fr) auto;
-    min-height: 38px;
+    min-height: 42px;
     color: theme.$fg3;
     background: linear-gradient(
       90deg,
@@ -396,7 +398,7 @@
     }
     .missing-main strong {
       color: color.change(theme.$fg, $alpha: 0.9);
-      font-size: calc(10px * var(--manage-font-scale, 1));
+      font-size: calc(13px * var(--manage-font-scale, 1));
     }
   }
 
@@ -441,12 +443,12 @@
 
 .tree-row-main {
   min-width: 0;
-  padding: 3px 5px;
+  padding: 5px 6px;
 
   &.compact {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 5px;
     overflow: hidden;
 
     .tree-primary-line {
@@ -456,7 +458,7 @@
 
     .tree-secondary-line {
       flex: 1 1 auto;
-      min-height: 18px;
+      min-height: 20px;
       overflow: hidden;
     }
   }
@@ -469,26 +471,26 @@
   flex-wrap: nowrap;
 }
 .tree-primary-line {
-  min-height: 18px;
-  gap: 4px;
+  min-height: 22px;
+  gap: 6px;
 }
 .tree-secondary-line {
-  min-height: 12px;
-  gap: 3px;
+  min-height: 16px;
+  gap: 5px;
 }
 
 .state-switch {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  min-height: 18px;
-  padding: 0 6px;
+  min-height: 22px;
+  padding: 0 8px;
   border: 1px solid color.change(theme.$fg, $alpha: 0.08);
   border-radius: 10px;
   background: transparent;
   box-shadow: none;
   color: theme.$fg3;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11px * var(--manage-font-scale, 1));
   letter-spacing: 0;
   white-space: nowrap;
   &.enabled {
@@ -503,14 +505,14 @@
 
 .tree-name {
   min-width: 0;
-  min-height: 18px;
+  min-height: 22px;
   padding: 0 2px;
   overflow: hidden;
   border: 0;
   background: transparent;
   box-shadow: none;
   color: theme.$fg;
-  font-size: calc(10px * var(--manage-font-scale, 1));
+  font-size: calc(13.5px * var(--manage-font-scale, 1));
   font-weight: 650;
   letter-spacing: 0;
   text-align: left;
@@ -519,26 +521,27 @@
 }
 .tree-version {
   color: theme.$fg3;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11.5px * var(--manage-font-scale, 1));
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .tree-mod-name {
-  max-width: 190px;
+  max-width: 220px;
   overflow: hidden;
   color: color.change(theme.$fg, $alpha: 0.52);
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11.5px * var(--manage-font-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tree-comment-input {
-  height: 23px;
-  max-width: 220px;
-  padding: 0 7px;
+  height: 28px;
+  max-width: 240px;
+  padding: 0 8px;
   border: 1px solid color.change(theme.$primary, $alpha: 0.5);
   border-radius: 6px;
   background: theme.$bg;
   color: theme.$fg;
-  font-size: calc(10px * var(--manage-font-scale, 1));
+  font-size: calc(12.5px * var(--manage-font-scale, 1));
   outline: none;
 }
 .tree-file-detail {
@@ -548,7 +551,7 @@
   margin-left: 3px;
   overflow: hidden;
   color: color.change(theme.$fg, $alpha: 0.32);
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11px * var(--manage-font-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -557,16 +560,16 @@
   display: inline-flex;
   align-self: center;
   align-items: center;
-  min-height: 24px;
+  min-height: 26px;
   margin-right: 6px;
-  padding: 0 8px;
+  padding: 0 10px;
   gap: 5px;
   border: 1px solid color.change(#ef5350, $alpha: 0.3);
   border-radius: 999px;
   background: color.change(#ef5350, $alpha: 0.1);
   box-shadow: none;
   color: #ffaaa8;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11.5px * var(--manage-font-scale, 1));
   letter-spacing: 0;
 
   &:hover:not(:disabled) {
@@ -581,12 +584,12 @@
 .manage-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 13px;
-  padding: 0 3px;
-  border-radius: 2px;
+  min-height: 18px;
+  padding: 0 5px;
+  border-radius: 3px;
   background: transparent;
   color: theme.$fg3;
-  font-size: calc(7px * var(--manage-font-scale, 1));
+  font-size: calc(10.5px * var(--manage-font-scale, 1));
   font-weight: 650;
   white-space: nowrap;
   &.clickable {
@@ -629,15 +632,15 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 17px;
-  padding: 0 7px;
+  min-height: 20px;
+  padding: 0 8px;
   border: 1px solid color.change(#ffc66d, $alpha: 0.45);
   border-radius: 99px;
   background: color.change(#ffc66d, $alpha: 0.14);
   box-shadow: none;
   color: #ffd08a;
   font-family: inherit;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11px * var(--manage-font-scale, 1));
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
@@ -720,7 +723,7 @@
   top: 26px;
   right: 3px;
   z-index: 60;
-  width: 190px;
+  width: 210px;
   padding: 4px;
   border: 1px solid color.change(theme.$fg, $alpha: 0.1);
   border-radius: 6px;
@@ -730,15 +733,15 @@
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 28px;
-    padding: 0 8px;
-    gap: 7px;
+    min-height: 32px;
+    padding: 0 9px;
+    gap: 8px;
     border: 0;
     border-radius: 4px;
     background: transparent;
     box-shadow: none;
     color: theme.$fg;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
     letter-spacing: 0;
     text-align: left;
     &:hover {
@@ -764,12 +767,12 @@
     height: 26px;
   }
   strong {
-    font-size: calc(12px * var(--manage-font-scale, 1));
+    font-size: calc(14px * var(--manage-font-scale, 1));
   }
   button {
-    min-height: 28px;
-    padding: 0 10px;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
 
@@ -801,7 +804,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
-  min-height: 29px;
+  min-height: 35px;
   padding: 0 5px 0 10px;
   gap: 4px;
   border: 1px solid transparent;
@@ -825,7 +828,7 @@
   background: transparent !important;
   box-shadow: none !important;
   color: inherit;
-  font-size: calc(10px * var(--manage-font-scale, 1));
+  font-size: calc(13px * var(--manage-font-scale, 1));
   letter-spacing: 0;
   text-align: left;
 }
@@ -838,7 +841,8 @@
 
 .profile-select small {
   color: theme.$fg3;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11px * var(--manage-font-scale, 1));
+  font-variant-numeric: tabular-nums;
 }
 
 .profile-export,
@@ -933,7 +937,7 @@
   span {
     flex: 0 0 auto;
     color: theme.$fg3;
-    font-size: 11px;
+    font-size: 12.5px;
     font-variant-numeric: tabular-nums;
   }
 }
@@ -1072,20 +1076,20 @@
   top: calc(var(--line-index, 0) * 24px);
   display: inline-flex;
   width: max-content;
-  height: 18px;
-  padding: 0 6px;
+  height: 20px;
+  padding: 0 7px;
   align-items: center;
   gap: 4px;
   border: 1px solid color.change(#65c477, $alpha: 0.32);
   border-radius: 99px;
   background: color.change(theme.$bg1, $alpha: 0.94);
   color: #65c477;
-  font-size: 9px;
-  line-height: 18px;
+  font-size: 11px;
+  line-height: 20px;
   white-space: nowrap;
 
   .icon {
-    width: 9px;
+    width: 10px;
     fill: currentColor;
   }
 
@@ -1098,7 +1102,7 @@
 
 .profile-editor-hint {
   color: theme.$fg3;
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .profile-inline-option {
@@ -1155,7 +1159,7 @@
 
   span {
     color: theme.$fg3;
-    font-size: 11px;
+    font-size: 12.5px;
   }
 }
 
@@ -1167,6 +1171,7 @@
   strong {
     color: theme.$primary;
     font-size: 22px;
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -1179,13 +1184,13 @@
 
   button {
     flex: 1;
-    min-height: 32px;
+    min-height: 34px;
     border: 0;
     border-radius: 7px;
     background: transparent;
     box-shadow: none;
     color: theme.$fg3;
-    font-size: 11px;
+    font-size: 12.5px;
 
     &.selected {
       background: color.change(theme.$primary, $alpha: 0.18);
@@ -1205,7 +1210,7 @@
     align-items: center;
     gap: 7px;
     color: theme.$fg2;
-    font-size: 11px;
+    font-size: 12.5px;
   }
 }
 
@@ -1227,7 +1232,7 @@
     background: transparent;
     color: theme.$fg2;
     font:
-      11px/1.55 ui-monospace,
+      12.5px/1.55 ui-monospace,
       SFMono-Regular,
       Consolas,
       monospace;
@@ -1242,7 +1247,7 @@
   justify-content: space-between;
   border-bottom: 1px solid color.change(theme.$fg, $alpha: 0.08);
   color: theme.$fg3;
-  font-size: 10px;
+  font-size: 12px;
 
   button {
     min-height: 24px;
@@ -1291,7 +1296,7 @@
   top: calc(100% + 4px);
   right: 0;
   display: grid;
-  min-width: 160px;
+  min-width: 176px;
   padding: 4px;
   border: 1px solid color.change(theme.$fg, $alpha: 0.12);
   border-radius: 8px;
@@ -1300,13 +1305,13 @@
   gap: 2px;
 
   button {
-    min-height: 27px;
-    padding: 0 8px;
+    min-height: 32px;
+    padding: 0 9px;
     border: 0;
     background: transparent;
     box-shadow: none;
     color: theme.$fg2;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
     text-align: left;
 
     &:hover {
@@ -1331,23 +1336,23 @@
 
 .profile-create {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
+  grid-template-columns: minmax(0, 1fr) 34px;
   gap: 5px;
   margin-top: 7px;
   input {
     min-width: 0;
-    height: 32px;
+    height: 34px;
     padding: 0 9px;
     border: 1px solid color.change(theme.$fg, $alpha: 0.08);
     border-radius: 8px;
     background: theme.$bg1;
     color: theme.$fg;
     outline: none;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
   }
   button {
     display: grid;
-    min-height: 32px;
+    min-height: 34px;
     padding: 0;
     place-items: center;
     border-radius: 8px;
@@ -1390,7 +1395,7 @@
     p {
       margin: 0;
       color: theme.$fg3;
-      font-size: calc(10px * var(--manage-font-scale, 1));
+      font-size: calc(12.5px * var(--manage-font-scale, 1));
     }
     > button {
       display: grid;
@@ -1403,7 +1408,7 @@
   }
   .detail-kicker {
     color: color.adjust(theme.$primary, $lightness: 18%);
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
     font-weight: 650;
   }
   .detail-stats {
@@ -1421,12 +1426,13 @@
       }
       span {
         color: theme.$fg3;
-        font-size: calc(8px * var(--manage-font-scale, 1));
+        font-size: calc(11px * var(--manage-font-scale, 1));
       }
       strong {
         margin-top: 4px;
         overflow: hidden;
-        font-size: calc(10px * var(--manage-font-scale, 1));
+        font-size: calc(12.5px * var(--manage-font-scale, 1));
+        font-variant-numeric: tabular-nums;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -1453,7 +1459,7 @@
   }
   .detail-description {
     color: color.change(theme.$fg, $alpha: 0.82);
-    font-size: calc(11px * var(--manage-font-scale, 1));
+    font-size: calc(13px * var(--manage-font-scale, 1));
     line-height: 1.65;
     user-select: text;
     img {
@@ -1474,7 +1480,7 @@
     margin-top: 18px;
     padding-top: 13px;
     border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
     span {
       color: theme.$fg3;
       overflow: hidden;
@@ -1492,7 +1498,7 @@
   text-align: left;
   .title {
     margin-bottom: 14px;
-    font-size: calc(17px * var(--manage-font-scale, 1));
+    font-size: calc(18px * var(--manage-font-scale, 1));
     font-weight: 750;
   }
   .buttons {
@@ -1501,8 +1507,8 @@
     gap: 8px;
     margin-top: 17px;
     button {
-      min-height: 32px;
-      padding: 0 13px;
+      min-height: 34px;
+      padding: 0 14px;
     }
     .delete-confirm {
       background: #d94c50;
@@ -1573,7 +1579,7 @@
     p {
       margin: 3px 0 0;
       color: theme.$fg3;
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
       line-height: 1.4;
     }
   }
@@ -1586,7 +1592,8 @@
     border-radius: 99px;
     background: color.change(#ffc66d, $alpha: 0.16);
     color: #ffc66d;
-    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
+    font-variant-numeric: tabular-nums;
     font-weight: 750;
   }
 }
@@ -1676,17 +1683,17 @@
       white-space: nowrap;
     }
     strong {
-      font-size: calc(10px * var(--manage-font-scale, 1));
+      font-size: calc(12.5px * var(--manage-font-scale, 1));
     }
     small {
       color: theme.$fg3;
-      font-size: calc(8px * var(--manage-font-scale, 1));
+      font-size: calc(11px * var(--manage-font-scale, 1));
     }
   }
   .duplicate-state {
-    padding: 2px 7px;
+    padding: 2px 8px;
     border-radius: 99px;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-size: calc(11px * var(--manage-font-scale, 1));
     font-weight: 700;
     white-space: nowrap;
     &.on {
@@ -1732,14 +1739,14 @@
   border-radius: 8px;
   background: color.change(#ef5350, $alpha: 0.12);
   color: #ff8d8a;
-  font-size: calc(9px * var(--manage-font-scale, 1));
+  font-size: calc(12px * var(--manage-font-scale, 1));
 }
 .duplicate-mod-popup .buttons {
   .duplicate-summary {
     align-self: center;
     margin-right: auto;
     color: theme.$fg3;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-size: calc(11px * var(--manage-font-scale, 1));
     white-space: nowrap;
   }
   .duplicate-keep-confirm {
@@ -1762,7 +1769,7 @@
   }
   span {
     color: theme.$fg3;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
 .warning-section {
@@ -1774,11 +1781,11 @@
   background: color.change(#ef5350, $alpha: 0.1);
   strong {
     color: #ff8d8a;
-    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
   }
   span {
     color: theme.$fg3;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
   }
 }
 .orphan-section {
@@ -1790,7 +1797,7 @@
     gap: 8px;
   }
   .orphan-heading > strong {
-    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
   }
 }
 .orphan-actions {
@@ -1798,14 +1805,14 @@
   gap: 4px;
 
   button {
-    min-height: 22px;
-    padding: 0 7px;
+    min-height: 26px;
+    padding: 0 8px;
     border: 1px solid color.change(theme.$fg, $alpha: 0.14);
     border-radius: 5px;
     background: theme.$bg2;
     box-shadow: none;
     color: theme.$fg2;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-size: calc(11px * var(--manage-font-scale, 1));
 
     &:hover {
       background: theme.$bg3;
@@ -1819,7 +1826,7 @@
   margin-top: 8px;
   gap: 6px;
   color: theme.$fg2;
-  font-size: calc(8px * var(--manage-font-scale, 1));
+  font-size: calc(11px * var(--manage-font-scale, 1));
 }
 .orphan-list {
   display: grid;
@@ -1835,7 +1842,7 @@
     gap: 8px;
     border-radius: 7px;
     background: theme.$bg1;
-    font-size: calc(9px * var(--manage-font-scale, 1));
+    font-size: calc(12px * var(--manage-font-scale, 1));
   }
   .orphan-mod-info {
     display: grid;
@@ -1853,7 +1860,7 @@
       flex-wrap: wrap;
       gap: 5px;
       color: theme.$fg3;
-      font-size: calc(8px * var(--manage-font-scale, 1));
+      font-size: calc(11px * var(--manage-font-scale, 1));
 
       > span {
         padding: 2px 6px;
@@ -1887,7 +1894,7 @@
   > span {
     color: theme.$fg2;
     font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-    font-size: calc(10px * var(--manage-font-scale, 1));
+    font-size: calc(12.5px * var(--manage-font-scale, 1));
     font-variant-numeric: tabular-nums;
   }
 
@@ -1895,7 +1902,7 @@
     width: 100%;
     overflow: hidden;
     color: theme.$fg3;
-    font-size: calc(8px * var(--manage-font-scale, 1));
+    font-size: calc(11px * var(--manage-font-scale, 1));
     text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1914,7 +1921,7 @@
 
   > strong {
     flex: 0 0 auto;
-    font-size: calc(11px * var(--manage-font-scale, 1));
+    font-size: calc(13px * var(--manage-font-scale, 1));
   }
 
   &.success {
@@ -1945,14 +1952,14 @@
 
     b {
       overflow: hidden;
-      font-size: calc(9px * var(--manage-font-scale, 1));
+      font-size: calc(12px * var(--manage-font-scale, 1));
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     span {
       color: theme.$fg3;
-      font-size: calc(8px * var(--manage-font-scale, 1));
+      font-size: calc(11px * var(--manage-font-scale, 1));
       line-height: 1.45;
       overflow-wrap: anywhere;
       user-select: text;
@@ -1962,7 +1969,7 @@
 
 @media (max-width: 900px) {
   .manage-page {
-    grid-template-columns: minmax(0, 1fr) 210px;
+    grid-template-columns: minmax(0, 1fr) 224px;
   }
   .manage-detail-popup .detail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
