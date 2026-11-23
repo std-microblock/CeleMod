@@ -56,6 +56,9 @@ import {
   ManageCatalogMeta,
   ManageNode,
   collectSwitchNames,
+  isAlwaysOnPackage,
+  splitAlwaysOnNames,
+  switchBlacklistFiles,
   collectDuplicateFixTargets,
   profileDisabledFilesAfterSwitch,
   type DuplicateFixTarget,
@@ -875,9 +878,7 @@ const ManageTreeNode = ({
     actions.checkOptional,
     actions.currentEverestVersion,
   );
-  const isAlwaysOn = actions.alwaysOnMods.some(
-    (alwaysOnName) => nodes[alwaysOnName]?.file === node.file,
-  );
+  const isAlwaysOn = isAlwaysOnPackage(name, nodes, actions.alwaysOnMods);
   const hasUpdate = actions.updateNames.has(name);
   const displayNames = resolveManageDisplayNames(
     name,
@@ -1083,6 +1084,15 @@ const ManageTreeNode = ({
                 {actions.isPinned(name)
                   ? _i18n.t("取消在 Mod 设置内置顶")
                   : _i18n.t("在 Mod 设置内置顶")}
+              </button>
+              <button
+                onClick={() => {
+                  setOpenMenuName(null);
+                  actions.toggleAlwaysOn(name);
+                }}
+              >
+                <Icon name="i-asterisk" />
+                {_i18n.t(isAlwaysOn ? "取消始终开启" : "设为始终开启")}
               </button>
               <button
                 className="danger"
@@ -1476,43 +1486,54 @@ export const Manage = () => {
     return [...missing.entries()].map(([name, version]) => ({ name, version }));
   }, [nodes]);
 
-  const applyProfileSoon = useCallback(() => {
-    const request = Date.now();
-    lastApplyRequest = request;
-    window.setTimeout(() => {
-      const names = activeProfileNames.length
-        ? activeProfileNames
-        : currentProfileName
-          ? [currentProfileName]
-          : [];
-      if (lastApplyRequest !== request || names.length === 0) return;
-      void callRemote(
-        "apply_mod_profiles",
-        gamePath,
-        JSON.stringify(names),
-        JSON.stringify(alwaysOnMods),
-      );
-    }, 350);
-  }, [activeProfileNames, alwaysOnMods, currentProfileName, gamePath]);
+  const applyProfileSoon = useCallback(
+    (alwaysOnOverride?: readonly string[]) => {
+      const request = Date.now();
+      lastApplyRequest = request;
+      window.setTimeout(() => {
+        const names = activeProfileNames.length
+          ? activeProfileNames
+          : currentProfileName
+            ? [currentProfileName]
+            : [];
+        if (lastApplyRequest !== request || names.length === 0) return;
+        void callRemote(
+          "apply_mod_profiles",
+          gamePath,
+          JSON.stringify(names),
+          JSON.stringify(alwaysOnOverride ?? alwaysOnMods),
+        );
+      }, 350);
+    },
+    [activeProfileNames, alwaysOnMods, currentProfileName, gamePath],
+  );
 
   const batchSwitch = useCallback(
-    (names: string[], enabled: boolean) => {
+    (
+      names: string[],
+      enabled: boolean,
+      alwaysOnOverride?: readonly string[],
+    ) => {
       if (!currentProfile || names.length === 0) return;
+      // Clearing always-on re-enables the Mod in the same click, so the caller
+      // can hand over the always-on list it is about to store.
+      const activeAlwaysOn = alwaysOnOverride ?? alwaysOnMods;
       const requestedNames = new Set(names);
       const packageNames = Object.values(nodes)
         .filter((node) => requestedNames.has(node.name))
         .map((node) => node.name);
-      const alwaysOnFiles = new Set(
-        alwaysOnMods
-          .map((name) => nodes[name]?.file)
-          .filter(Boolean) as string[],
-      );
       const effectiveNames = enabled
         ? packageNames
-        : packageNames.filter((name) => !alwaysOnFiles.has(nodes[name]?.file));
-      const files = effectiveNames
-        .map((name) => nodes[name]?.file)
-        .filter(Boolean) as string[];
+        : splitAlwaysOnNames({
+            names: packageNames,
+            nodes,
+            alwaysOnMods: activeAlwaysOn,
+          }).switchable;
+      const files = switchBlacklistFiles({
+        names: effectiveNames,
+        nodes,
+        enabled,
+      });
       if (effectiveNames.length === 0) return;
       if (profileEnabled) {
         void callRemote(
@@ -1571,7 +1592,7 @@ export const Manage = () => {
         ),
       );
       setNodesEnabled(effectiveNames, enabled);
-      if (profileEnabled) applyProfileSoon();
+      if (profileEnabled) applyProfileSoon(activeAlwaysOn);
     },
     [
       alwaysOnMods,
@@ -1587,9 +1608,58 @@ export const Manage = () => {
     ],
   );
 
+  const promptAlwaysOnDisable = useCallback(
+    (names: string[]) => {
+      createPopup(() => {
+        const popup = useContext(PopupContext);
+        return (
+          <div className="popup-content">
+            <div className="title">{_i18n.t("该 Mod 已设为始终开启")}</div>
+            <div className="content">
+              <p>
+                {_i18n.t(
+                  "始终开启的 Mod 不会被开关或「禁用全部」关掉。要继续禁用，请同时取消始终开启：",
+                )}
+              </p>
+              <p>{names.join(", ")}</p>
+            </div>
+            <div className="buttons">
+              <button onClick={popup.hide}>{_i18n.t("取消")}</button>
+              <button
+                onClick={() => {
+                  popup.hide();
+                  const blockedFiles = new Set(
+                    names
+                      .map((name) => nodes[name]?.file)
+                      .filter((file): file is string => Boolean(file)),
+                  );
+                  const nextAlwaysOn = alwaysOnMods.filter(
+                    (value) => !blockedFiles.has(nodes[value]?.file),
+                  );
+                  setAlwaysOnMods(nextAlwaysOn);
+                  batchSwitch(names, false, nextAlwaysOn);
+                }}
+              >
+                {_i18n.t("取消始终开启并禁用")}
+              </button>
+            </div>
+          </div>
+        );
+      });
+    },
+    [alwaysOnMods, batchSwitch, nodes, setAlwaysOnMods],
+  );
+
   const switchNodes = useCallback(
     (input: string | string[], enabled: boolean, recursive = true) => {
       const names = Array.isArray(input) ? input : [input];
+      if (!enabled) {
+        const { blocked } = splitAlwaysOnNames({ names, nodes, alwaysOnMods });
+        if (blocked.length > 0) {
+          promptAlwaysOnDisable(blocked);
+          return;
+        }
+      }
       batchSwitch(
         collectSwitchNames({
           names,
@@ -1604,10 +1674,12 @@ export const Manage = () => {
     },
     [
       orphanActionTypes,
+      alwaysOnMods,
       autoToggleDependencies,
       autoToggleOptionalDependencies,
       batchSwitch,
       nodes,
+      promptAlwaysOnDisable,
     ],
   );
 

@@ -19,6 +19,7 @@
     "test:catalog-response": "node --import tsx --test src/api/catalogResponse.test.ts",
     "test:download-files": "node --import tsx --test src/downloadFiles.test.ts",
     "test:mod-updates": "node --import tsx --test src/modUpdates.test.ts",
+    "test:always-on": "node --import tsx --test src/alwaysOnSwitch.test.ts",
     "test:update-notes": "node --import tsx --test src/components/UpdateNotes.test.tsx"
   },
   "dependencies": {
