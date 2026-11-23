@@ -2622,13 +2622,10 @@ export const Manage = () => {
             everestTooOld ||
             everestInstalling) && (
             <div className="manage-notice-bar">
-              {showUpdate && totalUpdateCount > 0 && (
+              {showUpdate && updates.length > 0 && (
                 <button
                   type="button"
-                  disabled={
-                    batchUpdateProgress !== null ||
-                    (updates.length === 0 && everestInstalling)
-                  }
+                  disabled={batchUpdateProgress !== null}
                   onClick={updateAll}
                 >
                   {batchUpdateProgress
@@ -2637,9 +2634,13 @@ export const Manage = () => {
                         batchUpdateProgress.total -
                           batchUpdateProgress.completed,
                       )} / ${batchUpdateProgress.total})`
-                    : _i18n.t("更新全部 ({count})", {
-                        count: totalUpdateCount,
-                      })}
+                    : hasEverestUpdate && everestTarget
+                      ? _i18n.t("更新全部 ({count} Mod + Everest)", {
+                          count: updates.length,
+                        })
+                      : _i18n.t("更新全部 ({count})", {
+                          count: updates.length,
+                        })}
                 </button>
               )}
               {everestInstalling ? (

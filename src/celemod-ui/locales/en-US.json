@@ -709,5 +709,6 @@
   "发现可用更新": "Updates available",
   "一键更新全部": "Update all",
   "查看更新": "View update",
-  "查看进度": "View progress"
+  "查看进度": "View progress",
+  "更新全部 ({count} Mod + Everest)": "Update all ({count} mods + Everest)"
 }
