@@ -17,19 +17,20 @@ import { Icon } from "./Icon";
 import {
   Awaitable,
   callRemote,
-  displayDate,
-  horizontalScrollMouseWheelHandler,
 } from "../utils";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Content } from "../api/wegfan";
+import type { LocalSubmission } from "../api/modCatalog";
 import { useAppStore, useAutoDisableNewMods } from "../states";
 import { useDownloadStore } from "../stores/download";
 import { PopupContext, createPopup } from "./Popup";
 import { ProgressIndicator } from "./Progress";
 import { useAnimatedPresence } from "./Motion";
-import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
-import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
 import { pickDownloadFiles } from "../downloadFiles";
+import {
+  openSearchModDetail,
+  type ModDetailPayload,
+} from "./ModDetailModal";
 // @ts-ignore
 import celemodIcon from "../resources/Celemod.png";
 
@@ -121,25 +122,16 @@ const CARD_MIN_WIDTH = 300;
 const GRID_GAP = 16;
 const GRID_PADDING = 14;
 
-export interface ModDetailInfo {
-  // HTML compatible
-  description: string;
-  authors?: string[];
-  images?: string[];
-  files?: {
-    name: string;
-    downloadUrl: string;
-  }[];
-  lastUpdate?: Date;
-  submissionId?: string;
-  externalUrl?: string;
-}
+export type ModDetailInfo = ModDetailPayload;
 
 export interface FileToDownload {
   name: string;
   url: string;
   id: string;
   size: string;
+  description?: string;
+  downloads?: number;
+  mods?: { name: string; version: string }[];
   isInstalled?: boolean;
   isPrimary?: boolean;
 }
@@ -152,20 +144,28 @@ interface InstalledModSummary {
 
 export interface ModInfo {
   name: string;
+  subtitle?: string;
   downloadKey?: string;
   downloadUrl: () => Awaitable<string | FileToDownload[]>;
   previewUrl: string;
   author: string;
   other: string;
   category?: string;
+  subCategory?: string | null;
   stats?: {
     likes: number;
     views: number;
     downloads: number;
+    sizeBytes?: number;
   };
   dates?: {
     published: Date;
     updated: Date;
+  };
+  cloudLookup?: {
+    submissionId?: string;
+    gameBananaId?: number | null;
+    searchName?: string;
   };
   detail?: () => Promise<ModDetailInfo>;
 }
@@ -195,10 +195,39 @@ export const Mod = memo(
       Math.min(100, Number(downloadTask?.progress ?? 0)),
     );
 
+    const openDetail = useCallback(() => {
+      if (!mod.detail) return;
+      openSearchModDetail({
+        name: mod.name,
+        subtitle: mod.subtitle,
+        author: mod.author,
+        category: mod.category,
+        subCategory: mod.subCategory,
+        previewUrl: mod.previewUrl,
+        isInstalled: props.isInstalled,
+        downloadKey: downloadOwnerId,
+        stats: mod.stats,
+        dates: mod.dates,
+        loadDetail: mod.detail,
+        loadFiles: mod.downloadUrl,
+        cloudLookup: mod.cloudLookup,
+        onDownloadFile: (name, fileSource) => {
+          downloadMod(name, fileSource, {
+            autoDisableNewMods,
+            ownerId: downloadOwnerId,
+          });
+        },
+      });
+    }, [autoDisableNewMods, downloadMod, downloadOwnerId, mod, props.isInstalled]);
+
+    const handleCardClick = props.onClick ?? (mod.detail ? openDetail : undefined);
+
     return (
       <div
-        onClick={props.onClick}
-        className={`mod ${props.expanded ? "expanded" : ""}`}
+        onClick={handleCardClick}
+        className={`mod ${props.expanded ? "expanded" : ""} ${
+          handleCardClick ? "is-clickable" : ""
+        }`.trim()}
         key={mod.name}
       >
         <BackgroundEle preview={preview} name={mod.name} />
@@ -421,156 +450,11 @@ export const Mod = memo(
 
           {props.mod.detail && (
             <Button
-              title={_i18n.t("更多")}
-              aria-label={_i18n.t("更多")}
-              onClick={async (event) => {
+              title={_i18n.t("查看详情")}
+              aria-label={_i18n.t("查看详情")}
+              onClick={(event) => {
                 event.stopPropagation();
-                createPopup(
-                  () => {
-                    const [data, setData] = useState<ModDetailInfo | null>(
-                      null,
-                    );
-                    const modPageSource = useAppStore(
-                      (state) => state.modPageSource,
-                    );
-                    const ctx = useContext(PopupContext);
-                    useEffect(() => {
-                      mod.detail?.().then(setData);
-                    }, []);
-
-                    const refContent = useRef<HTMLDivElement>(null);
-                    const refImages = useRef<HTMLDivElement>(null);
-                    useEffect(() => {
-                      if (!refImages.current) return;
-                      // horizontal scroll
-                      refImages.current.addEventListener(
-                        "mousewheel",
-                        horizontalScrollMouseWheelHandler(),
-                      );
-                    }, [data]);
-
-                    useEffect(() => {
-                      if (!refContent.current) return;
-                      refContent.current.innerHTML = "";
-                      refContent.current.appendChild(
-                        sanitizeDescriptionHtml(data?.description ?? ""),
-                      );
-
-                      // Keep external links going through the native opener.
-                      // @ts-ignore
-                      for (const a of refContent.current.querySelectorAll(
-                        "a",
-                      )) {
-                        const url = a.getAttribute("href");
-                        if (!url) continue;
-                        a.href = "#";
-                        a.onclick = (e: any) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          callRemote("open_url", url);
-                        };
-                      }
-
-                      // @ts-ignore
-                      for (const img of refContent.current.querySelectorAll(
-                        "img",
-                      ))
-                        img.style.maxWidth = "300px";
-                    }, [data]);
-
-                    if (!data)
-                      return (
-                        <div
-                          className="ui-fade-enter"
-                          style={{
-                            width: "min-content",
-                          }}
-                        >
-                          <ProgressIndicator infinite />
-                        </div>
-                      );
-
-                    return (
-                      <div className="mod-detail-popup ui-fade-enter">
-                        <div className="closeBtn" onClick={() => ctx.hide()}>
-                          <Icon name="i-cross" />
-                        </div>
-                        {(data.submissionId || data.externalUrl) && (
-                          <div
-                            className="openExternal"
-                            onClick={() => {
-                              const url = getAvailableModPageUrl(
-                                {
-                                  submissionId: data.submissionId,
-                                  gameBananaUrl: data.externalUrl,
-                                },
-                                modPageSource,
-                              );
-                              if (url) callRemote("open_url", url);
-                            }}
-                            onContextMenu={(event) => {
-                              event.preventDefault();
-                              const url = getAvailableModPageUrl(
-                                {
-                                  submissionId: data.submissionId,
-                                  gameBananaUrl: data.externalUrl,
-                                },
-                                getOtherModPageSource(modPageSource),
-                              );
-                              if (url) callRemote("open_url", url);
-                            }}
-                            title={_i18n.t(
-                              "左键打开所选来源，右键打开另一个来源",
-                            )}
-                          >
-                            <Icon name="external" />
-                          </div>
-                        )}
-
-                        <h2>{mod.name}</h2>
-                        <div className="info">
-                          Mod ·{" "}
-                          {data.lastUpdate
-                            ? displayDate(data.lastUpdate) + " ·"
-                            : ""}
-                          {mod.author}
-                        </div>
-                        {data.authors &&
-                          data.authors.join(" ") !== mod.author && (
-                            <Fragment>
-                              <div className="credits-title">Credits</div>
-                              <div className="info credits">
-                                {data.authors.join(" / ")}
-                              </div>
-                            </Fragment>
-                          )}
-                        {data.images && (
-                          <div className="images" ref={refImages}>
-                            {data.images.map((v) => (
-                              <img
-                                src={v + "?h=160"}
-                                alt=""
-                                srcSet=""
-                                onClick={() =>
-                                  createPopup(() => (
-                                    <div className="image-view ui-fade-enter">
-                                      <img src={v} alt="" srcSet="" />
-                                    </div>
-                                  ))
-                                }
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        <div className="content" ref={refContent}></div>
-                      </div>
-                    );
-                  },
-                  {
-                    backgroundMask: "#131313",
-                  },
-                );
+                openDetail();
               }}
             >
               <Icon name="opts-h" />
@@ -749,24 +633,38 @@ export const ModList = (props: {
 
   const createModInfo = useCallback(
     (mod2: Content) => {
+      const localSubmission = mod2 as Partial<LocalSubmission>;
+      const fileLookupByUrl = new Map(
+        (mod2.files ?? []).map((file) => [file.url, file]),
+      );
       const mod = {
         name: mod2.name,
+        subtitle: mod2.subtitle,
         downloadKey: String(mod2.gameBananaId ?? mod2.id ?? mod2.name),
         downloadUrl: () =>
-          pickDownloadFiles(mod2).map((file) => ({
-            id: file.id,
-            name: file.name,
-            size: formatSize(file.size),
-            url: file.url,
-            isPrimary: file.isPrimary,
-            isInstalled:
-              file.mods.length > 0 &&
-              file.mods.every((fileMod) =>
-                installedModVersions
-                  .get(fileMod.name.toLocaleLowerCase())
-                  ?.has(fileMod.version),
-              ),
-          })),
+          pickDownloadFiles(mod2).map((file) => {
+            const rawFile = fileLookupByUrl.get(file.url);
+            return {
+              id: file.id,
+              name: file.name,
+              description: rawFile?.description,
+              downloads: rawFile?.downloads,
+              mods: file.mods.map((m) => ({
+                name: m.name,
+                version: m.version,
+              })),
+              size: formatSize(file.size),
+              url: file.url,
+              isPrimary: file.isPrimary,
+              isInstalled:
+                file.mods.length > 0 &&
+                file.mods.every((fileMod) =>
+                  installedModVersions
+                    .get(fileMod.name.toLocaleLowerCase())
+                    ?.has(fileMod.version),
+                ),
+            };
+          }),
         previewUrl: mod2?.screenshots?.[0]?.url ?? celemodIcon,
         author: mod2.submitter,
         isInstalled:
@@ -775,29 +673,46 @@ export const ModList = (props: {
           mod2.views,
         )} · ${processLargeNum(mod2.downloads)}`,
         category: getCategoryLabel(mod2.categoryName),
+        subCategory: mod2.subCategoryName,
         stats: {
           likes: mod2.likes,
           views: mod2.views,
           downloads: mod2.downloads,
+          sizeBytes: localSubmission.catalogSize,
         },
         dates: {
           published: mod2.createTime,
           updated: mod2.latestUpdateAddedTime ?? mod2.updateTime,
         },
+        cloudLookup: {
+          submissionId: mod2.id,
+          gameBananaId: mod2.gameBananaId,
+          searchName: mod2.name,
+        },
         detail: () =>
           Promise.resolve({
             description: mod2.description,
+            subtitle: mod2.subtitle,
+            credits: mod2.credits,
             authors: mod2.credits
               .map((v) => v.authors.map((v) => v.name))
               .flat(),
+            screenshots: mod2.screenshots.map((shot) => ({
+              id: shot.id,
+              url: shot.url,
+              caption: shot.caption,
+            })),
             images: mod2.screenshots.map((v) => v.url),
             files: mod2.files.map((v) => ({
               name: v.description,
               downloadUrl: v.url,
             })),
-            lastUpdate: mod2.latestUpdateAddedTime,
+            lastUpdate: mod2.latestUpdateAddedTime ?? mod2.updateTime,
             submissionId: mod2.id,
             externalUrl: mod2.pageUrl,
+            gameBananaId: mod2.gameBananaId,
+            subCategory: mod2.subCategoryName,
+            catalogSize: localSubmission.catalogSize,
           }),
       };
       return mod;

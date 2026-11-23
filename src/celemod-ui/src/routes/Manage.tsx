@@ -44,9 +44,7 @@ import { useDownloadStore } from "../stores/download";
 import { createPopup, PopupContext } from "../components/Popup";
 import { ProgressIndicator } from "../components/Progress";
 import { CatalogMod, loadModCatalog } from "../api/modCatalog";
-import { Content, searchSubmission } from "../api/wegfan";
-import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
-import { getAvailableModPageUrl, getOtherModPageSource } from "../modPage";
+import { openManageModDetail } from "../components/ModDetailModal";
 import {
   collectModUpdates,
   type LatestModInfo,
@@ -525,151 +523,6 @@ const catalogMaps = (mods: CatalogMod[]) => {
     };
   }
   return { metaByName, fullByName };
-};
-
-const showModDetails = (node: ManageNode, catalogMod?: CatalogMod) => {
-  createPopup(
-    () => {
-      const popup = useContext(PopupContext);
-      const [cloud, setCloud] = useState<Content | null>(null);
-      const [cloudDone, setCloudDone] = useState(false);
-      const modPageSource = useAppStore((state) => state.modPageSource);
-      const descriptionRef = useRef<HTMLDivElement>(null);
-
-      useEffect(() => {
-        const submission = catalogMod?.submissionFile.submission;
-        if (!submission) {
-          setCloudDone(true);
-          return;
-        }
-        searchSubmission({ search: submission.name, size: 12 })
-          .then((result) => {
-            setCloud(
-              result.content.find(
-                (item) => item.gameBananaId === submission.gameBananaId,
-              ) ?? null,
-            );
-          })
-          .catch(console.error)
-          .finally(() => setCloudDone(true));
-      }, []);
-
-      useEffect(() => {
-        if (!descriptionRef.current || !cloud) return;
-        descriptionRef.current.innerHTML = "";
-        descriptionRef.current.appendChild(
-          sanitizeDescriptionHtml(cloud.description || ""),
-        );
-        for (const link of Array.from(
-          descriptionRef.current.querySelectorAll("a"),
-        )) {
-          const url = link.getAttribute("href");
-          if (!url) continue;
-          link.setAttribute("href", "#");
-          link.addEventListener("click", (event) => {
-            event.preventDefault();
-            void callRemote("open_url", url);
-          });
-        }
-      }, [cloud]);
-
-      const meta = node.meta;
-      return (
-        <div className="manage-detail-popup">
-          <button className="detail-close" onClick={popup.hide}>
-            <Icon name="i-cross" />
-          </button>
-          <div className="detail-heading">
-            <div>
-              <span className="detail-kicker">
-                {meta?.category || _i18n.t("本地 Mod")}
-              </span>
-              <h2>{meta?.submissionName || node.name}</h2>
-              <p>
-                {node.name} · {node.version}
-              </p>
-            </div>
-            {(meta?.submissionId || meta?.pageUrl) && (
-              <button
-                onClick={() => {
-                  const url = getAvailableModPageUrl(
-                    {
-                      submissionId: meta.submissionId,
-                      gameBananaUrl: meta.pageUrl,
-                    },
-                    modPageSource,
-                  );
-                  if (url) callRemote("open_url", url);
-                }}
-                onContextMenu={(event) => {
-                  event.preventDefault();
-                  const url = getAvailableModPageUrl(
-                    {
-                      submissionId: meta.submissionId,
-                      gameBananaUrl: meta.pageUrl,
-                    },
-                    getOtherModPageSource(modPageSource),
-                  );
-                  if (url) callRemote("open_url", url);
-                }}
-                title={_i18n.t("左键打开所选来源，右键打开另一个来源")}
-              >
-                <Icon name="external" />
-              </button>
-            )}
-          </div>
-          <div className="detail-stats">
-            <div>
-              <span>{_i18n.t("作者")}</span>
-              <strong>{meta?.submitter || "--"}</strong>
-            </div>
-            <div>
-              <span>{_i18n.t("类型")}</span>
-              <strong>{meta?.subCategory || meta?.category || "--"}</strong>
-            </div>
-            <div>
-              <span>{_i18n.t("下载次数")}</span>
-              <strong>{meta?.downloads?.toLocaleString() || "--"}</strong>
-            </div>
-            <div>
-              <span>{_i18n.t("文件大小")}</span>
-              <strong>{formatSize(meta?.catalogSize || node.size)}</strong>
-            </div>
-          </div>
-          {cloud?.screenshots?.length ? (
-            <div className="detail-images ui-fade-enter">
-              {cloud.screenshots.map((image) => (
-                <img key={image.id} src={`${image.url}?h=180`} alt="" />
-              ))}
-            </div>
-          ) : null}
-          {!cloudDone ? (
-            <div className="detail-loading">
-              <ProgressIndicator infinite size={28} />
-            </div>
-          ) : cloud ? (
-            <div
-              className="detail-description ui-fade-enter"
-              ref={descriptionRef}
-            />
-          ) : (
-            <div className="detail-description detail-local-only ui-fade-enter">
-              {_i18n.t(
-                "本地缓存包含版本、分类、作者、下载量、大小和更新时间；云端详情暂不可用。",
-              )}
-            </div>
-          )}
-          <div className="detail-files">
-            <strong>{_i18n.t("本地文件")}</strong>
-            <span>
-              {node.file} · {formatSize(node.size)}
-            </span>
-          </div>
-        </div>
-      );
-    },
-    { backgroundMask: "#111318" },
-  );
 };
 
 const showProfileRename = (
@@ -2423,6 +2276,31 @@ export const Manage = () => {
     );
   };
 
+  const detailBridgeRef = useRef({
+    switchNodes,
+    deleteNode,
+    showDuplicates,
+    updateNode,
+    downloadMissing,
+    fullByName,
+    updateNames,
+    updateVersions,
+    updateStates,
+    showUpdate,
+  });
+  detailBridgeRef.current = {
+    switchNodes,
+    deleteNode,
+    showDuplicates,
+    updateNode,
+    downloadMissing,
+    fullByName,
+    updateNames,
+    updateVersions,
+    updateStates,
+    showUpdate,
+  };
+
   const actions = useMemo<ManageActions>(
     () => ({
       switchNodes,
@@ -2431,9 +2309,59 @@ export const Manage = () => {
       updateNode,
       downloadMissing,
       showDetails(name) {
-        const node = nodes[name];
-        if (node)
-          showModDetails(node, fullByName.get(name.trim().toLocaleLowerCase()));
+        const node = useManageStore.getState().nodes[name];
+        if (!node) return;
+        openManageModDetail({
+          modName: name,
+          getCatalogMod: (targetName) =>
+            detailBridgeRef.current.fullByName.get(
+              targetName.trim().toLocaleLowerCase(),
+            ),
+          modPath,
+          currentEverestVersion,
+          checkOptional,
+          autoUseSubmissionNameAsComment,
+          getUpdateInfo: (targetName) => {
+            const bridge = detailBridgeRef.current;
+            return {
+              hasUpdate: bridge.showUpdate && bridge.updateNames.has(targetName),
+              version: bridge.updateVersions[targetName],
+              state: bridge.updateStates[targetName],
+            };
+          },
+          actions: {
+            switchNodes: (names, enabled, recursive) =>
+              detailBridgeRef.current.switchNodes(names, enabled, recursive),
+            updateNode: (targetName) =>
+              detailBridgeRef.current.updateNode(targetName),
+            downloadMissing: (targetName) =>
+              detailBridgeRef.current.downloadMissing(targetName),
+            showDuplicates: (targetName) =>
+              detailBridgeRef.current.showDuplicates(targetName),
+            deleteNode: (targetName) =>
+              detailBridgeRef.current.deleteNode(targetName),
+            toggleAlwaysOn: (targetName) => {
+              const liveNodes = useManageStore.getState().nodes;
+              const liveAlwaysOn = useAppStore.getState().alwaysOnMods;
+              const file = liveNodes[targetName]?.file;
+              if (!file) return;
+              const packageIsAlwaysOn = liveAlwaysOn.some(
+                (value) => liveNodes[value]?.file === file,
+              );
+              setAlwaysOnMods(
+                packageIsAlwaysOn
+                  ? liveAlwaysOn.filter(
+                      (value) => liveNodes[value]?.file !== file,
+                    )
+                  : [...liveAlwaysOn, targetName],
+              );
+            },
+            setComment: (targetName, comment) => {
+              const liveComments = useAppStore.getState().modComments;
+              setComments({ ...liveComments, [targetName]: comment });
+            },
+          },
+        });
       },
       toggleAlwaysOn(name) {
         const file = nodes[name]?.file;

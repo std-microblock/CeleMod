@@ -1485,157 +1485,6 @@
   }
 }
 
-.manage-detail-popup {
-  position: relative;
-  width: min(760px, 84vw);
-  max-height: 82vh;
-  padding: 22px;
-  overflow-y: auto;
-  text-align: left;
-  .detail-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: grid;
-    width: 30px;
-    height: 30px;
-    min-height: 0;
-    padding: 0;
-    place-items: center;
-    border: 0;
-    border-radius: 7px;
-    background: theme.$bg2;
-    box-shadow: none;
-    color: theme.$fg3;
-    transition:
-      background-color var(--motion-fast, 140ms) ease,
-      color var(--motion-fast, 140ms) ease;
-    &:hover {
-      background: theme.$bg3;
-      color: theme.$fg;
-    }
-  }
-  .detail-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    padding-right: 38px;
-    h2 {
-      margin: 4px 0;
-      font-size: calc(22px * var(--manage-font-scale, 1));
-    }
-    p {
-      margin: 0;
-      color: theme.$fg3;
-      font-size: calc(12.5px * var(--manage-font-scale, 1));
-    }
-    > button {
-      display: grid;
-      width: 34px;
-      height: 34px;
-      min-height: 0;
-      padding: 0;
-      place-items: center;
-      transition:
-        background-color var(--motion-fast, 140ms) ease,
-        border-color var(--motion-fast, 140ms) ease,
-        color var(--motion-fast, 140ms) ease;
-    }
-  }
-  .detail-kicker {
-    color: color.adjust(theme.$primary, $lightness: 18%);
-    font-size: calc(12px * var(--manage-font-scale, 1));
-    font-weight: 650;
-  }
-  .detail-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin: 18px 0;
-    div {
-      padding: 10px;
-      border-radius: 9px;
-      background: theme.$bg1;
-      span,
-      strong {
-        display: block;
-      }
-      span {
-        color: theme.$fg3;
-        font-size: calc(11px * var(--manage-font-scale, 1));
-      }
-      strong {
-        margin-top: 4px;
-        overflow: hidden;
-        font-size: calc(12.5px * var(--manage-font-scale, 1));
-        font-variant-numeric: tabular-nums;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-  }
-  .detail-images {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding: 3px 2px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
-    img {
-      height: 150px;
-      border-radius: 9px;
-      transition:
-        transform var(--motion-normal, 210ms)
-          var(--motion-ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-        filter var(--motion-fast, 140ms) ease;
-      &:hover {
-        transform: translateY(-2px) scale(1.02);
-        filter: brightness(1.05);
-      }
-    }
-  }
-  .detail-loading {
-    display: grid;
-    min-height: 100px;
-    place-items: center;
-  }
-  .detail-description {
-    color: color.change(theme.$fg, $alpha: 0.82);
-    font-size: calc(13px * var(--manage-font-scale, 1));
-    line-height: 1.65;
-    user-select: text;
-    img {
-      max-width: 100%;
-    }
-  }
-  .detail-local-only {
-    padding: 14px;
-    border-radius: 9px;
-    background: theme.$bg1;
-    color: theme.$fg3;
-  }
-  .detail-files {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-top: 18px;
-    padding-top: 13px;
-    border-top: 1px solid color.change(theme.$fg, $alpha: 0.08);
-    font-size: calc(12px * var(--manage-font-scale, 1));
-    span {
-      color: theme.$fg3;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-}
-
 .popup-content.delete-mod-popup,
 .duplicate-mod-popup,
 .popup-content.full-mod-check-popup {
@@ -2117,9 +1966,6 @@
   .manage-page {
     grid-template-columns: minmax(0, 1fr) 224px;
   }
-  .manage-detail-popup .detail-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2149,10 +1995,7 @@
   .profile-folder,
   .profile-export-tabs button,
   .profile-import-menu button,
-  .profile-create input,
-  .manage-detail-popup .detail-close,
-  .manage-detail-popup .detail-heading > button,
-  .manage-detail-popup .detail-images img {
+  .profile-create input {
     transition: none;
   }
 
@@ -2166,10 +2009,7 @@
   .profile-rename:active,
   .profile-delete:active,
   .profile-import:active,
-  .profile-folder:active,
-  .manage-detail-popup .detail-close:active,
-  .manage-detail-popup .detail-heading > button:active,
-  .manage-detail-popup .detail-images img:hover {
+  .profile-folder:active {
     transform: none;
   }
 }
