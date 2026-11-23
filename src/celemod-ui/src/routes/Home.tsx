@@ -23,7 +23,7 @@ import {
 } from "../states";
 import "./Home.scss";
 import { useGlobalContext } from "src/App";
-import { detectDesktopPlatform } from "../tauri/window";
+import { detectDesktopPlatform, isMobileLayout } from "../tauri/window";
 import { SteamAccount } from "../components/SteamAccount";
 import { HomeUpdatesCard } from "../components/HomeUpdatesCard";
 import { Collapse } from "../components/Motion";
@@ -641,32 +641,34 @@ export const Home = () => {
         </section>
       ) : null}
 
-      <section className="home-section home-shortcuts-section">
-        <div className="home-section-head">
-          <h2>{chinese ? "常用功能" : "Quick access"}</h2>
-        </div>
-        <div className="home-shortcuts">
-          {shortcuts.map((shortcut) => (
-            <button
-              type="button"
-              key={shortcut.page}
-              className="home-shortcut"
-              onClick={() => globalCtx.pageController.setPage(shortcut.page)}
-            >
-              <span className="shortcut-icon" aria-hidden="true">
-                <Icon name={shortcut.icon} />
-              </span>
-              <span className="shortcut-copy">
-                <strong title={shortcut.title}>{shortcut.title}</strong>
-                <small title={shortcut.description}>
-                  {shortcut.description}
-                </small>
-              </span>
-              <Icon name="i-right" />
-            </button>
-          ))}
-        </div>
-      </section>
+      {isMobileLayout() && (
+        <section className="home-section home-shortcuts-section">
+          <div className="home-section-head">
+            <h2>{chinese ? "常用功能" : "Quick access"}</h2>
+          </div>
+          <div className="home-shortcuts">
+            {shortcuts.map((shortcut) => (
+              <button
+                type="button"
+                key={shortcut.page}
+                className="home-shortcut"
+                onClick={() => globalCtx.pageController.setPage(shortcut.page)}
+              >
+                <span className="shortcut-icon" aria-hidden="true">
+                  <Icon name={shortcut.icon} />
+                </span>
+                <span className="shortcut-copy">
+                  <strong title={shortcut.title}>{shortcut.title}</strong>
+                  <small title={shortcut.description}>
+                    {shortcut.description}
+                  </small>
+                </span>
+                <Icon name="i-right" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {chinese ? (
         <footer className="home-footer home-community">
