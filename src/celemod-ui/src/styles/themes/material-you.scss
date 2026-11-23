@@ -404,7 +404,128 @@ html[data-theme="material-you"] button.large {
   padding-inline: 28px;
   font-size: 16px;
 }
-html[data-theme="material-you"] .home-community button,
+html[data-theme="material-you"] .home-page .home-launch-card,
+html[data-theme="material-you"] .home-page .home-updates-card,
+html[data-theme="material-you"] .home-page .home-active-mods {
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-shape-lg) !important;
+  background: var(--md-surface-container) !important;
+  box-shadow: var(--md-elevation-1);
+}
+html[data-theme="material-you"] .home-page .home-updates-card {
+  border-color: color-mix(in srgb, var(--md-primary) 42%, var(--md-outline-variant)) !important;
+}
+html[data-theme="material-you"] .home-page .home-updates-header,
+html[data-theme="material-you"] .home-page .home-update-row {
+  border-bottom-color: color-mix(in srgb, var(--md-outline-variant) 65%, transparent);
+}
+html[data-theme="material-you"] .home-page .home-update-row-link {
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: var(--md-shape-full) !important;
+  background: transparent !important;
+  color: var(--md-on-surface-variant) !important;
+  box-shadow: none !important;
+}
+html[data-theme="material-you"] .home-page .home-update-row-link:hover {
+  background: var(--md-state-hover) !important;
+  color: var(--md-on-surface) !important;
+}
+html[data-theme="material-you"] .home-page .home-update-row-btn {
+  min-height: 32px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-shape-full) !important;
+  background: var(--md-surface-container-high) !important;
+  color: var(--md-on-surface) !important;
+  box-shadow: none !important;
+}
+html[data-theme="material-you"] .home-page .home-updates-all-btn {
+  min-height: 36px !important;
+  padding: 0 18px !important;
+}
+html[data-theme="material-you"] .home-page .home-status-strip {
+  border-top-color: var(--md-outline-variant);
+  background: var(--md-surface-container-low);
+}
+html[data-theme="material-you"] .home-page .home-status-item,
+html[data-theme="material-you"] .home-page .home-active-mods-toggle,
+html[data-theme="material-you"] .home-page .home-community-link {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--md-on-surface) !important;
+}
+html[data-theme="material-you"] .home-page .home-status-item {
+  border-right: 1px solid var(--md-outline-variant) !important;
+  padding: 12px 18px !important;
+}
+html[data-theme="material-you"] .home-page .home-status-item:last-child {
+  border-right: 0 !important;
+}
+html[data-theme="material-you"] .home-page .home-status-item:hover,
+html[data-theme="material-you"] .home-page .home-active-mods-toggle:hover,
+html[data-theme="material-you"] .home-page .home-community-link:hover {
+  background: var(--md-state-hover) !important;
+  box-shadow: none !important;
+}
+html[data-theme="material-you"] .home-page .home-community-link {
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  border-radius: var(--md-shape-full) !important;
+  color: var(--md-on-surface-variant) !important;
+}
+html[data-theme="material-you"] .home-page .home-update-btn {
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-shape-full) !important;
+  background: var(--md-surface-container) !important;
+  color: var(--md-on-surface-variant) !important;
+  box-shadow: none !important;
+}
+html[data-theme="material-you"] .home-page .home-update-btn:hover {
+  background: var(--md-surface-container-high) !important;
+  color: var(--md-on-surface) !important;
+}
+html[data-theme="material-you"] .home-page .home-shortcut,
+html[data-theme="material-you"] .home-page .home-profiles-section .profile {
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-shape-lg) !important;
+  background: var(--md-surface-container) !important;
+  color: var(--md-on-surface) !important;
+  box-shadow: none !important;
+  padding: 13px 14px !important;
+}
+html[data-theme="material-you"] .home-page .home-shortcut:hover,
+html[data-theme="material-you"] .home-page .home-profiles-section .profile:hover {
+  background: var(--md-surface-container-high) !important;
+  box-shadow: var(--md-elevation-1) !important;
+}
+html[data-theme="material-you"] .home-page .home-profiles-section .profile.selected {
+  border-color: var(--md-primary) !important;
+  background: color-mix(in srgb, var(--md-primary-container) 36%, var(--md-surface-container)) !important;
+}
+html[data-theme="material-you"] .home-page .gameSelector .game-mods-btn,
+html[data-theme="material-you"] .home-page .gameSelector .game-launch-secondary {
+  border: 1px solid var(--md-outline-variant) !important;
+  background: var(--md-surface-container-high) !important;
+  color: var(--md-on-surface) !important;
+}
+html[data-theme="material-you"] .home-page .gameSelector .game-mods-btn:hover,
+html[data-theme="material-you"] .home-page .gameSelector .game-launch-secondary:hover {
+  background: var(--md-surface-container-highest) !important;
+}
+html[data-theme="material-you"] .home-page .gameSelector .game-path-field select {
+  border-radius: var(--md-shape-md) !important;
+}
+html[data-theme="material-you"] .home-page .home-language select {
+  min-height: 36px;
+  height: 36px;
+  border-radius: var(--md-shape-full) !important;
+}
 html[data-theme="material-you"] .manage-search button,
 html[data-theme="material-you"] .search-submit,
 html[data-theme="material-you"] .toolbar-icon-button {
@@ -414,8 +535,6 @@ html[data-theme="material-you"] .toolbar-icon-button {
 
 /* Tonal surfaces and cards across routes */
 html[data-theme="material-you"] .settings-card,
-html[data-theme="material-you"] .home-active-mods,
-html[data-theme="material-you"] .home-profiles-section .profile,
 html[data-theme="material-you"] .manage-filter-popup,
 html[data-theme="material-you"] .manage-action-menu,
 html[data-theme="material-you"] .filter-popup,
@@ -429,8 +548,7 @@ html[data-theme="material-you"] .multiplayer-account-card {
   box-shadow: var(--md-elevation-1);
   color: var(--md-on-surface);
 }
-html[data-theme="material-you"] .settings-card:hover,
-html[data-theme="material-you"] .home-profiles-section .profile:hover {
+html[data-theme="material-you"] .settings-card:hover {
   background: var(--md-surface-container-high) !important;
   box-shadow: var(--md-elevation-2);
 }
@@ -583,7 +701,7 @@ html[data-theme="material-you"] .keybindings-page button {
   box-shadow: none;
 }
 html[data-theme="material-you"] .manage-page .manage-tree-row {
-  min-height: 40px;
+  min-height: 44px;
   grid-template-columns: calc(var(--indent) + 28px) minmax(0, 1fr) auto;
 }
 html[data-theme="material-you"] .manage-page .tree-expander {
@@ -603,11 +721,11 @@ html[data-theme="material-you"] .manage-page .state-switch {
 }
 html[data-theme="material-you"] .manage-page .tree-name {
   min-height: 28px;
-  height: 28px;
+  height: auto;
   padding: 0 8px;
   border-radius: 8px !important;
   background: transparent !important;
-  font-size: 13px;
+  font-size: calc(13.5px * var(--manage-font-scale, 1));
 }
 html[data-theme="material-you"] .manage-page .mod-row-menu button,
 html[data-theme="material-you"] .manage-page .toolbar-icon-button,
@@ -727,66 +845,93 @@ html[data-theme="material-you"] .icon {
   overflow: visible;
 }
 
-/* Downloads are an M3 list: keep one continuous surface and reserve cards for
-   pages that actually represent independent objects. Nested file rows should
-   read as list items, not another stack of outlined containers. */
+/* Downloads use an M3 tonal surface list with segmented pills and icon buttons. */
 html[data-theme="material-you"] .page-Downloads {
   background: transparent;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-page {
-  width: min(1120px, 100%);
-  max-width: none;
-  margin: 0 auto;
-  padding: 24px 28px 48px;
-  box-sizing: border-box;
   color: var(--md-on-surface-variant);
 }
 
+html[data-theme="material-you"] .page-Downloads .download-page-inner {
+  width: min(940px, 100%);
+  padding: 24px 28px 48px;
+}
+
 html[data-theme="material-you"] .page-Downloads .download-page-header {
-  margin-bottom: 16px;
-  padding: 0 0 16px;
   border-bottom: 1px solid var(--md-outline-variant);
-}
-
-html[data-theme="material-you"] .page-Downloads .download-page-heading {
-  gap: 14px;
-}
-
-html[data-theme="material-you"] .page-Downloads .download-page-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--md-shape-md);
-  color: var(--md-on-primary-container);
-  background: var(--md-primary-container);
-  font-size: 20px;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-page-heading h1 {
   color: var(--md-on-surface);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 500;
   letter-spacing: -0.01em;
 }
 
-html[data-theme="material-you"] .page-Downloads .download-page-heading p {
-  margin-top: 4px;
+html[data-theme="material-you"] .page-Downloads .download-page-subtitle {
   color: var(--md-on-surface-variant);
 }
 
+html[data-theme="material-you"] .page-Downloads .download-clear-button,
+html[data-theme="material-you"] .page-Downloads .download-filter-reset,
+html[data-theme="material-you"] .page-Downloads .download-empty-action {
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  border: 1px solid var(--md-outline-variant) !important;
+  border-radius: var(--md-shape-full) !important;
+  color: var(--md-on-surface) !important;
+  background: var(--md-surface-container) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-clear-button:hover,
+html[data-theme="material-you"] .page-Downloads .download-filter-reset:hover,
+html[data-theme="material-you"] .page-Downloads .download-empty-action:hover {
+  background: var(--md-surface-container-high) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-filter-bar {
+  padding: 4px;
+  border-color: var(--md-outline-variant);
+  border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-low);
+}
+
+html[data-theme="material-you"] .page-Downloads .download-filter-pill {
+  min-height: 32px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: var(--md-shape-full) !important;
+  color: var(--md-on-surface-variant) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-filter-pill:hover {
+  color: var(--md-on-surface) !important;
+  background: var(--md-state-hover) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-filter-pill.is-active {
+  color: var(--md-on-secondary-container) !important;
+  background: var(--md-secondary-container) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-page-list {
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--md-shape-lg);
+  background: var(--md-surface-container);
+  box-shadow: var(--md-elevation-1);
+}
+
 html[data-theme="material-you"] .page-Downloads .download-task {
-  margin: 0;
-  padding: 16px 8px 15px;
-  border: 0;
-  border-bottom: 1px solid var(--md-outline-variant);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  border-bottom-color: color-mix(in srgb, var(--md-outline-variant) 65%, transparent);
 }
 
 html[data-theme="material-you"] .page-Downloads .download-task:hover {
   background: color-mix(in srgb, var(--md-on-surface) 4%, transparent);
-  box-shadow: none;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-task-toggle,
@@ -798,17 +943,25 @@ html[data-theme="material-you"]
   min-height: 0 !important;
   padding: 0 !important;
   border: 0 !important;
-  border-radius: var(--md-shape-sm) !important;
   color: var(--md-on-surface-variant) !important;
   background: transparent !important;
   box-shadow: none !important;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-task-toggle {
-  width: 100%;
-  height: 32px;
-  justify-content: stretch;
-  font-size: inherit;
+  border-radius: var(--md-shape-sm) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-task-action {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--md-shape-full) !important;
+}
+
+html[data-theme="material-you"] .page-Downloads .download-dependency-actions button {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--md-shape-full) !important;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-task-toggle:hover,
@@ -822,32 +975,8 @@ html[data-theme="material-you"]
   box-shadow: none !important;
 }
 
-html[data-theme="material-you"] .page-Downloads .download-task-action {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--md-shape-full) !important;
-}
-
-html[data-theme="material-you"] .page-Downloads .download-task-status-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--md-shape-sm);
-  color: var(--md-primary);
-  background: color-mix(in srgb, var(--md-primary) 16%, transparent);
-  font-size: 12px;
-}
-
 html[data-theme="material-you"] .page-Downloads .download-task-title {
   color: var(--md-on-surface);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-html[data-theme="material-you"] .page-Downloads .download-task-status-text,
-html[data-theme="material-you"] .page-Downloads .download-task-summary,
-html[data-theme="material-you"] .page-Downloads .download-detail-summary,
-html[data-theme="material-you"] .page-Downloads .download-dependency-heading {
-  color: var(--md-on-surface-variant);
 }
 
 html[data-theme="material-you"] .page-Downloads .download-task-progress,
@@ -876,75 +1005,20 @@ html[data-theme="material-you"]
   background: var(--md-error);
 }
 
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-task-canceled
-  .download-task-progress
-  > span,
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-task-paused
-  .download-task-progress
-  > span {
-  background: var(--md-on-surface-variant);
-}
-
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-task-failed
-  .download-task-status-icon,
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-detail-row-failed
-  .download-dependency-main
-  > .icon,
-html[data-theme="material-you"] .page-Downloads .download-task-error-details,
-html[data-theme="material-you"] .page-Downloads .download-dependency-error {
-  color: var(--md-error);
-}
-
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-task-canceled
-  .download-task-status-icon,
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-task-paused
-  .download-task-status-icon {
-  color: var(--md-on-surface-variant);
-}
-
-html[data-theme="material-you"] .page-Downloads .download-task-cancel:hover {
+html[data-theme="material-you"] .page-Downloads .download-task-cancel:hover,
+html[data-theme="material-you"] .page-Downloads .download-dependency-actions button.download-dependency-cancel:hover {
   color: var(--md-error) !important;
-  background: color-mix(in srgb, var(--md-error) 13%, transparent) !important;
+  background: color-mix(in srgb, var(--md-error) 14%, transparent) !important;
 }
 
 html[data-theme="material-you"] .page-Downloads .download-dependency-list {
-  margin-left: 34px;
-  border-top-color: var(--md-outline-variant);
+  border-left-color: var(--md-outline-variant);
 }
 
-html[data-theme="material-you"] .page-Downloads .download-detail-row {
-  padding-inline: 0;
-  border: 0;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--md-outline-variant) 62%, transparent);
-  border-radius: 0;
-  background: transparent;
-}
-
-html[data-theme="material-you"] .page-Downloads .download-detail-row:hover {
-  background: color-mix(in srgb, var(--md-on-surface) 3%, transparent);
-}
-
-html[data-theme="material-you"]
-  .page-Downloads
-  .download-detail-row:last-child {
-  border-bottom: 0;
-}
-
-html[data-theme="material-you"] .page-Downloads .download-list-empty {
-  color: var(--md-on-surface-variant);
+html[data-theme="material-you"] .page-Downloads .download-empty-icon {
+  border-color: var(--md-outline-variant);
+  border-radius: var(--md-shape-lg);
+  background: var(--md-surface-container);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1028,12 +1102,17 @@ html[data-theme="material-you"] .page {
   width: 100%;
   max-width: none;
 }
-html[data-theme="material-you"] .home-page,
 html[data-theme="material-you"] .settings-page,
 html[data-theme="material-you"] .manage-page {
   width: min(1120px, 100%);
   margin: 0 auto;
   padding: 24px 28px 48px;
+  box-sizing: border-box;
+}
+html[data-theme="material-you"] .home-page {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 24px 28px 56px;
   box-sizing: border-box;
 }
 html[data-theme="material-you"] .settings-columns {

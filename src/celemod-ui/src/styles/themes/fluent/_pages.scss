@@ -349,89 +349,188 @@ html[data-theme="fluent"] .download-type-grid label:hover {
 }
 
 html[data-theme="fluent"] .home-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
+  width: min(920px, 100%);
+  margin: 0 auto;
   padding: 24px 32px 56px;
   box-sizing: border-box;
 }
 
-html[data-theme="fluent"] .home-header {
-  padding: 26px 8px 48px;
+html[data-theme="fluent"] .home-page .home-brand .home-brand-mark {
+  border-color: var(--fluent-stroke-control);
+  border-radius: var(--fluent-radius-card);
+  background: var(--fluent-fill-subtle);
 }
 
-html[data-theme="fluent"] .home-brand {
-  gap: 20px;
-}
-
-html[data-theme="fluent"] .home-brand img {
-  width: 88px;
-  height: 88px;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.3));
-}
-
-html[data-theme="fluent"] .home-brand h1 {
-  font-size: 38px;
+html[data-theme="fluent"] .home-page .home-brand-title {
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 
-html[data-theme="fluent"] .home-brand p {
-  color: var(--fluent-text-tertiary);
-  font-size: 17px;
-}
-
-html[data-theme="fluent"] .home-language {
+html[data-theme="fluent"] .home-page .home-brand-subtitle,
+html[data-theme="fluent"] .home-page .home-language,
+html[data-theme="fluent"] .home-page .home-section-head h2,
+html[data-theme="fluent"] .home-page .home-footer {
   color: var(--fluent-text-tertiary);
 }
 
-html[data-theme="fluent"] .home-community button {
-  min-height: 24px;
-  padding-inline: 7px;
+html[data-theme="fluent"] .home-page .home-launch-card,
+html[data-theme="fluent"] .home-page .home-updates-card,
+html[data-theme="fluent"] .home-page .home-active-mods {
+  border-color: var(--fluent-stroke-subtle);
+  border-radius: var(--fluent-radius-card);
+  background: var(--fluent-acrylic-base);
+  box-shadow: var(--fluent-shadow-card);
+  backdrop-filter: blur(20px) saturate(130%);
+}
+
+html[data-theme="fluent"] .home-page .home-updates-card {
+  border-color: color-mix(in srgb, var(--fluent-accent) 34%, var(--fluent-stroke-subtle));
+}
+
+html[data-theme="fluent"] .home-page .home-updates-header,
+html[data-theme="fluent"] .home-page .home-update-row {
+  border-bottom-color: var(--fluent-stroke-divider);
+}
+
+html[data-theme="fluent"] .home-page .home-updates-icon {
+  background: rgba(96, 205, 255, 0.14);
+  color: var(--fluent-accent);
+}
+
+html[data-theme="fluent"] .home-page .home-update-row-link {
+  min-height: 30px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: var(--fluent-text-secondary) !important;
 }
 
-html[data-theme="fluent"] .home-community button:hover {
+html[data-theme="fluent"] .home-page .home-update-row-link:hover {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-subtle) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-update-row-btn {
+  min-height: 30px !important;
+}
+
+html[data-theme="fluent"] .home-page .home-status-strip {
+  border-top-color: var(--fluent-stroke-divider);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme="fluent"] .home-page .home-status-item {
+  min-height: 58px !important;
+  border: 0 !important;
+  border-right: 1px solid var(--fluent-stroke-divider) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .home-page .home-status-item:last-child {
+  border-right: 0 !important;
+}
+
+html[data-theme="fluent"] .home-page .home-status-item:hover {
+  background: var(--fluent-fill-subtle) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-status-pill {
+  color: var(--fluent-accent);
+  background: rgba(96, 205, 255, 0.14);
+}
+
+html[data-theme="fluent"] .home-page .home-active-mods-toggle {
+  min-height: 42px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .home-page .home-active-mods-toggle:hover {
+  background: var(--fluent-fill-subtle) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-active-mod-list[role="status"] {
+  border: 0;
+  border-top: 1px solid var(--fluent-stroke-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html[data-theme="fluent"] .home-page .home-community-link {
+  min-height: 28px !important;
+  padding-inline: 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--fluent-text-secondary) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-community-link:hover {
   color: var(--fluent-accent) !important;
+  background: var(--fluent-fill-subtle) !important;
 }
 
-html[data-theme="fluent"] .home-section {
-  margin-bottom: 22px;
-  padding: 0 8px;
-}
-
-html[data-theme="fluent"] .home-game-section,
-html[data-theme="fluent"] .home-profiles-section {
-  max-width: 960px;
-  margin-inline: auto;
-}
-
-html[data-theme="fluent"] .home-section-heading h2 {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-html[data-theme="fluent"] .home-keyboard-input-banner {
+html[data-theme="fluent"] .home-page .home-keyboard-input-banner {
   border: 1px solid rgba(252, 225, 0, 0.25);
-  border-radius: 6px;
+  border-radius: var(--fluent-radius-card);
   background: rgba(252, 225, 0, 0.06);
 }
 
-html[data-theme="fluent"] .home-profiles-section .profile,
-html[data-theme="fluent"] .home-active-mod-list > * {
-  border: 1px solid var(--fluent-stroke-subtle);
-  border-radius: 6px;
-  background: var(--fluent-fill-subtle);
-  box-shadow: none;
+html[data-theme="fluent"] .home-page .home-profiles-section .profile,
+html[data-theme="fluent"] .home-page .home-shortcut {
+  border: 1px solid var(--fluent-stroke-subtle) !important;
+  border-radius: var(--fluent-radius-card) !important;
+  background: var(--fluent-fill-subtle) !important;
+  box-shadow: none !important;
   transition:
     background var(--fluent-duration-fast),
     border-color var(--fluent-duration-fast);
 }
 
-html[data-theme="fluent"] .home-profiles-section .profile:hover,
-html[data-theme="fluent"] .home-active-mod-list > *:hover {
-  border-color: var(--fluent-stroke-strong);
-  background: var(--fluent-fill-control-hover);
+html[data-theme="fluent"] .home-page .home-profiles-section .profile:hover,
+html[data-theme="fluent"] .home-page .home-shortcut:hover {
+  border-color: var(--fluent-stroke-strong) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-profiles-section .profile.selected {
+  border-color: color-mix(in srgb, var(--fluent-accent) 55%, transparent) !important;
+  background: rgba(96, 205, 255, 0.09) !important;
+}
+
+html[data-theme="fluent"] .home-page .home-profiles-section .profile .profile-active-indicator.is-active {
+  border-color: var(--fluent-accent);
+  background: var(--fluent-accent);
+  color: var(--fluent-accent-fg);
+}
+
+html[data-theme="fluent"] .home-page .home-shortcut:hover .shortcut-icon {
+  color: var(--fluent-accent);
+  background: rgba(96, 205, 255, 0.14);
+}
+
+html[data-theme="fluent"] .home-page .gameSelector .game-path-field select {
+  height: 38px;
+  min-height: 38px;
+  border-radius: var(--fluent-radius-control) !important;
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+html[data-theme="fluent"] .home-page .gameSelector .game-mods-btn,
+html[data-theme="fluent"] .home-page .gameSelector .game-launch-secondary {
+  min-height: 38px;
+  border-radius: var(--fluent-radius-control) !important;
+}
+
+html[data-theme="fluent"] .home-page .gameSelector .game-launch-primary {
+  min-height: 38px;
+  border-radius: var(--fluent-radius-control) !important;
 }
 
 html[data-theme="fluent"] .filter,
@@ -566,7 +665,7 @@ html[data-theme="fluent"] .mod .mod-info-backdrop img {
 }
 
 html[data-theme="fluent"] .manage-page {
-  grid-template-columns: minmax(0, 1fr) 248px;
+  grid-template-columns: minmax(0, 1fr) 256px;
   min-width: 0;
   background: transparent;
 }
@@ -628,7 +727,7 @@ html[data-theme="fluent"] .manage-tree-scroll {
 
 html[data-theme="fluent"] .manage-tree-row {
   position: relative;
-  min-height: 38px;
+  min-height: 40px;
   border-radius: 0;
   transition:
     background var(--fluent-duration-fast),
@@ -668,13 +767,13 @@ html[data-theme="fluent"] .manage-tree-row .tree-row-actions > button:hover {
 
 /* Status text is a compact Fluent badge, not an unframed text button. */
 html[data-theme="fluent"] .manage-tree-row .state-switch {
-  min-height: 22px;
+  min-height: 23px;
   padding: 0 8px;
   border: 1px solid var(--fluent-stroke-control) !important;
   border-radius: 999px !important;
   color: var(--fluent-text-tertiary);
   background: var(--fluent-fill-subtle) !important;
-  font-size: 10px;
+  font-size: calc(11px * var(--manage-font-scale, 1));
   line-height: 1;
 }
 
@@ -809,61 +908,86 @@ html[data-theme="fluent"] .keybindings-page {
   background: transparent;
 }
 
-/* Downloads are a ListView-style route, not a collection of Fluent buttons.
-   The generic control rules above intentionally target every button, so keep
-   the task toggles and icon actions on their own compact geometry. */
+/* Downloads use a clean Fluent ListView surface with compact icon actions
+   and segmented filter pills, avoiding chunky filled button frames. */
 html[data-theme="fluent"] .page-Downloads {
   background: transparent;
 }
 
 html[data-theme="fluent"] .page-Downloads .download-page {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 18px 28px 40px;
-  box-sizing: border-box;
   color: var(--fluent-text-secondary);
 }
 
+html[data-theme="fluent"] .page-Downloads .download-page-inner {
+  width: min(940px, 100%);
+  padding: 24px 32px 48px;
+}
+
 html[data-theme="fluent"] .page-Downloads .download-page-header {
-  margin-bottom: 0;
-  padding: 4px 6px 12px;
   border-bottom-color: var(--fluent-stroke-divider);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-heading {
-  gap: 10px;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-page-icon {
-  width: 28px;
-  height: 28px;
-  border: 1px solid color-mix(in srgb, var(--fluent-accent) 30%, transparent);
-  border-radius: 4px;
-  color: var(--fluent-accent);
-  background: color-mix(in srgb, var(--fluent-accent) 12%, transparent);
-  font-size: 13px;
 }
 
 html[data-theme="fluent"] .page-Downloads .download-page-heading h1 {
   color: var(--fluent-text-primary);
-  font-size: 20px;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
-html[data-theme="fluent"] .page-Downloads .download-page-heading p {
-  margin-top: 3px;
+html[data-theme="fluent"] .page-Downloads .download-page-subtitle {
+  border: 0;
+  border-radius: 0;
   color: var(--fluent-text-tertiary);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html[data-theme="fluent"] .loenn[role="status"],
+html[data-theme="fluent"] .loenn [role="status"] {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-filter-bar {
+  padding: 3px;
+  gap: 2px;
+  border-color: var(--fluent-stroke-subtle);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-filter-pill {
+  min-height: 28px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  color: var(--fluent-text-secondary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-filter-pill:hover {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control-hover) !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-filter-pill.is-active {
+  color: var(--fluent-text-primary) !important;
+  background: var(--fluent-fill-control-selected) !important;
+  box-shadow: inset 0 0 0 1px var(--fluent-stroke-subtle) !important;
+}
+
+html[data-theme="fluent"] .page-Downloads .download-page-list {
+  border: 1px solid var(--fluent-stroke-subtle);
+  border-radius: var(--fluent-radius-card);
+  background: var(--fluent-acrylic-base);
+  box-shadow: var(--fluent-shadow-card);
 }
 
 html[data-theme="fluent"] .page-Downloads .download-task {
-  margin: 0;
-  padding: 12px 8px 11px;
-  border: 0;
-  border-bottom: 1px solid var(--fluent-stroke-divider);
-  border-radius: 0;
-  background: transparent;
+  border-bottom-color: var(--fluent-stroke-divider);
 }
 
 html[data-theme="fluent"] .page-Downloads .download-task:hover {
@@ -882,13 +1006,6 @@ html[data-theme="fluent"] .page-Downloads .download-dependency-actions button {
   box-shadow: none !important;
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-toggle {
-  width: 100%;
-  height: 28px;
-  justify-content: stretch;
-  font-size: inherit;
-}
-
 html[data-theme="fluent"] .page-Downloads .download-task-toggle:hover,
 html[data-theme="fluent"] .page-Downloads .download-task-action:hover,
 html[data-theme="fluent"]
@@ -900,25 +1017,13 @@ html[data-theme="fluent"]
   box-shadow: none !important;
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-status-icon {
-  width: 22px;
-  height: 22px;
-  border: 1px solid color-mix(in srgb, var(--fluent-accent) 28%, transparent);
-  border-radius: 4px;
-  color: var(--fluent-accent);
-  background: color-mix(in srgb, var(--fluent-accent) 11%, transparent);
-}
-
 html[data-theme="fluent"] .page-Downloads .download-task-title {
   color: var(--fluent-text-primary);
-  font-size: 12px;
   font-weight: 600;
 }
 
-html[data-theme="fluent"] .page-Downloads .download-task-status-text,
 html[data-theme="fluent"] .page-Downloads .download-task-summary,
-html[data-theme="fluent"] .page-Downloads .download-detail-summary,
-html[data-theme="fluent"] .page-Downloads .download-dependency-heading {
+html[data-theme="fluent"] .page-Downloads .download-dependency-meta {
   color: var(--fluent-text-tertiary);
 }
 
@@ -932,83 +1037,38 @@ html[data-theme="fluent"] .page-Downloads .download-dependency-progress > span {
   background: var(--fluent-accent);
 }
 
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-failed
-  .download-task-progress
-  > span,
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-detail-row-failed
-  .download-dependency-progress
-  > span {
+html[data-theme="fluent"] .page-Downloads .download-task-finished .download-task-progress > span,
+html[data-theme="fluent"] .page-Downloads .download-detail-row-finished .download-dependency-progress > span {
+  background: var(--fluent-success);
+}
+
+html[data-theme="fluent"] .page-Downloads .download-task-failed .download-task-progress > span,
+html[data-theme="fluent"] .page-Downloads .download-detail-row-failed .download-dependency-progress > span {
   background: var(--fluent-danger);
 }
 
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-canceled
-  .download-task-progress
-  > span,
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-paused
-  .download-task-progress
-  > span {
-  background: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-failed
-  .download-task-status-icon,
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-detail-row-failed
-  .download-dependency-main
-  > .icon,
-html[data-theme="fluent"] .page-Downloads .download-task-error-details,
-html[data-theme="fluent"] .page-Downloads .download-dependency-error {
-  color: var(--fluent-danger);
-}
-
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-canceled
-  .download-task-status-icon,
-html[data-theme="fluent"]
-  .page-Downloads
-  .download-task-paused
-  .download-task-status-icon {
-  color: var(--fluent-text-tertiary);
-}
-
-html[data-theme="fluent"] .page-Downloads .download-task-cancel:hover {
+html[data-theme="fluent"] .page-Downloads .download-task-cancel:hover,
+html[data-theme="fluent"] .page-Downloads .download-dependency-actions button.download-dependency-cancel:hover {
   color: var(--fluent-danger) !important;
   background: color-mix(
     in srgb,
-    var(--fluent-danger) 13%,
+    var(--fluent-danger) 14%,
     transparent
   ) !important;
 }
 
 html[data-theme="fluent"] .page-Downloads .download-dependency-list {
-  margin-left: 30px;
-  border-top-color: var(--fluent-stroke-divider);
+  border-left-color: var(--fluent-stroke-divider);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-detail-row {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-html[data-theme="fluent"] .page-Downloads .download-detail-row:hover {
+html[data-theme="fluent"] .page-Downloads .download-empty-icon {
+  border-color: var(--fluent-stroke-control);
+  border-radius: var(--fluent-radius-card);
   background: var(--fluent-fill-subtle);
 }
 
-html[data-theme="fluent"] .page-Downloads .download-list-empty {
-  color: var(--fluent-text-tertiary);
+html[data-theme="fluent"] .page-Downloads .download-empty-action .icon {
+  color: var(--fluent-accent);
 }
 
 html[data-theme="fluent"] .keybindings-main {

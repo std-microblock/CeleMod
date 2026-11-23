@@ -7,80 +7,6 @@
   display: none;
 }
 
-.home-shortcuts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-.home-shortcut {
-  --shortcut-accent: var(--color-primary);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  min-height: 88px;
-  padding: 14px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-fg) 9%, transparent);
-  border-radius: 14px;
-  background: var(--color-surface-elevated);
-  color: var(--color-fg);
-  box-shadow: none;
-  text-align: left;
-  letter-spacing: 0;
-  text-transform: none;
-  &.tone-blue {
-    --shortcut-accent: #89b8ee;
-  }
-  &.tone-green {
-    --shortcut-accent: #88d3b0;
-  }
-  &.tone-pink {
-    --shortcut-accent: #e9a1c0;
-  }
-  &.tone-amber {
-    --shortcut-accent: #e7c17c;
-  }
-  &.tone-neutral {
-    --shortcut-accent: var(--color-fg-muted);
-  }
-  .shortcut-icon {
-    display: grid;
-    flex: 0 0 36px;
-    height: 36px;
-    place-items: center;
-    border-radius: 11px;
-    color: var(--shortcut-accent);
-    background: color-mix(in srgb, var(--shortcut-accent) 13%, transparent);
-    font-size: 18px;
-  }
-  .shortcut-copy {
-    min-width: 0;
-    flex: 1;
-  }
-  strong,
-  small {
-    display: block;
-  }
-  strong {
-    font-size: 14px;
-    font-weight: 650;
-  }
-  small {
-    margin-top: 5px;
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--color-fg-muted);
-  }
-  > .icon {
-    font-size: 9px;
-    opacity: 0.4;
-  }
-  &:hover {
-    border-color: var(--shortcut-accent);
-    background: var(--color-surface-hover);
-  }
-}
-
 html[data-mobile-layout] {
   --window-titlebar-height: 0px;
   --mobile-nav-height: 72px;
@@ -239,74 +165,64 @@ html[data-mobile-layout] {
   // Single-column pages, with a shared comfortable phone gutter.
   .home-page,
   .settings-page,
-  .download-page,
   .multiplayer-page,
   .loenn {
-    padding: 20px 16px 24px;
+    padding: 20px 16px 28px;
   }
-  .home-header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 8px 0 20px;
-  }
-  .home-brand {
-    width: 100%;
-    gap: 14px;
-  }
-  .home-brand img {
-    width: 64px;
-    height: 64px;
-  }
-  .home-brand h1 {
-    font-size: 30px;
-  }
-  .home-brand p {
-    width: auto;
-    font-size: 13px;
-  }
-  .home-language,
-  .home-community,
-  .home-update-actions {
-    position: static;
-  }
-  .home-language {
-    order: 1;
-  }
-  .home-language select {
-    min-height: 40px;
-    font-size: 13px;
-  }
-  .home-community {
-    flex-wrap: wrap;
-    font-size: 12px;
-    gap: 12px;
-  }
-  .home-community button {
-    min-height: 40px;
-  }
-  .home-update-actions {
-    order: 2;
-    margin-left: auto;
-  }
-  .home-update-actions button {
-    min-height: 40px;
-    font-size: 12px;
-  }
-  .home-section {
+  .download-page {
     padding: 0;
-    margin-bottom: 24px;
   }
-  .home-section-heading h2 {
-    font-size: 16px;
+  .download-page-inner {
+    padding: 20px 16px 28px;
   }
-  .home-shortcuts {
+  .home-page .home-header {
+    gap: 12px;
+    padding: 4px 0 0;
+  }
+  .home-page .home-brand {
+    width: 100%;
+    gap: 12px;
+  }
+  .home-page .home-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .home-page .home-language select {
+    min-height: 40px;
+    height: 40px;
+    font-size: 13px;
+  }
+  .home-page .home-update-btn {
+    min-height: 40px;
+    height: 40px;
+    font-size: 12.5px;
+  }
+  .home-page .home-launch-body {
+    padding: 16px;
+  }
+  .home-page .home-status-strip.cols-3,
+  .home-page .home-status-strip.cols-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-page .home-status-item {
+    min-height: 52px;
+    padding: 12px 16px;
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-fg) 7%, transparent);
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+  .home-page .home-shortcuts-section {
+    display: flex;
+  }
+  .home-page .home-shortcuts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-shortcut {
+  .home-page .home-shortcut {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
-    min-height: 90px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 76px;
     gap: 6px 8px;
     padding: 12px 10px;
 
@@ -325,20 +241,17 @@ html[data-mobile-layout] {
       margin-top: 0;
     }
   }
-  .home-shortcut > .icon {
+  .home-page .home-shortcut > .icon {
     display: none;
   }
-  .home-game-section .gameSelector,
-  .home-profiles-section .profiles {
-    padding: 0;
-  }
-  .gameSelector {
+  .gameSelector .game-path-row {
     flex-direction: column;
     align-items: stretch;
   }
   .gameSelector .game-path-field select {
     height: 44px;
-    font-size: 12px;
+    min-height: 44px;
+    font-size: 12.5px;
   }
   .gameSelector .game-actions {
     flex-wrap: wrap;
@@ -348,24 +261,20 @@ html[data-mobile-layout] {
     flex: 1;
     min-height: 44px;
   }
-  .home-profiles-section .profiles {
+  .home-page .home-profiles-section .profiles {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-profiles-section .profile {
+  .home-page .home-profiles-section .profile {
     width: auto;
     box-sizing: border-box;
-    min-height: 70px;
+    min-height: 68px;
   }
-  .home-profiles-section .profile .profile-meta,
-  .home-active-mod-list span {
-    font-size: 11px;
+  .home-page .home-active-mods {
+    margin: 0;
   }
-  .home-active-mods {
-    margin: 12px 0 0;
-  }
-  .home-game-missing,
-  .home-keyboard-input-banner {
+  .home-page .home-game-missing,
+  .home-page .home-keyboard-input-banner {
     display: flex;
     flex-wrap: wrap;
   }
@@ -747,15 +656,16 @@ html[data-mobile-layout] {
     overflow-y: auto;
   }
   .loenn .loenn-header,
-  .loenn .loenn-local,
-  .loenn .install-heading {
+  .loenn .loenn-local-main,
+  .loenn .loenn-version-main {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 12px;
   }
-  .loenn .local-path {
+  .loenn .loenn-path-text {
     white-space: normal;
     overflow-wrap: anywhere;
+    max-width: 100%;
   }
   .no-everest {
     padding: 24px 16px;
