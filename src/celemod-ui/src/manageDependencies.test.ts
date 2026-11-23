@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   collectOrphanDependencyNames,
   collectDuplicateFixTargets,
+  getDependencyHealth,
   profileDisabledFilesAfterSwitch,
   collectSwitchNames,
   normalizeManageDependencies,
@@ -357,5 +358,84 @@ test("disabling a remaining file does not discard its exclusion", () => {
       false,
     ),
     ["Remaining.zip"],
+  );
+});
+
+test("flags an enabled Mod whose Everest dependency is newer than installed Everest", () => {
+  const nodes = {
+    NewMap: node("NewMap", {
+      dependencies: [{ name: "Everest", version: "1.6696.0", optional: false }],
+    }),
+  };
+
+  const health = getDependencyHealth("NewMap", nodes, false, "5577");
+  assert.equal(health.status, "version");
+  assert.equal(health.messages.length, 1);
+  assert.match(health.messages[0], /Everest 5577 < 1\.6696\.0/);
+});
+
+test("treats an enabled Mod as healthy when installed Everest satisfies EverestCore", () => {
+  const nodes = {
+    CoreMod: node("CoreMod", {
+      dependencies: [
+        { name: "EverestCore", version: "1.5000.0", optional: false },
+      ],
+    }),
+  };
+
+  assert.deepEqual(getDependencyHealth("CoreMod", nodes, false, "6696"), {
+    status: "healthy",
+    messages: [],
+  });
+});
+
+test("keeps Everest dependency healthy when currentEverestVersion is omitted or empty", () => {
+  const nodes = {
+    NewMap: node("NewMap", {
+      dependencies: [{ name: "Everest", version: "1.6696.0", optional: false }],
+    }),
+  };
+
+  assert.deepEqual(getDependencyHealth("NewMap", nodes, false), {
+    status: "healthy",
+    messages: [],
+  });
+  assert.deepEqual(getDependencyHealth("NewMap", nodes, false, ""), {
+    status: "healthy",
+    messages: [],
+  });
+});
+
+test("health=issues filter catches Mods blocked by an outdated Everest version", () => {
+  const nodes = {
+    NeedsNewEverest: node("NeedsNewEverest", {
+      dependencies: [{ name: "Everest", version: "1.6696.0", optional: false }],
+    }),
+    CompatibleMod: node("CompatibleMod", {
+      dependencies: [
+        { name: "EverestCore", version: "1.5000.0", optional: false },
+      ],
+    }),
+  };
+
+  assert.deepEqual(
+    selectVisibleRootNames({
+      nodes,
+      filters: {
+        query: "",
+        enabled: "all",
+        health: "issues",
+        types: [],
+        updateOnly: false,
+        duplicateOnly: false,
+        showHiddenTypes: false,
+      },
+      rootOnly: false,
+      includeOptional: false,
+      hiddenTypes: [],
+      updateNames: new Set(),
+      currentEverestVersion: "5577",
+    }),
+    ["NeedsNewEverest"],
   );
 });

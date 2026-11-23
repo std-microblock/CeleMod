@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import type { BackendModInfo } from "../states";
+import { extractEverestBuild } from "../api/everestUpdate";
 
 export type ManageEnabledFilter = "all" | "enabled" | "disabled";
 export type ManageHealthFilter = "all" | "healthy" | "issues" | "missing";
@@ -388,7 +389,12 @@ export const useManageStore = create<ManageTreeState>()(
   ),
 );
 
-const EXCLUDED_DEPENDENCIES = new Set(["Everest", "Celeste", "EverestCore"]);
+const EVEREST_DEPENDENCIES = new Set(["Everest", "EverestCore"]);
+const BUILTIN_EXCLUDED = new Set(["Celeste"]);
+const EXCLUDED_DEPENDENCIES = new Set([
+  ...BUILTIN_EXCLUDED,
+  ...EVEREST_DEPENDENCIES,
+]);
 const ALTERNATIVE_MODS = [
   "CelesteNet.Client",
   "MiaoNet",
@@ -414,12 +420,14 @@ export const getDependencyHealth = (
   name: string,
   nodes: Record<string, ManageNode>,
   includeOptional: boolean,
+  currentEverestVersion = "",
 ): ManageDependencyHealth => {
   if (!nodes[name]?.enabled) return { status: "healthy", messages: [] };
   const messages: string[] = [];
   let status: ManageDependencyHealth["status"] = "healthy";
   const visiting = new Set<string>();
   const ranks = { healthy: 0, version: 1, disabled: 2, missing: 3 };
+  const installedEverestBuild = extractEverestBuild(currentEverestVersion);
 
   const merge = (next: ManageDependencyHealth["status"], message: string) => {
     if (ranks[next] > ranks[status]) status = next;
@@ -433,10 +441,20 @@ export const getDependencyHealth = (
     visiting.add(nodeName);
     for (const dependency of node.dependencies) {
       if (
-        EXCLUDED_DEPENDENCIES.has(dependency.name) ||
+        BUILTIN_EXCLUDED.has(dependency.name) ||
         (dependency.optional && !includeOptional)
       )
         continue;
+      if (EVEREST_DEPENDENCIES.has(dependency.name)) {
+        const requiredBuild = extractEverestBuild(dependency.version);
+        if (installedEverestBuild > 0 && requiredBuild > installedEverestBuild) {
+          merge(
+            "version",
+            `Everest ${installedEverestBuild} < ${dependency.version}`,
+          );
+        }
+        continue;
+      }
       const installed = nodes[dependency.name];
       const covered = alternativesCovering(dependency.name, nodes).length > 0;
       if (!installed) {
@@ -585,6 +603,7 @@ export const selectVisibleRootNames = ({
   hiddenTypes,
   updateNames,
   displayNames,
+  currentEverestVersion,
 }: {
   nodes: Record<string, ManageNode>;
   filters: ManageFilters;
@@ -593,6 +612,7 @@ export const selectVisibleRootNames = ({
   hiddenTypes: string[];
   updateNames: Set<string>;
   displayNames?: Record<string, ManageDisplayNames>;
+  currentEverestVersion?: string;
 }) => {
   const query = filters.query.trim().toLocaleLowerCase();
   const matches = (node: ManageNode) => {
@@ -611,7 +631,12 @@ export const selectVisibleRootNames = ({
     if (filters.enabled === "disabled" && node.enabled) return false;
     if (filters.updateOnly && !updateNames.has(node.name)) return false;
     if (filters.duplicateOnly && node.duplicateFiles.length < 2) return false;
-    const health = getDependencyHealth(node.name, nodes, includeOptional);
+    const health = getDependencyHealth(
+      node.name,
+      nodes,
+      includeOptional,
+      currentEverestVersion,
+    );
     if (filters.health === "healthy" && health.status !== "healthy")
       return false;
     if (filters.health === "issues" && health.status === "healthy")
