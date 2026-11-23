@@ -82,10 +82,6 @@ html[data-theme="fluent"] .blocking-mask {
   backdrop-filter: blur(8px);
 }
 
-html[data-theme="fluent"] .startup-splash-backdrop {
-  background: var(--fluent-mica-base);
-}
-
 html[data-theme="fluent"] .drop-install-overlay {
   border-color: rgba(96, 205, 255, 0.55);
   border-radius: var(--fluent-radius-overlay);

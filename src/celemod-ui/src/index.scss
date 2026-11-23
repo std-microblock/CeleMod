@@ -843,12 +843,14 @@ textarea,
 /*                               Startup Splash                               */
 /* ========================================================================== */
 
-/* While the splash covers the frame nothing else paints. The shell stays
-   mounted so its layout is available for the roll-in handoff, but it never
-   composites behind the splash: blurring the app there smears through the
-   acrylic window instead of hiding it. */
+/* While the splash mask covers the window nothing else paints. The shell and
+   the titlebar stay mounted (the shell's layout is what the roll-in handoff
+   measures) but never composite behind the mask: blurring them there smears
+   through the acrylic window instead of hiding it. */
 html.is-splash-covering .app-shell,
-html.is-splash-covering .catalog-offline {
+html.is-splash-covering .catalog-offline,
+html.is-splash-covering .window-titlebar,
+html.is-splash-covering .macos-titlebar {
   visibility: hidden;
 }
 
@@ -858,7 +860,8 @@ html.is-splash-covering .catalog-offline {
 
 .startup-splash {
   position: fixed;
-  inset: var(--window-titlebar-height, 45px) 0 0;
+  /* Full window: the mask covers the titlebar as well. */
+  inset: 0;
   z-index: 1050;
   display: flex;
   flex-direction: column;
@@ -878,15 +881,10 @@ html.is-splash-covering .catalog-offline {
   position: absolute;
   inset: 0;
   z-index: 0;
+  /* Opaque mask: nothing behind it — app content or the acrylic desktop —
+     may show through while the splash loads. */
   background: var(--color-canvas);
   will-change: opacity;
-}
-
-html[window-blurbehind]:not([data-theme="fluent"]):not(
-    [data-theme="material-you"]
-  )
-  .startup-splash-backdrop {
-  background: rgba(10, 10, 12, 0.78);
 }
 
 .startup-splash-brand {

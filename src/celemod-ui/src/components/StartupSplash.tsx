@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import _i18n from "../i18n";
 import celemodLogo from "../resources/Celemod.png";
 import { Collapse, prefersReducedMotion } from "./Motion";
@@ -349,7 +350,10 @@ export function StartupSplash({
 
   const isExiting = phase === "rolling" || phase === "fading";
 
-  return (
+  // Rendered into <body> so the fixed mask covers the whole window, titlebar
+  // included: inside the app frame it would be clipped to the frame's padding
+  // box and painted below the titlebar.
+  return createPortal(
     <div
       className={`startup-splash${isExiting ? " is-closing" : ""}`}
       aria-live="polite"
@@ -418,6 +422,7 @@ export function StartupSplash({
           </div>
         </Collapse>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
