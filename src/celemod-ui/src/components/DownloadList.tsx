@@ -1,9 +1,13 @@
 import _i18n from "src/i18n";
 import "./DownloadList.scss";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
 import { Download, useDownloadStore } from "../stores/download";
+import { useGamePath } from "../states";
+import { useGlobalContext } from "../App";
+
+type FilterKey = "all" | "active" | "finished" | "failed";
 
 const formatBytes = (bytes: number) => {
   if (!bytes) return "0 B";
@@ -21,6 +25,16 @@ const formatBytes = (bytes: number) => {
 
 const formatSpeed = (bytesPerSec: number) =>
   bytesPerSec ? `${formatBytes(bytesPerSec)}/s` : "0 B/s";
+
+const formatBytesPair = (downloadedBytes: number, totalBytes: number) => {
+  if (totalBytes > 0) {
+    return `${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)}`;
+  }
+  if (downloadedBytes > 0) {
+    return formatBytes(downloadedBytes);
+  }
+  return null;
+};
 
 // Prefer byte counters over the streamed percentage: the latter can lag
 // behind and is also used for aggregate root progress in the store.
@@ -135,15 +149,34 @@ const DownloadDetailRow = ({
   const progress = getTaskProgress(task);
   const status = stateLabel(task);
   const canControl = allowControl && task.state === "pending" && !task.canceled;
+  const isTransferring =
+    task.state === "pending" && !task.canceled && !task.paused;
+  const bytesSummary = formatBytesPair(task.downloadedBytes, task.totalBytes);
+
   return (
     <div className={`download-detail-row download-detail-row-${status.tone}`}>
       <div className="download-dependency-main">
-        <Icon name={status.icon} />
-        <span title={task.name}>{label ?? task.name}</span>
-        <strong>{Math.round(progress)}%</strong>
+        <span className="download-dependency-status-icon" aria-hidden="true">
+          <Icon name={status.icon} />
+        </span>
+        <span className="download-dependency-name" title={task.name}>
+          {label ?? task.name}
+        </span>
+        <span className="download-dependency-meta">
+          {bytesSummary ? <span>{bytesSummary}</span> : null}
+          {isTransferring && task.speedBytesPerSec > 0 ? (
+            <span className="download-dependency-speed">
+              {formatSpeed(task.speedBytesPerSec)}
+            </span>
+          ) : null}
+        </span>
+        <strong className="download-dependency-percent">
+          {Math.round(progress)}%
+        </strong>
         {canControl ? (
           <span className="download-dependency-actions">
             <button
+              type="button"
               title={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
               aria-label={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
               onClick={() => togglePauseDownload(task.name)}
@@ -151,6 +184,8 @@ const DownloadDetailRow = ({
               <Icon name={task.paused ? "play" : "pause"} />
             </button>
             <button
+              type="button"
+              className="download-dependency-cancel"
               title={_i18n.t("取消")}
               aria-label={_i18n.t("取消")}
               onClick={() => cancelDownload(task.name)}
@@ -160,18 +195,14 @@ const DownloadDetailRow = ({
           </span>
         ) : null}
       </div>
-      <div className="download-dependency-progress">
+      <div className="download-dependency-progress" aria-hidden="true">
         <span style={{ width: `${progress}%` }} />
-      </div>
-      <div className="download-detail-summary">
-        <span>
-          {formatBytes(task.downloadedBytes)} / {formatBytes(task.totalBytes)}
-        </span>
-        <span>{formatSpeed(task.speedBytesPerSec)}</span>
       </div>
       {children}
       {task.error ? (
-        <div className="download-dependency-error">{task.error}</div>
+        <div className="download-dependency-error" role="alert">
+          {task.error}
+        </div>
       ) : null}
     </div>
   );
@@ -180,7 +211,7 @@ const DownloadDetailRow = ({
 export const DownloadTask = ({
   task,
   dependencyTasks = [],
-  initialExpanded = true,
+  initialExpanded,
   allowRetry = true,
   allowControl = true,
 }: {
@@ -195,14 +226,35 @@ export const DownloadTask = ({
     (state) => state.togglePauseDownload,
   );
   const downloadMod = useDownloadStore((state) => state.downloadMod);
-  const [expanded, setExpanded] = useState(initialExpanded);
+  const [expandedOverride, setExpandedOverride] = useState<boolean | null>(
+    initialExpanded ?? null,
+  );
+
   const metricTasks = [task, ...dependencyTasks];
   const metrics = getMetrics(metricTasks);
   const progress = Math.max(0, Math.min(100, Number(metrics.progress) || 0));
   const displayTask = getRootStatus(task, dependencyTasks);
   const status = stateLabel(displayTask);
+  const hasDependencies = dependencyTasks.length > 0;
+  const autoExpanded =
+    hasDependencies &&
+    !displayTask.canceled &&
+    (displayTask.state === "pending" || displayTask.state === "failed");
+  const expanded = hasDependencies ? (expandedOverride ?? autoExpanded) : false;
+
   const canControl =
     allowControl && displayTask.state === "pending" && !displayTask.canceled;
+  const isTransferring =
+    displayTask.state === "pending" &&
+    !displayTask.canceled &&
+    !displayTask.paused;
+  const bytesSummary = formatBytesPair(
+    metrics.downloadedBytes,
+    metrics.totalBytes,
+  );
+  const collapsedError =
+    task.error || dependencyTasks.find((dep) => dep.error)?.error;
+
   const action =
     allowRetry && task.state === "failed" && task.source
       ? {
@@ -212,36 +264,62 @@ export const DownloadTask = ({
         }
       : null;
 
+  const toggleExpanded = () => setExpandedOverride(!expanded);
+
   return (
     <article className={`download-task download-task-${status.tone}`}>
       <div className="download-task-topline">
-        <button
-          className="download-task-toggle"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
-        >
-          <span className="download-task-status-icon">
-            <Icon name={status.icon} />
-          </span>
-          <span className="download-task-title" title={task.name}>
-            {task.name}
-          </span>
-          <span className="download-task-status-text">{status.label}</span>
-          <Icon name={expanded ? "i-down" : "i-right"} />
-        </button>
+        {hasDependencies ? (
+          <button
+            type="button"
+            className="download-task-toggle"
+            aria-expanded={expanded}
+            onClick={toggleExpanded}
+          >
+            <span className="download-task-status-icon" aria-hidden="true">
+              <Icon name={status.icon} />
+            </span>
+            <span className="download-task-heading-group">
+              <span className="download-task-title" title={task.name}>
+                {task.name}
+              </span>
+              <span className="download-task-status-text">{status.label}</span>
+              <span className="download-task-dep-badge">
+                +{dependencyTasks.length} {_i18n.t("依赖")}
+              </span>
+            </span>
+          </button>
+        ) : (
+          <div className="download-task-identity">
+            <span className="download-task-status-icon" aria-hidden="true">
+              <Icon name={status.icon} />
+            </span>
+            <span className="download-task-heading-group">
+              <span className="download-task-title" title={task.name}>
+                {task.name}
+              </span>
+              <span className="download-task-status-text">{status.label}</span>
+            </span>
+          </div>
+        )}
+
         <div className="download-task-actions">
           {canControl ? (
             <button
+              type="button"
               className="download-task-action"
-              title={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
-              aria-label={task.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              title={displayTask.paused ? _i18n.t("继续") : _i18n.t("暂停")}
+              aria-label={
+                displayTask.paused ? _i18n.t("继续") : _i18n.t("暂停")
+              }
               onClick={() => togglePauseDownload(task.name)}
             >
-              <Icon name={task.paused ? "play" : "pause"} />
+              <Icon name={displayTask.paused ? "play" : "pause"} />
             </button>
           ) : null}
           {canControl ? (
             <button
+              type="button"
               className="download-task-action download-task-cancel"
               title={_i18n.t("取消")}
               aria-label={_i18n.t("取消")}
@@ -251,6 +329,7 @@ export const DownloadTask = ({
             </button>
           ) : action ? (
             <button
+              type="button"
               className="download-task-action"
               title={action.title}
               aria-label={action.title}
@@ -259,33 +338,53 @@ export const DownloadTask = ({
               <Icon name={action.icon} />
             </button>
           ) : null}
+          {hasDependencies ? (
+            <button
+              type="button"
+              className="download-task-action download-task-expand"
+              aria-expanded={expanded}
+              title={expanded ? _i18n.t("收起依赖") : _i18n.t("展开依赖")}
+              aria-label={expanded ? _i18n.t("收起依赖") : _i18n.t("展开依赖")}
+              onClick={toggleExpanded}
+            >
+              <Icon name={expanded ? "i-down" : "i-right"} />
+            </button>
+          ) : null}
         </div>
       </div>
 
-      <div className="download-task-progress" aria-hidden="true">
-        <span style={{ width: `${progress}%` }} />
-      </div>
-      <div className="download-task-summary">
-        <strong>{Math.round(progress)}%</strong>
-        <span>{task.requested ? _i18n.t("下载") : _i18n.t("依赖")}</span>
-        <span>
-          {formatBytes(metrics.downloadedBytes)} /{" "}
-          {formatBytes(metrics.totalBytes)}
-        </span>
-        <span>{formatSpeed(metrics.speedBytesPerSec)}</span>
+      <div className="download-task-body">
+        <div className="download-task-progress" aria-hidden="true">
+          <span style={{ width: `${progress}%` }} />
+        </div>
+        <div className="download-task-summary">
+          <span className="download-task-summary-left">
+            <strong>{Math.round(progress)}%</strong>
+            {bytesSummary ? (
+              <span className="download-task-bytes">{bytesSummary}</span>
+            ) : null}
+          </span>
+          {isTransferring && metrics.speedBytesPerSec > 0 ? (
+            <span className="download-task-speed">
+              {formatSpeed(metrics.speedBytesPerSec)}
+            </span>
+          ) : null}
+        </div>
       </div>
 
-      {expanded && dependencyTasks.length > 0 ? (
+      {collapsedError && (!hasDependencies || !expanded) ? (
+        <div className="download-task-error-details" role="alert">
+          {collapsedError}
+        </div>
+      ) : null}
+
+      {hasDependencies && expanded ? (
         <div className="download-dependency-list">
-          <div className="download-dependency-heading">{_i18n.t("主文件")}</div>
           <DownloadDetailRow
             task={task}
             allowControl={allowControl}
             label={_i18n.t("主文件")}
           />
-          <div className="download-dependency-heading">
-            {_i18n.t("依赖")} <span>{dependencyTasks.length}</span>
-          </div>
           {dependencyTasks.map((dependency) => (
             <DownloadDetailRow
               key={dependency.name}
@@ -294,17 +393,6 @@ export const DownloadTask = ({
             />
           ))}
         </div>
-      ) : expanded ? (
-        <div className="download-dependency-list download-main-file-only">
-          <DownloadDetailRow
-            task={task}
-            allowControl={allowControl}
-            label={_i18n.t("主文件")}
-          />
-        </div>
-      ) : null}
-      {task.error && expanded ? (
-        <div className="download-task-error-details">{task.error}</div>
       ) : null}
     </article>
   );
@@ -312,53 +400,213 @@ export const DownloadTask = ({
 
 export const DownloadListPage = () => {
   const downloadTasks = useDownloadStore((state) => state.tasks);
-  const allTasks = Object.values(downloadTasks);
-  const taskMap = new Map(
-    allTasks.map((task) => [task.name.toLocaleLowerCase(), task]),
+  const clearFinishedTasks = useDownloadStore(
+    (state) => state.clearFinishedTasks,
   );
-  const roots = allTasks.filter((task) => task.requested);
-  const visibleRoots = roots.length > 0 ? roots : allTasks;
-  const visibleCount = allTasks.filter(
-    (task) => task.state !== "finished" || task.canceled,
-  ).length;
+  const [gamePath] = useGamePath();
+  const { pageController } = useGlobalContext();
+  const [filter, setFilter] = useState<FilterKey>("all");
+
+  const {
+    rootItems,
+    activeCount,
+    finishedCount,
+    failedCount,
+    totalActiveSpeed,
+    hasClearableTasks,
+  } = useMemo(() => {
+    const allTasks = Object.values(downloadTasks);
+    const taskMap = new Map(
+      allTasks.map((task) => [task.name.toLocaleLowerCase(), task]),
+    );
+    const roots = allTasks.filter((task) => task.requested);
+    const visibleRoots = (roots.length > 0 ? roots : allTasks)
+      .slice()
+      .sort((a, b) => b.attemptId - a.attemptId);
+
+    const activeCancelKeys = new Set<string>();
+    let speedSum = 0;
+    for (const task of allTasks) {
+      if (task.state === "pending" && !task.canceled) {
+        if (task.cancelKey) activeCancelKeys.add(task.cancelKey);
+        if (!task.paused) {
+          speedSum += task.speedBytesPerSec;
+        }
+      }
+    }
+
+    let active = 0;
+    let finished = 0;
+    let failed = 0;
+    let clearable = false;
+
+    const items = visibleRoots.map((task) => {
+      const dependencies = collectDependencies(task, taskMap);
+      const dependencyTasks =
+        dependencies.length > 0
+          ? dependencies
+          : allTasks.filter(
+              (candidate) =>
+                !candidate.requested && candidate.cancelKey === task.cancelKey,
+            );
+      const displayTask = getRootStatus(task, dependencyTasks);
+      let category: Exclude<FilterKey, "all">;
+      if (displayTask.canceled || displayTask.state === "failed") {
+        category = "failed";
+        failed += 1;
+      } else if (displayTask.state === "finished") {
+        category = "finished";
+        finished += 1;
+      } else {
+        category = "active";
+        active += 1;
+      }
+
+      if (
+        (displayTask.state === "finished" || displayTask.canceled) &&
+        (!task.cancelKey || !activeCancelKeys.has(task.cancelKey))
+      ) {
+        clearable = true;
+      }
+
+      return { task, dependencyTasks, category };
+    });
+
+    return {
+      rootItems: items,
+      activeCount: active,
+      finishedCount: finished,
+      failedCount: failed,
+      totalActiveSpeed: speedSum,
+      hasClearableTasks: clearable,
+    };
+  }, [downloadTasks]);
+
+  const totalCount = rootItems.length;
+  const filteredItems = useMemo(
+    () =>
+      filter === "all"
+        ? rootItems
+        : rootItems.filter((item) => item.category === filter),
+    [filter, rootItems],
+  );
+
+  const filterTabs: Array<{ id: FilterKey; label: string; count: number }> = [
+    { id: "all", label: _i18n.t("全部"), count: totalCount },
+    { id: "active", label: _i18n.t("进行中"), count: activeCount },
+    { id: "finished", label: _i18n.t("已完成"), count: finishedCount },
+    { id: "failed", label: _i18n.t("异常"), count: failedCount },
+  ];
 
   return (
     <div className="download-page">
-      <header className="download-page-header">
-        <div className="download-page-heading">
-          <span className="download-page-icon">
-            <Icon name="download" />
-          </span>
-          <div>
+      <div className="download-page-inner">
+        <header className="download-page-header">
+          <div className="download-page-heading">
             <h1>{_i18n.t("下载任务")}</h1>
-            <p>
-              {visibleCount} {_i18n.t("项")}
+            <p className="download-page-subtitle" role="status">
+              {activeCount > 0 ? (
+                <>
+                  <span>
+                    {_i18n.t("{count} 项进行中", { count: activeCount })}
+                  </span>
+                  <span className="download-subtitle-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <span className="download-subtitle-speed">
+                    {formatSpeed(totalActiveSpeed)}
+                  </span>
+                </>
+              ) : totalCount > 0 ? (
+                <span>
+                  {_i18n.t("共 {total} 项任务 · {finished} 已完成", {
+                    total: totalCount,
+                    finished: finishedCount,
+                  })}
+                </span>
+              ) : (
+                <span>{_i18n.t("模组与依赖的下载进度将在此集中显示")}</span>
+              )}
             </p>
           </div>
-        </div>
-      </header>
-      <div className="download-page-list">
-        {visibleRoots.length > 0 ? (
-          visibleRoots.map((task) => (
-            <DownloadTask
-              key={task.name}
-              task={task}
-              dependencyTasks={(() => {
-                const dependencies = collectDependencies(task, taskMap);
-                return dependencies.length > 0
-                  ? dependencies
-                  : allTasks.filter(
-                      (candidate) =>
-                        !candidate.requested &&
-                        candidate.cancelKey === task.cancelKey,
-                    );
-              })()}
-            />
-          ))
+
+          {totalCount > 0 && hasClearableTasks ? (
+            <div className="download-page-controls">
+              <button
+                type="button"
+                className="download-clear-button"
+                onClick={clearFinishedTasks}
+              >
+                <Icon name="delete" />
+                <span>{_i18n.t("清除已完成")}</span>
+              </button>
+            </div>
+          ) : null}
+        </header>
+
+        {totalCount > 0 ? (
+          <>
+            <div
+              className="download-filter-bar"
+              role="group"
+              aria-label={_i18n.t("按状态筛选下载任务")}
+            >
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`download-filter-pill${filter === tab.id ? " is-active" : ""}`}
+                  aria-pressed={filter === tab.id}
+                  onClick={() => setFilter(tab.id)}
+                >
+                  <span>{tab.label}</span>
+                  <span className="download-filter-count">{tab.count}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="download-page-list">
+              {filteredItems.length > 0 ? (
+                filteredItems.map(({ task, dependencyTasks }) => (
+                  <DownloadTask
+                    key={task.name}
+                    task={task}
+                    dependencyTasks={dependencyTasks}
+                  />
+                ))
+              ) : (
+                <div className="download-filter-empty">
+                  <p>{_i18n.t("当前筛选下没有下载任务")}</p>
+                  <button
+                    type="button"
+                    className="download-filter-reset"
+                    onClick={() => setFilter("all")}
+                  >
+                    {_i18n.t("查看全部")}
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <div className="download-list-empty">
-            <Icon name="download" />
-            <span>{_i18n.t("无数据")}</span>
+            <span className="download-empty-icon" aria-hidden="true">
+              <Icon name="download" />
+            </span>
+            <h2>{_i18n.t("暂无下载任务")}</h2>
+            <p>
+              {_i18n.t("在搜索或推荐模组中点击下载，进度与依赖会在这里实时显示")}
+            </p>
+            {gamePath ? (
+              <button
+                type="button"
+                className="download-empty-action"
+                onClick={() => pageController.setPage("Search")}
+              >
+                <Icon name="search" />
+                <span>{_i18n.t("前往搜索模组")}</span>
+              </button>
+            ) : null}
           </div>
         )}
       </div>
