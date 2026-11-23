@@ -64,6 +64,10 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
     }
     private fun settingsFile() = File(activity.filesDir, "android-controls.json")
     private fun settings(): JSONObject = if (settingsFile().isFile) JSONObject(settingsFile().readText()) else JSONObject()
+    private fun touchEnabled(value: JSONObject = settings()): Boolean = ControlProfile.touchEnabled(
+        if (value.has("buttons") && !value.isNull("buttons")) value.optBoolean("buttons", false) else null,
+        if (value.has("joystick") && !value.isNull("joystick")) value.optBoolean("joystick", false) else null,
+    )
     private fun checkedPath(raw: String): File {
         val path = File(raw).canonicalFile
         require(path.toPath().startsWith(root().canonicalFile.toPath())) { "Game must be in ${root()}" }
@@ -78,7 +82,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
         // The gameplay buttons and direction controls are one virtual-keyboard
         // switch. Keep accepting the old settings file format and treat either
         // legacy flag as enabling the overlay.
-        val touchEnabled = settings().optBoolean("buttons", false) || settings().optBoolean("joystick", false)
+        val touchEnabled = touchEnabled()
         result.put("gameRoot", root().absolutePath)
         result.put("joystick", touchEnabled)
         result.put("gameRumble", settings().optBoolean("gameRumble", false))
@@ -181,7 +185,7 @@ class RuntimePlugin(private val activity: Activity) : Plugin(activity) {
                     SteamBridge.beforeLaunch(activity.applicationContext, path)
                     SteamBridge.launchStage = "preparing"
                     RuntimeHost.prepare(activity)
-                    val touchEnabled = settings().optBoolean("buttons", false) || settings().optBoolean("joystick", false)
+                    val touchEnabled = touchEnabled()
                     val intent = Intent(activity, GameActivity::class.java)
                         .putExtra("path", path.absolutePath)
                         .putExtra("origin", args.optBoolean("origin"))

@@ -537,7 +537,12 @@ class TouchControls(
         resetDialog?.dismiss(); resetDialog = null
         styleDialog?.dismiss(); styleDialog = null
         rebuild()
-        Toast.makeText(context, if (save) "按键布局已保存" else "已取消，保留原布局", Toast.LENGTH_SHORT).show()
+        val message = when {
+            !save -> "已取消，保留原布局"
+            !buttons && !joystick -> "按键布局已保存（当前已在设置中关闭「显示虚拟按键」）"
+            else -> "按键布局已保存"
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun cancelDrag() {

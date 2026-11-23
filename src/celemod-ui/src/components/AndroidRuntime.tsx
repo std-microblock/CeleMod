@@ -101,7 +101,7 @@ export function AndroidRuntime() {
             </span>
             <input
               type="checkbox"
-              checked={settings?.joystick ?? false}
+              checked={settings?.joystick ?? true}
               disabled={!settings || saving}
               onChange={(e) => void update("joystick", e.target.checked)}
             />

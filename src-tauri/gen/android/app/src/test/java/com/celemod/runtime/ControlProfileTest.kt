@@ -25,6 +25,17 @@ class ControlProfileTest {
             assertTrue(p.directions); assertFalse(p.stick); assertTrue(p.actions.isNotEmpty())
         }
     }
+    @Test fun touchControlsDefaultOnUntilExplicitlyDisabled() {
+        assertTrue(ControlProfile.touchEnabled(null, null))
+        assertTrue(ControlProfile.touchEnabled(true, null))
+        assertTrue(ControlProfile.touchEnabled(null, true))
+        assertTrue(ControlProfile.touchEnabled(true, false))
+        assertTrue(ControlProfile.touchEnabled(false, true))
+        assertFalse(ControlProfile.touchEnabled(false, false))
+        assertFalse(ControlProfile.touchEnabled(false, null))
+        assertFalse(ControlProfile.touchEnabled(null, false))
+    }
+
     @Test fun disabledControlsStayDisabled() {
         for (mode in ControlMode.entries) {
             val p = profile(mode, false, false)

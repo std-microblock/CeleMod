@@ -896,7 +896,11 @@ fn get_key_bindings_impl(
     let save_dir = save_directory(&game_path);
     let settings_path = save_dir.join("settings.celeste");
     let mouse_path = save_dir.join("modsettings-Everest_MouseBindings.celeste");
-    let settings = read_text(&settings_path)?;
+    let settings = match fs::read_to_string(&settings_path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => return Err(format!("读取 {} 失败：{error}", settings_path.display())),
+    };
     let mouse = fs::read_to_string(&mouse_path).unwrap_or_default();
     let mut entries = Vec::new();
 
@@ -930,16 +934,19 @@ fn get_key_bindings_impl(
         .map(|item| (item.name.to_ascii_lowercase(), item))
         .collect::<HashMap<_, _>>();
     let blacklisted = blacklisted_files(&game_path);
-    let mut config_files = fs::read_dir(&save_dir)
-        .map_err(|error| format!("读取存档目录失败：{error}"))?
-        .filter_map(Result::ok)
-        .filter(|entry| {
-            let name = entry.file_name().to_string_lossy().to_string();
-            name.starts_with("modsettings-")
-                && name.ends_with(".celeste")
-                && name != "modsettings-Everest_MouseBindings.celeste"
-        })
-        .collect::<Vec<_>>();
+    let mut config_files = match fs::read_dir(&save_dir) {
+        Ok(entries) => entries
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                let name = entry.file_name().to_string_lossy().to_string();
+                name.starts_with("modsettings-")
+                    && name.ends_with(".celeste")
+                    && name != "modsettings-Everest_MouseBindings.celeste"
+            })
+            .collect::<Vec<_>>(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(error) => return Err(format!("读取存档目录失败：{error}")),
+    };
     config_files.sort_by_key(|entry| entry.file_name().to_string_lossy().to_ascii_lowercase());
 
     for config in config_files {
@@ -1019,7 +1026,13 @@ pub(super) fn update_key_binding(
             return Err("未知的游戏按键项。".to_string());
         }
         let settings_path = save_dir.join("settings.celeste");
-        let mut settings = read_text(&settings_path)?;
+        let mut settings = match fs::read_to_string(&settings_path) {
+            Ok(content) => content,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err("找不到游戏按键配置 settings.celeste，请先启动一次 Celeste。".to_string());
+            }
+            Err(error) => return Err(format!("读取 {} 失败：{error}", settings_path.display())),
+        };
         settings = replace_xml_child_list(
             &settings,
             action,
@@ -1225,6 +1238,29 @@ mod tests {
                 .unwrap();
         assert!(output.contains("<Keys>Space</Keys>"));
         assert!(output.contains("<Buttons>A</Buttons>"));
+    }
+
+    #[test]
+    fn loads_catalog_before_first_game_launch() {
+        let suffix = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "celemod-keybindings-fresh-{}-{suffix}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let catalog = get_key_bindings_impl(
+            root.to_string_lossy().into_owned(),
+            "zh-CN".to_string(),
+            &AtomicBool::new(false),
+        )
+        .expect("fresh game directory without Saves/settings.celeste should still load");
+        assert_eq!(catalog.entries.len(), VANILLA_ACTIONS.len());
+        assert!(catalog.entries.iter().any(|entry| entry.action == "Jump"));
+        assert!(catalog.touch_buttons.is_empty());
+        fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]

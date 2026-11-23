@@ -47,7 +47,7 @@ class GameActivity : SDLActivity() {
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         }
         vibration = GameVibration(this, intent.getBooleanExtra("gameRumble", false))
-        val overlay = TouchControls(this, intent.getBooleanExtra("buttons", false), intent.getBooleanExtra("joystick", false),
+        val overlay = TouchControls(this, intent.getBooleanExtra("buttons", true), intent.getBooleanExtra("joystick", true),
             onExit = { confirmReturn() }, onKeyboard = { SDLActivity.showTextInput(0, 0, 1, 1) },
             onVibration = { vibration?.touch(it) })
         controls = overlay

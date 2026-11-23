@@ -33,6 +33,11 @@ data class ControlProfile(
     val diagonalDirections: Boolean = false
 ) {
     companion object {
+        /** Android touch controls default on until the user explicitly turns them off. */
+        fun touchEnabled(buttons: Boolean?, joystick: Boolean?): Boolean =
+            if (buttons == null && joystick == null) true
+            else (buttons == true) || (joystick == true)
+
         fun forState(state: ControlState, buttons: Boolean, joystick: Boolean, direct: Boolean = false,
                      directionMode: DirectionControlMode = DirectionControlMode.default(joystick)): ControlProfile {
             val enabled = buttons || joystick
