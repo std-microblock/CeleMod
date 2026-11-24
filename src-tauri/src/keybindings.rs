@@ -1029,7 +1029,9 @@ pub(super) fn update_key_binding(
         let mut settings = match fs::read_to_string(&settings_path) {
             Ok(content) => content,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                return Err("找不到游戏按键配置 settings.celeste，请先启动一次 Celeste。".to_string());
+                return Err(
+                    "找不到游戏按键配置 settings.celeste，请先启动一次 Celeste。".to_string(),
+                );
             }
             Err(error) => return Err(format!("读取 {} 失败：{error}", settings_path.display())),
         };

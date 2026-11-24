@@ -192,7 +192,9 @@ export const Home = () => {
   const pickGamePath = async () => {
     setLaunchError("");
     if (isAndroid) {
-      mask.setMaskText(chinese ? "正在导入游戏目录…" : "Importing game folder…");
+      mask.setMaskText(
+        chinese ? "正在导入游戏目录…" : "Importing game folder…",
+      );
       mask.setMaskEnabled(true);
     }
     try {

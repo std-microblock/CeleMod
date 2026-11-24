@@ -96,7 +96,8 @@ export function AndroidRuntime() {
             <div className="setting-description">
               <strong>{settings?.runtime ?? "正在读取运行时…"}</strong>
               <small>
-                应用不含游戏资源。可直接从本地文件导入 Celeste 游戏目录，或将游戏放入下方目录的子文件夹后返回主页选择。
+                应用不含游戏资源。可直接从本地文件导入 Celeste
+                游戏目录，或将游戏放入下方目录的子文件夹后返回主页选择。
               </small>
               <code>{settings?.gameRoot}</code>
             </div>
