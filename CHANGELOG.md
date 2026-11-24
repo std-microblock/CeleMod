@@ -1,6 +1,5 @@
 # 1.3.1
 
-- Android 支持从本机文件导入 Celeste 游戏目录：用系统文件夹选择器选中后复制到游戏根目录，并校验 Content 目录与 Celeste.exe/dll；导入期间不能再启动或安装 Everest。
 - Android 触摸按键改为默认开启，首次启动前也能加载键位表，不再因为还没有 settings.celeste 而报错；改键界面也不会再被触摸面板误当成游戏菜单。
 - Android 外接键盘的方向键改为作为键盘事件直接转发给游戏，不再被当作摇杆方向。
 - 下载 Mod 依赖时跟随当前选择的下载镜像，weg.fan 与 0x0a.de 镜像下的依赖不再总是走 GameBanana 直连。
