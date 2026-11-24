@@ -58,11 +58,12 @@ let
   gdkPixbufModulePath =
     lib.makeSearchPath "lib/gdk-pixbuf-2.0/2.10.0/loaders" [ pkgs.librsvg pkgs.gdk-pixbuf ];
 
-  shellHook = ''
-    if [ -n "''${CELEMOD_SHELL_QUIET:-}" ]; then
-      return 0 2>/dev/null || true
-    fi
+  # Sourced, not inlined, so the same helper works for interactive use and for
+  # `nix develop --command`. Both hooks are idempotent and never change the
+  # caller error policy.
+  hookFile = if isCi then ./hooks/ci.sh else ./hooks/celemod.sh;
 
+  shellHook = ''
     export GIO_EXTRA_MODULES="${gioModulePath}"
     export GIO_MODULE_DIR="${pkgs.glib-networking}/lib/gio/modules"
     export GDK_PIXBUF_MODULE_PATH="${gdkPixbufModulePath}"
@@ -73,6 +74,10 @@ let
     # corepack must never try to download a pnpm shim during activation.
     export COREPACK_ENABLE_AUTO_PIN=0
     export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
+    if [ -z "''${CELEMOD_SHELL_QUIET:-}" ]; then
+      . ${hookFile}
+    fi
   '';
 in
 pkgs.mkShell {
@@ -90,8 +95,9 @@ pkgs.mkShell {
     pkgs.rust-analyzer
   ];
 
-  # Deliberately plain: `nix develop --command bash -c ...` must work, so the
-  # hook is idempotent and never changes the caller error policy.
+  # mkShell exports these as environment variables for both shells. The hook
+  # may override them (ci.sh picks colourless output), so they are defaults,
+  # not hard requirements.
   RUST_BACKTRACE = "1";
-  CARGO_TERM_COLOR = "always";
+  CARGO_TERM_COLOR = lib.optionalString (!isCi) "always" + lib.optionalString isCi "never";
 }

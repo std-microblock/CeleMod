@@ -13,12 +13,10 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${CELEMOD_REPO_ROOT:-$(dirname "$HERE")}"
-if [ ! -f "$REPO_ROOT/flake.nix" ]; then
-  echo "ERROR: $REPO_ROOT does not look like the CeleMod checkout." >&2
-  echo "       Pass --repo-root DIR or set CELEMOD_REPO_ROOT." >&2
-  exit 1
-fi
 DRY_RUN=0
+
+# Parse arguments before validating REPO_ROOT, so --repo-root can override a
+# default that would otherwise fail the check below.
 while [ $# -gt 0 ]; do
   case "$1" in
     --repo-root) REPO_ROOT="$2"; shift 2 ;;
@@ -28,12 +26,22 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ ! -f "$REPO_ROOT/flake.nix" ]; then
+  echo "ERROR: $REPO_ROOT does not look like the CeleMod checkout." >&2
+  echo "       Pass --repo-root DIR or set CELEMOD_REPO_ROOT." >&2
+  exit 1
+fi
+
 OUT_DIR="$REPO_ROOT/nix"
 VERSIONS="$OUT_DIR/versions.nix"
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
 [ -f "$VERSIONS" ] || { echo "missing $VERSIONS" >&2; exit 1; }
-mkdir -p "$WORK"
+
+# Respect TMPDIR but do not assume it exists.
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/celemod-hashes.XXXXXXXX")" || {
+  echo "ERROR: cannot create a temporary directory (TMPDIR=${TMPDIR:-unset})." >&2
+  exit 1
+}
+trap 'rm -rf "$WORK"' EXIT
 
 # Optional: point nix at a throwaway HOME/cache (useful in sandboxes whose
 # real HOME is not writable).

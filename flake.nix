@@ -35,8 +35,8 @@
           fromOverlay = self.overlays.default pkgs pkgs;
         in
         {
-          inherit (fromOverlay) celemod celemod-ui;
-          default = fromOverlay.celemod;
+          inherit (fromOverlay) "cele-mod" "cele-mod-ui";
+          default = fromOverlay."cele-mod";
         };
     in
     {
@@ -58,8 +58,10 @@
           packages = packagesFor system;
         in
         {
-          celemod-version = pkgs.runCommand "celemod-version-check" { } ''
-            test "$(cat ${packages.celemod.version})" = "$(cat ${./version.txt})"
+          # Same name as the derivation, so `nix build .#checks.<system>.*`
+          # and `nix flake check` report something recognisable.
+          cele-mod-version = pkgs.runCommand "cele-mod-version-check" { } ''
+            test "$(cat ${packages."cele-mod".version})" = "$(cat ${./version.txt})"
             touch $out
           '';
 
@@ -67,10 +69,10 @@
           # placeholders, which `nix flake check --no-build` cannot tell apart
           # from a real derivation. Assert on the build inputs rather than
           # passthru.placeholder: a plain runCommand never sets that attribute.
-          celemod-is-real = pkgs.runCommand "celemod-real-check" { } ''
-            test "${toString (builtins.any (d: builtins.match ".*(rust|cargo).*" (d.name or "") != null) (packages.celemod.nativeBuildInputs or [ ]))}" = "1"
-            test "${toString (builtins.length (packages.celemod-ui.nativeBuildInputs or [ ]))}" != "0"
-            test "${if packages.celemod-ui ? pnpmDeps then "1" else "0"}" = "1"
+          cele-mod-is-real = pkgs.runCommand "cele-mod-real-check" { } ''
+            test "${toString (builtins.any (d: builtins.match ".*(rust|cargo).*" (d.name or "") != null) (packages."cele-mod".nativeBuildInputs or [ ]))}" = "1"
+            test "${toString (builtins.length (packages."cele-mod-ui".nativeBuildInputs or [ ]))}" != "0"
+            test "${if packages."cele-mod-ui" ? pnpmDeps then "1" else "0"}" = "1"
             touch $out
           '';
         });

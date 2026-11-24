@@ -1,4 +1,6 @@
 /target
+/result
+/result-*
 *.tsbuildinfo
 /.local/
 /src-tauri/gen/schemas/

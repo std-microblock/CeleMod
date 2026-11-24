@@ -75,12 +75,14 @@ locked nixpkgs accepts 3, 4 or 5; 4 is what the hash was produced with.
 ./scripts/update-nix-hashes.sh             # rewrite nix/versions.nix
 ```
 
-The script sets each hash to a deliberate fake, builds, and reads the
-`got: sha256-...` line back. Nothing is guessed. It pins nixpkgs from the
-committed `flake.lock`, so it can never hash against unstable HEAD.
+Nothing in `nix/versions.nix` is written by hand. For each hash the script
+builds a throwaway expression that sets `pkgs.lib.fakeHash`, lets the
+fixed-output derivation fail, and reads the `got: sha256-...` line back --
+so every recorded value came from a real fetch of the real input. nixpkgs is
+pinned from the committed `flake.lock`, so it can never hash against HEAD.
 
-After writing it validates every digest, asserts that each value equals the one
-just measured, and restores the backup on failure. A second run against
+After writing it re-validates every digest, asserts that each value equals the
+one just measured, and restores the backup on failure. A second run against
 unchanged inputs is byte-identical.
 
 To bump the app version, update `version.txt` (and `src-tauri/Cargo.toml`'s
@@ -106,18 +108,19 @@ handles the git dependency and needs no `outputHashes`. So `tools.nix` passes
 no `cargoLock` at all. (`cargoHash` inside `cargoLock` is a separate, harder
 failure: `unexpected argument 'cargoHash'` at `import-cargo-lock.nix:76`.)
 
-### No `cargoRoot`
+### `cargoRoot = "."`
 
-`cargoRoot` also drives vendor staging, so it would stage only `src-tauri/`,
-which has no `Cargo.lock`:
+`cargoRoot` also drives vendor staging. Pointing it at `src-tauri/` makes it
+look for a lockfile that is not there:
 
 ```text
 FileNotFoundError: [Errno 2] No such file or directory: 'Cargo.lock'
 ```
 
 This repository is a cargo workspace whose `Cargo.toml` and `Cargo.lock` live
-at the root, so vendoring runs from the root and the build subdirectory is
-selected with `buildAndTestSubdir = "src-tauri"`.
+at the root, so vendoring must run from the root. Keep `cargoRoot = "."`,
+which is also the default, and select the build subdirectory separately with
+`buildAndTestSubdir = "src-tauri"`.
 
 ### `CMAKE_POLICY_VERSION_MINIMUM = 3.5`
 

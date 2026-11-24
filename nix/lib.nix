@@ -5,7 +5,7 @@
 # Only derivations are exported: `nix flake check` rejects a non-derivation
 # under packages.<system>.*, so a bare `version` string must not live here.
 {
-  # `final` when used as an overlay body, so pkgs.celemod is self-consistent.
+  # `final` when used as an overlay body, so pkgs.cele-mod is self-consistent.
   pkgs,
   lib ? pkgs.lib,
   # overridable for tests; defaults to the repository root
@@ -15,7 +15,7 @@ let
   # --------------------------------------------------------------------------
   # Version: version.txt at the repository root is the single source of truth.
   # readFile is pure eval (no IFD); surrounding whitespace is trimmed so that
-  #   nix eval --raw .#packages.x86_64-linux.celemod.version
+  #   nix eval --raw .#packages.x86_64-linux."cele-mod".version
   # prints exactly 1.2.2.
   # --------------------------------------------------------------------------
   versionFromFile =
@@ -68,9 +68,9 @@ let
       wrapGAppsHook4;
   };
 
-  # Linux GUI stack for the Tauri build. Passed in as inputs rather than
-  # referenced inside tools.nix, so that module stays pkgs-agnostic.
-  tauriNativeInputs = with pkgs; [
+  # The GTK/WebKit stack the Tauri build links against. Keep in sync with the
+  # buildInputs in nix/devshell.nix.
+  tauriInputs = with pkgs; [
     pkg-config
     cmake
     patchelf
@@ -82,36 +82,33 @@ let
     libayatana-appindicator
     desktop-file-utils
     xdg-utils
-  ];
-
-  tauriBuildInputs = with pkgs; [
     openssl
     glib-networking
     gsettings-desktop-schemas
     dconf
     libappindicator-gtk3
-    webkitgtk_4_1
-    gtk3
-    libsoup_3
-    librsvg
   ];
+
 in
 {
-  celemod-ui = tools.mkCelemodUi {
+  # Attribute names follow the upstream crate, whose [package] and [[bin]] are
+  # both `cele-mod`, so the attribute and the command you run are one string:
+  # pkgs.cele-mod installs $out/bin/cele-mod.
+  "cele-mod" = tools.mkCelemod {
+    src = root;
+    inherit version;
+    inherit (versions) cargoHash;
+    nativeBuildInputs = tauriInputs;
+    buildInputs = tauriInputs;
+  };
+
+  # The frontend on its own, as $out/dist. It is a building block rather than
+  # something you run: the application derivation copies this tree into
+  # src/celemod-ui/dist so tauri-build can embed it into the binary. It is
+  # exposed because it is by far the cheapest target to build and inspect when
+  # iterating on the UI.
+  "cele-mod-ui" = tools.mkCelemodUi {
     src = root;
     inherit version;
   };
-
-  celemod = tools.mkCelemod (
-    {
-      src = root;
-      inherit version;
-      nativeBuildInputs = tauriNativeInputs;
-      buildInputs = tauriBuildInputs;
-    }
-    # Only inject cargoHash when the sidecar actually has one. Passing null
-    # would fall back to importCargoLock, which needs outputHashes for the
-    # pinned game-scanner git dependency.
-    // lib.optionalAttrs (versions ? cargoHash) { inherit (versions) cargoHash; }
-  );
 }

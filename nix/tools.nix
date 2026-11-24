@@ -21,8 +21,9 @@
 let
   versions = import ./versions.nix;
 
-  # version.txt at the repository root is the single source of truth.
-  repoVersion = versions.version;
+  # version.txt at the repository root is the single source of truth;
+  # versions.nix holds hashes only.
+  repoVersion = lib.strings.trim (builtins.readFile ./../version.txt);
 in
 rec {
   inherit repoVersion;
