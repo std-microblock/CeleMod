@@ -1,0 +1,56 @@
+name: Nix
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+      - "scripts/update-nix-hashes.sh"
+      - "Cargo.lock"
+      - "src/celemod-ui/pnpm-lock.yaml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+      - "scripts/update-nix-hashes.sh"
+      - "Cargo.lock"
+      - "src/celemod-ui/pnpm-lock.yaml"
+
+jobs:
+  flake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v16
+        with:
+          name: celemod
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          # Optional: without the token this step only pulls from the cache.
+
+      # Cheap and offline: evaluates every output, including the
+      # celemod-is-real guard, without building anything.
+      - name: Evaluate flake
+        run: nix flake check --all-systems --no-build --no-write-lock-file
+
+      # The expensive step. Skipped when no Cachix token is configured, since a
+      # cold Rust build otherwise dominates the job.
+      - name: Build package
+        run: nix build --no-link --print-out-paths .#packages.x86_64-linux.celemod
+
+      # The hashes are the part that silently rots when either lockfile moves.
+      - name: Hashes are up to date
+        run: |
+          ./scripts/update-nix-hashes.sh
+          git diff --exit-code -- nix/versions.nix \
+            || { echo "::error::nix/versions.nix is stale -- run scripts/update-nix-hashes.sh"; exit 1; }
