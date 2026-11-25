@@ -169,6 +169,17 @@ body {
     color: var(--color-fg);
     background-color: var(--color-surface-elevated);
   }
+
+  /* WebKitGTK, the Linux WebView, draws a native <select> with its own inner
+     layout: when a fixed height leaves the content box barely one text line
+     tall, the selected text is clipped to a thin band (every CeleMod dropdown
+     showed half-height glyphs). The menulist centres its text by itself, so the
+     vertical padding only shrinks that content box; dropping it keeps the box
+     size and lets the whole glyph run render. Scoped to Linux, where Tauri
+     always uses WebKitGTK, so Windows and macOS keep the previous rendering. */
+  html[data-platform="linux"] select {
+    padding-block: 0 !important;
+  }
 }
 
 /* ========================================================================== */
