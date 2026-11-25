@@ -627,6 +627,11 @@
 }
 
 .tree-name {
+  /* The base button layer lays its label out as a centred flex item, which
+     makes `text-align`/`text-overflow` dead and clips long Mod names on both
+     sides once the font scale shrinks the row. Plain block flow keeps the
+     label left-aligned and ellipsized. */
+  display: block;
   min-width: 0;
   min-height: 22px;
   height: auto;
