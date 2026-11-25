@@ -5896,11 +5896,15 @@ fn reveal_crash_report(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn open_url(url: String) -> Result<(), String> {
+async fn open_url(url: String) -> Result<(), String> {
     #[cfg(target_os = "android")]
     return crate::android::open_url(&url).map_err(|e| format!("{e:#}"));
     #[cfg(not(target_os = "android"))]
-    open::that(url).map_err(|error| error.to_string())
+    // `open::that` waits for the launcher process on Windows, so a failing
+    // launch (the shell error dialog) would otherwise block the window.
+    tauri::async_runtime::spawn_blocking(move || open::that(url).map_err(|error| error.to_string()))
+        .await
+        .map_err(|error| format!("Open worker failed: {error}"))?
 }
 
 #[tauri::command]

@@ -24,6 +24,7 @@ import {
 import { searchSubmission, type Content, type Credit } from "../api/wegfan";
 import type { CatalogMod } from "../api/modCatalog";
 import { sanitizeDescriptionHtml } from "../sanitizeDescriptionHtml";
+import { externalLinkUrl } from "../externalLink";
 import { callRemote, type Awaitable } from "../utils";
 import {
   formatCompactNumber,
@@ -408,7 +409,7 @@ const ModDescriptionHtml = ({ html }: { html: string }) => {
     el.appendChild(sanitizeDescriptionHtml(html));
 
     for (const anchor of Array.from(el.querySelectorAll("a"))) {
-      const href = anchor.getAttribute("href");
+      const href = externalLinkUrl(anchor.getAttribute("href"));
       if (!href) continue;
       anchor.setAttribute("href", "#");
       anchor.setAttribute("title", href);

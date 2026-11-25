@@ -1,3 +1,5 @@
+import { externalLinkUrl } from "./externalLink";
+
 const ALLOWED_DESCRIPTION_TAGS = new Set([
   "a",
   "b",
@@ -37,16 +39,14 @@ const ALLOWED_DESCRIPTION_TAGS = new Set([
   "ul",
 ]);
 
-const isSafeDescriptionUrl = (url: string, isImage = false) => {
+const isSafeDescriptionImageUrl = (url: string) => {
   const value = url.trim();
   if (!value) return false;
-  if (value.startsWith("#")) return !isImage;
   if (value.startsWith("/")) return true;
   if (value.startsWith("./") || value.startsWith("../")) return true;
 
   const lower = value.toLowerCase();
   if (lower.startsWith("http://") || lower.startsWith("https://")) return true;
-  if (!isImage && lower.startsWith("mailto:")) return true;
 
   return false;
 };
@@ -77,11 +77,11 @@ export const sanitizeDescriptionHtml = (html: string) => {
     const safeElement = document.createElement(tagName);
 
     if (tagName === "a") {
-      const href = source.getAttribute("href");
+      // Descriptions are remote content: only absolute HTTP(S) links may reach
+      // the OS, otherwise the link is treated as a file path.
+      const href = externalLinkUrl(source.getAttribute("href"));
       const title = source.getAttribute("title");
-      if (href && isSafeDescriptionUrl(href)) {
-        safeElement.setAttribute("href", href);
-      }
+      if (href) safeElement.setAttribute("href", href);
       if (title) safeElement.setAttribute("title", title);
     }
 
@@ -89,7 +89,7 @@ export const sanitizeDescriptionHtml = (html: string) => {
       const src = source.getAttribute("src");
       const alt = source.getAttribute("alt");
       const title = source.getAttribute("title");
-      if (!src || !isSafeDescriptionUrl(src, true)) return;
+      if (!src || !isSafeDescriptionImageUrl(src)) return;
       safeElement.setAttribute("src", src);
       if (alt) safeElement.setAttribute("alt", alt);
       if (title) safeElement.setAttribute("title", title);
