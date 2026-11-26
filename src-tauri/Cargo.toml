@@ -51,6 +51,7 @@ notify = "8"
 [target.'cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))'.dependencies]
 tauri-plugin-system-symbols = "0.3"
 tauri-plugin-window-controls = "0.1"
+tauri-plugin-window-state = "2"
 game-scanner = { git = "https://github.com/EqualGames/game-scanner", branch = "dependabot/cargo/sysinfo-0.28.2" }
 tauri-plugin-single-instance = { version = "2.4.3", features = ["deep-link"] }
 

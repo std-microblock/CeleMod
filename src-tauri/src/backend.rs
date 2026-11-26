@@ -7693,9 +7693,20 @@ pub fn run() {
     }
     #[cfg(desktop)]
     {
+        // Remember the window geometry between launches.  Only the size,
+        // position and maximized flag are restored: visibility and
+        // decorations stay under the app's control.
+        let window_state_flags = tauri_plugin_window_state::StateFlags::SIZE
+            | tauri_plugin_window_state::StateFlags::POSITION
+            | tauri_plugin_window_state::StateFlags::MAXIMIZED;
         builder = builder
             .plugin(tauri_plugin_system_symbols::init())
-            .plugin(tauri_plugin_window_controls::init());
+            .plugin(tauri_plugin_window_controls::init())
+            .plugin(
+                tauri_plugin_window_state::Builder::default()
+                    .with_state_flags(window_state_flags)
+                    .build(),
+            );
     }
     #[cfg(desktop)]
     {
