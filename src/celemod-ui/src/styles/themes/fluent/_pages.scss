@@ -102,6 +102,10 @@ html[data-theme="fluent"] .home-page {
 html[data-theme="fluent"] .filter,
 html[data-theme="fluent"] .manage-toolbar,
 html[data-theme="fluent"] .keybindings-toolbar {
+  /* backdrop-filter 让命令栏自己成为 stacking context，栏内弹层的 z-index
+     于是只在栏内生效，被后面 position: relative 的列表盖住；把整条命令栏抬到列表之上 */
+  position: relative;
+  z-index: 1;
   border-bottom-color: var(--fluent-stroke-divider);
   background: color-mix(in srgb, var(--fluent-mica-alt) 82%, transparent);
   backdrop-filter: blur(18px) saturate(120%);
